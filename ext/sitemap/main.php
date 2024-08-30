@@ -127,7 +127,7 @@ class XMLSitemap extends Extension
             return true;
         }
 
-        $sitemap_generation_interval = 86400; // allow new site map every day
+        $sitemap_generation_interval = 3600; // allow new site map every hour
         $last_generated_time = filemtime($cache_path);
 
         // if file doesn't exist, return true
@@ -135,7 +135,7 @@ class XMLSitemap extends Extension
             return true;
         }
 
-        // if it's been a day since last sitemap creation, return true
+        // if it's been an hour since last sitemap creation, return true
         return ($last_generated_time + $sitemap_generation_interval < time());
     }
 }

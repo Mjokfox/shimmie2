@@ -13,6 +13,7 @@ class ReverseSearchLinksTheme extends Themelet
         global $config;
 
         $links = [
+            'Google' => 'https://lens.google.com/uploadbyurl?url='. url_escape(make_http($image->get_image_link())),
             'SauceNAO' => 'https://saucenao.com/search.php?url=' . url_escape(make_http($image->get_thumb_link())),
             'TinEye' => 'https://www.tineye.com/search/?url=' . url_escape(make_http($image->get_thumb_link())),
             'trace.moe' => 'https://trace.moe/?auto&url=' . url_escape(make_http($image->get_thumb_link())),
