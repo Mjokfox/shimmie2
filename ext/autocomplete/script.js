@@ -7,7 +7,7 @@
 function getCurrentWord(element) {
 	let text = element.value;
 	let pos = element.selectionStart;
-	var start = text.lastIndexOf(' ', pos-1);
+	var start = Math.max(text.lastIndexOf(' ', pos-1),text.lastIndexOf('\n', pos-1));
 	if(start === -1) {
 		start = 0;
 	}
@@ -170,14 +170,15 @@ function setCompletion(element, new_word) {
 	}
 
 	// get the word before the cursor
-	var start = text.lastIndexOf(' ', pos-1);
+	var start = Math.max(text.lastIndexOf(' ', pos-1),text.lastIndexOf('\n', pos-1));
+	// var entstart = text.lastIndexOf("\n", pos-1);
 	if(start === -1) {
 		start = 0;
 	}
 	else {
 		start++; // skip the space
 	}
-	var end = text.indexOf(' ', pos);
+	var end = Math.max(text.indexOf(' ', pos-1),text.indexOf('\n', pos-1));
 	if(end === -1) {
 		end = text.length;
 	}
@@ -243,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				highlightCompletion(element, element.selected_completion+1);
 			}
 			// if enter or right are pressed while a completion is selected, add the selected completion
-			else if((event.code === "Enter" || event.code == "ArrowRight") && element.selected_completion !== -1) {
+			else if((event.code === "Enter" || event.code == "ArrowRight" || event.code == "Tab") && element.selected_completion !== -1) {
 				event.preventDefault();
 				const key = Object.keys(element.completions)[element.selected_completion]
 				setCompletion(element, key);

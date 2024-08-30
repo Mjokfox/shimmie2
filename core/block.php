@@ -51,7 +51,6 @@ class Block
         $this->body = (string)$body;
         $this->section = $section;
         $this->position = $position;
-
         if (is_null($id)) {
             $id = (empty($header) ? md5($this->body ?? '') : $header) . $section;
         }
@@ -71,7 +70,11 @@ class Block
         $html = "<section id='$i'>";
         $h_toggler = $hidable ? " shm-toggler" : "";
         if (!empty($h)) {
-            $html .= "<h3 data-toggle-sel='#$i' class='$h_toggler'>$h</h3>";
+            // if ($h == "Search"){
+                $html .= "<h3>$h</h3>";
+            // } else{
+            //     $html .= "<h3 data-toggle-sel='#$i' class='$h_toggler'>$h</h3>";
+            // }
         }
         if (!empty($b)) {
             $html .= "<div class='blockbody'>$b</div>";

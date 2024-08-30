@@ -92,6 +92,7 @@ class Search
         if ($limit !== null && $limit < 1) {
             $limit = 1;
         }
+        
         if (SPEED_HAX) {
             if (!$user->can(Permissions::BIG_SEARCH) and count($tags) > 3) {
                 throw new PermissionDenied("Anonymous users may only search for up to 3 tags at a time");

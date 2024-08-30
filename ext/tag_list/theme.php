@@ -63,7 +63,7 @@ class TagListTheme extends Themelet
     /**
      * @param array<array{tag: string, count: int}> $tag_infos
      */
-    public function display_split_related_block(Page $page, array $tag_infos): void
+    public function display_split_related_block(Page $page, array $tag_infos, $image_id): void
     {
         global $config;
 
@@ -74,14 +74,16 @@ class TagListTheme extends Themelet
         if (Extension::is_enabled(TagCategoriesInfo::KEY)) {
             $this->tagcategories = new TagCategories();
             $tag_category_dict = $this->tagcategories->getKeyedDict();
+            $categorized_tags = $this->tagcategories->getCategorizedTagsforImageId($image_id);
         } else {
             $tag_category_dict = [];
+            $categorized_tags = [];
         }
         $tag_categories_html = [];
         $tag_categories_count = [];
 
         foreach ($tag_infos as $row) {
-            $split = self::return_tag($row, $tag_category_dict);
+            $split = self::return_tag($row, $tag_category_dict, $categorized_tags);
             $category = $split[0];
             $tag_html = $split[1];
             if (!isset($tag_categories_html[$category])) {
@@ -106,15 +108,32 @@ class TagListTheme extends Themelet
             $main_html = null;
         }
         unset($tag_categories_html[' ']);
-
+        $categories_display_names= [];
         foreach (array_keys($tag_categories_html) as $category) {
             if ($tag_categories_count[$category] < 2) {
-                $category_display_name = html_escape($tag_category_dict[$category]['display_singular']);
+                $categories_display_names[$tag_category_dict[$category]['display_singular']] = $tag_categories_html[$category];
             } else {
-                $category_display_name = html_escape($tag_category_dict[$category]['display_multiple']);
+                $categories_display_names[$tag_category_dict[$category]['display_multiple']] = $tag_categories_html[$category];
             }
-            $page->add_block(new Block($category_display_name, $tag_categories_html[$category], "left", 9));
         }
+        ksort($categories_display_names);
+        if (array_key_exists("Meta", $categories_display_names)) {
+            $metaLeftValue = $categories_display_names["Meta"];
+            unset($categories_display_names["Meta"]);
+            $categories_display_names["Meta"] = $metaLeftValue;
+        }
+
+        foreach (array_keys($categories_display_names) as $categories_display_name) {
+            $page->add_block(new Block(html_escape($categories_display_name), $categories_display_names[$categories_display_name], "left", 9));
+        }
+        // foreach (array_keys($tag_categories_html) as $category) {
+        //     if ($tag_categories_count[$category] < 2) {
+        //         $category_display_name = html_escape($tag_category_dict[$category]['display_singular']);
+        //     } else {
+        //         $category_display_name = html_escape($tag_category_dict[$category]['display_multiple']);
+        //     }
+        //     $page->add_block(new Block($category_display_name, $tag_categories_html[$category], "left", 9));
+        // }
 
         if ($main_html !== null) {
             $page->add_block(new Block("Tags", $main_html, "left", 10));
@@ -133,14 +152,16 @@ class TagListTheme extends Themelet
         if (Extension::is_enabled(TagCategoriesInfo::KEY)) {
             $this->tagcategories = new TagCategories();
             $tag_category_dict = $this->tagcategories->getKeyedDict();
+            $categorized_tags = $this->tagcategories->getCategorizedTags();
         } else {
+            $categorized_tags = [];
             $tag_category_dict = [];
         }
         $main_html = $this->get_tag_list_preamble();
 
         foreach ($tag_infos as $row) {
-            $split = $this->return_tag($row, $tag_category_dict);
-            //$category = $split[0];
+            $split = $this->return_tag($row, $tag_category_dict, $categorized_tags);
+            $category = $split[0];
             $tag_html = $split[1];
             $main_html .= "<tr>$tag_html</tr>";
         }
@@ -203,7 +224,7 @@ class TagListTheme extends Themelet
      * @param array<string, array{color: string}> $tag_category_dict
      * @return array{0: string, 1: string}
      */
-    public function return_tag(array $row, array $tag_category_dict): array
+    public function return_tag(array $row, array $tag_category_dict, ?array $categorized_tags = []): array
     {
         global $config;
 
@@ -213,15 +234,16 @@ class TagListTheme extends Themelet
 
         $tag_category_css = '';
         $tag_category_style = '';
-        $h_tag_split = explode(':', html_escape($tag), 2);
+        // $h_tag_split = explode(':', html_escape($tag), 2);
         $category = ' ';
 
         // we found a tag, see if it's valid!
-        if ((count($h_tag_split) > 1) and array_key_exists($h_tag_split[0], $tag_category_dict)) {
-            $category = $h_tag_split[0];
-            $h_tag = $h_tag_split[1];
-            $tag_category_css .= ' tag_category_'.$category;
-            $tag_category_style .= 'style="color:'.html_escape($tag_category_dict[$category]['color']).';" ';
+        if (array_key_exists($tag, $categorized_tags)) {
+            if (array_key_exists($categorized_tags[$tag], $tag_category_dict)){
+                $category = $categorized_tags[$tag];
+                $tag_category_css .= ' tag_category_'.$category;
+                $tag_category_style .= 'style="color:'.html_escape($tag_category_dict[$category]['color']).';" ';
+            }
         }
 
         $h_tag_no_underscores = str_replace("_", " ", $h_tag);

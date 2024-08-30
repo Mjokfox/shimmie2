@@ -35,6 +35,7 @@ class ReverseSearchLinks extends Extension
      * @var string[]
      */
     protected array $SERVICES = [
+        'Google',
         'SauceNAO',
         'TinEye',
         'trace.moe',
@@ -50,7 +51,7 @@ class ReverseSearchLinks extends Extension
         global $config;
         $config->set_default_array(
             ReverseSearchLinksConfig::ENABLED_SERVICES,
-            ['SauceNAO', 'TinEye', 'trace.moe', 'ascii2d', 'Yandex']
+            ['Google', 'SauceNAO', 'TinEye', 'trace.moe', 'ascii2d', 'Yandex']
         );
     }
 }

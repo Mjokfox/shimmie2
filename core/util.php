@@ -10,6 +10,14 @@ namespace Shimmie2;
 
 const DATA_DIR = "data";
 
+function debug_log($data) {
+    if (is_array($data)) {
+        $output = implode(',', $data);
+    } else {
+        $output = $data;
+    }
+    error_log("Debug: " . $output);
+}
 
 function get_theme(): string
 {

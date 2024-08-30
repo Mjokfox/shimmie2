@@ -1,7 +1,77 @@
 TABLE#large_upload_form.form {
-	width: 100%;
+    width: 100%;
 }
 
 .mini_upload INPUT {
-	width: 100%;
+    width: 100%;
+}
+
+.container {
+    display: flex;
+    margin: 20px;
+    position: relative;
+}
+
+
+.left-column, .right-column {
+    overflow: auto;
+}
+
+.left-column {
+    width: 60%;
+}
+
+.right-column {
+    width: 39%;
+    padding-left: 20px;
+    background: #fff1;
+}
+
+.divider {
+    width: 5px;
+    cursor: col-resize;
+    background-color: #ccc;
+    position: relative;
+    z-index: 1;
+}
+
+.upload-section {
+    margin-bottom: 20px;
+}
+
+.file-input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.table-section {
+    margin-bottom: 20px;
+}
+
+.button {
+    padding: 10px 20px;
+    margin-right: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.image-preview {
+    max-height: 80vh;
+    width: 100%;
+    object-fit: contain;
+    display: none;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    padding: 10px;
+}
+
+.upload-button {
+    padding: 10px 20px;
+    background-color: #008CBA;
+    color: white;
+    border: none;
+    cursor: pointer;
 }

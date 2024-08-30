@@ -239,6 +239,12 @@ class Wiki extends Extension
         }
     }
 
+    public function onRobotsBuilding(RobotsBuildingEvent $event): void
+    {
+        // wiki doesnt have to be indexed
+        $event->add_disallow("wiki");
+    }
+
     public function onPageNavBuilding(PageNavBuildingEvent $event): void
     {
         $event->add_nav_link("wiki", new Link('wiki'), "Wiki");
@@ -446,7 +452,6 @@ class Wiki extends Extension
                             FROM tags
                             WHERE tag = :title
                                 ", ["title" => $a_tag]);
-
                         $tag_html = $tag_list_t->return_tag($a_row, $tag_category_dict ?? []);
                         $f_auto_tags[] = $tag_html[1];
                     }
