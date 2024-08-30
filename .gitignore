@@ -2,7 +2,7 @@ backup
 data
 .docker/entrypoint.d/config.json
 .sl
-
+themes/*/static
 #Composer
 composer.phar
 /vendor/
