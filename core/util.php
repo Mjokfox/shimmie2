@@ -9,14 +9,10 @@ namespace Shimmie2;
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 const DATA_DIR = "data";
-
 function debug_log($data) {
-    if (is_array($data)) {
-        $output = implode(',', $data);
-    } else {
-        $output = $data;
-    }
-    error_log("Debug: " . $output);
+    $equals = str_repeat("=", 50);
+    $output = is_array($data) ? implode(',', $data) : $data;
+    error_log("\n".$equals."\n".time()." Debug: " . $output ."\n". $equals);
 }
 
 function get_theme(): string
