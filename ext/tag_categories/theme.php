@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Shimmie2;
-// use Exception;
+
 class TagCategoriesTheme extends Themelet
 {
     /**
@@ -261,5 +261,29 @@ class TagCategoriesTheme extends Themelet
         <p>Can use &lt;, &lt;=, &gt;, &gt;=, or =.</p>
         <p>Category name is not case sensitive, category must exist for search to work.</p>
         ';
+    }
+
+    public function show_count_tag_categories(Page $page, array $dict)
+    {
+        $html = '<table class="table-odd noborders"><tr><th>tag</th><th>count</th><tr>';
+        foreach($dict as $row){
+            $html .= "<tr><td>".$row["tag"]."</td><td>".$row["count"]."</td></tr>";
+        }
+        $html .= "</table>";
+        $page->set_title("Tag Categories counts");
+        $page->set_heading("Tag Categories counts");
+        
+        $page->add_block(new Block("Tag Categories counts", $html, "main", 10));
+        $page->add_block(new NavBlock());
+    }
+
+    public function display_admin_form(): void
+    {
+        global $page;
+        $html = (string)SHM_SIMPLE_FORM(
+            "admin/count_categories_tags",
+            SHM_SUBMIT('Display tag count'),
+        );
+        $page->add_block(new Block("Tag categories count", $html));
     }
 }

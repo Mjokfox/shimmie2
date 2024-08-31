@@ -97,10 +97,22 @@ class TagCategories extends Extension
         if ($event->page_matches("tags/categories", method: "GET")) {
             $this->theme->show_tag_categories($page, $database->get_all('SELECT * FROM image_tag_categories'));
         }
-        if ($event->page_matches("tags/categories", method: "POST", permission: Permissions::EDIT_TAG_CATEGORIES)) {
+        else if ($event->page_matches("tags/categories", method: "POST", permission: Permissions::EDIT_TAG_CATEGORIES)) {
             $this->page_update();
             $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("tags/categories"));
+        }
+        else if ($event->page_matches("admin/count_categories_tags", method: "GET")){
+            $this->theme->show_count_tag_categories($page, $database->get_all(
+            'SELECT tags.tag, tags.count
+            FROM tags, image_tag_categories_tags itct
+            WHERE tags.id = itct.tag_id
+            ORDER BY tags.count ASC;'
+            ));
+        }
+        else if ($event->page_matches("admin/count_categories_tags", method: "POST")){
+            $page->set_mode(PageMode::REDIRECT);
+            $page->set_redirect(make_link("admin/count_categories_tags"));
         }
     }
 
@@ -140,6 +152,22 @@ class TagCategories extends Extension
             $block->header = "Tag Categories";
             $block->body = $this->theme->get_help_html();
             $event->add_block($block);
+        }
+    }
+
+    public function onAdminBuilding(AdminBuildingEvent $event): void
+    {
+        $this->theme->display_admin_form();
+    }
+
+    public function onAdminAction(AdminActionEvent $event): void
+    {
+        global $database;
+        switch($event->action) {
+            case "count_categories_tags":
+                debug_log("did it4");
+                $event->redirect = false;
+                break;
         }
     }
 
