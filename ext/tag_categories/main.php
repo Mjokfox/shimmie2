@@ -119,7 +119,7 @@ class TagCategories extends Extension
         }
     }
 
-    public function onSearchTermParse(SearchTermParseEvent $event): void
+    /*public function onSearchTermParse(SearchTermParseEvent $event): void
     {
         if (is_null($event->term)) {
             return;
@@ -153,7 +153,7 @@ class TagCategories extends Extension
         if ($event->key === HelpPages::SEARCH) {
             $event->add_section("Tag Categories", $this->theme->get_help_html());
         }
-    }
+    }*/
 
     public function onAdminBuilding(AdminBuildingEvent $event): void
     {
