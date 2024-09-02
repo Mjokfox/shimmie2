@@ -246,7 +246,7 @@ class Ratings extends Extension
 
     public function onParseLinkTemplate(ParseLinkTemplateEvent $event): void
     {
-        if(!is_null($event->image['rating'])) {
+        if (!is_null($event->image['rating'])) {
             $event->replace('$rating', $this->rating_to_human($event->image['rating']));
         }
     }
@@ -440,7 +440,7 @@ class Ratings extends Extension
      * @param ImageRating[]|null $ratings
      * @return array<string, string>
      */
-    public static function get_ratings_dict(array $ratings = null): array
+    public static function get_ratings_dict(?array $ratings = null): array
     {
         if (!isset($ratings)) {
             $ratings = self::get_sorted_ratings();

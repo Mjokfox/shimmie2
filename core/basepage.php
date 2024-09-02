@@ -101,7 +101,7 @@ class BasePage
     public function set_filename(string $filename, string $disposition = "attachment"): void
     {
         $max_len = 250;
-        if(strlen($filename) > $max_len) {
+        if (strlen($filename) > $max_len) {
             // remove extension, truncate filename, apply extension
             $ext = pathinfo($filename, PATHINFO_EXTENSION);
             $filename = substr($filename, 0, $max_len - strlen($ext) - 1) . '.' . $ext;
@@ -245,14 +245,14 @@ class BasePage
      * Find a block which contains the given text
      * (Useful for unit tests)
      */
-    public function find_block(string $text): ?Block
+    public function find_block(string $text): Block
     {
         foreach ($this->blocks as $block) {
             if ($block->header == $text) {
                 return $block;
             }
         }
-        return null;
+        throw new \Exception("Block not found: $text");
     }
 
     // ==============================================
@@ -303,7 +303,7 @@ class BasePage
                 if (!is_null($this->filename)) {
                     header('Content-Disposition: ' . $this->disposition . '; filename=' . $this->filename);
                 }
-                assert($this->file, "file should not be null with PageMode::FILE");
+                assert(!is_null($this->file), "file should not be null with PageMode::FILE");
 
                 // https://gist.github.com/codler/3906826
                 $size = \Safe\filesize($this->file); // File size
@@ -433,7 +433,7 @@ class BasePage
         $css_cache_file = data_path("cache/style/{$theme_name}.{$css_latest}.{$css_md5}.css");
         if (!file_exists($css_cache_file)) {
             $mcss = new \MicroBundler\MicroBundler();
-            foreach($css_files as $css) {
+            foreach ($css_files as $css) {
                 $mcss->addSource($css);
             }
             $mcss->save($css_cache_file);
@@ -456,7 +456,7 @@ class BasePage
         $js_cache_file = data_path("cache/initscript/{$theme_name}.{$js_latest}.{$js_md5}.js");
         if (!file_exists($js_cache_file)) {
             $mcss = new \MicroBundler\MicroBundler();
-            foreach($js_files as $js) {
+            foreach ($js_files as $js) {
                 $mcss->addSource($js);
             }
             $mcss->save($js_cache_file);
@@ -484,7 +484,7 @@ class BasePage
         $js_cache_file = data_path("cache/script/{$theme_name}.{$js_latest}.{$js_md5}.js");
         if (!file_exists($js_cache_file)) {
             $mcss = new \MicroBundler\MicroBundler();
-            foreach($js_files as $js) {
+            foreach ($js_files as $js) {
                 $mcss->addSource($js);
             }
             $mcss->save($js_cache_file);
@@ -731,7 +731,7 @@ class NavLink
     /**
      * @param string[] $pages_matched
      */
-    public static function is_active(array $pages_matched, string $url = null): bool
+    public static function is_active(array $pages_matched, ?string $url = null): bool
     {
         /**
          * Woo! We can actually SEE THE CURRENT PAGE!! (well... see it highlighted in the menu.)
