@@ -22,7 +22,6 @@ use function MicroHTML\BR;
 use function MicroHTML\A;
 use function MicroHTML\LABEL;
 use function MicroHTML\SPAN;
-
 use function MicroHTML\P;
 
 class UploadTheme extends Themelet
@@ -309,7 +308,7 @@ class UploadTheme extends Themelet
             $page->set_title("Upload Status");
             $page->set_heading("Upload Status");
             $page->add_block(new NavBlock());
-            foreach($errors as $error) {
+            foreach ($errors as $error) {
                 $page->add_block(new Block($error->name, format_text($error->error)));
             }
         } elseif (count($successes) == 0) {

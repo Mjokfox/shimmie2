@@ -213,7 +213,7 @@ class ImageIO extends Extension
         $event->replace('$filesize', to_shorthand_int($event->image->filesize));
         $event->replace('$filename', $base_fname);
         $event->replace('$ext', $event->image->get_ext());
-        if(isset($event->image->posted)) {
+        if (isset($event->image->posted)) {
             $event->replace('$date', autodate($event->image->posted, false));
         }
         $event->replace("\\n", "\n");
@@ -244,7 +244,7 @@ class ImageIO extends Extension
 
 
         if (isset($_SERVER["HTTP_IF_MODIFIED_SINCE"])) {
-            $if_modified_since = preg_replace('/;.*$/', '', $_SERVER["HTTP_IF_MODIFIED_SINCE"]);
+            $if_modified_since = preg_replace_ex('/;.*$/', '', $_SERVER["HTTP_IF_MODIFIED_SINCE"]);
         } else {
             $if_modified_since = "";
         }

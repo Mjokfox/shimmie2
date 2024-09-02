@@ -45,7 +45,7 @@ class Block
      */
     public bool $is_content = true;
 
-    public function __construct(string $header = null, string|\MicroHTML\HTMLElement $body = null, string $section = "main", int $position = 50, string $id = null)
+    public function __construct(?string $header = null, string|\MicroHTML\HTMLElement|null $body = null, string $section = "main", int $position = 50, ?string $id = null)
     {
         $this->header = $header;
         $this->body = (string)$body;
@@ -54,8 +54,7 @@ class Block
         if (is_null($id)) {
             $id = (empty($header) ? md5($this->body ?? '') : $header) . $section;
         }
-        $str_id = preg_replace('/[^\w-]/', '', str_replace(' ', '_', $id));
-        assert(is_string($str_id));
+        $str_id = preg_replace_ex('/[^\w-]/', '', str_replace(' ', '_', $id));
         $this->id = $str_id;
     }
 
