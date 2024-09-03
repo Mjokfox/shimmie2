@@ -49,8 +49,11 @@ class CustomViewPostTheme extends ViewPostTheme
 
 
         if (!is_null($image->source)) {
-            $h_source = html_escape(make_http($image->source));
-            $html .= "<br>Source: <a href='$h_source'>link</a>";
+            $source = $image->source;
+            if (!str_contains($source, "://")) {
+                $source = "https://" . $source;
+            }
+            $html .= "<br>Source: <a href='$source'>link</a>";  
         }
 
         if (Extension::is_enabled(RatingsInfo::KEY)) {
