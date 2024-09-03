@@ -44,10 +44,10 @@ class BrowserSearch extends Extension
 				<os:InputEncoding>UTF-8</os:InputEncoding>
 				<os:Image width='16' height='16'>data:image/x-icon;base64,$icon_b64</os:Image>
 				<os:SearchForm>$search_form_url</os:SearchForm>
-				<os:Url type='text/html' method='GET' template='https://findafox.net$search_form_url'>
+				<os:Url type='text/html' method='GET' template='".html_escape(make_http($search_form_url))."'>
 				  <os:Param name='search' value='{searchTerms}'/>
 				</os:Url>
-				<os:Url type='application/x-suggestions+json' template='https://findafox.net$suggenton_url'/>
+				<os:Url type='application/x-suggestions+json' template='".html_escape(make_http($suggenton_url))."'/>
 				</SearchPlugin>
 			";
 
