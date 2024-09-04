@@ -20,15 +20,16 @@ class GitPull extends Extension
         global $database;
         switch($event->action) {
             case "git_pull":
-                $this->execGitPull();
+                $output = $this->execGitPull();
+                log_warning("admin", $output, $output);
                 $event->redirect = true;
                 break;
         }
     }
 
-    private function execGitPull() : void {
+    private function execGitPull() : string {
         $command = new CommandBuilder("git");
         $command->add_flag("pull");
-        $command->execute(true);
+        return $command->execute(true);
     }
 }
