@@ -47,7 +47,7 @@ class UploadTheme extends Themelet
         $max_kb = to_shorthand_int($max_size);
         $max_total_size = parse_shorthand_int(ini_get('post_max_size') ?: "0");
         $max_total_kb = to_shorthand_int($max_total_size);
-        $upload_list = cache_get_or_set("upload_page",fn() => $this->build_upload_list(),15);
+        $upload_list = cache_get_or_set("upload_page",fn() => $this->build_upload_list(),1);
 
         $common_fields = emptyHTML();
         $ucbe = send_event(new UploadCommonBuildingEvent());
@@ -60,7 +60,7 @@ class UploadTheme extends Themelet
             DIV(
                 ["class" => "container"],
                 DIV(
-                    ["class" => "left-column","style" => "border-width: 2px;border-style: none; padding: 10px; flex: 1; text-align: center;"],
+                    ["class" => "left-column"],
                     DIV(["style" => "display: flex; align-items: center;"],
                         INPUT(["type" => "file",
                               "id" => "multiFileInput",
@@ -154,16 +154,18 @@ class UploadTheme extends Themelet
                 // $headers,
             )
         );
-
+        $colors = ["F00","F80","FF0","8F0","0F0","0F8","0FF","08F","00F","80F","F0F","F08"];
+        $alpha = "2";
         for ($i = 0; $i < $upload_count; $i++) {
             $specific_fields = emptyHTML();
             $usfbe = send_event(new UploadSpecificBuildingEvent((string)$i));
             foreach ($usfbe->get_parts() as $part) {
                 $specific_fields->appendChild($part);
             }
+            $color = "#".$colors[$i%11].$alpha;
 
             $upload_list->appendChild(
-                TR(
+                TR(["id"=> "rowdata{$i}","style" => "background-color:".$color],
                     TD(
                         ["colspan" => 2, "style" => "white-space: nowrap;"],
                        SPAN("{$i} "),
@@ -199,7 +201,7 @@ class UploadTheme extends Themelet
                         DIV([
                             "id" => "showinputdata{$i}",
                             "style" => "display:inline;margin-right:5px;font-size:15px;visibility:hidden;",
-                            "onclick" => "inputdiv(this,document.getElementById('inputdivdata{$i}'),'data{$i}');",
+                            "onclick" => "inputdiv(this,document.getElementById('inputdivdata{$i}'),'data{$i}','$color');",
                         ], "Show Input"),
 
                     ),
@@ -207,13 +209,13 @@ class UploadTheme extends Themelet
                        DIV([
                            "id" => "showpreviewdata{$i}",
                            "style" => "display:inline;margin-right:5px;font-size:15px;visibility:hidden;",
-                           "onclick" => "showpreview(document.getElementById('data{$i}').files[0]);",
+                           "onclick" => "showpreview(document.getElementById('data{$i}').files[0],'$color');",
                        ], "Preview"),
 
                    ),
 
                 ),
-                TR(
+                TR(["style" => "background-color:".$color],
                     TD( ["colspan" => "100%"],
                     DIV([
                             "id" => "inputdivdata{$i}",

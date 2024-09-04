@@ -3,7 +3,7 @@ function fileSize(size) {
     return (size / Math.pow(1024, i)).toFixed(2) * 1 + ['B', 'kB', 'MB', 'GB', 'TB'][i];
 }
 
-function showpreview(file) {
+function showpreview(file, background_color="#F002") {
     const imagePreview = document.getElementById('imagePreview');
     if (file){
         const reader = new FileReader();
@@ -12,17 +12,18 @@ function showpreview(file) {
             imagePreview.style.display = 'block';
         }
         reader.readAsDataURL(file);
+        imagePreview.parentElement.style["background-color"] = background_color;
     } else{
         imagePreview.src = '';
         imagePreview.style.display = 'none';
     }
 }
 
-function inputdiv(self,div,previewId) {
+function inputdiv(self,div,previewId,background_color="#0F02") {
     if (div.style.display === 'none' || div.style.display === '') {
         div.style.display = 'block';
         self.textContent = 'Hide Input';
-        showpreview(document.getElementById(previewId).files[0]);
+        showpreview(document.getElementById(previewId).files[0],background_color);
     } else {
         div.style.display = 'none';
         self.textContent = 'Show Input';
@@ -102,12 +103,13 @@ function updateTracker(e) {
         var showprevbtn = document.getElementById("showpreview"+input.id);
         var showinputbtn = document.getElementById("showinput"+input.id);
         var inputbutton = document.getElementById("browse"+input.id)
+        var TR_color = document.getElementById("row"+input.id)
         var toobig = false;
         if (input.files.length) {
             if(cancelbtn) cancelbtn.style.visibility = 'visible';
             if(showinputbtn) if (showinputbtn.style.visibility == 'hidden'){
                 showinputbtn.style.visibility = 'visible'
-                showpreview(input.files[0])
+                showpreview(input.files[0],TR_color.style["background-color"])
             }
             if(showprevbtn) showprevbtn.style.visibility = 'visible';
             for (var i = 0; i < input.files.length; i++) {
@@ -291,6 +293,8 @@ function sliderInit() {
 
             leftColumn.style.width = `${newLeftWidth}%`;
             rightColumn.style.width = `${newRightWidth}%`;
+            rightColumn.firstChild.style.width = `${(newRightWidth/100)*containerRect.width}px`;
+            // rightColumn.firstChild.style.width = `calc(${newRightWidth}% - 12px)`;
         }
 
         // Function to stop resizing
