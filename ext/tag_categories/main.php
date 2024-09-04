@@ -165,7 +165,6 @@ class TagCategories extends Extension
         global $database;
         switch($event->action) {
             case "count_categories_tags":
-                debug_log("did it4");
                 $event->redirect = false;
                 break;
         }

@@ -13,7 +13,7 @@ class CommandBuilder
     /** @var string[] */
     private array $args = [];
     /** @var string[] */
-    public array $output;
+    public array $output = [];
 
     public function __construct(string $executable)
     {
@@ -60,7 +60,6 @@ class CommandBuilder
         exec($cmd, $this->output, $ret);
 
         $output = $this->combineOutput("nothing");
-
         log_debug('command_builder', "Command `$cmd` returned $ret and outputted $output");
 
         if ($fail_on_non_zero_return && (int)$ret !== (int)0) {
