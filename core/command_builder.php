@@ -54,7 +54,7 @@ class CommandBuilder
         }
     }
 
-    public function execute(bool $fail_on_non_zero_return = false): int
+    public function execute(bool $fail_on_non_zero_return = false): string
     {
         $cmd = $this->generate();
         exec($cmd, $this->output, $ret);
@@ -65,6 +65,6 @@ class CommandBuilder
         if ($fail_on_non_zero_return && (int)$ret !== (int)0) {
             throw new ServerError("Command `$cmd` failed, returning $ret and outputting $output");
         }
-        return $ret;
+        return $output;
     }
 }
