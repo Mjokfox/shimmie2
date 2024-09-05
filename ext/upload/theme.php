@@ -141,7 +141,7 @@ class UploadTheme extends Themelet
         $uhbe = send_event(new UploadHeaderBuildingEvent());
         foreach ($uhbe->get_parts() as $part) {
             $headers->appendChild(
-                TH("Post-Specific $part")
+                TH("Post $part")
             );
         }
 
