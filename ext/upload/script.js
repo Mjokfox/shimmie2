@@ -5,17 +5,19 @@ function fileSize(size) {
 
 function showpreview(file, background_color="#F002") {
     const imagePreview = document.getElementById('imagePreview');
-    if (file){
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            imagePreview.src = e.target.result;
-            imagePreview.style.display = 'block';
+    if (imagePreview){
+        if (file){
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+            imagePreview.parentElement.style["background-color"] = background_color;
+        } else{
+            imagePreview.src = '';
+            imagePreview.style.display = 'none';
         }
-        reader.readAsDataURL(file);
-        imagePreview.parentElement.style["background-color"] = background_color;
-    } else{
-        imagePreview.src = '';
-        imagePreview.style.display = 'none';
     }
 }
 
@@ -76,22 +78,8 @@ function distributefiles(){
     updateTracker();
 }
 
-// function stupidSplitFunctionINeed(input) {
-//     // Use a regular expression to match the alphabetic part and the numeric part
-//     const match = input.match(/^([a-zA-Z]+)(\d+)$/);
-//
-//     if (match) {
-//         const textPart = match[1];
-//         const numberPart = match[2];
-//         return { textPart, numberPart };
-//     } else {
-//         // Handle the case where the input doesn't match the expected pattern
-//         return null;
-//     }
-// }
 
 function updateTracker(e) {
-    // if (e) updateTags({"id":(stupidSplitFunctionINeed(e.target.id)).join("_")});
     var size = 0;
     var upbtn = document.getElementById("uploadbutton");
     var tracker = document.getElementById("upload_size_tracker");
@@ -293,7 +281,8 @@ function sliderInit() {
 
             leftColumn.style.width = `${newLeftWidth}%`;
             rightColumn.style.width = `${newRightWidth}%`;
-            rightColumn.firstChild.style.width = `${(newRightWidth/100)*containerRect.width}px`;
+            if (preview_enabled && !split_view_enabled)
+                rightColumn.firstChild.style.width = `${(newRightWidth/100)*containerRect.width}px`;
             // rightColumn.firstChild.style.width = `calc(${newRightWidth}% - 12px)`;
         }
 

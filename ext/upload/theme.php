@@ -44,6 +44,8 @@ class UploadTheme extends Themelet
 
         $tl_enabled = ($config->get_string(UploadConfig::TRANSLOAD_ENGINE, "none") != "none");
         $max_size = $config->get_int(UploadConfig::SIZE);
+        $split_view = $config->get_bool(UploadConfig::SPLITVIEW);
+        $preview_enabled = $config->get_bool(UploadConfig::PREVIEW);
         $max_kb = to_shorthand_int($max_size);
         $max_total_size = parse_shorthand_int(ini_get('post_max_size') ?: "0");
         $max_total_kb = to_shorthand_int($max_total_size);
@@ -54,13 +56,17 @@ class UploadTheme extends Themelet
         foreach ($ucbe->get_parts() as $part) {
             $common_fields->appendChild($part);
         }
-
+        if ($preview_enabled) {
+            $preview_class = "image-preview".(!$split_view ? " upload-split-view":"");
+            $preview_element = IMG(["id"=>"imagePreview", "class"=>$preview_class, "alt"=>"Image Preview"]);
+        } else $preview_element = "";
         $form = SHM_FORM("upload", multipart: true, form_id: "file_upload");
         $form->appendChild(
             DIV(
                 ["class" => "container"],
                 DIV(
                     ["class" => "left-column"],
+                    $split_view ? DIV(["style" => "padding:10px"],$preview_element) : "",
                     DIV(["style" => "display: flex; align-items: center;"],
                         INPUT(["type" => "file",
                               "id" => "multiFileInput",
@@ -99,7 +105,7 @@ class UploadTheme extends Themelet
                 DIV(
                     ["class" => "right-column"],
                     // DIV(["class"=>"image-preview"],
-                        IMG(["id"=>"imagePreview", "class"=>"image-preview", "alt"=>"Image Preview"])
+                        !$split_view ? $preview_element : "",
                     // )
                 )
             )
@@ -118,12 +124,15 @@ class UploadTheme extends Themelet
             rawHTML("<script>
             window.shm_max_size = $max_size;
             window.shm_max_total_size = $max_total_size;
+            const preview_enabled=".($preview_enabled ? "true" : "false").";
+            const split_view_enabled=".($split_view ? "true" : "false").";
             </script>")
         );
 
         $page->set_title("Upload");
         $page->add_block(new NavBlock());
         $page->add_block(new Block("Upload", $html, "main", 20));
+        
         if ($tl_enabled) {
             $page->add_block(new Block("Bookmarklets", $this->build_bookmarklets(), "left", 20));
         }
@@ -134,6 +143,8 @@ class UploadTheme extends Themelet
         global $config;
         $upload_list = emptyHTML();
         $upload_count = $config->get_int(UploadConfig::COUNT);
+        $preview_enabled = $config->get_bool(UploadConfig::PREVIEW);
+        $split_view = $config->get_bool(UploadConfig::SPLITVIEW);
         $tl_enabled = ($config->get_string(UploadConfig::TRANSLOAD_ENGINE, "none") != "none");
         $accept = $this->get_accept();
 
@@ -204,14 +215,14 @@ class UploadTheme extends Themelet
                         ], "Show Input"),
 
                     ),
-                   TD(
+                    $preview_enabled ? TD(
                        DIV([
                            "id" => "showpreviewdata{$i}",
                            "style" => "display:inline;margin-right:5px;font-size:15px;visibility:hidden;",
                            "onclick" => "showpreview(document.getElementById('data{$i}').files[0],'$color');",
                        ], "Preview"),
 
-                   ),
+                   ) : "",
 
                 ),
                 TR(["style" => "background-color:".$color],
@@ -219,6 +230,7 @@ class UploadTheme extends Themelet
                     DIV([
                             "id" => "inputdivdata{$i}",
                             "style" => "display: none",
+                            "class" => $split_view ? "upload-split-view":"",
                         ],
                         TABLE(
                             ["id" => "small_upload_form", "class" => "form","style"=>"width:100%"],
