@@ -114,6 +114,8 @@ class Upload extends Extension
         $config->set_default_int(UploadConfig::COUNT, 3);
         $config->set_default_int(UploadConfig::SIZE, parse_shorthand_int('1MB'));
         $config->set_default_int(UploadConfig::MIN_FREE_SPACE, parse_shorthand_int('100MB'));
+        $config->set_default_bool(UploadConfig::SPLITVIEW, false);
+        $config->set_default_bool(UploadConfig::PREVIEW, true);
         $config->set_default_bool(UploadConfig::TLSOURCE, true);
 
         $this->is_full = false;
@@ -154,6 +156,8 @@ class Upload extends Extension
         $sb->add_label("<i>PHP Limit = " . ini_get('max_file_uploads') . "</i>");
         $sb->add_shorthand_int_option(UploadConfig::SIZE, "<br/>Max size per file: ");
         $sb->add_label("<i>PHP Limit = " . ini_get('upload_max_filesize') . "</i>");
+        $sb->add_bool_option(UploadConfig::SPLITVIEW, "<br/>Upload page split input: ");
+        $sb->add_bool_option(UploadConfig::PREVIEW, "<br/>Show image preview: ");
         $sb->add_choice_option(UploadConfig::TRANSLOAD_ENGINE, $tes, "<br/>Transload: ");
         $sb->add_bool_option(UploadConfig::TLSOURCE, "<br/>Use transloaded URL as source if none is provided: ");
 

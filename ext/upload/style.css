@@ -59,17 +59,25 @@ TABLE#large_upload_form.form {
     cursor: pointer;
 }
 
-.image-preview {
+.upload-split-view {
+    right: calc(1rem + 30px);
+    transform:translate(0%,-50%);
+    position: fixed;
+    top: 52%;
+}
+
+IMG.upload-split-view {
     max-height: 78vh;
     width: 37%;
+}
+
+.image-preview {
+    max-height: 50vh;
+    max-width: 100%;
     display: none;
     box-sizing: border-box;
     border: 1px solid #ccc;
     padding: 5px;
-    position: fixed;
-    top: 52%;
-    right: calc(1rem + 30px);
-    transform:translate(0%,-50%);
 }
 
 .upload-button {
