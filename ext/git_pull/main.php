@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+use MicroHTML\HTMLElement;
+
+use function MicroHTML\rawHTML;
 class GitPull extends Extension
 {
     public function onAdminBuilding(AdminBuildingEvent $event): void
@@ -13,7 +16,7 @@ class GitPull extends Extension
             "admin/git_pull",
             SHM_SUBMIT('Pull from git'),
         );
-        $page->add_block(new Block("Git Pull", $html));
+        $page->add_block(new Block("Git Pull", rawHTML($html)));
     }
     public function onAdminAction(AdminActionEvent $event): void
     {
