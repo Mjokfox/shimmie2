@@ -78,6 +78,65 @@ function distributefiles(){
     updateTracker();
 }
 
+const preset_tags = {
+    "red_fox":["red_fur","white_fur","black_nose","orange_eyes","white_tail_tip"],
+    "arctic_fox":["white_fur","black_nose","orange_eyes","white_tail_tip"],
+    "fennec_fox":["tan_fur","black_nose","black_eyes","black_tail_tip"],
+    "gray_fox":["red_fur","white_fur","gray_fur","black_nose","orange_eyes","black_tail_tip"],
+    "bat-eared_fox":["black_fur","gray_fur","black_nose","black_eyes","black_tail_tip"],
+    "bengal_fox":["tan_fur","gray_fur","black_nose","black_eyes","black_tail_tip"],
+    "blanford’s_fox":["tan_fur","gray_fur","black_nose","black_eyes","black_tail_tip"],
+    "cape_fox":["tan_fur","gray_fur","black_nose","black_eyes","black_tail_tip"],
+    "corsac_fox":["red_fur","white_fur","gray_fur","black_nose","orange_eyes","black_tail_tip"],
+    "crab-eating_fox ":["black_fur","gray_fur","black_nose","black_eyes","black_tail_tip"],
+    "culpeo_fox":["red_fur","black_fur","gray_fur","black_nose","orange_eyes","black_tail_tip"],
+    "darwin’s_fox":["red_fur","black_fur","gray_fur","black_nose","orange_eyes","black_tail_tip"],
+    "hoary_fox":["tan_fur","gray_fur","black_nose","orange_eyes","black_tail_tip"],
+    "island_fox":["red_fur","white_fur","gray_fur","black_nose","orange_eyes","black_tail_tip"],
+    "kit_fox":["tan_fur","white_fur","gray_fur","black_nose","orange_eyes","black_tail_tip"],
+    "pale_fox":["tan_fur","black_nose","orange_eyes","black_tail_tip"],
+    "pampas_fox":["red_fur","gray_fur","black_nose","orange_eyes","black_tail_tip"],
+    "ruppell’s_fox":["tan_fur","black_nose","orange_eyes","white_tail_tip"],
+    "sechuran_fox":["white_fur","gray_fur","black_nose","orange_eyes","black_tail_tip"],
+    "south_american_gray_fox":["red_fur","white_fur","gray_fur","black_nose","orange_eyes","black_tail_tip"],
+    "swift_fox":["tan_fur","white_fur","black_nose","orange_eyes","black_tail_tip"],
+    "tibetan_fox":["tan_fur","white_fur","black_fur","gray_fur","black_nose","orange_eyes","white_tail_tip"],
+}
+
+var changed_tags = {};
+var previous_presettag = [];
+function presettags(self) {
+    var tag = "";
+    var add = false
+    var split_id = "";
+    if (self.nodeName === "OPTION"){
+        split_id = self.parentNode.id.split("_");
+    } else {split_id = self.id.split("_");}
+    var suffix = split_id[1];
+    if (split_id[0] === "tagsDropdown"){
+        tag = self.value;
+        add = true;
+    } else {
+        tag = self.value;
+        add = self.checked;
+    }
+    if (self.type === "radio" || self.nodeName === "OPTION"){
+        if (suffix in previous_presettag){
+            preset_tags[previous_presettag[suffix]].forEach((tagg) =>{
+                if (!changed_tags[suffix].includes(tagg)){
+                    document.querySelector(`input[value="${tagg}"]`).checked = false;
+                }
+            });
+        }
+    }
+    preset_tags[tag].forEach((tagg) =>{
+        if (!changed_tags[suffix].includes(tagg)){
+            document.querySelector(`input[value="${tagg}"]`).checked = add;
+        }
+    });
+    previous_presettag[suffix] = tag;
+    updateTags(self)
+}
 
 function updateTracker(e) {
     var size = 0;
@@ -138,10 +197,15 @@ function updateTracker(e) {
 }
 
 function updateTags(self) {
-    const suffix = self.id.split("_")[1]
+    const split_id = self.id.split("_");
+    const suffix = split_id[1];
     const tagsinput = document.getElementById("tags"+suffix);
     const fileInput = document.getElementById("data"+suffix);
     var tags = [];
+    if (!(suffix in changed_tags)) changed_tags[suffix] = [];
+    if (split_id !== "tagsDropdown"){
+        if (!changed_tags[suffix].includes(self.value)) changed_tags[suffix].push(self.value);
+    }
     if (fileInput.files[0]){
         const splitType = fileInput.files[0].type.split("/");
         if (splitType[0] === "video"){
@@ -210,8 +274,8 @@ function copyTagsTo(self, target){
 // when single > lock species, age. Mutiple > unlock age. multiple species unlocks all
 // when red_fox > appear muzzle marking
 
-const makeCheckbox = {"multiple":["Age"],"multiple_species":["Species","Age"]};
-const makeRadio = {"single":["Species","Age"],"multiple":["Species"]};
+const makeCheckbox = {"multiple":["Age","EyesMouth1","EyesMouth2"],"multiple_species":["Species","Age","EyesMouth1","EyesMouth2"]};
+const makeRadio = {"single":["Species","Age","EyesMouth1","EyesMouth2"],"multiple":["Species"]};
 const appears = {"red_fox":["Muzzle"]};
 
 function checkboxRadio(self){
