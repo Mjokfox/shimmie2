@@ -473,3 +473,31 @@ DIV.grid-container {
 DIV.cell_row DIV LABEL {
 	padding-right: 	8px;
 }
+DIV.numeric-score DIV {
+	padding-right: 5px;
+}
+
+DIV.numeric-score DIV BUTTON {
+	border-radius: 3px;
+	background: #fff0;
+	cursor: pointer;
+}
+
+DIV.numeric-score DIV BUTTON:hover {
+	background: #fff3;
+}
+
+DIV.numeric-score DIV BUTTON , DIV B {
+	font-size:1.5em;
+	padding-left: 5px;
+	padding-right: 5px;
+	border: none;
+}
+
+#Post_Scoremain {
+	margin-top: 0;
+}
+
+INPUT[type=submit] {
+	cursor: pointer;
+}
