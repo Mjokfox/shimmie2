@@ -274,7 +274,7 @@ class TagCategoriesTheme extends Themelet
         $page->set_title("Tag Categories counts");
         $page->set_heading("Tag Categories counts");
         
-        $page->add_block(new Block("Tag Categories counts", $html, "main", 10));
+        $page->add_block(new Block("Tag Categories counts", rawHTML($html), "main", 10));
         $page->add_block(new NavBlock());
     }
 
@@ -285,6 +285,6 @@ class TagCategoriesTheme extends Themelet
             "admin/count_categories_tags",
             SHM_SUBMIT('Display tag count'),
         );
-        $page->add_block(new Block("Tag categories count", $html));
+        $page->add_block(new Block("Tag categories count", rawHTML($html)));
     }
 }
