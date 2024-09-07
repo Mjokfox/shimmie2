@@ -33,7 +33,7 @@ class CustomViewPostTheme extends ViewPostTheme
         if ($user->can(Permissions::VIEW_IP)) {
             $h_ownerlink .= " ($h_ip)";
         }
-
+        
         $html = "
 		ID: {$image->id}
 		<br>Uploader: $h_ownerlink
@@ -63,6 +63,12 @@ class CustomViewPostTheme extends ViewPostTheme
             }
             $h_rating = Ratings::rating_to_human($rating);
             $html .= "<br>Rating: <a href='".search_link(["rating=$rating"])."'>$h_rating</a>";
+        }
+
+        if (Extension::is_enabled(NumericScoreInfo::KEY)) {
+            $h_score = (int)$image['numeric_score'];
+            $score_color = $h_score > 0 ? "lime" : ($h_score < 0 ? "red" : "gray");
+            $html .= "<br>Score: <span style='color:$score_color'>$h_score</span>";
         }
 
         return $html;
