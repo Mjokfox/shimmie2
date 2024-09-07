@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\rawHTML;
-
 class CustomCommentListTheme extends CommentListTheme
 {
     /**
@@ -30,7 +28,8 @@ class CustomCommentListTheme extends CommentListTheme
         $nav = "$h_prev | $h_index | $h_next";
 
         $page->set_title("Comments");
-        $page->add_block(new Block("Navigation", rawHTML($nav), "left"));
+        $page->set_heading("Comments");
+        $page->add_block(new Block("Navigation", $nav, "left"));
         $this->display_paginator($page, "comment/list", null, $page_number, $total_pages);
 
         // parts for each image
@@ -85,7 +84,7 @@ class CustomCommentListTheme extends CommentListTheme
 			";
 
 
-            $page->add_block(new Block(null, rawHTML($html), "main", $position++));
+            $page->add_block(new Block("&nbsp;", $html, "main", $position++));
         }
     }
 

@@ -168,21 +168,6 @@ class TagCategories extends Extension
                 $event->redirect = false;
                 break;
         }
-    }*/
-
-    public function onAdminBuilding(AdminBuildingEvent $event): void
-    {
-        $this->theme->display_admin_form();
-    }
-
-    public function onAdminAction(AdminActionEvent $event): void
-    {
-        global $database;
-        switch($event->action) {
-            case "count_categories_tags":
-                $event->redirect = false;
-                break;
-        }
     }
 
     /**
