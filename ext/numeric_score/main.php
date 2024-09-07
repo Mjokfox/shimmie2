@@ -8,6 +8,8 @@ use GQLA\Type;
 use GQLA\Field;
 use GQLA\Mutation;
 
+use function MicroHTML\rawHTML;
+
 #[Type(name: "NumericScoreVote")]
 class NumericScoreVote
 {
@@ -313,10 +315,7 @@ class NumericScore extends Extension
     public function onHelpPageBuilding(HelpPageBuildingEvent $event): void
     {
         if ($event->key === HelpPages::SEARCH) {
-            $block = new Block();
-            $block->header = "Numeric Score";
-            $block->body = $this->theme->get_help_html();
-            $event->add_block($block);
+            $event->add_section("Numeric Score", $this->theme->get_help_html());
         }
     }
 

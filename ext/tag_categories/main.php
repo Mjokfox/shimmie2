@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 namespace Shimmie2;
+
+use function MicroHTML\rawHTML;
+
 require_once "config.php";
 
 class TagCategories extends Extension
@@ -148,10 +151,22 @@ class TagCategories extends Extension
     public function onHelpPageBuilding(HelpPageBuildingEvent $event): void
     {
         if ($event->key === HelpPages::SEARCH) {
-            $block = new Block();
-            $block->header = "Tag Categories";
-            $block->body = $this->theme->get_help_html();
-            $event->add_block($block);
+            $event->add_section("Tag Categories", $this->theme->get_help_html());
+        }
+    }*/
+
+    public function onAdminBuilding(AdminBuildingEvent $event): void
+    {
+        $this->theme->display_admin_form();
+    }
+
+    public function onAdminAction(AdminActionEvent $event): void
+    {
+        global $database;
+        switch($event->action) {
+            case "count_categories_tags":
+                $event->redirect = false;
+                break;
         }
     }*/
 

@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{emptyHTML,rawHTML,HTML,HEAD,BODY,TITLE, LINK, SCRIPT};
+use function MicroHTML\{emptyHTML, rawHTML, HTML, HEAD, BODY, TITLE, LINK, SCRIPT, A, B, joinHTML, BR, H1, HEADER as HTML_HEADER, NAV, ARTICLE, FOOTER, SECTION, H3, DIV};
 
 require_once "core/event.php";
 
@@ -36,14 +36,12 @@ class Cookie
 }
 
 /**
- * Class Page
- *
  * A data structure for holding all the bits of data that make up a page.
  *
  * The various extensions all add whatever they want to this structure,
  * then Layout turns it into HTML.
  */
-class BasePage
+class Page
 {
     public PageMode $mode = PageMode::PAGE;
     private string $mime;
@@ -157,6 +155,9 @@ class BasePage
     public function set_title(string $title): void
     {
         $this->title = $title;
+        if ($this->heading === "") {
+            $this->heading = $title;
+        }
     }
 
     public function set_heading(string $heading): void
@@ -586,7 +587,7 @@ class BasePage
             HTML(
                 ["lang" => "en"],
                 HEAD($head),
-                BODY($body_attrs, rawHTML((string)$body))
+                BODY($body_attrs, $body)
             )
         );
     }
@@ -599,22 +600,22 @@ class BasePage
         );
     }
 
-    protected function body_html(): string
+    protected function body_html(): HTMLElement
     {
-        $left_block_html = "";
-        $main_block_html = "";
-        $sub_block_html  = "";
+        $left_block_html = [];
+        $main_block_html = [];
+        $sub_block_html = [];
 
         foreach ($this->blocks as $block) {
             switch ($block->section) {
                 case "left":
-                    $left_block_html .= $block->get_html(true);
+                    $left_block_html[] = $this->block_html($block, true);
                     break;
                 case "main":
-                    $main_block_html .= $block->get_html(false);
+                    $main_block_html[] = $this->block_html($block, false);
                     break;
                 case "subheading":
-                    $sub_block_html .= $block->get_html(false);
+                    $sub_block_html[] = $this->block_html($block, false);
                     break;
                 default:
                     print "<p>error: {$block->header} using an unknown section ({$block->section})";
@@ -623,41 +624,60 @@ class BasePage
         }
 
         $footer_html = $this->footer_html();
-        $flash_html = $this->flash ? "<b id='flash'>".nl2br(html_escape(implode("\n", $this->flash)))."</b>" : "";
-        return "
-            <header>
-                <h1>{$this->heading}</h1>
-                $sub_block_html
-            </header>
-            <nav>
-                $left_block_html
-            </nav>
-            <article>
-                $flash_html
-                $main_block_html
-            </article>
-            <footer>
+        $flash_html = $this->flash_html();
+        return emptyHTML(
+            HTML_HEADER(
+                H1($this->heading),
+                ...$sub_block_html
+            ),
+            NAV(
+                ...$left_block_html
+            ),
+            ARTICLE(
+                $flash_html,
+                ...$main_block_html
+            ),
+            FOOTER(
                 $footer_html
-            </footer>
-        ";
+            )
+        );
     }
 
-    protected function footer_html(): string
+    protected function block_html(Block $block, bool $hidable): HTMLElement
+    {
+        $html = SECTION(['id' => $block->id]);
+        if (!empty($block->header)) {
+            $html->appendChild(H3(["data-toggle-sel" => "#{$block->id}", "class" => $hidable ? "shm-toggler" : ""], $block->header));
+        }
+        if (!empty($block->body)) {
+            $html->appendChild(DIV(['class' => "blockbody"], $block->body));
+        }
+        return $html;
+    }
+
+    protected function flash_html(): HTMLElement
+    {
+        if ($this->flash) {
+            return B(["id" => "flash"], rawHTML(nl2br(html_escape(implode("\n", $this->flash)))));
+        }
+        return emptyHTML();
+    }
+
+    protected function footer_html(): HTMLElement
     {
         $debug = get_debug_info();
         $contact_link = contact_link();
-        $contact = empty($contact_link) ? "" : "<br><a href='$contact_link'>Contact</a>";
-
-        return "
-			Media &copy; their respective owners,
-			<a href=\"https://code.shishnet.org/shimmie2/\">Shimmie</a> &copy;
-			<a href=\"https://www.shishnet.org/\">Shish</a> &amp;
-			<a href=\"https://github.com/shish/shimmie2/graphs/contributors\">The Team</a>
-			2007-2024,
-			based on the Danbooru concept.
-			$debug
-			$contact
-        ";
+        return joinHTML("", [
+            "Media © their respective owners, ",
+            A(["href" => "https://code.shishnet.org/shimmie2/"], "Shimmie"),
+            " © ",
+            A(["href" => "https://www.shishnet.org/"], "Shish"),
+            " & ",
+            A(["href" => "https://github.com/shish/shimmie2/graphs/contributors"], "The Team"),
+            " 2007-2024, based on the Danbooru concept.",
+            BR(), $debug,
+            $contact_link ? emptyHTML(BR(), A(["href" => $contact_link], "Contact")) : ""
+        ]);
     }
 }
 
