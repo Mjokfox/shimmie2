@@ -396,6 +396,40 @@ margin-top:0.5rem;
 #Imagemain h3 {
 display:none;
 }
+@media screen and (width <= 800px) {
+BODY {
+grid-template-columns: auto;
+}
+HEADER {
+grid-column: 1;
+grid-row: 1;
+}
+ARTICLE {
+grid-column: 1;
+grid-row: 2;
+margin: 0 16px;
+}
+NAV {
+grid-column: 1;
+grid-row: 3;
+margin: auto;
+width: auto;
+}
+FOOTER {
+grid-column: 1;
+grid-row: 4;
+}
+.withleft {
+margin: 0;
+}
+#image-list .blockbody {
+margin: 0;
+}
+.shm-image-list {
+justify-content: center;
+}
+}
+
 TABLE.table_container{
 	width:100%;
 /* 	table-layout: fixed; */

@@ -9,6 +9,8 @@ use Symfony\Component\Console\Input\{InputInterface,InputArgument};
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+use function MicroHTML\rawHTML;
+
 require_once "config.php";
 require_once "events.php";
 
@@ -167,17 +169,15 @@ class Index extends Extension
                 $limit = $input->getOption('limit');
                 $count = $input->getOption('count');
 
-                [$tag_conditions, $img_conditions, $order] = Search::terms_to_conditions($search);
+                $params = SearchParameters::from_terms($search);
                 if ($count) {
-                    $order = null;
+                    $params->order = null;
                     $page = null;
                     $limit = null;
                 }
 
                 $q = Search::build_search_querylet(
-                    $tag_conditions,
-                    $img_conditions,
-                    $order,
+                    $params,
                     $limit,
                     (int)(($page - 1) * $limit),
                 );
@@ -253,7 +253,7 @@ class Index extends Extension
         // If we've reached this far, and nobody else has done anything with this term, then treat it as a tag
         if ($event->order === null && $event->img_conditions == [] && $event->tag_conditions == []) {
             assert(is_string($event->term));
-            $event->add_tag_condition(new TagCondition($event->term, $event->positive));
+            $event->add_tag_condition(new TagCondition($event->term, !$event->negative));
         }
     }
 

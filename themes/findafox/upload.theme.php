@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-
 use function MicroHTML\{joinHTML, emptyHTML, DIV, BUTTON, A, TEXTAREA, TABLE, TR, TH, TD, INPUT, LABEL, BR, SELECT, OPTION};
 
 use MicroHTML\HTMLElement;
