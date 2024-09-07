@@ -8,35 +8,8 @@ use MicroHTML\HTMLElement;
 
 use function MicroHTML\{A,B,BR,IMG,emptyHTML,joinHTML,LINK};
 
-/**
- * Class BaseThemelet
- *
- * A collection of common functions for theme parts
- */
-class BaseThemelet
+class CommonElementsTheme extends Themelet
 {
-    /**
-     * Generic error message display
-     */
-    public function display_error(int $code, string $title, string $message): void
-    {
-        global $page;
-        $page->set_code($code);
-        $page->set_title($title);
-        $page->set_heading($title);
-        $has_nav = false;
-        foreach ($page->blocks as $block) {
-            if ($block->header == "Navigation") {
-                $has_nav = true;
-                break;
-            }
-        }
-        if (!$has_nav) {
-            $page->add_block(new NavBlock());
-        }
-        $page->add_block(new Block("Error", $message));
-    }
-
     /**
      * Generic thumbnail code; returns HTML rather than adding
      * a block since thumbs tend to go inside blocks...
@@ -179,14 +152,5 @@ class BaseThemelet
             $pages_html,
             ' >>'
         );
-    }
-
-    public function display_crud(string $title, HTMLElement $table, HTMLElement $paginator): void
-    {
-        global $page;
-        $page->set_title($title);
-        $page->set_heading($title);
-        $page->add_block(new NavBlock());
-        $page->add_block(new Block("$title Table", emptyHTML($table, $paginator)));
     }
 }

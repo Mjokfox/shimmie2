@@ -31,12 +31,14 @@ class IndexTest extends ShimmiePHPUnitTestCase
         $this->get_page('post/list/1');
         $this->assert_title("Shimmie");
 
-        $this->get_page('post/list/99999');
-        $this->assert_response(404);
+        $this->assertException(PostNotFound::class, function () {
+            $this->get_page('post/view/99999');
+        });
 
         # No results: 404
-        $this->get_page('post/list/maumaumau/1');
-        $this->assert_response(404);
+        $this->assertException(PostNotFound::class, function () {
+            $this->get_page('post/list/maumaumau/1');
+        });
 
         # One result: 302
         $this->get_page("post/list/pbx/1");
@@ -58,5 +60,27 @@ class IndexTest extends ShimmiePHPUnitTestCase
             send_event(new PageSubNavBuildingEvent($parent));
         }
         $this->assertTrue(true);
+    }
+
+    public function test_operands(): void
+    {
+        $e = new SearchTermParseEvent(0, null, []);
+        $this->assertFalse($e->negative);
+
+        $e = new SearchTermParseEvent(1, "foo", ["foo"]);
+        $this->assertEquals("foo", $e->term);
+        $this->assertFalse($e->negative);
+
+        $e = new SearchTermParseEvent(1, "-foo", ["-foo"]);
+        $this->assertEquals("foo", $e->term);
+        $this->assertTrue($e->negative);
+
+        $this->assertException(SearchTermParseException::class, function () {
+            new SearchTermParseEvent(1, "", []);
+        });
+
+        $this->assertException(SearchTermParseException::class, function () {
+            new SearchTermParseEvent(1, "*", []);
+        });
     }
 }

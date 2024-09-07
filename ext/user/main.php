@@ -17,7 +17,7 @@ use MicroCRUD\TextColumn;
 use MicroCRUD\DateColumn;
 use MicroCRUD\Table;
 
-use function MicroHTML\{A, STYLE};
+use function MicroHTML\{A, STYLE, emptyHTML};
 
 class UserNameColumn extends TextColumn
 {
@@ -200,7 +200,7 @@ class UserPage extends Extension
                 $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(make_link("user"));
             } catch (UserCreationException $ex) {
-                $this->theme->display_error(400, "User Creation Error", $ex->getMessage());
+                throw new InvalidInput($ex->getMessage());
             }
         }
         if ($event->page_matches("user_admin/create_other", method: "POST", permission: Permissions::CREATE_OTHER_USER)) {
@@ -226,7 +226,9 @@ class UserPage extends Extension
                 // $t->columns[] = $col;
                 array_splice($t->columns, 2, 0, [$col]);
             }
-            $this->theme->display_crud("Users", $t->table($t->query()), $t->paginator());
+            $page->set_title("Users");
+            $page->add_block(new NavBlock());
+            $page->add_block(new Block(null, emptyHTML($t->table($t->query()), $t->paginator())));
         }
         if ($event->page_matches("user_admin/classes", method: "GET")) {
             $this->theme->display_user_classes(
@@ -309,21 +311,12 @@ class UserPage extends Extension
         }
 
         if ($event->page_matches("user/{name}")) {
-            try {
-                $display_user = User::by_name($event->get_arg('name'));
-                if ($display_user->id == $config->get_int("anon_id")) {
-                    throw new UserNotFound("No such user");
-                }
-                $e = send_event(new UserPageBuildingEvent($display_user));
-                $this->display_stats($e);
-            } catch (UserNotFound $ex) {
-                $this->theme->display_error(
-                    404,
-                    "No Such User",
-                    "If you typed the ID by hand, try again; if you came from a link on this " .
-                    "site, it might be bug report time..."
-                );
+            $display_user = User::by_name($event->get_arg('name'));
+            if ($display_user->id == $config->get_int("anon_id")) {
+                throw new UserNotFound("No such user");
             }
+            $e = send_event(new UserPageBuildingEvent($display_user));
+            $this->display_stats($e);
         } elseif ($event->page_matches("user")) {
             $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("user/" . $user->name));
@@ -606,10 +599,7 @@ class UserPage extends Extension
     public function onHelpPageBuilding(HelpPageBuildingEvent $event): void
     {
         if ($event->key === HelpPages::SEARCH) {
-            $block = new Block();
-            $block->header = "Users";
-            $block->body = (string) $this->theme->get_help_html();
-            $event->add_block($block);
+            $event->add_section("Users", $this->theme->get_help_html());
         }
     }
 
@@ -666,7 +656,7 @@ class UserPage extends Extension
     {
         $my_user = User::by_name($username);
         if (is_null($my_user->email)) {
-            $this->theme->display_error(400, "Error", "That user has no registered email address");
+            throw new InvalidInput("That user has no registered email address");
         } else {
             throw new ServerError("Email sending not implemented");
         }
@@ -675,8 +665,7 @@ class UserPage extends Extension
     private function user_can_edit_user(User $a, User $b): bool
     {
         if ($a->is_anonymous()) {
-            $this->theme->display_error(401, "Error", "You aren't logged in");
-            return false;
+            throw new PermissionDenied("You aren't logged in");
         }
 
         if (
@@ -686,8 +675,7 @@ class UserPage extends Extension
         ) {
             return true;
         } else {
-            $this->theme->display_error(401, "Error", "You need to be an admin to change other people's details");
-            return false;
+            throw new PermissionDenied("You need to be an admin to change other people's details");
         }
     }
 
@@ -760,7 +748,6 @@ class UserPage extends Extension
         global $user, $config, $database;
 
         $page->set_title("Error");
-        $page->set_heading("Error");
         $page->add_block(new NavBlock());
 
         $duser = User::by_id($uid);
