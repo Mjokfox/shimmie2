@@ -24,10 +24,20 @@ class CustomUploadTheme extends UploadTheme
     }
 }
 
-function make_input_label($suffix,$tag,$id,$type="radio",$br=null,$onclicks="",$class=""): HTMLElement
+function make_input_label($suffix,$tag,$id,$type="radio",$br=null,$onclicks="",$class="",$selected=false): HTMLElement
 {
     return LABEL(INPUT(
-        ["type" => "{$type}", "name"=>"{$id}_{$suffix}", "id" => "tagsInput_{$suffix}","class" => "{$class}", "value" => $tag,"onclick" => "updateTags(this); {$onclicks}"],),
+        array_merge(
+            [
+                "type" => "{$type}",
+                "name" => "{$id}_{$suffix}",
+                "id" => "tagsInput_{$suffix}",
+                "class" => "{$class}",
+                "value" => $tag,
+                "onClick" => "updateTags(this); {$onclicks}"
+            ],
+            $selected ? ["checked" => "true"] : []
+        ),),
                  "{$tag} ",$br ? BR() : "")
     ;
 }
@@ -64,7 +74,7 @@ class CustomPostTagsTheme extends PostTagsTheme
         JOIN tags t ON itct.tag_id = t.id;
         ");
         $category_tags = [];
-
+        $preselect_tags = ["mouth_closed","eyes_open","adult","photo","color","wild"];
         foreach ($res as $row) {
             $category_name = $row['category_name'];
             if (explode(":",$category_name)[0] == "Species"){ // implode the multiple species categories into one, tbh it should just be one already
@@ -127,11 +137,11 @@ class CustomPostTagsTheme extends PostTagsTheme
             $dropdownHtml->appendChild(OPTION(["value" => ""],"less common species"));
             foreach($tags as $tag){
                 if (in_array($tag,$common_species)){
-                    $tempHtml->appendChild(make_input_label($suffix,$tag,"Species","checkbox",false,"checkboxRadio(this);"));
+                    $tempHtml->appendChild(make_input_label($suffix,$tag,"Species","checkbox",false,"checkboxRadio(this);presettags(this);"));
                 }
                 else{
                     $dropdownHtml->appendChild(
-                        OPTION(["value" => $tag],$tag)
+                        OPTION(["value" => $tag, "onClick" => "presettags(this);"],$tag)
                     );
                 }
             }
@@ -165,7 +175,7 @@ class CustomPostTagsTheme extends PostTagsTheme
                 $tagarray = explode("_",$tag);
                 if (in_array("eyes",$tagarray)){
                     if(array_search("eyes",$tagarray) == 0){
-                        $tempHtml1->appendChild(make_input_label($suffix,$tag,"EyesMouth","checkbox",true));
+                        $tempHtml1->appendChild(make_input_label($suffix,$tag,"EyesMouth1","checkbox",true,"","",in_array($tag,$preselect_tags)));
                     } else{
                         $tempHtml2->appendChild(make_input_label($suffix,$tag,"Eyes","checkbox",true));
                     }
@@ -174,7 +184,7 @@ class CustomPostTagsTheme extends PostTagsTheme
                     $tempHtml4->appendChild(make_input_label($suffix,$tag,"Muzzle","checkbox",true,"","disabledOnStartup"));
                 }
                 elseif (in_array("mouth",$tagarray)){
-                    $tempHtml1->appendChild(make_input_label($suffix,$tag,"EyesMouth","checkbox",true));
+                    $tempHtml1->appendChild(make_input_label($suffix,$tag,"EyesMouth2","checkbox",true,"","",in_array($tag,$preselect_tags)));
                 }
                 elseif (in_array("nose",$tagarray)){
                     $tempHtml3->appendChild(make_input_label($suffix,$tag,"Nose","checkbox",true));
@@ -215,7 +225,7 @@ class CustomPostTagsTheme extends PostTagsTheme
             if (array_key_exists("Body:Age",$category_tags)){ //fur specific ordering
                 $tempHtml1 = emptyHTML();
                 foreach($category_tags["Body:Age"] as $taga){
-                    $tempHtml1->appendChild(make_input_label($suffix,$taga,"Age","checkbox",true));
+                    $tempHtml1->appendChild(make_input_label($suffix,$taga,"Age","checkbox",true,"","",in_array($taga,$preselect_tags)));
                 }
                 unset($category_tags["Body:Age"]);
             }
@@ -279,7 +289,7 @@ class CustomPostTagsTheme extends PostTagsTheme
                 $input_array[$category_upper_name][$category_lower_name] = emptyHTML();
                 $type = in_array($category_lower_name,$radio_categories) ? "radio" : "checkbox";
                 foreach($category_tags[$category_tag] as $tag){
-                    $input_array[$category_upper_name][$category_lower_name]->appendChild(make_input_label($suffix,$tag,$category_lower_name,$type,true));
+                    $input_array[$category_upper_name][$category_lower_name]->appendChild(make_input_label($suffix,$tag,$category_lower_name,$type,true,"","",in_array($tag,$preselect_tags)));
                 }
             }
             foreach(array_keys($category_array) as $category){
