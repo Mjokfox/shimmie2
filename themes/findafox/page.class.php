@@ -67,7 +67,7 @@ class CustomPage extends Page
         foreach ($this->blocks as $block) {
             switch ($block->section) {
                 case "left":
-                    $left_block_html[] = $this->block_html($block, true);
+                    $left_block_html[] = $this->block_html($block, false);
                     break;
                 case "user":
                     $user_block_html[] = $block->body;
