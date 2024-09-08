@@ -56,7 +56,7 @@ function customSort(array &$array, array $customOrder): void { // custom sorting
         if ($indexB !== false) {
             return 1;
         }
-        return strcmp($a, $b);
+        return 0;
     });
 }
 
@@ -221,6 +221,8 @@ class CustomPostTagsTheme extends PostTagsTheme
         if (array_key_exists("Body:Fur",$category_tags)){ //fur specific ordering
             $tags = $category_tags["Body:Fur"];
             arsort($tags);
+            $fur_order = ['red_fur', 'white_fur', 'gray_fur','tan_fur','black_fur'];
+            customSort($tags,$fur_order);
             $tempHtml1 = null;
             if (array_key_exists("Body:Age",$category_tags)){ //fur specific ordering
                 $tempHtml1 = emptyHTML();

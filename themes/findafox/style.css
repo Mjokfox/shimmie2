@@ -458,7 +458,7 @@ DIV.cell_row {
 	/*flex-wrap: wrap;*/ /* Allow wrapping if there are too many columns */
 }
 
-DIV.grid-container {
+DIV.grid-container, DIV.cell_row DIV{
 	/*flex: 1;*/ /* Allow equal space for each content column */
 	text-align: left; /* Center align the text (optional) */
 	padding-left: 8px; /* Optional padding for better spacing */
