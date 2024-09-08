@@ -203,6 +203,7 @@ class UploadTheme extends Themelet
                     TD(
                         $tl_enabled ? INPUT([
                             "type" => "text",
+                            "class" => "url-input",
                             "name" => "url{$i}",
                             "value" => ($i == 0) ? @$_GET['url'] : null,
                         ]) : null
