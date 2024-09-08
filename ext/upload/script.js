@@ -21,6 +21,20 @@ function showpreview(file, background_color="#F002") {
     }
 }
 
+// function showpreview_url(url, background_color="#F002"){
+//     const imagePreview = document.getElementById('imagePreview');
+//     if (imagePreview){
+//         if (url){
+//             imagePreview.src = url;
+//             imagePreview.style.display = 'block';
+//             imagePreview.parentElement.style["background-color"] = background_color;
+//         } else{
+//             imagePreview.src = '';
+//             imagePreview.style.display = 'none';
+//         }
+//     }
+// }
+
 function inputdiv(self,div,previewId,background_color="#0F02") {
     if (div.style.display === 'none' || div.style.display === '') {
         div.style.display = 'block';
@@ -124,26 +138,40 @@ function presettags(self) {
         if (suffix in previous_presettag){
             preset_tags[previous_presettag[suffix]].forEach((tagg) =>{
                 if (!changed_tags[suffix].includes(tagg)){
-                    document.querySelector(`input[value="${tagg}"]`).checked = false;
+                    document.querySelector(`input[value="${tagg}"].tagsInput_${suffix}`).checked = false;
                 }
             });
         }
     }
     preset_tags[tag].forEach((tagg) =>{
         if (!changed_tags[suffix].includes(tagg)){
-            document.querySelector(`input[value="${tagg}"]`).checked = add;
+            document.querySelector(`input[value="${tagg}"].tagsInput_${suffix}`).checked = add;
         }
     });
     previous_presettag[suffix] = tag;
     updateTags(self)
 }
 
+// function checkInput(input) {
+//     const urlPattern = /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/\S*)?$/;
+//     const value = input.trim();
+//     if (value === '') {
+//         return false;
+//     } else return urlPattern.test(value)
+
+// }
+
 function updateTracker(e) {
     var size = 0;
     var upbtn = document.getElementById("uploadbutton");
     var tracker = document.getElementById("upload_size_tracker");
     var lockbtn = false;
-
+    // if (e){
+    //     if (e.target.type === "text"){
+    //         console.log(checkInput(e.target.value));
+    //     }
+    // }
+    
     // check that each individual file is less than the max file size
     document.querySelectorAll("#large_upload_form input[type='file']").forEach((input) => {
         var cancelbtn = document.getElementById("cancel"+input.id);
@@ -419,6 +447,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll("#large_upload_form input[type='file']").forEach((el) => {
             el.addEventListener('change', updateTracker);
         });
+        // document.querySelectorAll("input.url-input").forEach((el) => {
+        //     el.addEventListener('input', updateTracker);
+        // });
         updateTracker();
     }
     dropZoneInit();

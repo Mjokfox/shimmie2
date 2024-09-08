@@ -31,7 +31,7 @@ function make_input_label($suffix,$tag,$id,$type="radio",$br=null,$onclicks="",$
                 "type" => "{$type}",
                 "name" => "{$id}_{$suffix}",
                 "id" => "tagsInput_{$suffix}",
-                "class" => "{$class}",
+                "class" => "tagsInput_{$suffix} {$class}",
                 "value" => $tag,
                 "onClick" => "updateTags(this); {$onclicks}"
             ],
