@@ -43,11 +43,12 @@ class ViewPost extends Extension
             }
 
             if (is_null($image)) {
-                throw new PostNotFound("No more posts");
+                $page->set_mode(PageMode::REDIRECT);
+                $page->set_redirect(make_link("post/view/{$image_id}", $query));
+            } else {
+                $page->set_mode(PageMode::REDIRECT);
+                $page->set_redirect(make_link("post/view/{$image->id}", $query));
             }
-
-            $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(make_link("post/view/{$image->id}", $query));
         } elseif ($event->page_matches("post/view/{image_id}")) {
             if (!is_numeric($event->get_arg('image_id'))) {
                 // For some reason there exists some very broken mobile client
