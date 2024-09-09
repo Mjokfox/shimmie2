@@ -457,4 +457,22 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll(".disabledOnStartup").forEach((el) => {
         el.disabled = true;
     });
+    document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach((radio) => {
+        radio.previousChecked = radio.checked;
+        radio.addEventListener('click', function(event) {
+            if (radio.type === "radio"){
+                if (radio.previousChecked) {
+                    radio.checked = false;
+                    radio.previousChecked = false;
+                    updateTags(radio);
+                    event.preventDefault();
+                } else {
+                    document.querySelectorAll('input[name="' + radio.name + '"]').forEach((r) => {
+                        r.previousChecked = false;
+                    });
+                    radio.previousChecked = true;
+                }
+            }
+        });
+    });
 });
