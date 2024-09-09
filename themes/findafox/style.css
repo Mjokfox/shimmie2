@@ -542,17 +542,17 @@ DIV.post-controls {
 	justify-content: space-between;
 	gap: .5em;
 	background-color: var(--header-selected);
-	padding:5px;
 	font-weight: bold;
 }
 
-DIV.post-controls A:not(.post-controls-center) {
+DIV.post-controls :not(.post-controls-center) {
+	padding: 5px;
 	margin-left: 10px;
 	margin-right: 10px;
 	flex-shrink: 2;
 }
 
-DIV.post-controls A.post-controls-center {
+DIV.post-controls .post-controls-center {
 	flex-grow: 2;
 	text-align: center;
 }

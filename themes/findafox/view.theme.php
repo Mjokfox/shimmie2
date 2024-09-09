@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{A, DIV, rawHTML};
+use function MicroHTML\{A, DIV, SPAN, rawHTML};
 
 class CustomViewPostTheme extends ViewPostTheme
 {
@@ -99,7 +99,9 @@ class CustomViewPostTheme extends ViewPostTheme
         } else {
             return DIV(["class" => "post-controls"],
                 A(["href" => make_link("post/prev/{$image->id}", $query), "id" => "prevlink"], "⮪ Prev"),
-                A(["href" => make_link("post/list/"), "id" => "searchlink", "class" => "post-controls-center"], "Search"),
+                SPAN(["class" => "post-controls-center"],
+                    A(["href" => make_link("post/list/"), "id" => "searchlink"], "Search")
+                ),
                 A(["href" => make_link("post/next/{$image->id}", $query), "id" => "nextlink"], "Next ⮫"),
             );
         }
