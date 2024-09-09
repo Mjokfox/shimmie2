@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\rawHTML;
+use function MicroHTML\{A, DIV, rawHTML};
 
 class CustomViewPostTheme extends ViewPostTheme
 {
@@ -20,6 +20,7 @@ class CustomViewPostTheme extends ViewPostTheme
         $page->add_block(new Block("Search", $this->build_navigation($image), "left", 0));
         $page->add_block(new Block("Information", $this->build_information($image), "left", 15));
         $page->add_block(new Block(null, $this->build_info($image, $editor_parts), "main", 15));
+        $page->add_block(new Block(null, $this->build_pin($image), "main", 2,"post_controls"));
     }
 
     private function build_information(Image $image): HTMLElement
@@ -81,12 +82,26 @@ class CustomViewPostTheme extends ViewPostTheme
         //$h_pin = $this->build_pin($image);
         $h_search = "
 			<form action='".search_link()."' method='GET'>
-				<input name='search' type='text' class='autocomplete_tags' style='width:75%'>
+				<input id='searchinput' name='search' type='text' class='autocomplete_tags' style='width:75%'>
 				<input type='submit' value='Go' style='width:20%'>
 				<input type='hidden' name='q' value='post/list'>
 			</form>
 		";
 
         return rawHTML($h_search);
+    }
+
+    protected function build_pin(Image $image): HTMLElement
+    {
+        $query = $this->get_query();
+        if ($this->is_ordered_search()) {
+            return A(["href" => make_link()], "Index");
+        } else {
+            return DIV(["class" => "post-controls"],
+                A(["href" => make_link("post/prev/{$image->id}", $query), "id" => "prevlink"], "⮪ Prev"),
+                A(["href" => make_link("post/list/"), "id" => "searchlink", "class" => "post-controls-center"], "Search"),
+                A(["href" => make_link("post/next/{$image->id}", $query), "id" => "nextlink"], "Next ⮫"),
+            );
+        }
     }
 }
