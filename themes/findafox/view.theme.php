@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{A, DIV, SPAN, rawHTML};
+use function MicroHTML\{A, DIV, SPAN, LINK, rawHTML};
 
 class CustomViewPostTheme extends ViewPostTheme
 {
@@ -93,17 +93,16 @@ class CustomViewPostTheme extends ViewPostTheme
 
     protected function build_pin(Image $image): HTMLElement
     {
+        global $page;
         $query = $this->get_query();
-        if ($this->is_ordered_search()) {
-            return A(["href" => make_link()], "Index");
-        } else {
-            return DIV(["class" => "post-controls"],
-                A(["href" => make_link("post/prev/{$image->id}", $query), "id" => "prevlink"], "⮪ Prev"),
-                SPAN(["class" => "post-controls-center"],
-                    A(["href" => make_link("post/list/"), "id" => "searchlink"], "Search")
-                ),
-                A(["href" => make_link("post/next/{$image->id}", $query), "id" => "nextlink"], "Next ⮫"),
-            );
-        }
+        $page->add_html_header(LINK(["id" => "nextlink", "rel" => "next", "href" => make_link("post/next/{$image->id}", $query)]));
+        $page->add_html_header(LINK(["id" => "prevlink", "rel" => "previous", "href" => make_link("post/prev/{$image->id}", $query)]));
+        return DIV(["class" => "post-controls"],
+            A(["href" => make_link("post/prev/{$image->id}", $query), "id" => "prevlink"], "⮪ Prev"),
+            SPAN(["class" => "post-controls-center"],
+                A(["href" => make_link("post/list/"), "id" => "searchlink"], "Search")
+            ),
+            A(["href" => make_link("post/next/{$image->id}", $query), "id" => "nextlink"], "Next ⮫"),
+        );
     }
 }

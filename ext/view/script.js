@@ -54,6 +54,12 @@ document.addEventListener('DOMContentLoaded', () => {
 		if(decodequery.match(/^order[=:]/)){
 			const thing = document.getElementById("post_controls");
 			if (thing) thing.parentElement.removeChild(thing);
+			document.querySelectorAll("LINK#prevlink").forEach(function(e) {
+				e.parentElement.removeChild(e);
+			});
+			document.querySelectorAll("LINK#nextlink").forEach(function(e) {
+				e.parentElement.removeChild(e);
+			});
 		} else {
 			updateAttr("LINK#prevlink", "href", query);
 			updateAttr("LINK#nextlink", "href", query);
