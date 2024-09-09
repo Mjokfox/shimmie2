@@ -501,3 +501,24 @@ DIV.numeric-score DIV BUTTON , DIV.numeric-score DIV B {
 INPUT[type=submit] {
 	cursor: pointer;
 }
+
+DIV.post-controls {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: .5em;
+	background-color: var(--header-selected);
+	padding:5px;
+	font-weight: bold;
+}
+
+DIV.post-controls A:not(.post-controls-center) {
+	margin-left: 10px;
+	margin-right: 10px;
+	flex-shrink: 2;
+}
+
+DIV.post-controls A.post-controls-center {
+	flex-grow: 2;
+	text-align: center;
+}
