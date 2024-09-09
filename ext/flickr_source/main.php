@@ -1,0 +1,99 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Shimmie2;
+
+use function MicroHTML\{INPUT, rawHTML};
+
+class FlickrSource extends Extension
+{
+    public function get_priority(): int
+    {
+        return 2;
+    }
+    public function onImageInfoSet(ImageInfoSetEvent $event): void
+    {   
+        if (Extension::is_enabled(PostSourceInfo::KEY)){
+            $slot = $event->slot;
+            if(!($event->params["source"] || $event->params["source{$slot}"])){
+                $image = $event->image;
+                $filename = $image->filename;
+                if(preg_match("/\d{9,12}_[a-f0-9]{8,12}_[a-z0-9]+(\.jpg|\.png)$/", $filename)){
+                    $source = $this->getFlickrUrl(explode("_",$filename)[0]);
+                    debug_log($source);
+                    if ($source !== "https://flickr.com/photos///"){
+                       $image->set_source($source);
+                    }
+                }
+            }
+        }
+        
+    }
+    public function onAdminBuilding(AdminBuildingEvent $event): void
+    {
+        global $page;
+        $html = (string)SHM_SIMPLE_FORM(
+            "admin/flickr_source",
+            SHM_SUBMIT('Find all flickr sources from id: '),
+            INPUT(["type" => 'number', "name" => 'flickr_start_id', "value" => "0", "style" => "width:3em"]),
+            
+        );
+        $page->add_block(new Block("Flickr Source", rawHTML($html)));
+    }
+
+    public function onAdminAction(AdminActionEvent $event): void
+    {
+        global $database;
+        switch($event->action) {
+            case "flickr_source":
+                $query = "SELECT id, filename
+                FROM images
+                WHERE source IS NULL 
+                AND mime LIKE 'image/%'
+                AND id > :id;";
+                $files = $database->get_all($query,["id" => $event->params['flickr_start_id'] | "0"]);
+                $i = 0;
+                $j = 0;
+                $k = 0;
+                foreach ($files as $file) {
+                    if(preg_match("/\d{9,12}_[a-f0-9]{8,12}_[a-z0-9]+(\.jpg|\.png)$/", $file["filename"])){
+                        $source = $this->getFlickrUrl(explode("_",$file["filename"])[0]);
+                        if ($source !== "https://flickr.com/photos///"){
+                            Image::by_id($file["id"])->set_source($source);
+                            $i++;
+                        }
+                        else{
+                            $j++;
+                        }
+                    } else {
+                        $k++;
+                    }
+                }
+                $message = "Found valid sources for {$i} images, invalid sources for {$j}, and skipped {$k} non flickr images";
+                log_warning("admin", $message, $message);
+                $event->redirect = true;
+                break;
+        }
+    }
+
+    public function getFlickrUrl($id): string {
+        $url = "https://flickr.com/photo.gne?id={$id}";
+
+        $ch = curl_init($url);
+    
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_HEADER, true);
+        curl_setopt($ch, CURLOPT_NOBODY, true);
+    
+        curl_exec($ch);
+    
+        $redirectedUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+    
+        curl_close($ch);
+    
+        return $redirectedUrl;
+    }
+
+}
