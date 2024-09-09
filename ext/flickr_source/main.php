@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{INPUT, rawHTML};
+use function MicroHTML\{B,TABLE,TR,TD,INPUT, rawHTML};
 
 class FlickrSource extends Extension
 {
@@ -35,8 +35,15 @@ class FlickrSource extends Extension
         global $page;
         $html = (string)SHM_SIMPLE_FORM(
             "admin/flickr_source",
-            SHM_SUBMIT('Find all flickr sources from id: '),
-            INPUT(["type" => 'number', "name" => 'flickr_start_id', "value" => "0", "style" => "width:3em"]),
+            TABLE( 
+            TR(
+                TD(["style" => "padding-right:5px"],B("Start id")),TD(INPUT(["type" => 'number', "name" => 'flickr_start_id', "value" => "0", "style" => "width:5em"])),
+            ),
+            TR(
+                TD(B("Limit")),TD(INPUT(["type" => 'number', "name" => 'flickr_limit', "value" => "10", "style" => "width:5em"])),
+            ),
+        ),
+            SHM_SUBMIT('Find all flickr sources'),
             
         );
         $page->add_block(new Block("Flickr Source", rawHTML($html)));
@@ -51,8 +58,9 @@ class FlickrSource extends Extension
                 FROM images
                 WHERE source IS NULL 
                 AND mime LIKE 'image/%'
-                AND id > :id;";
-                $files = $database->get_all($query,["id" => $event->params['flickr_start_id'] | "0"]);
+                AND id > :id
+                LIMIT :limit;";
+                $files = $database->get_all($query,["id" => $event->params['flickr_start_id'] | "0","limit" => $event->params['flickr_limit'] | "0"]);
                 $i = 0;
                 $j = 0;
                 $k = 0;
