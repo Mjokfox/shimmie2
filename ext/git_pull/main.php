@@ -9,6 +9,10 @@ use MicroHTML\HTMLElement;
 use function MicroHTML\rawHTML;
 class GitPull extends Extension
 {
+    public function get_priority(): int
+    {
+        return 1;
+    }
     public function onAdminBuilding(AdminBuildingEvent $event): void
     {
         global $page;
