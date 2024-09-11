@@ -165,9 +165,19 @@ font-size:0.8rem;
 FOOTER > DIV {
 margin: 1rem 2rem;
 }
+.bbcode BLOCKQUOTE {
+border: 1px solid #AAA;
+padding: 8px;
+background: #FFF2;
+}
+.bbcode PRE {
+padding-top:10px;
+}
 CODE {
-background: #DEDEDE;
+border: 1px solid #08F;
+background: #AAF4;
 font-size: 0.9rem;
+padding: 8px;
 }
 form {
 margin:0;
