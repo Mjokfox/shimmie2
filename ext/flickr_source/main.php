@@ -12,24 +12,24 @@ class FlickrSource extends Extension
     {
         return 2;
     }
-    public function onImageInfoSet(ImageInfoSetEvent $event): void
-    {   
-        if (Extension::is_enabled(PostSourceInfo::KEY)){
-            $slot = $event->slot;
-            if(!($event->params["source"] || $event->params["source{$slot}"])){
-                $image = $event->image;
-                $filename = $image->filename;
-                if(preg_match("/\d{9,12}_[a-f0-9]{8,12}_[a-z0-9]+(\.jpg|\.png)$/", $filename)){
-                    $source = $this->getFlickrUrl(explode("_",$filename)[0]);
-                    debug_log($source);
-                    if ($source !== "https://flickr.com/photos///"){
-                       send_event(new SourceSetEvent($image,$source));
-                    }
-                }
-            }
-        }
+    // public function onImageInfoSet(ImageInfoSetEvent $event): void
+    // {   
+    //     if (Extension::is_enabled(PostSourceInfo::KEY)){
+    //         $slot = $event->slot;
+    //         if(!($event->params["source"] || $event->params["source{$slot}"])){
+    //             $image = $event->image;
+    //             $filename = $image->filename;
+    //             if(preg_match("/\d{9,12}_[a-f0-9]{8,12}_[a-z0-9]+(\.jpg|\.png)$/", $filename)){
+    //                 $source = $this->getFlickrUrl(explode("_",$filename)[0]);
+    //                 debug_log($source);
+    //                 if ($source !== "https://flickr.com/photos///"){
+    //                    send_event(new SourceSetEvent($image,$source));
+    //                 }
+    //             }
+    //         }
+    //     }
         
-    }
+    // }
     public function onAdminBuilding(AdminBuildingEvent $event): void
     {
         global $page;
