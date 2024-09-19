@@ -22,7 +22,7 @@ class Home extends Extension
 
             $body = $this->get_body();
 
-            $this->theme->display_page($page, $sitename, $base_href, $theme_name, $body);
+            $this->theme->display_page($page, $sitename, $body);
         }
     }
 

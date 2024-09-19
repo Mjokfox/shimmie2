@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{emptyHTML, HEADER, FOOTER, DIV, SCRIPT, A, B, IMG, NAV, ARTICLE, rawHTML, SECTION};
+use function MicroHTML\{BODY, emptyHTML, HEADER, FOOTER, DIV, SCRIPT, A, B, IMG, NAV, ARTICLE, rawHTML, SECTION};
 
 /**
  * Name: Lite Theme
@@ -19,7 +19,7 @@ use function MicroHTML\{emptyHTML, HEADER, FOOTER, DIV, SCRIPT, A, B, IMG, NAV, 
 
 class LitePage extends Page
 {
-    public function body_html(): HTMLElement
+    protected function body_html(): HTMLElement
     {
         global $config;
 
@@ -83,25 +83,20 @@ class LitePage extends Page
         }
 
         $flash_html = $this->flash_html();
-
-        if (!$this->left_enabled) {
-            $left_block_el = emptyHTML();
-            $main_block_el = ARTICLE(["id" => "body_noleft"], ...$main_block_html);
-        } else {
-            $left_block_el = NAV(...$left_block_html);
-            $main_block_el = ARTICLE($flash_html, ...$main_block_html);
-        }
-
         $footer_html = $this->footer_html();
 
-        return emptyHTML(
+        return BODY(
+            $this->body_attrs(),
             HEADER(
                 $menu,
                 $custom_sublinks,
                 ...$sub_block_html
             ),
-            $left_block_el,
-            $main_block_el,
+            NAV(...$left_block_html),
+            ARTICLE(
+                $flash_html,
+                ...$main_block_html
+            ),
             FOOTER($footer_html)
         );
     } /* end of function display_page() */
@@ -121,7 +116,7 @@ class LitePage extends Page
         return $html;
     }
 
-    public function navlinks(Link $link, HTMLElement|string $desc, bool $active): HTMLElement
+    private function navlinks(Link $link, HTMLElement|string $desc, bool $active): HTMLElement
     {
         return A([
             "class" => $active ? "tab-selected" : "tab",

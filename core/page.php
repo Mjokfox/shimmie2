@@ -127,7 +127,7 @@ class Page
     public string $title = "";
     public string $heading = "";
     public string $subheading = "";
-    public bool $left_enabled = true;
+    protected string $layout = "grid";
 
     /** @var HTMLElement[] */
     public array $html_headers = [];
@@ -175,9 +175,9 @@ class Page
         $this->flash[] = $message;
     }
 
-    public function disable_left(): void
+    public function set_layout(string $layout): void
     {
-        $this->left_enabled = false;
+        $this->layout = $layout;
     }
 
     /**
@@ -572,32 +572,41 @@ class Page
         );
     }
 
-    public function html_html(HTMLElement $head, string|HTMLElement $body): HTMLElement
+    public function html_html(HTMLElement $head, HTMLElement $body): HTMLElement
     {
-        global $user;
-
-        $body_attrs = [
-            "data-userclass" => $user->class->name,
-            "data-base-href" => get_base_href(),
-            "data-base-link" => make_link(""),
-        ];
-
         return emptyHTML(
             rawHTML("<!doctype html>"),
             HTML(
                 ["lang" => "en"],
-                HEAD($head),
-                BODY($body_attrs, $body)
+                "\n",
+                $head,
+                "\n",
+                $body,
+                "\n",
             )
         );
     }
 
     protected function head_html(): HTMLElement
     {
-        return emptyHTML(
+        return HEAD(
             TITLE($this->title),
             $this->get_all_html_headers(),
         );
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function body_attrs(): array
+    {
+        global $user;
+        return [
+            "class" => "layout-{$this->layout}",
+            "data-userclass" => $user->class->name,
+            "data-base-href" => get_base_href(),
+            "data-base-link" => make_link(""),
+        ];
     }
 
     protected function body_html(): HTMLElement
@@ -625,7 +634,8 @@ class Page
 
         $footer_html = $this->footer_html();
         $flash_html = $this->flash_html();
-        return emptyHTML(
+        return BODY(
+            $this->body_attrs(),
             HTML_HEADER(
                 H1($this->heading),
                 ...$sub_block_html
@@ -652,7 +662,7 @@ class Page
         if (!empty($block->body)) {
             $html->appendChild(DIV(['class' => "blockbody"], $block->body));
         }
-        return $html;
+        return emptyHTML("\n", $html);
     }
 
     protected function flash_html(): HTMLElement
@@ -669,13 +679,12 @@ class Page
         $contact_link = contact_link();
         return joinHTML("", [
             "Media © their respective owners, ",
-            A(["href" => "https://code.shishnet.org/shimmie2/"], "Shimmie"),
+            A(["href" => "https://code.shishnet.org/shimmie2/", "title" => $debug], "Shimmie"),
             " © ",
             A(["href" => "https://www.shishnet.org/"], "Shish"),
             " & ",
             A(["href" => "https://github.com/shish/shimmie2/graphs/contributors"], "The Team"),
             " 2007-2024, based on the Danbooru concept.",
-            BR(), $debug,
             $contact_link ? emptyHTML(BR(), A(["href" => $contact_link], "Contact")) : ""
         ]);
     }

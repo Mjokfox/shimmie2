@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{DIV, LI, A, rawHTML, emptyHTML, UL, ARTICLE, FOOTER, EM, HEADER, H1, NAV};
+use function MicroHTML\{BODY, DIV, LI, A, rawHTML, emptyHTML, UL, ARTICLE, FOOTER, EM, HEADER, H1, NAV};
 
 /**
  * Name: Danbooru Theme
@@ -52,7 +52,7 @@ Tips
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 class DanbooruPage extends Page
 {
-    public function body_html(): HTMLElement
+    protected function body_html(): HTMLElement
     {
         global $config;
 
@@ -75,9 +75,6 @@ class DanbooruPage extends Page
                     $sub_block_html[] = $block->body;
                     break;
                 case "main":
-                    if ($block->header == "Posts") {
-                        $block->header = "&nbsp;";
-                    }
                     $main_block_html[] = $this->block_html($block, false);
                     break;
                 default:
@@ -109,19 +106,11 @@ class DanbooruPage extends Page
         }
 
         $title_link = H1(["id" => "site-title"], A(["href" => make_link($main_page)], $site_name));
-
-        if ($this->left_enabled) {
-            $left = NAV(...$left_block_html);
-            $withleft = "withleft";
-        } else {
-            $left = "";
-            $withleft = "noleft";
-        }
-
         $flash_html = $this->flash_html();
         $footer_html = $this->footer_html();
 
-        return emptyHTML(
+        return BODY(
+            $this->body_attrs(),
             HEADER(
                 $title_link,
                 UL(["id" => "navbar", "class" => "flat-list"], $custom_links),
@@ -129,9 +118,8 @@ class DanbooruPage extends Page
             ),
             $subheading,
             emptyHTML(...$sub_block_html),
-            $left,
+            NAV(...$left_block_html),
             ARTICLE(
-                ["class" => $withleft],
                 $flash_html,
                 ...$main_block_html
             ),
@@ -139,7 +127,7 @@ class DanbooruPage extends Page
         );
     }
 
-    public function navlinks(Link $link, HTMLElement|string $desc, bool $active): HTMLElement
+    private function navlinks(Link $link, HTMLElement|string $desc, bool $active): HTMLElement
     {
         return A([
             "class" => $active ? "current-page" : "tab",

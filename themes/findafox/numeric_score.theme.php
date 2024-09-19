@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use MicroHTML\HTMLElement;
-
 use function MicroHTML\rawHTML;
 
 class CustomNumericScoreTheme extends NumericScoreTheme
@@ -84,7 +82,7 @@ class CustomNumericScoreTheme extends NumericScoreTheme
 			// ";
         }
         $html .= "</div>";
-        $page->add_block(new Block("", rawHTML($html), "main", 10,"Post_Scoremain"));
+        $page->add_block(new Block("", rawhtml($html), "main", 10,"Post_Scoremain"));
     }
 
     private function get_my_vote($user_id,$image_id) : int

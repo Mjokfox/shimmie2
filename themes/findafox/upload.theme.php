@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+
 use function MicroHTML\{joinHTML, emptyHTML, DIV, BUTTON, A, TEXTAREA, TABLE, TR, TH, TD, INPUT, LABEL, BR, SELECT, OPTION};
 
 use MicroHTML\HTMLElement;
@@ -18,7 +19,7 @@ class CustomUploadTheme extends UploadTheme
 
     public function display_page(Page $page): void
     {
-        $page->disable_left();
+        $page->set_layout("no-left");
         parent::display_page($page);
     }
 }

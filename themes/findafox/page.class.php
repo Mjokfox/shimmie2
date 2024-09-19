@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{DIV, LI, A, rawHTML, emptyHTML, UL, ARTICLE, FOOTER, EM, HEADER, H1, NAV};
+use function MicroHTML\{BODY, DIV, LI, A, IMG, rawHTML, emptyHTML, UL, ARTICLE, FOOTER, EM, HEADER, H1, NAV};
 
 /**
  * Name: Danbooru 2 Theme
@@ -25,7 +25,7 @@ Danbooru 2 Theme - Notes (Bzchan)
 Files: default.php, style.css
 
 How to use a theme
-- Copy the Custom folder with all its contained files into the "themes"
+- Copy the danbooru2 folder with all its contained files into the "themes"
   directory in your shimmie installation.
 - Log into your shimmie and change the Theme in the Board Config to your
   desired theme.
@@ -51,9 +51,9 @@ Tips
 
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-class CustomPage extends Page
+class customPage extends Page
 {
-    public function body_html(): HTMLElement
+    protected function body_html(): HTMLElement
     {
         global $config;
 
@@ -67,7 +67,7 @@ class CustomPage extends Page
         foreach ($this->blocks as $block) {
             switch ($block->section) {
                 case "left":
-                    $left_block_html[] = $this->block_html($block, false);
+                    $left_block_html[] = $this->block_html($block, true);
                     break;
                 case "user":
                     $user_block_html[] = $block->body;
@@ -109,20 +109,18 @@ class CustomPage extends Page
             }
         }
 
-        $title_link = H1(["id" => "site-title"], A(["href" => make_link($main_page)], $site_name));
-
-        if ($this->left_enabled) {
-            $left = NAV(...$left_block_html);
-            $withleft = "withleft";
-        } else {
-            $left = "";
-            $withleft = "noleft";
-        }
-
+        $title_link = H1(
+            ["id" => "site-title"],
+            A(["href" => make_link($main_page)],
+                IMG(["src" => "/favicon.ico", "alt" => "", "class" => "logo"]), 
+                $site_name
+            )
+        );
         $flash_html = $this->flash_html();
         $footer_html = $this->footer_html();
 
-        return emptyHTML(
+        return BODY(
+            $this->body_attrs(),
             HEADER(
                 $title_link,
                 UL(["id" => "navbar", "class" => "flat-list"], $custom_links),
@@ -130,9 +128,8 @@ class CustomPage extends Page
             ),
             $subheading,
             emptyHTML(...$sub_block_html),
-            $left,
+            NAV(...$left_block_html),
             ARTICLE(
-                ["class" => $withleft],
                 $flash_html,
                 ...$main_block_html
             ),
@@ -140,7 +137,7 @@ class CustomPage extends Page
         );
     }
 
-    public function navlinks(Link $link, HTMLElement|string $desc, bool $active): HTMLElement
+    private function navlinks(Link $link, HTMLElement|string $desc, bool $active): HTMLElement
     {
         return A([
             "class" => $active ? "current-page" : "tab",

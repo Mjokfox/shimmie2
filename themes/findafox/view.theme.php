@@ -73,7 +73,7 @@ class CustomViewPostTheme extends ViewPostTheme
             $score_color = $h_score > 0 ? "lime" : ($h_score < 0 ? "red" : "gray");
             $html .= "<br>Score: <span style='color:$score_color'>$h_score</span>";
         }
-        
+
         return rawHTML($html);
     }
 
