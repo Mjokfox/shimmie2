@@ -137,7 +137,7 @@ class TagListTheme extends Themelet
         }
 
         foreach (array_keys($categories_display_names) as $categories_display_name) {
-            $page->add_block(new Block(html_escape($categories_display_name), $categories_display_names[$categories_display_name], "left", 9));
+            $page->add_block(new Block(html_escape($categories_display_name), rawHTML($categories_display_names[$categories_display_name]), "left", 9));
         }
         // foreach (array_keys($tag_categories_html) as $category) {
         //     if ($tag_categories_count[$category] < 2) {

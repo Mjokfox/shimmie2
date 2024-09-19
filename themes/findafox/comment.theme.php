@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+use function MicroHTML\rawHTML;
+
 class CustomCommentListTheme extends CommentListTheme
 {
     /**
@@ -13,7 +15,7 @@ class CustomCommentListTheme extends CommentListTheme
     {
         global $config, $page, $user;
 
-        $page->disable_left();
+        $page->set_layout("no-left");
 
         // parts for the whole page
         $prev = $page_number - 1;
@@ -28,8 +30,7 @@ class CustomCommentListTheme extends CommentListTheme
         $nav = "$h_prev | $h_index | $h_next";
 
         $page->set_title("Comments");
-        $page->set_heading("Comments");
-        $page->add_block(new Block("Navigation", $nav, "left"));
+        $page->add_block(new Block("Navigation", rawHTML($nav), "left"));
         $this->display_paginator($page, "comment/list", null, $page_number, $total_pages);
 
         // parts for each image
@@ -53,7 +54,7 @@ class CustomCommentListTheme extends CommentListTheme
             $p = autodate($image->posted);
 
             $r = Extension::is_enabled(RatingsInfo::KEY) ? "<b>Rating</b> ".Ratings::rating_to_human($image['rating']) : "";
-            $comment_html =   "<b>Date</b> $p $s <b>User</b> $un $s $r<br><b>Tags</b> $t<p>&nbsp;";
+            $comment_html =   "<b>Date</b> $p $s <b>Uploader</b> $un $s $r<br><b>Tags</b> $t<p>&nbsp;";
 
             $comment_count = count($comments);
             if ($comment_limit > 0 && $comment_count > $comment_limit) {
@@ -84,7 +85,7 @@ class CustomCommentListTheme extends CommentListTheme
 			";
 
 
-            $page->add_block(new Block("&nbsp;", $html, "main", $position++));
+            $page->add_block(new Block(null, rawHTML($html), "main", $position++));
         }
     }
 

@@ -23,7 +23,7 @@ class CustomViewPostTheme extends ViewPostTheme
         $page->add_block(new Block(null, $this->build_pin($image), "main", 2,"post_controls"));
     }
 
-    private function build_information(Image $image): string
+    private function build_information(Image $image): HTMLElement
     {
         $h_owner = html_escape($image->get_owner()->name);
         $h_ownerlink = "<a href='".make_link("user/$h_owner")."'>$h_owner</a>";
@@ -36,7 +36,7 @@ class CustomViewPostTheme extends ViewPostTheme
         if ($user->can(Permissions::VIEW_IP)) {
             $h_ownerlink .= " ($h_ip)";
         }
-        
+
         $html = "
 		ID: {$image->id}
 		<br>Uploader: $h_ownerlink
@@ -74,10 +74,10 @@ class CustomViewPostTheme extends ViewPostTheme
             $html .= "<br>Score: <span style='color:$score_color'>$h_score</span>";
         }
 
-        return $html;
+        return rawHTML($html);
     }
 
-    protected function build_navigation(Image $image): string
+    protected function build_navigation(Image $image): HTMLElement
     {
         //$h_pin = $this->build_pin($image);
         $h_search = "
