@@ -117,6 +117,7 @@ class Upload extends Extension
         $config->set_default_bool(UploadConfig::SPLITVIEW, false);
         $config->set_default_bool(UploadConfig::PREVIEW, true);
         $config->set_default_bool(UploadConfig::TLSOURCE, true);
+        $config->set_default_string("upload_order","");
 
         $this->is_full = false;
 
