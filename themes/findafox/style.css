@@ -72,13 +72,13 @@ HEADER #site-title IMG {
 	vertical-align: middle;
 	margin-right: .5rem;
 }
-
+/* my changes */
 HEADER ul#navbar,
 HEADER ul#subnavbar {
 	font-family: "Verdana", "Helvetica", sans-serif;
 	font-size:110%;
 }
-
+/* end of changes */
 HEADER ul#navbar {
 	margin: 0;
 	padding: 0 30px 0 30px;
@@ -235,7 +235,7 @@ FOOTER>DIV {
 	margin: 1rem 2rem;
 }
 
-/* i changed */
+/* my changes */
 .bbcode BLOCKQUOTE { 
 	border: 1px solid #AAA;
 	padding: 8px;
@@ -250,7 +250,7 @@ CODE {
 	font-size: 0.9rem;
 	padding: 8px;
 }
-/* end change */
+/* end of changes */
 
 form {
 	margin: 0;
@@ -580,83 +580,12 @@ DIV#paginator B {
 IMG.logo {
 	height: 2em;
 }
-TABLE.table_container{
-	width:100%;
-/* 	table-layout: fixed; */
-}
-
-TABLE.form TBODY TR.top TD{
-	vertical-align:top;
-	border-left-width: 1px;
-	border-left-style: solid;
-	white-space: nowrap;
-}
-TABLE.form TBODY TR TD.right{
-	text-align:right;
-}
-
-TABLE.form TBODY TR TH.left{
-	text-align:left;
-}
-
-TABLE.form TBODY TR TD.min_width_td{
-	white-space: nowrap;
-}
-
-TABLE.form TBODY TR TD.max_width_td{
-	width: 100%;
-}
-
-TABLE.form TBODY TR TD{
-	padding-right:10px;
-
-}
 
 .tageditcloud div#tagcloud_unset {
 	background: #FFF6;
 	color: lime;
 }
 
-DIV.table_container {
-	display: flex;
-	flex-direction: column; /* Stack header and cell content vertically */
-	width: 100%;
-
-}
-
-DIV.header_row{
-	display: flex; /* Align tag_header items in a row */
-	justify-content: space-between; /* Distribute space between columns (optional) */
-}
-
-DIV.header_row DIV {
-	/*flex: 1;*/ /* Allow equal space for each column header */
-	padding-right: 8px; /* Optional padding for better spacing */
-	box-sizing: border-box;
-	font-weight: bold;
-}
-
-DIV.cell_row {
-	display: flex; /* Align tag_cell_content items in a row */
-	justify-content: space-between;
-	/*flex-wrap: wrap;*/ /* Allow wrapping if there are too many columns */
-}
-
-DIV.grid-container, DIV.cell_row DIV{
-	/*flex: 1;*/ /* Allow equal space for each content column */
-	text-align: left; /* Center align the text (optional) */
-	padding-left: 8px; /* Optional padding for better spacing */
-	box-sizing: border-box;
-	display: grid;
-	grid-template-rows: repeat(5, auto);
-	grid-auto-flow: column;
-	align-content: start;
-	vertical-align:top;
-}
-
-DIV.cell_row DIV LABEL {
-	padding-right: 	8px;
-}
 DIV.numeric-score DIV {
 	padding-right: 5px;
 }
@@ -706,4 +635,83 @@ DIV.post-controls .post-controls-center {
 	flex-grow: 2;
 	text-align: center;
 }
+
+DIV.upload-tags-grid {
+	padding-top:10px;
+	display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: min-content;
+    gap: 10px;
+}
+
+DIV.grid-cell {
+    display: flex;
+    gap: 10px; 
+	align-items: center;
+	grid-column: span 1;
+}
+
+DIV.grid-cell-wide {
+    display: flex;
+    gap: 10px; 
+	align-items: center;
+	grid-column: span 2;
+}
+
+DIV.grid-cell:nth-child(odd) {
+	border-right-width:1px;
+	border-right-style:dashed;
+}
+
+DIV.grid-cell-label {
+    font-weight: bold;
+    width: 8ch;
+    white-space: normal;
+    overflow-wrap: break-word;
+}
+
+DIV.grid-cell-separator {
+	border-left-width: 1px;
+	border-left-style: solid;
+	height:100%;
+}
+
+DIV.grid-cell-content.dir-row {
+    display: flex;
+    flex-direction: row;
+}
+
+DIV.grid-cell-content {
+    display: grid;
+	grid-template-columns: repeat(2, 20ch);
+	grid-template-rows: repeat(5, auto);
+}
+
+DIV.grid-cell-wide DIV.grid-cell-content {
+	grid-template-columns: repeat(4, 20ch);
+}
+
+DIV.grid-cell-content LABEL {
+	padding-right:5px;
+}
+
+DIV.grid-cell-wide DIV.grid-cell-content LABEL:nth-child(16n) {
+	padding-bottom:5px;
+}
+
+.grid-cell-content:not(.grid-cell-wide .grid-cell-content) LABEL:nth-child(8n) {
+    padding-bottom: 5px;
+}
+
+DIV.grid-cell-content LABEL INPUT {
+	margin-right:1px;
+}
+
+DIV.showInputButton, DIV.showPreviewButton {
+	padding: 2px;
+	display:inline;
+	font-size:15px;
+	visibility:hidden;
+}
+
 /* end of changes */

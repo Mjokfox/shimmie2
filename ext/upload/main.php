@@ -165,6 +165,8 @@ class Upload extends Extension
         $sb->add_bool_option(UploadConfig::MIME_CHECK_ENABLED, "Enable upload MIME checks", true);
         $sb->add_multichoice_option(UploadConfig::ALLOWED_MIME_STRINGS, $this->get_mime_options(), "Allowed MIME uploads", true);
         $sb->end_table();
+        $sb->add_label("Category order, comma separated, the same names you see on the upload page:<br/>");
+        $sb->add_longtext_option("upload_order");
     }
 
     /**

@@ -18,11 +18,11 @@ TABLE#large_upload_form.form {
 }
 
 .left-column {
-    width: 60%;
+    width: 50%;
 }
 
 .right-column {
-    width: 39%;
+    width: 49%;
     padding-left: 20px;
     background-color: #fff1;
     min-height: 80vh;

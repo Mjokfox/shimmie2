@@ -3,7 +3,7 @@ function fileSize(size) {
     return (size / Math.pow(1024, i)).toFixed(2) * 1 + ['B', 'kB', 'MB', 'GB', 'TB'][i];
 }
 
-function showpreview(file, background_color="#F002") {
+function showpreview(file, background_color="#F002",url="") {
     const imagePreview = document.getElementById('imagePreview');
     if (imagePreview){
         if (file){
@@ -14,35 +14,99 @@ function showpreview(file, background_color="#F002") {
             }
             reader.readAsDataURL(file);
             imagePreview.parentElement.style["background-color"] = background_color;
-        } else{
+        } else if (url) {
+            imagePreview.src = url;
+            imagePreview.style.display = 'block';
+        } 
+        else{
             imagePreview.src = '';
             imagePreview.style.display = 'none';
         }
     }
 }
 
-// function showpreview_url(url, background_color="#F002"){
-//     const imagePreview = document.getElementById('imagePreview');
-//     if (imagePreview){
-//         if (url){
-//             imagePreview.src = url;
-//             imagePreview.style.display = 'block';
-//             imagePreview.parentElement.style["background-color"] = background_color;
-//         } else{
-//             imagePreview.src = '';
-//             imagePreview.style.display = 'none';
-//         }
-//     }
-// }
+function isValidHttpUrl(string) {
+    let url;
+    
+    try {
+      url = new URL(string);
+    } catch (_) {
+      return false;  
+    }
+  
+    return url.protocol === "http:" || url.protocol === "https:";
+  }
 
-function inputdiv(self,div,previewId,background_color="#0F02") {
+function urlInputEvent(e){
+    urlInput(e.target)
+}
+
+function urlInput(input) {
+    if (isValidHttpUrl(input.value)) {
+        var color = "#F002"
+        if (input.parentElement.parentElement) {
+            color = input.parentElement.parentElement.style.background_color;
+        }
+        showpreview(null,color,input.value)
+
+        const suffix = input.name.split("url")[1]
+
+        var showprevbtn = document.getElementById("showpreviewdata"+suffix);
+        var showinputbtn = document.getElementById("showinputdata"+suffix);
+        if(showinputbtn) if (showinputbtn.style.visibility == 'hidden'){
+            showinputbtn.style.visibility = 'visible'
+        }
+        if(showprevbtn) showprevbtn.style.visibility = 'visible';
+    }
+}
+
+function showpreview_handler(self,file,url,background_color="#0F02") {
+    document.querySelectorAll("DIV.showPreviewButton").forEach((button) => {
+        button.style.border = 'none';
+    });
+    self.style.border = '2px dotted white';
+    if (isValidHttpUrl(url.value)){
+        showpreview(null,background_color,url.value);
+    } else {
+        showpreview(file,background_color);
+    }
+}
+
+function inputdiv(self,preview,div,url,previewId,background_color="#0F02") {
     if (div.style.display === 'none' || div.style.display === '') {
         div.style.display = 'block';
         self.textContent = 'Hide Input';
-        showpreview(document.getElementById(previewId).files[0],background_color);
+        if (isValidHttpUrl(url.value)){
+            showpreview(null,background_color,url.value);
+        } else {
+            showpreview(document.getElementById(previewId).files[0],background_color);
+        }
+        document.querySelectorAll("DIV.showPreviewButton").forEach((button) => {
+            button.style.border = 'none';
+        });
+        preview.style.border = '2px dotted white';
+
+        const right_column = document.querySelector(".right-column");
+        if (right_column) {
+            right_column.style["background-color"] = background_color;
+        }
     } else {
         div.style.display = 'none';
         self.textContent = 'Show Input';
+    }
+    if (split_view_enabled) {
+        document.querySelectorAll(".upload-split-view").forEach((input) => {
+            if (input != div) {
+                input.style.display = 'none'
+            }
+        });
+        document.querySelectorAll("DIV.showInputButton").forEach((button) => {
+            if (button != self){
+                button.textContent = 'Show Input';
+                button.style.border = 'none';
+            }
+        });
+        self.style.border = '2px dotted white';
     }
 }
 
@@ -152,25 +216,11 @@ function presettags(self) {
     updateTags(self)
 }
 
-// function checkInput(input) {
-//     const urlPattern = /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/\S*)?$/;
-//     const value = input.trim();
-//     if (value === '') {
-//         return false;
-//     } else return urlPattern.test(value)
-
-// }
-
 function updateTracker(e) {
     var size = 0;
     var upbtn = document.getElementById("uploadbutton");
     var tracker = document.getElementById("upload_size_tracker");
     var lockbtn = false;
-    // if (e){
-    //     if (e.target.type === "text"){
-    //         console.log(checkInput(e.target.value));
-    //     }
-    // }
     
     // check that each individual file is less than the max file size
     document.querySelectorAll("#large_upload_form input[type='file']").forEach((input) => {
@@ -182,7 +232,7 @@ function updateTracker(e) {
         var toobig = false;
         if (input.files.length) {
             if(cancelbtn) cancelbtn.style.visibility = 'visible';
-            if(showinputbtn) if (showinputbtn.style.visibility == 'hidden'){
+            if(showinputbtn) {
                 showinputbtn.style.visibility = 'visible'
                 showpreview(input.files[0],TR_color.style["background-color"])
             }
@@ -207,6 +257,9 @@ function updateTracker(e) {
             if(showprevbtn) showprevbtn.style.visibility = 'hidden';
             inputbutton.style = 'color:inherit';
         }
+    });
+    document.querySelectorAll("#large_upload_form input.url-input").forEach((input) => {
+        urlInput(input)
     });
 
     // check that the total is less than the max total size
@@ -447,9 +500,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll("#large_upload_form input[type='file']").forEach((el) => {
             el.addEventListener('change', updateTracker);
         });
-        // document.querySelectorAll("input.url-input").forEach((el) => {
-        //     el.addEventListener('input', updateTracker);
-        // });
+        document.querySelectorAll("input.url-input").forEach((el) => {
+            el.addEventListener('input', urlInputEvent);
+        });
         updateTracker();
     }
     dropZoneInit();

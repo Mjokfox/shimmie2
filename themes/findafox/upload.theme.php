@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Shimmie2;
 
 
-use function MicroHTML\{joinHTML, emptyHTML, DIV, BUTTON, A, TEXTAREA, TABLE, TR, TH, TD, INPUT, LABEL, BR, SELECT, OPTION};
+use function MicroHTML\{ emptyHTML, DIV, SPAN, TEXTAREA, TABLE, TR, TH, TD, INPUT, LABEL, BR, SELECT, OPTION};
 
 use MicroHTML\HTMLElement;
 
@@ -21,6 +21,118 @@ class CustomUploadTheme extends UploadTheme
     {
         $page->set_layout("no-left");
         parent::display_page($page);
+    }
+
+    protected function build_upload_list(): HTMLElement
+    {
+        global $config;
+        $upload_list = emptyHTML();
+        $upload_count = $config->get_int(UploadConfig::COUNT);
+        $preview_enabled = $config->get_bool(UploadConfig::PREVIEW);
+        $split_view = $config->get_bool(UploadConfig::SPLITVIEW);
+        $tl_enabled = ($config->get_string(UploadConfig::TRANSLOAD_ENGINE, "none") != "none");
+        $accept = $this->get_accept();
+
+        $headers = emptyHTML();
+        $uhbe = send_event(new UploadHeaderBuildingEvent());
+        foreach ($uhbe->get_parts() as $part) {
+            $headers->appendChild(
+                TH("Post $part")
+            );
+        }
+
+        $upload_list->appendChild(
+            TR(
+                ["class" => "header"],
+                TH(["colspan" => 2], "Select File"),
+                TH($tl_enabled ? "or URL" : null),
+                // $headers,
+            )
+        );
+        $colors = ["F00","F80","FF0","8F0","0F0","0F8","0FF","08F","00F","80F","F0F","F08"];
+        $alpha = "2";
+        for ($i = 0; $i < $upload_count; $i++) {
+            $specific_fields = emptyHTML();
+            $usfbe = send_event(new UploadSpecificBuildingEvent((string)$i));
+            foreach ($usfbe->get_parts() as $part) {
+                $specific_fields->appendChild($part);
+            }
+            $color = "#".$colors[$i%11].$alpha;
+
+            $upload_list->appendChild(
+                TR(["id"=> "rowdata{$i}","style" => "background-color:".$color],
+                    TD(
+                        ["colspan" => 2, "style" => "white-space: nowrap;"],
+                       SPAN("{$i} "),
+                        DIV([
+                            "id" => "canceldata{$i}",
+                            "style" => "display:inline;margin-right:5px;font-size:15px;visibility:hidden;",
+                            "onclick" => "document.getElementById('data{$i}').value='';updateTracker();",
+                        ], "✖"),
+                        INPUT([
+                            "type" => "file",
+                            "id" => "data{$i}",
+                            "name" => "data{$i}[]",
+                            "accept" => $accept,
+                            "multiple" => false,
+                            "style" => "display:none",
+                        ]),
+                       INPUT([
+                           "type" => "button",
+                           "value" => "Browse...",
+                           "id" => "browsedata{$i}",
+                           "onclick" => "document.getElementById('data{$i}').click();" ,
+                       ]),
+
+                    ),
+                    TD(
+                        $tl_enabled ? INPUT([
+                            "type" => "text",
+                            "class" => "url-input",
+                            "name" => "url{$i}",
+                            "value" => ($i == 0) ? @$_GET['url'] : null,
+                        ]) : null
+                    ),
+                    TD(["style" => "text-align:center"],
+                        DIV([
+                            "id" => "showinputdata{$i}",
+                            "class" => "showInputButton",
+                            "onclick" => "inputdiv(this,document.getElementById('showpreviewdata{$i}'),document.getElementById('inputdivdata{$i}'),document.querySelector('input[name=url$i]'),'data{$i}','$color');",
+                        ], "Show Input"),
+
+                    ),
+                    $preview_enabled ? TD(["style" => "text-align:center"],
+                       DIV([
+                           "id" => "showpreviewdata{$i}",
+                           "class" => "showPreviewButton",
+                           "onclick" => "showpreview_handler(this,document.getElementById('data{$i}').files[0],document.querySelector('input[name=url$i]'),'$color');",
+                       ], "Preview"),
+
+                   ) : "",
+
+                ),
+                TR(["style" => "background-color:".$color],
+                    TD( ["colspan" => "100%"],
+                    DIV([
+                            "id" => "inputdivdata{$i}",
+                            "style" => "display: none",
+                            "class" => $split_view ? "upload-split-view":"",
+                        ],
+                        TABLE(
+                            ["id" => "small_upload_form", "class" => "form","style" => "width:100%"],
+                            TR(["class" => "header"],$headers),
+                            TR(["class" => "header"],
+                            $specific_fields,
+                            ),
+                        ),
+                        get_categories_html((string)$i),
+                    ),
+                    ),
+                )
+            );
+        }
+
+        return $upload_list;
     }
 }
 
@@ -60,19 +172,55 @@ function customSort(array &$array, array $customOrder): void { // custom sorting
     });
 }
 
-class CustomPostTagsTheme extends PostTagsTheme
-{
-    public function get_upload_specific_html(string $suffix): HTMLElement
+function customkSort(array &$array, array $customOrder): void { // custom key sorting thingy
+    uksort($array, function($a, $b) use ($customOrder) {
+        $indexA = array_search($a, $customOrder);
+        $indexB = array_search($b, $customOrder);
+        if ($indexA !== false && $indexB !== false) {
+            return $indexA <=> $indexB;
+        }
+        if ($indexA !== false) {
+            return -1;
+        }
+
+        if ($indexB !== false) {
+            return 1;
+        }
+        return 0;
+    });
+}
+
+function customkciSort(array &$array, array $customOrder): void { // custom key case insensitive sorting thingy
+    $customOrderLower = array_map('strtolower', $customOrder);
+
+    uksort($array, function($a, $b) use ($customOrderLower) {
+        $indexA = array_search(strtolower($a), $customOrderLower);
+        $indexB = array_search(strtolower($b), $customOrderLower);
+        
+        if ($indexA !== false && $indexB !== false) {
+            return $indexA <=> $indexB;
+        }
+        if ($indexA !== false) {
+            return -1;
+        }
+        if ($indexB !== false) {
+            return 1;
+        }
+        return 0;
+    });
+}
+
+function get_categories_html(string $suffix): HTMLElement
     {
-        global $database,$config;
-        $res = $database->get_all("
-        SELECT
-        itc.display_singular AS category_name,
-        t.tag AS tag_name
-        FROM image_tag_categories_tags itct
-        JOIN image_tag_categories itc ON itct.category_id = itc.id
-        JOIN tags t ON itct.tag_id = t.id;
-        ");
+        global $database,$config,$cache;
+        $res = cache_get_or_set("category_table",fn() => $database->get_all("
+            SELECT
+            itc.display_singular AS category_name,
+            t.tag AS tag_name
+            FROM image_tag_categories_tags itct
+            JOIN image_tag_categories itc ON itct.category_id = itc.id
+            JOIN tags t ON itct.tag_id = t.id;
+        "),30);
         $category_tags = [];
         $preselect_tags = ["mouth_closed","eyes_open","adult","photo","color","wild"];
         foreach ($res as $row) {
@@ -96,20 +244,8 @@ class CustomPostTagsTheme extends PostTagsTheme
             unset($category_tags["Meta"]);
             $category_tags["Meta"] = $value;
         }
+        $html_input_array = [];
         $tags_input = emptyHTML();
-        $tags_input->appendChild(
-            TR(["class" => "header"],
-                TH(["class" => "right min_width_td"],
-                    // ["style" => "width:20%"],
-                    "Category"
-                ),
-                TH(["class" => "max_width_td"],
-                    // ["style" => "width:80%"],
-                    "Tag"
-                ),
-            ),
-        );
-        // hardcoded ordering
         if (array_key_exists("Meta",$category_tags)){ //meta specific ordering
             $tags = $category_tags["Meta"];
             arsort($tags);
@@ -120,14 +256,17 @@ class CustomPostTagsTheme extends PostTagsTheme
                     $tempHtml->appendChild(make_input_label($suffix,$tag,"Metas","radio",false,"checkboxRadio(this);"));
                 }
             }
-            $tags_input->appendChild(
-                TR(
-                    TD(["class" => "right min_width_td"],"Amount"),
-                    TD(["class" => "max_width_td"],$tempHtml,),
-                )
-            );
+            // $tags_input->appendChild(
+            $html_input_array["Amount"] = 
+                DIV(["class" => "grid-cell-wide"],
+                    DIV(["class" => "grid-cell-label"],"Amount"),
+                    DIV(["class" => "grid-cell-separator"]),
+                    DIV(["class" => "grid-cell-content dir-row"],$tempHtml,),
+                );
+            // );
             $category_tags["Meta"] = array_diff($category_tags["Meta"],$metas);
         }
+        
         if (array_key_exists("Species",$category_tags)){ //species specific ordering
             $tags = $category_tags["Species"];
             $common_species = ['red_fox', 'arctic_fox', 'fennec_fox','gray_fox'];
@@ -146,128 +285,105 @@ class CustomPostTagsTheme extends PostTagsTheme
                 }
             }
 
-            $tags_input->appendChild(
-                TR(
-                    TD(["class" => "right min_width_td"],
-                        "Species"
-                    ),
-                    TD(["class" => "max_width_td"],
+            // $tags_input->appendChild(
+            $html_input_array["Species"] =
+                DIV(["class" => "grid-cell-wide"],
+                    DIV(["class" => "grid-cell-label"],"Species"),
+                    DIV(["class" => "grid-cell-separator"]),
+                    DIV(["class" => "grid-cell-content dir-row"],
                         $tempHtml,
                         SELECT(
                             ["id" => "tagsDropdown_{$suffix}", "style" => "width:auto","onclick" => "updateTags(this);"],
-                               $dropdownHtml
-                        )
+                                $dropdownHtml
+                        ),
                     ),
-                ),
-            );
+                );
+            // );
             unset($category_tags["Species"]);
         }
-
+        
         if (array_key_exists("Body:Face",$category_tags)){ //face specific ordering
             $tags = $category_tags["Body:Face"];
             arsort($tags);
-            $tempHtml1 = emptyHTML();
-            $tempHtml2 = emptyHTML();
-            $tempHtml3 = emptyHTML();
-            $tempHtml4 = emptyHTML();
-            $tempHtml5 = emptyHTML();
+            $tempHtmls = [emptyHTML(),emptyHTML(),emptyHTML(),emptyHTML(),emptyHTML()];
+            $lables = ["Facial features","Eye color","Nose color","Muzzle marking","Misc facial"];
             foreach($tags as $tag){
                 $tagarray = explode("_",$tag);
                 if (in_array("eyes",$tagarray)){
                     if(array_search("eyes",$tagarray) == 0){
-                        $tempHtml1->appendChild(make_input_label($suffix,$tag,"EyesMouth1","checkbox",true,"","",in_array($tag,$preselect_tags)));
+                        $tempHtmls[0]->appendChild(make_input_label($suffix,$tag,"EyesMouth1","checkbox",true,"","",in_array($tag,$preselect_tags)));
                     } else{
-                        $tempHtml2->appendChild(make_input_label($suffix,$tag,"Eyes","checkbox",true));
+                        $tempHtmls[1]->appendChild(make_input_label($suffix,$tag,"Eyes","checkbox",true));
                     }
                 }
                 elseif (in_array("muzzle",$tagarray)){
-                    $tempHtml4->appendChild(make_input_label($suffix,$tag,"Muzzle","checkbox",true,"","disabledOnStartup"));
+                    $tempHtmls[3]->appendChild(make_input_label($suffix,$tag,"Muzzle","checkbox",true,"","disabledOnStartup"));
                 }
                 elseif (in_array("mouth",$tagarray)){
-                    $tempHtml1->appendChild(make_input_label($suffix,$tag,"EyesMouth2","checkbox",true,"","",in_array($tag,$preselect_tags)));
+                    $tempHtmls[0]->appendChild(make_input_label($suffix,$tag,"EyesMouth2","checkbox",true,"","",in_array($tag,$preselect_tags)));
                 }
                 elseif (in_array("nose",$tagarray)){
-                    $tempHtml3->appendChild(make_input_label($suffix,$tag,"Nose","checkbox",true));
+                    $tempHtmls[2]->appendChild(make_input_label($suffix,$tag,"Nose","checkbox",true));
                 }
                 else {
-                    $tempHtml5->appendChild(make_input_label($suffix,$tag,"FaceMisc","checkbox",true));
+                    $tempHtmls[4]->appendChild(make_input_label($suffix,$tag,"FaceMisc","checkbox",true));
                 }
 
 
             }
-            $tags_input->appendChild(
-                TR(TD(["class" => "right min_width_td"],"Facial features"),
-                    TD(["class" => "max_width_td"],
-                       DIV(["class" => "table_container","style" => "width: 100%;"],
-                           DIV(["class" => "header_row"],
-                               DIV("open|closed"),
-                               DIV("Eye color"),
-                               DIV("Nose color"),
-                               DIV("muzzle marking"),
-                               DIV("misc"),
-                           ),
-                           DIV(["class" => "cell_row"],
-                               DIV($tempHtml1),
-                               DIV($tempHtml2),
-                               DIV($tempHtml3),
-                               DIV($tempHtml4),
-                               DIV($tempHtml5),
-                           ))),
-                )
-            );
+            $i = 0;
+            foreach($tempHtmls as $tempHtml) {
+                $html_input_array[$lables[$i]] = 
+                    DIV(["class" => "grid-cell"],
+                        DIV(["class" => "grid-cell-label"],$lables[$i]),
+                        DIV(["class" => "grid-cell-separator"]),
+                        DIV(["class" => "grid-cell-content"],$tempHtml,)
+                    );
+                $i++;
+            }
             unset($category_tags["Body:Face"]);
         }
-
+        
         if (array_key_exists("Body:Fur",$category_tags)){ //fur specific ordering
             $tags = $category_tags["Body:Fur"];
             arsort($tags);
             $fur_order = ['red_fur', 'white_fur', 'gray_fur','tan_fur','black_fur'];
             customSort($tags,$fur_order);
-            $tempHtml1 = null;
+            $tempHtmls = [null,emptyHTML(),emptyHTML(),emptyHTML()];
+            $lables = ["Age","Fur color","Tail tip","Coat"];
             if (array_key_exists("Body:Age",$category_tags)){ //fur specific ordering
-                $tempHtml1 = emptyHTML();
+                $tempHtmls[0] = emptyHTML();
                 foreach($category_tags["Body:Age"] as $taga){
-                    $tempHtml1->appendChild(make_input_label($suffix,$taga,"Age","checkbox",true,"","",in_array($taga,$preselect_tags)));
+                    $tempHtmls[0]->appendChild(make_input_label($suffix,$taga,"Age","checkbox",true,"","",in_array($taga,$preselect_tags)));
                 }
                 unset($category_tags["Body:Age"]);
             }
-            $tempHtml2 = emptyHTML();
-            $tempHtml3 = emptyHTML();
-            $tempHtml4 = emptyHTML();
             foreach($tags as $tag){
                 $tagarray = explode("_",$tag);
                 if (in_array("fur",$tagarray)){
-                    $tempHtml2->appendChild(make_input_label($suffix,$tag,"FurColor","checkbox",true));
+                    $tempHtmls[1]->appendChild(make_input_label($suffix,$tag,"FurColor","checkbox",true));
                 }
                 elseif (in_array("tail",$tagarray)){
-                    $tempHtml3->appendChild(make_input_label($suffix,$tag,"TailTip","checkbox",true));
+                    $tempHtmls[2]->appendChild(make_input_label($suffix,$tag,"TailTip","checkbox",true));
                 }
                 else {
-                    $tempHtml4->appendChild(make_input_label($suffix,$tag,"Furmisc","checkbox",true));
+                    $tempHtmls[3]->appendChild(make_input_label($suffix,$tag,"Furmisc","checkbox",true));
                 }
             }
-            $tags_input->appendChild(
-                TR(TD(["class" => "right min_width_td"],"Body features"),
-                    TD(["class" => "max_width_td"],
-                       DIV(["class" => "table_container","style" => "width: 100%;"],
-                           DIV(["class" => "header_row"],
-                               $tempHtml1 ? DIV("Age") : "",
-                               DIV("Fur color"),
-                               DIV("Tail tip"),
-                               DIV("misc"),
-                           ),
-                           DIV(["class" => "cell_row"],
-                               $tempHtml1 ? DIV($tempHtml1) : "",
-                               DIV($tempHtml2),
-                               DIV($tempHtml3),
-                               DIV($tempHtml4),
-                           ))),
-                )
-            );
+            $i = 0;
+            foreach($tempHtmls as $tempHtml) {
+                if ($tempHtml != null){
+                    $html_input_array[$lables[$i]] = 
+                        DIV(["class" => "grid-cell"],
+                            DIV(["class" => "grid-cell-label"],$lables[$i]),
+                            DIV(["class" => "grid-cell-separator"]),
+                            DIV(["class" => "grid-cell-content"],$tempHtml,)
+                        );
+                }
+                $i++;
+            }
             unset($category_tags["Body:Fur"]);
         }
-
-        // dynamic ordering
         if(count($category_tags) > 0){
             $input_array = [];
             $category_array = [];
@@ -281,7 +397,7 @@ class CustomPostTagsTheme extends PostTagsTheme
                     $category_lower_name = $string_array[1];
                 } else {
                     $category_upper_name = $category_tag;
-                    $category_lower_name = "Misc";
+                    $category_lower_name = "Meta";
                 }
 
                 if (!array_key_exists($category_upper_name,$input_array)){
@@ -294,48 +410,43 @@ class CustomPostTagsTheme extends PostTagsTheme
                     $input_array[$category_upper_name][$category_lower_name]->appendChild(make_input_label($suffix,$tag,$category_lower_name,$type,true,"","",in_array($tag,$preselect_tags)));
                 }
             }
+            krsort($category_array);
             foreach(array_keys($category_array) as $category){
-                $headerHtml = emptyHTML();
-                $cellHtml = emptyHTML();
-                $realcell = emptyHTML();
+                krsort($input_array[$category]);
                 foreach(array_keys($input_array[$category]) as $lower_category){
-                    $headerHtml->appendChild(
-                        TH(["class" => "left"],$lower_category)
-                    );
-                    $cellHtml->appendChild(
-                        TD(DIV(["class" => "grid-container"],$input_array[$category][$lower_category]))
+                    $html_input_array[$lower_category] =
+                        DIV(["class" => $lower_category === "Meta" || $lower_category === "Activity" ? "grid-cell-wide" : "grid-cell"],
+                            DIV(["class" => "grid-cell-label"],$lower_category),
+                            DIV(["class" => "grid-cell-separator"]),
+                            DIV(["class" => "grid-cell-content"],$input_array[$category][$lower_category],),
                     );
                 }
-                $tags_input->appendChild(
-                    TR(
-                        TD(["class" => "right min_width_td"],
-                            $category
-                        ),
-                        TD(["class" => "max_width_td"],
-                            TABLE(["style" => "width: 100%;","class" => "table_container"],
-                                TR(["class" => "header_row"],
-                                    $headerHtml
-                                ),
-                                TR(["class" => "top"],
-                                    $cellHtml
-                                ),
-                            ),
-                        ),
-                    ),
-                );
             }
-        }
+    }
+    $upload_order = $config->get_string("upload_order");
+    $category_sort = array_map('trim',explode(",",$upload_order));
+    customkciSort($html_input_array,$category_sort);
+    foreach ($html_input_array as $whatever) {
+        $tags_input->appendChild($whatever);
+    }
         $upload_count = $config->get_int(UploadConfig::COUNT) - 1;
-        return TR(TD(["colspan" => "2"],            // love me wayyyyyy too lov return statements lmao
-                     TABLE(["style" => "width: 100%;", "class" => "tableSpacing"],$tags_input),
-                     DIV(
-                         TEXTAREA(["type" => "text","name" => "tags{$suffix}","id" => "tags{$suffix}","class" => "autocomplete_tags","readonly" => true,"rows" => "2", "cols" => "15","value" => ($suffix == 0) ? @$_GET['tags'] : null,]),
-                         DIV(["style" => "display:flex"],
-                            INPUT(["type" => "button","id" => "Copy_{$suffix}","onclick" => "copyTagsTo(this,document.getElementById('CopyNumber_{$suffix}'))","value" => "Copy this input to:","style" => "width:auto; padding-left:10px;padding-right:10px; "]),
-                            INPUT(["type" => "number","id" => "CopyNumber_{$suffix}","value" => "{$suffix}","min" => "0","max" => "{$upload_count}","style" => "width:auto"]),
-                            INPUT(["type" => "button","id" => "tagsClear_{$suffix}","onclick" => "clearInputs(this)","value" => "Clear input","style" => "width:20%; margin-left: auto;"]),
-                         ),
-                     )
+        $output = emptyHTML();
+        $output->appendChild(DIV(["class" => "upload-tags-grid"],$tags_input));
+        $output->appendChild(DIV(
+            TEXTAREA(["type" => "text","name" => "tags{$suffix}","id" => "tags{$suffix}","class" => "autocomplete_tags","readonly" => true,"rows" => "2", "cols" => "15","value" => ($suffix == 0) ? @$_GET['tags'] : null,]),
+            DIV(["style" => "display:flex"],
+               INPUT(["type" => "button","id" => "Copy_{$suffix}","onclick" => "copyTagsTo(this,document.getElementById('CopyNumber_{$suffix}'))","value" => "Copy this input to:","style" => "width:auto; padding-left:10px;padding-right:10px; "]),
+               INPUT(["type" => "number","id" => "CopyNumber_{$suffix}","value" => "{$suffix}","min" => "0","max" => "{$upload_count}","style" => "width:auto"]),
+               INPUT(["type" => "button","id" => "tagsClear_{$suffix}","onclick" => "clearInputs(this)","value" => "Clear input","style" => "width:20%; margin-left: auto;"]),
+            ),
         ));
+        return $output;
+    }
+    
+class CustomPostTagsTheme extends PostTagsTheme
+{
+    public function get_upload_specific_html(string $suffix): HTMLElement
+    {
+        return emptyHTML();
     }
 }
