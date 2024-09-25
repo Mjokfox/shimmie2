@@ -22,6 +22,8 @@
 
 	--zebra-heading-fg: #171BB3;
 	--zebra-hover-bg: #FFD;
+
+	--rowm: 1;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -530,7 +532,10 @@ form+form {
 	display: none;
 }
 /* My changes */
-@media only screen and (max-width:1000px) {
+@media only screen and (min-resolution: 2dppx) and (orientation: portrait) {
+	:root {
+		--rowm: 2;
+	}
 	body {
 		font-size: x-large;
 	}
@@ -605,11 +610,11 @@ form+form {
 		display:none;
 	}
 	.upload-tags-grid DIV.grid-cell-content {
-		grid-template-columns: repeat(2, 20ch);
+		grid-template-columns: 20ch auto;
 	}
 	
 	.upload-tags-grid DIV.grid-cell-wide .grid-cell-content {
-		grid-template-columns: repeat(2, 20ch);
+		grid-template-columns: 20ch auto;
 	}
 
 	.upload-tags-grid DIV.grid-cell-wide {
@@ -623,21 +628,32 @@ form+form {
 		display: grid;
 		justify-content: start;
 		grid-auto-flow: dense;
-		grid-template-columns: repeat(2, 20ch);
+		grid-template-columns: 20ch auto;
 	}
 
-	.grid-cell-wide .grid-cell-content :is(:nth-child(8n + 5),:nth-child(8n + 6),:nth-child(8n + 7),:nth-child(8n)) {
-		grid-column: 2;
+	DIV.grid-cell-content LABEL INPUT {
+		height: 1.2em;
+		width: 1.2em;
 	}
 }
+
 @media only screen and (max-width:1500px) {
-	
 	DIV.grid-cell-content {
-		grid-template-columns: repeat(2, 12ch);
+		grid-template-columns: 16ch auto
 	}
 	
 	DIV.grid-cell-wide .grid-cell-content {
-		grid-template-columns: repeat(4, 12ch);
+		grid-template-columns: repeat(3, 16ch) auto;
+	}
+}
+/* just get as compact as possible */
+@media only screen and (max-width:1200px) { 
+	DIV.grid-cell-content {
+		grid-template-columns: repeat(2, auto);
+	}
+	
+	DIV.grid-cell-wide .grid-cell-content {
+		grid-template-columns: repeat(4, auto);
 	}
 }
 
@@ -743,24 +759,16 @@ DIV.grid-cell-separator {
 .grid-cell-content {
     display: grid;
 	justify-content: start;
-	grid-auto-flow: dense;
-	grid-template-columns: repeat(2, 20ch);
+	grid-auto-flow: column;
+	grid-template-columns: 20ch auto;
 }
 
 .grid-cell-wide .grid-cell-content {
 	grid-template-columns: repeat(4, 20ch);
 }
 
-/* Thanks to Temani Afif on stackoverflow */
-.grid-cell-content > * {
-	grid-column: 1;
-}
+@media not all and (min-resolution: 2dppx) and (orientation: portrait) {
 
-.grid-cell-content:not(.grid-cell-wide .grid-cell-content) :is(:nth-child(8n + 5),:nth-child(8n + 6),:nth-child(8n + 7),:nth-child(8n)) {
-	grid-column: 2;
-}
-
-@media only screen and (min-width:1000px) {
 	DIV.grid-cell:nth-child(odd) {
 		border-right-width:1px;
 		border-right-style:dashed;
@@ -770,31 +778,13 @@ DIV.grid-cell-separator {
 		display: flex;
 		flex-direction: row;
 	}
-
-	.grid-cell-wide .grid-cell-content :is(:nth-child(16n + 5),:nth-child(16n + 6),:nth-child(16n + 7),:nth-child(16n + 8)) {
-		grid-column: 2;
-	}
-	
-	.grid-cell-wide .grid-cell-content :is(:nth-child(16n + 9),:nth-child(16n + 10),:nth-child(16n + 11),:nth-child(16n + 12)) {
-		grid-column: 3;
-	}
-	
-	.grid-cell-wide .grid-cell-content :is(:nth-child(16n + 13),:nth-child(16n + 14),:nth-child(16n + 15),:nth-child(16n)) {
-		grid-column: 4;
-	}
-}
-
-
-  
-.grid-cell-content :nth-child(8n) {
-	margin-bottom: 5px;
 }
 
 DIV.grid-cell-content LABEL {
 	padding-right:5px;
 }
 
-DIV.grid-cell-content LABEL INPUT {
+.grid-cell-content LABEL INPUT {
 	margin-right:1px;
 }
 

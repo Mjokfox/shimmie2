@@ -307,37 +307,45 @@ function get_categories_html(string $suffix): HTMLElement
             arsort($tags);
             $tempHtmls = [emptyHTML(),emptyHTML(),emptyHTML(),emptyHTML(),emptyHTML()];
             $lables = ["Facial features","Eye color","Nose color","Muzzle marking","Misc facial"];
+            $counts = [0,0,0,0,0];
             foreach($tags as $tag){
                 $tagarray = explode("_",$tag);
                 if (in_array("eyes",$tagarray)){
                     if(array_search("eyes",$tagarray) == 0){
                         $tempHtmls[0]->appendChild(make_input_label($suffix,$tag,"EyesMouth1","checkbox","","",in_array($tag,$preselect_tags)));
+                        $counts[0]++;
                     } else{
                         $tempHtmls[1]->appendChild(make_input_label($suffix,$tag,"Eyes","checkbox"));
+                        $counts[1]++;
                     }
                 }
                 elseif (in_array("muzzle",$tagarray)){
                     $tempHtmls[3]->appendChild(make_input_label($suffix,$tag,"Muzzle","checkbox","","disabledOnStartup"));
+                    $counts[3]++;
                 }
                 elseif (in_array("mouth",$tagarray)){
                     $tempHtmls[0]->appendChild(make_input_label($suffix,$tag,"EyesMouth2","checkbox","","",in_array($tag,$preselect_tags)));
+                    $counts[0]++;
                 }
                 elseif (in_array("nose",$tagarray)){
                     $tempHtmls[2]->appendChild(make_input_label($suffix,$tag,"Nose","checkbox"));
+                    $counts[2]++;
                 }
                 else {
                     $tempHtmls[4]->appendChild(make_input_label($suffix,$tag,"FaceMisc","checkbox"));
+                    $counts[4]++;
                 }
 
 
             }
             $i = 0;
             foreach($tempHtmls as $tempHtml) {
+                $rows = max(4, round($counts[$i] / 2));
                 $html_input_array[$lables[$i]] = 
                     DIV(["class" => "grid-cell"],
                         DIV(["class" => "grid-cell-label"],$lables[$i]),
                         DIV(["class" => "grid-cell-separator"]),
-                        DIV(["class" => "grid-cell-content"],$tempHtml,)
+                        DIV(["class" => "grid-cell-content", "style" => "grid-template-rows: repeat($rows,auto);"],$tempHtml,)
                     );
                 $i++;
             }
@@ -351,10 +359,12 @@ function get_categories_html(string $suffix): HTMLElement
             customSort($tags,$fur_order);
             $tempHtmls = [null,emptyHTML(),emptyHTML(),emptyHTML()];
             $lables = ["Age","Fur color","Tail tip","Coat"];
+            $counts = [0,0,0,0];
             if (array_key_exists("Body:Age",$category_tags)){ //fur specific ordering
                 $tempHtmls[0] = emptyHTML();
                 foreach($category_tags["Body:Age"] as $taga){
                     $tempHtmls[0]->appendChild(make_input_label($suffix,$taga,"Age","checkbox","","",in_array($taga,$preselect_tags)));
+                    $counts[0]++;
                 }
                 unset($category_tags["Body:Age"]);
             }
@@ -362,22 +372,26 @@ function get_categories_html(string $suffix): HTMLElement
                 $tagarray = explode("_",$tag);
                 if (in_array("fur",$tagarray)){
                     $tempHtmls[1]->appendChild(make_input_label($suffix,$tag,"FurColor","checkbox"));
+                    $counts[1]++;
                 }
                 elseif (in_array("tail",$tagarray)){
                     $tempHtmls[2]->appendChild(make_input_label($suffix,$tag,"TailTip","checkbox"));
+                    $counts[2]++;
                 }
                 else {
                     $tempHtmls[3]->appendChild(make_input_label($suffix,$tag,"Furmisc","checkbox"));
+                    $counts[3]++;
                 }
             }
             $i = 0;
             foreach($tempHtmls as $tempHtml) {
                 if ($tempHtml != null){
+                    $rows = max(4, round($counts[$i] / 2));
                     $html_input_array[$lables[$i]] = 
                         DIV(["class" => "grid-cell"],
                             DIV(["class" => "grid-cell-label"],$lables[$i]),
                             DIV(["class" => "grid-cell-separator"]),
-                            DIV(["class" => "grid-cell-content"],$tempHtml,)
+                            DIV(["class" => "grid-cell-content", "style" => "grid-template-rows: repeat($rows,auto);"],$tempHtml,)
                         );
                 }
                 $i++;
@@ -387,6 +401,7 @@ function get_categories_html(string $suffix): HTMLElement
         if(count($category_tags) > 0){
             $input_array = [];
             $category_array = [];
+            $count_array = [];
             $radio_categories = ["Time"]; // still some hardcoded bits tho...
             $hidden_categories = ["Genus", "Name","Type"];
             foreach (array_keys($category_tags) as $category_tag) {
@@ -404,21 +419,24 @@ function get_categories_html(string $suffix): HTMLElement
                     $input_array[$category_upper_name] = [];
                     $category_array[$category_upper_name] = true;
                 }
+                $count_array[$category_upper_name][$category_lower_name] = count($category_tags[$category_tag]);
                 $input_array[$category_upper_name][$category_lower_name] = emptyHTML();
                 $type = in_array($category_lower_name,$radio_categories) ? "radio" : "checkbox";
                 foreach($category_tags[$category_tag] as $tag){
                     $input_array[$category_upper_name][$category_lower_name]->appendChild(make_input_label($suffix,$tag,$category_lower_name,$type,"","",in_array($tag,$preselect_tags)));
+                    
                 }
             }
-            krsort($category_array);
+            $wide_categories = ["Meta","Activity"];
             foreach(array_keys($category_array) as $category){
-                krsort($input_array[$category]);
                 foreach(array_keys($input_array[$category]) as $lower_category){
+                    $rows = max(4, ceil($count_array[$category][$lower_category] / (in_array($lower_category,$wide_categories) ? 4 : 2 )));
+                    $calc = in_array($lower_category,$wide_categories) ? "calc($rows * var(--rowm))" : "$rows";
                     $html_input_array[$lower_category] =
-                        DIV(["class" => $lower_category === "Meta" || $lower_category === "Activity" ? "grid-cell-wide" : "grid-cell"],
+                        DIV(["class" => in_array($lower_category,$wide_categories) ? "grid-cell-wide" : "grid-cell"],
                             DIV(["class" => "grid-cell-label"],$lower_category),
-                            DIV(["class" => "grid-cell-separator"]),
-                            DIV(["class" => "grid-cell-content"],$input_array[$category][$lower_category],),
+                            DIV(["class" => "grid-cell-separator"]), 
+                            DIV(["class" => "grid-cell-content", "style" => "grid-template-rows: repeat($calc,auto);"],$input_array[$category][$lower_category],),
                     );
                 }
             }
