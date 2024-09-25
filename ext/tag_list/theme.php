@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A, BR, rawHTML, emptyHTML};
+use function MicroHTML\{A, BR, rawHTML, emptyHTML,DIV,H3};
 
 class TagListTheme extends Themelet
 {
@@ -135,22 +135,20 @@ class TagListTheme extends Themelet
             unset($categories_display_names["Meta"]);
             $categories_display_names["Meta"] = $metaLeftValue;
         }
-
+        $tagshtml = emptyHTML();
         foreach (array_keys($categories_display_names) as $categories_display_name) {
-            $page->add_block(new Block(html_escape($categories_display_name), rawHTML($categories_display_names[$categories_display_name]), "left", 9));
+            $tagshtml->appendChild(H3(html_escape($categories_display_name)));
+            $tagshtml->appendChild(rawHTML($categories_display_names[$categories_display_name]));
         }
-        // foreach (array_keys($tag_categories_html) as $category) {
-        //     if ($tag_categories_count[$category] < 2) {
-        //         $category_display_name = html_escape($tag_category_dict[$category]['display_singular']);
-        //     } else {
-        //         $category_display_name = html_escape($tag_category_dict[$category]['display_multiple']);
-        //     }
-        //     $page->add_block(new Block($category_display_name, $tag_categories_html[$category], "left", 9));
-        // }
+
 
         if ($main_html !== null) {
-            $page->add_block(new Block("Tags", rawHTML($main_html), "left", 10));
+            $tagshtml->appendChild(DIV(
+                H3("Misc"),
+                DIV(["class" => "blockbody"],rawHTML($main_html)),
+            ));
         }
+        $page->add_block(new Block(null, $tagshtml, "left", 10,"Tagsleft"));
     }
 
     /**

@@ -529,8 +529,11 @@ form+form {
 #Imagemain h3 {
 	display: none;
 }
-
-@media screen and (width <=800px) {
+/* My changes */
+@media only screen and (max-width:1000px) {
+	body {
+		font-size: x-large;
+	}
 	BODY.layout-grid {
 		grid-template-columns: auto;
 	}
@@ -542,15 +545,16 @@ form+form {
 
 	ARTICLE {
 		grid-column: 1;
-		grid-row: 2;
+		grid-row: 3;
 		margin: 0 16px;
 	}
 
 	NAV {
 		grid-column: 1;
-		grid-row: 3;
+		grid-row: 2;
 		margin: auto;
 		width: auto;
+		display: flex;
 	}
 
 	FOOTER {
@@ -568,11 +572,74 @@ form+form {
 
 	.shm-image-list {
 		justify-content: center;
+		grid-template-columns: repeat( auto-fill, calc(var(--thumb-width) + 8px) );
+	}
+
+	NAV:has(:not(#Tagsleft)) #Bulk_Actionsleft {
+		display: none;
+	}
+
+	#Popular_Tagsleft {
+		font-size: 50%;
+	}
+	NAV:has(#Tagsleft) {
+		grid-row: 3;
+	}
+	ARTICLE:has(#Imagemain) {
+		grid-row: 2;
+	}
+	.upload-split-view {
+		right: unset;
+		transform:unset;
+		position: unset;
+		top: unset;
+	}
+	.left-column {
+		width: 100%;
+	}
+	.right-column {
+		display: none;
+	}
+
+	.divider {
+		display:none;
+	}
+	.upload-tags-grid DIV.grid-cell-content {
+		grid-template-columns: repeat(2, 20ch);
+	}
+	
+	.upload-tags-grid DIV.grid-cell-wide .grid-cell-content {
+		grid-template-columns: repeat(2, 20ch);
+	}
+
+	.upload-tags-grid DIV.grid-cell-wide {
+		grid-column: span 1;
+	}
+
+	DIV.upload-tags-grid {
+		grid-template-columns: repeat(1, 1fr);
+	}
+	DIV.grid-cell-content.dir-row {
+		display: grid;
+		justify-content: start;
+		grid-auto-flow: dense;
+		grid-template-columns: repeat(2, 20ch);
+	}
+
+	.grid-cell-wide .grid-cell-content :is(:nth-child(8n + 5),:nth-child(8n + 6),:nth-child(8n + 7),:nth-child(8n)) {
+		grid-column: 2;
 	}
 }
-
-
-/* my changes */
+@media only screen and (max-width:1500px) {
+	
+	DIV.grid-cell-content {
+		grid-template-columns: repeat(2, 12ch);
+	}
+	
+	DIV.grid-cell-wide .grid-cell-content {
+		grid-template-columns: repeat(4, 12ch);
+	}
+}
 
 DIV#paginator B {
 	background-color: #fff2;
@@ -636,7 +703,7 @@ DIV.post-controls .post-controls-center {
 	text-align: center;
 }
 
-DIV.upload-tags-grid {
+.upload-tags-grid {
 	padding-top:10px;
 	display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -658,10 +725,6 @@ DIV.grid-cell-wide {
 	grid-column: span 2;
 }
 
-DIV.grid-cell:nth-child(odd) {
-	border-right-width:1px;
-	border-right-style:dashed;
-}
 
 DIV.grid-cell-label {
     font-weight: bold;
@@ -675,11 +738,6 @@ DIV.grid-cell-separator {
 	border-left-width: 1px;
 	border-left-style: solid;
 	height:100%;
-}
-
-DIV.grid-cell-content.dir-row {
-    display: flex;
-    flex-direction: row;
 }
 
 .grid-cell-content {
@@ -702,17 +760,31 @@ DIV.grid-cell-content.dir-row {
 	grid-column: 2;
 }
 
-.grid-cell-wide .grid-cell-content :is(:nth-child(16n + 5),:nth-child(16n + 6),:nth-child(16n + 7),:nth-child(16n + 8)) {
-	grid-column: 2;
+@media only screen and (min-width:1000px) {
+	DIV.grid-cell:nth-child(odd) {
+		border-right-width:1px;
+		border-right-style:dashed;
+	}
+
+	DIV.grid-cell-content.dir-row {
+		display: flex;
+		flex-direction: row;
+	}
+
+	.grid-cell-wide .grid-cell-content :is(:nth-child(16n + 5),:nth-child(16n + 6),:nth-child(16n + 7),:nth-child(16n + 8)) {
+		grid-column: 2;
+	}
+	
+	.grid-cell-wide .grid-cell-content :is(:nth-child(16n + 9),:nth-child(16n + 10),:nth-child(16n + 11),:nth-child(16n + 12)) {
+		grid-column: 3;
+	}
+	
+	.grid-cell-wide .grid-cell-content :is(:nth-child(16n + 13),:nth-child(16n + 14),:nth-child(16n + 15),:nth-child(16n)) {
+		grid-column: 4;
+	}
 }
 
-.grid-cell-wide .grid-cell-content :is(:nth-child(16n + 9),:nth-child(16n + 10),:nth-child(16n + 11),:nth-child(16n + 12)) {
-	grid-column: 3;
-}
 
-.grid-cell-wide .grid-cell-content :is(:nth-child(16n + 13),:nth-child(16n + 14),:nth-child(16n + 15),:nth-child(16n)) {
-	grid-column: 4;
-}
   
 .grid-cell-content :nth-child(8n) {
 	margin-bottom: 5px;
@@ -731,6 +803,10 @@ DIV.showInputButton, DIV.showPreviewButton {
 	display:inline;
 	font-size:15px;
 	visibility:hidden;
+}
+
+.tag_list {
+	margin-bottom: 1rem;
 }
 
 /* end of changes */

@@ -417,11 +417,13 @@ function checkboxRadio(self){
     }
 
 }
-
-function isMobile() {
-    return /Mobi|Android/i.test(navigator.userAgent);
-}
-
+const upload_style = document.createElement('style');
+upload_style.innerHTML = `
+  DIV.upload-split-view {
+  }
+`;
+document.head.appendChild(upload_style);
+const upload_style_rule = upload_style.sheet.cssRules[0];
 function sliderInit() {
     const container = document.querySelector('.container');
     const leftColumn = document.querySelector('.left-column');
@@ -429,11 +431,10 @@ function sliderInit() {
     const divider = document.querySelector('.divider');
     if (container && leftColumn && rightColumn && divider) {
         let isResizing = false;
-        const isMobileDevice = isMobile();
 
         // Set different bounds based on device type
-        const minBound = isMobileDevice ? 10 : 20; // Change bounds for mobile
-        const maxBound = isMobileDevice ? 90 : 80; // Change bounds for mobile
+        const minBound = 20;
+        const maxBound = 80;
 
         // Function to start resizing
         function startResizing(e) {
@@ -451,18 +452,19 @@ function sliderInit() {
 
             const containerRect = container.getBoundingClientRect();
             let newLeftWidth = ((clientX - containerRect.left) / containerRect.width) * 100;
-
+            let inputleft = ((clientX + 10)/window.innerWidth)*100;
             if (newLeftWidth < minBound || newLeftWidth > maxBound) {
                 newLeftWidth = newLeftWidth < minBound ? minBound : maxBound;
+                inputleft = newLeftWidth+1; //placeholder for now,works good enough
             }
 
             const newRightWidth = 99 - newLeftWidth;
 
             leftColumn.style.width = `${newLeftWidth}%`;
             rightColumn.style.width = `${newRightWidth}%`;
+            upload_style_rule.style.left = `${inputleft}%`;
             if (preview_enabled && !split_view_enabled)
                 rightColumn.firstChild.style.width = `${(newRightWidth/100)*containerRect.width}px`;
-            // rightColumn.firstChild.style.width = `calc(${newRightWidth}% - 12px)`;
         }
 
         // Function to stop resizing
@@ -483,10 +485,6 @@ function sliderInit() {
         document.addEventListener('touchmove', resize);
         document.addEventListener('touchend', stopResizing);
 
-        if (isMobileDevice){
-            leftColumn.style.width = `${maxBound}%`;
-            rightColumn.style.width = `${minBound-1}%`;
-        }
 
     }
 }
