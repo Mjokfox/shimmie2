@@ -668,6 +668,7 @@ DIV.grid-cell-label {
     width: 8ch;
     white-space: normal;
     overflow-wrap: break-word;
+	text-align: right;
 }
 
 DIV.grid-cell-separator {
@@ -681,26 +682,44 @@ DIV.grid-cell-content.dir-row {
     flex-direction: row;
 }
 
-DIV.grid-cell-content {
+.grid-cell-content {
     display: grid;
+	justify-content: start;
+	grid-auto-flow: dense;
 	grid-template-columns: repeat(2, 20ch);
-	grid-template-rows: repeat(5, auto);
 }
 
-DIV.grid-cell-wide DIV.grid-cell-content {
+.grid-cell-wide .grid-cell-content {
 	grid-template-columns: repeat(4, 20ch);
+}
+
+/* Thanks to Temani Afif on stackoverflow */
+.grid-cell-content > * {
+	grid-column: 1;
+}
+
+.grid-cell-content:not(.grid-cell-wide .grid-cell-content) :is(:nth-child(8n + 5),:nth-child(8n + 6),:nth-child(8n + 7),:nth-child(8n)) {
+	grid-column: 2;
+}
+
+.grid-cell-wide .grid-cell-content :is(:nth-child(16n + 5),:nth-child(16n + 6),:nth-child(16n + 7),:nth-child(16n + 8)) {
+	grid-column: 2;
+}
+
+.grid-cell-wide .grid-cell-content :is(:nth-child(16n + 9),:nth-child(16n + 10),:nth-child(16n + 11),:nth-child(16n + 12)) {
+	grid-column: 3;
+}
+
+.grid-cell-wide .grid-cell-content :is(:nth-child(16n + 13),:nth-child(16n + 14),:nth-child(16n + 15),:nth-child(16n)) {
+	grid-column: 4;
+}
+  
+.grid-cell-content :nth-child(8n) {
+	margin-bottom: 5px;
 }
 
 DIV.grid-cell-content LABEL {
 	padding-right:5px;
-}
-
-DIV.grid-cell-wide DIV.grid-cell-content LABEL:nth-child(16n) {
-	padding-bottom:5px;
-}
-
-.grid-cell-content:not(.grid-cell-wide .grid-cell-content) LABEL:nth-child(8n) {
-    padding-bottom: 5px;
 }
 
 DIV.grid-cell-content LABEL INPUT {

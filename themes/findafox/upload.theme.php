@@ -136,7 +136,7 @@ class CustomUploadTheme extends UploadTheme
     }
 }
 
-function make_input_label($suffix,$tag,$id,$type="radio",$br=null,$onclicks="",$class="",$selected=false): HTMLElement
+function make_input_label($suffix,$tag,$id,$type="radio",$onclicks="",$class="",$selected=false): HTMLElement
 {
     return LABEL(INPUT(
         array_merge(
@@ -150,7 +150,7 @@ function make_input_label($suffix,$tag,$id,$type="radio",$br=null,$onclicks="",$
             ],
             $selected ? ["checked" => "true"] : []
         ),),
-                 "{$tag} ",$br ? BR() : "")
+                 "{$tag} ")
     ;
 }
 
@@ -253,7 +253,7 @@ function get_categories_html(string $suffix): HTMLElement
             $tempHtml = emptyHTML();
             foreach($tags as $tag){
                 if (in_array($tag,$metas)){
-                    $tempHtml->appendChild(make_input_label($suffix,$tag,"Metas","radio",false,"checkboxRadio(this);"));
+                    $tempHtml->appendChild(make_input_label($suffix,$tag,"Metas","radio","checkboxRadio(this);"));
                 }
             }
             // $tags_input->appendChild(
@@ -276,7 +276,7 @@ function get_categories_html(string $suffix): HTMLElement
             $dropdownHtml->appendChild(OPTION(["value" => ""],"less common species"));
             foreach($tags as $tag){
                 if (in_array($tag,$common_species)){
-                    $tempHtml->appendChild(make_input_label($suffix,$tag,"Species","checkbox",false,"checkboxRadio(this);presettags(this);"));
+                    $tempHtml->appendChild(make_input_label($suffix,$tag,"Species","checkbox","checkboxRadio(this);presettags(this);"));
                 }
                 else{
                     $dropdownHtml->appendChild(
@@ -311,22 +311,22 @@ function get_categories_html(string $suffix): HTMLElement
                 $tagarray = explode("_",$tag);
                 if (in_array("eyes",$tagarray)){
                     if(array_search("eyes",$tagarray) == 0){
-                        $tempHtmls[0]->appendChild(make_input_label($suffix,$tag,"EyesMouth1","checkbox",true,"","",in_array($tag,$preselect_tags)));
+                        $tempHtmls[0]->appendChild(make_input_label($suffix,$tag,"EyesMouth1","checkbox","","",in_array($tag,$preselect_tags)));
                     } else{
-                        $tempHtmls[1]->appendChild(make_input_label($suffix,$tag,"Eyes","checkbox",true));
+                        $tempHtmls[1]->appendChild(make_input_label($suffix,$tag,"Eyes","checkbox"));
                     }
                 }
                 elseif (in_array("muzzle",$tagarray)){
-                    $tempHtmls[3]->appendChild(make_input_label($suffix,$tag,"Muzzle","checkbox",true,"","disabledOnStartup"));
+                    $tempHtmls[3]->appendChild(make_input_label($suffix,$tag,"Muzzle","checkbox","","disabledOnStartup"));
                 }
                 elseif (in_array("mouth",$tagarray)){
-                    $tempHtmls[0]->appendChild(make_input_label($suffix,$tag,"EyesMouth2","checkbox",true,"","",in_array($tag,$preselect_tags)));
+                    $tempHtmls[0]->appendChild(make_input_label($suffix,$tag,"EyesMouth2","checkbox","","",in_array($tag,$preselect_tags)));
                 }
                 elseif (in_array("nose",$tagarray)){
-                    $tempHtmls[2]->appendChild(make_input_label($suffix,$tag,"Nose","checkbox",true));
+                    $tempHtmls[2]->appendChild(make_input_label($suffix,$tag,"Nose","checkbox"));
                 }
                 else {
-                    $tempHtmls[4]->appendChild(make_input_label($suffix,$tag,"FaceMisc","checkbox",true));
+                    $tempHtmls[4]->appendChild(make_input_label($suffix,$tag,"FaceMisc","checkbox"));
                 }
 
 
@@ -354,20 +354,20 @@ function get_categories_html(string $suffix): HTMLElement
             if (array_key_exists("Body:Age",$category_tags)){ //fur specific ordering
                 $tempHtmls[0] = emptyHTML();
                 foreach($category_tags["Body:Age"] as $taga){
-                    $tempHtmls[0]->appendChild(make_input_label($suffix,$taga,"Age","checkbox",true,"","",in_array($taga,$preselect_tags)));
+                    $tempHtmls[0]->appendChild(make_input_label($suffix,$taga,"Age","checkbox","","",in_array($taga,$preselect_tags)));
                 }
                 unset($category_tags["Body:Age"]);
             }
             foreach($tags as $tag){
                 $tagarray = explode("_",$tag);
                 if (in_array("fur",$tagarray)){
-                    $tempHtmls[1]->appendChild(make_input_label($suffix,$tag,"FurColor","checkbox",true));
+                    $tempHtmls[1]->appendChild(make_input_label($suffix,$tag,"FurColor","checkbox"));
                 }
                 elseif (in_array("tail",$tagarray)){
-                    $tempHtmls[2]->appendChild(make_input_label($suffix,$tag,"TailTip","checkbox",true));
+                    $tempHtmls[2]->appendChild(make_input_label($suffix,$tag,"TailTip","checkbox"));
                 }
                 else {
-                    $tempHtmls[3]->appendChild(make_input_label($suffix,$tag,"Furmisc","checkbox",true));
+                    $tempHtmls[3]->appendChild(make_input_label($suffix,$tag,"Furmisc","checkbox"));
                 }
             }
             $i = 0;
@@ -407,7 +407,7 @@ function get_categories_html(string $suffix): HTMLElement
                 $input_array[$category_upper_name][$category_lower_name] = emptyHTML();
                 $type = in_array($category_lower_name,$radio_categories) ? "radio" : "checkbox";
                 foreach($category_tags[$category_tag] as $tag){
-                    $input_array[$category_upper_name][$category_lower_name]->appendChild(make_input_label($suffix,$tag,$category_lower_name,$type,true,"","",in_array($tag,$preselect_tags)));
+                    $input_array[$category_upper_name][$category_lower_name]->appendChild(make_input_label($suffix,$tag,$category_lower_name,$type,false,"","",in_array($tag,$preselect_tags)));
                 }
             }
             krsort($category_array);

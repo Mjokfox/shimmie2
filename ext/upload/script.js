@@ -17,6 +17,7 @@ function showpreview(file, background_color="#F002",url="") {
         } else if (url) {
             imagePreview.src = url;
             imagePreview.style.display = 'block';
+            imagePreview.parentElement.style["background-color"] = background_color;
         } 
         else{
             imagePreview.src = '';
@@ -42,21 +43,41 @@ function urlInputEvent(e){
 }
 
 function urlInput(input) {
+    const suffix = input.name.split("url")[1]
+    var showprevbtn = document.getElementById("showpreviewdata"+suffix);
+    var showinputbtn = document.getElementById("showinputdata"+suffix);
+    var color = "#F002"
+    if (input.parentElement.parentElement) {
+        color = input.parentElement.parentElement.style["background-color"];
+    }
     if (isValidHttpUrl(input.value)) {
-        var color = "#F002"
-        if (input.parentElement.parentElement) {
-            color = input.parentElement.parentElement.style.background_color;
-        }
-        showpreview(null,color,input.value)
-
-        const suffix = input.name.split("url")[1]
-
-        var showprevbtn = document.getElementById("showpreviewdata"+suffix);
-        var showinputbtn = document.getElementById("showinputdata"+suffix);
-        if(showinputbtn) if (showinputbtn.style.visibility == 'hidden'){
+        if(showinputbtn){
             showinputbtn.style.visibility = 'visible'
         }
-        if(showprevbtn) showprevbtn.style.visibility = 'visible';
+        if(showprevbtn){ 
+            showprevbtn.style.visibility = 'visible';
+            showpreview_handler(showprevbtn,null,input,color)
+        } else {
+            showpreview(null,color,input.value);
+        }
+    } else {
+        const fileInput = document.getElementById("data"+suffix);
+        if (fileInput.files.length) {
+            if(showprevbtn){ 
+                showprevbtn.style.visibility = 'visible';
+                showpreview_handler(showprevbtn,fileInput.files[0],input,color)
+            } else {
+                showpreview(fileInput.files[0],color);
+            }
+        } else{
+            if(showinputbtn){
+                showinputbtn.style.visibility = 'hidden'
+            }
+            if(showprevbtn){ 
+                showprevbtn.style.visibility = 'hidden';
+            }
+            showpreview();
+        }
     }
 }
 
@@ -76,15 +97,7 @@ function inputdiv(self,preview,div,url,previewId,background_color="#0F02") {
     if (div.style.display === 'none' || div.style.display === '') {
         div.style.display = 'block';
         self.textContent = 'Hide Input';
-        if (isValidHttpUrl(url.value)){
-            showpreview(null,background_color,url.value);
-        } else {
-            showpreview(document.getElementById(previewId).files[0],background_color);
-        }
-        document.querySelectorAll("DIV.showPreviewButton").forEach((button) => {
-            button.style.border = 'none';
-        });
-        preview.style.border = '2px dotted white';
+        showpreview_handler(preview,document.getElementById(previewId).files[0],url,background_color)
 
         const right_column = document.querySelector(".right-column");
         if (right_column) {
@@ -221,20 +234,27 @@ function updateTracker(e) {
     var upbtn = document.getElementById("uploadbutton");
     var tracker = document.getElementById("upload_size_tracker");
     var lockbtn = false;
+    var previewed = false;
     
     // check that each individual file is less than the max file size
     document.querySelectorAll("#large_upload_form input[type='file']").forEach((input) => {
+        const suffix = input.id.split("data")[1];
         var cancelbtn = document.getElementById("cancel"+input.id);
         var showprevbtn = document.getElementById("showpreview"+input.id);
         var showinputbtn = document.getElementById("showinput"+input.id);
         var inputbutton = document.getElementById("browse"+input.id)
         var TR_color = document.getElementById("row"+input.id)
+        const url_input = document.querySelector(`input[name=url${suffix}]`);
         var toobig = false;
         if (input.files.length) {
             if(cancelbtn) cancelbtn.style.visibility = 'visible';
             if(showinputbtn) {
                 showinputbtn.style.visibility = 'visible'
-                showpreview(input.files[0],TR_color.style["background-color"])
+                if (url_input){
+                    showpreview_handler(showprevbtn,input.files[0],url_input,TR_color.style["background-color"])
+                } else{
+                showpreview(input.files[0],TR_color.style["background-color"])}
+                previewed = true;
             }
             if(showprevbtn) showprevbtn.style.visibility = 'visible';
             for (var i = 0; i < input.files.length; i++) {
@@ -251,16 +271,30 @@ function updateTracker(e) {
                 inputbutton.style = 'color:inherit';
             }
         } else {
-            showpreview()
             if(cancelbtn) cancelbtn.style.visibility = 'hidden';
-            if(showinputbtn) showinputbtn.style.visibility = 'hidden';
-            if(showprevbtn) showprevbtn.style.visibility = 'hidden';
-            inputbutton.style = 'color:inherit';
+            if (url_input && isValidHttpUrl(url_input.value)) {
+                
+                if(showinputbtn){
+                    showinputbtn.style.visibility = 'visible'
+                }
+                if(showprevbtn){ 
+                    showprevbtn.style.visibility = 'visible';
+                    showpreview_handler(showprevbtn,null,url_input,TR_color.style["background-color"])
+                } else {
+                    showpreview(null,TR_color.style["background-color"],url_input.value);
+                }
+                previewed = true;
+            } else {
+                
+                if(showinputbtn) showinputbtn.style.visibility = 'hidden';
+                if(showprevbtn) showprevbtn.style.visibility = 'hidden';
+                inputbutton.style = 'color:inherit';
+            }
         }
     });
-    document.querySelectorAll("#large_upload_form input.url-input").forEach((input) => {
-        urlInput(input)
-    });
+    if (!previewed) {
+        showpreview()
+    }
 
     // check that the total is less than the max total size
     if (size) {

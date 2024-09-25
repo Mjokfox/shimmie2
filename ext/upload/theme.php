@@ -66,7 +66,7 @@ class UploadTheme extends Themelet
                 ["class" => "container"],
                 DIV(
                     ["class" => "left-column"],
-                    $split_view ? DIV(["style" => "padding:10px"],$preview_element) : "",
+                    $split_view ? DIV(["style" => "padding:10px;justify-content:center;display:flex;"],$preview_element) : "",
                     DIV(["style" => "display: flex; align-items: center;"],
                         INPUT(["type" => "file",
                               "id" => "multiFileInput",
