@@ -407,7 +407,7 @@ function get_categories_html(string $suffix): HTMLElement
                 $input_array[$category_upper_name][$category_lower_name] = emptyHTML();
                 $type = in_array($category_lower_name,$radio_categories) ? "radio" : "checkbox";
                 foreach($category_tags[$category_tag] as $tag){
-                    $input_array[$category_upper_name][$category_lower_name]->appendChild(make_input_label($suffix,$tag,$category_lower_name,$type,false,"","",in_array($tag,$preselect_tags)));
+                    $input_array[$category_upper_name][$category_lower_name]->appendChild(make_input_label($suffix,$tag,$category_lower_name,$type,"","",in_array($tag,$preselect_tags)));
                 }
             }
             krsort($category_array);
