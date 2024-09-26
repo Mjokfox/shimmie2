@@ -49,7 +49,7 @@ class UploadTheme extends Themelet
         $max_kb = to_shorthand_int($max_size);
         $max_total_size = parse_shorthand_int(ini_get('post_max_size') ?: "0");
         $max_total_kb = to_shorthand_int($max_total_size);
-        $upload_list = cache_get_or_set("upload_page",fn() => $this->build_upload_list(),1);
+        $upload_list = cache_get_or_set("upload_page",fn() => $this->build_upload_list(),900);
 
         $common_fields = emptyHTML();
         $ucbe = send_event(new UploadCommonBuildingEvent());
