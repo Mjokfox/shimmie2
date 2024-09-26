@@ -22,8 +22,6 @@
 
 	--zebra-heading-fg: #171BB3;
 	--zebra-hover-bg: #FFD;
-
-	--rowm: 1;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -610,6 +608,8 @@ form+form {
 		display:none;
 	}
 	.upload-tags-grid DIV.grid-cell-content {
+		--double-rows: calc(var(--rows) * 2);
+        --num-rows: min(var(--double-rows), var(--tworows));
 		grid-template-columns: 20ch auto;
 	}
 	
@@ -634,6 +634,10 @@ form+form {
 	DIV.grid-cell-content LABEL INPUT {
 		height: 1.2em;
 		width: 1.2em;
+	}
+
+	DIV.grid-cell:nth-child(even), DIV.grid-cell-wide:nth-child(even) {
+		background-color: #FFF1;
 	}
 }
 
@@ -761,6 +765,7 @@ DIV.grid-cell-separator {
 	justify-content: start;
 	grid-auto-flow: column;
 	grid-template-columns: 20ch auto;
+	grid-template-rows: repeat(var(--num-rows), auto);
 }
 
 .grid-cell-wide .grid-cell-content {
@@ -768,7 +773,9 @@ DIV.grid-cell-separator {
 }
 
 @media not all and (min-resolution: 2dppx) and (orientation: portrait) {
-
+	.grid-cell-content{
+		--num-rows: var(--rows);
+	}
 	DIV.grid-cell:nth-child(odd) {
 		border-right-width:1px;
 		border-right-style:dashed;

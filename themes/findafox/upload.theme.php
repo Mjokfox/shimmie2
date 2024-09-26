@@ -340,12 +340,13 @@ function get_categories_html(string $suffix): HTMLElement
             }
             $i = 0;
             foreach($tempHtmls as $tempHtml) {
-                $rows = max(4, round($counts[$i] / 2));
+                $rows = ceil($counts[$i] / 2);
+                $rows4 = max(4, $rows);
                 $html_input_array[$lables[$i]] = 
                     DIV(["class" => "grid-cell"],
                         DIV(["class" => "grid-cell-label"],$lables[$i]),
                         DIV(["class" => "grid-cell-separator"]),
-                        DIV(["class" => "grid-cell-content", "style" => "grid-template-rows: repeat($rows,auto);"],$tempHtml,)
+                        DIV(["class" => "grid-cell-content", "style" => "--rows: $rows4;--tworows: $rows"],$tempHtml,)
                     );
                 $i++;
             }
@@ -355,7 +356,7 @@ function get_categories_html(string $suffix): HTMLElement
         if (array_key_exists("Body:Fur",$category_tags)){ //fur specific ordering
             $tags = $category_tags["Body:Fur"];
             arsort($tags);
-            $fur_order = ['red_fur', 'white_fur', 'gray_fur','tan_fur','black_fur'];
+            $fur_order = ['red_fur', 'white_fur', 'gray_fur','tan_fur','black_fur','brown_fur'];
             customSort($tags,$fur_order);
             $tempHtmls = [null,emptyHTML(),emptyHTML(),emptyHTML()];
             $lables = ["Age","Fur color","Tail tip","Coat"];
@@ -386,12 +387,13 @@ function get_categories_html(string $suffix): HTMLElement
             $i = 0;
             foreach($tempHtmls as $tempHtml) {
                 if ($tempHtml != null){
-                    $rows = max(4, round($counts[$i] / 2));
+                    $rows = ceil($counts[$i] / 2);
+                    $rows4 = max(4, $rows);
                     $html_input_array[$lables[$i]] = 
                         DIV(["class" => "grid-cell"],
                             DIV(["class" => "grid-cell-label"],$lables[$i]),
                             DIV(["class" => "grid-cell-separator"]),
-                            DIV(["class" => "grid-cell-content", "style" => "grid-template-rows: repeat($rows,auto);"],$tempHtml,)
+                            DIV(["class" => "grid-cell-content", "style" => "--rows: $rows4;--tworows: $rows"],$tempHtml,)
                         );
                 }
                 $i++;
@@ -431,12 +433,12 @@ function get_categories_html(string $suffix): HTMLElement
             foreach(array_keys($category_array) as $category){
                 foreach(array_keys($input_array[$category]) as $lower_category){
                     $rows = max(4, ceil($count_array[$category][$lower_category] / (in_array($lower_category,$wide_categories) ? 4 : 2 )));
-                    $calc = in_array($lower_category,$wide_categories) ? "calc($rows * var(--rowm))" : "$rows";
+                    $tworows = ceil($count_array[$category][$lower_category] / 2 );
                     $html_input_array[$lower_category] =
                         DIV(["class" => in_array($lower_category,$wide_categories) ? "grid-cell-wide" : "grid-cell"],
                             DIV(["class" => "grid-cell-label"],$lower_category),
                             DIV(["class" => "grid-cell-separator"]), 
-                            DIV(["class" => "grid-cell-content", "style" => "grid-template-rows: repeat($calc,auto);"],$input_array[$category][$lower_category],),
+                            DIV(["class" => "grid-cell-content", "style" => "--rows: $rows;--tworows: $tworows"],$input_array[$category][$lower_category],),
                     );
                 }
             }
