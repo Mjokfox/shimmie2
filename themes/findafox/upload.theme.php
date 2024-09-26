@@ -89,6 +89,7 @@ class CustomUploadTheme extends UploadTheme
                         $tl_enabled ? INPUT([
                             "type" => "text",
                             "class" => "url-input",
+                            "id" => "urldata{$i}",
                             "name" => "url{$i}",
                             "value" => ($i == 0) ? @$_GET['url'] : null,
                         ]) : null
@@ -97,7 +98,7 @@ class CustomUploadTheme extends UploadTheme
                         DIV([
                             "id" => "showinputdata{$i}",
                             "class" => "showInputButton",
-                            "onclick" => "inputdiv(this,document.getElementById('showpreviewdata{$i}'),document.getElementById('inputdivdata{$i}'),document.querySelector('input[name=url$i]'),'data{$i}','$color');",
+                            "onclick" => "input_button_handler($i,this,'$color');",
                         ], "Show Input"),
 
                     ),
@@ -105,7 +106,7 @@ class CustomUploadTheme extends UploadTheme
                        DIV([
                            "id" => "showpreviewdata{$i}",
                            "class" => "showPreviewButton",
-                           "onclick" => "showpreview_handler(this,document.getElementById('data{$i}').files[0],document.querySelector('input[name=url$i]'),'$color');",
+                           "onclick" => "preview_button_handler($i,this,'$color');",
                        ], "Preview"),
 
                    ) : "",

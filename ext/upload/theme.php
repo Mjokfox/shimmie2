@@ -49,7 +49,7 @@ class UploadTheme extends Themelet
         $max_kb = to_shorthand_int($max_size);
         $max_total_size = parse_shorthand_int(ini_get('post_max_size') ?: "0");
         $max_total_kb = to_shorthand_int($max_total_size);
-        $upload_list = cache_get_or_set("upload_page",fn() => $this->build_upload_list(),900);
+        $upload_list = cache_get_or_set("upload_page",fn() => $this->build_upload_list(),1);
 
         $common_fields = emptyHTML();
         $ucbe = send_event(new UploadCommonBuildingEvent());
@@ -124,8 +124,8 @@ class UploadTheme extends Themelet
             rawHTML("<script>
             window.shm_max_size = $max_size;
             window.shm_max_total_size = $max_total_size;
-            const preview_enabled=".($preview_enabled ? "true" : "false").";
-            const split_view_enabled=".($split_view ? "true" : "false").";
+            const PREVIEW_ENABLED=".($preview_enabled ? "true" : "false").";
+            const SPLIT_VIEW_ENABLED=".($split_view ? "true" : "false").";
             </script>")
         );
 

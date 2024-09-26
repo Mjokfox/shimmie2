@@ -1,9 +1,17 @@
-function fileSize(size) {
-    var i = Math.floor(Math.log(size) / Math.log(1024));
-    return (size / Math.pow(1024, i)).toFixed(2) * 1 + ['B', 'kB', 'MB', 'GB', 'TB'][i];
+// preview and input div handling
+function isValidHttpUrl(string="") {
+    let url;
+    
+    try {
+      url = new URL(string);
+    } catch (_) {
+      return false;  
+    }
+  
+    return url.protocol === "http:" || url.protocol === "https:";
 }
 
-function showpreview(file, background_color="#F002",url="") {
+function showPreview(file,url="", background_color="#0000") {
     const imagePreview = document.getElementById('imagePreview');
     if (imagePreview){
         if (file){
@@ -26,103 +34,166 @@ function showpreview(file, background_color="#F002",url="") {
     }
 }
 
-function isValidHttpUrl(string) {
-    let url;
-    
-    try {
-      url = new URL(string);
-    } catch (_) {
-      return false;  
-    }
-  
-    return url.protocol === "http:" || url.protocol === "https:";
-  }
-
-function urlInputEvent(e){
-    urlInput(e.target)
-}
-
-function urlInput(input) {
-    const suffix = input.name.split("url")[1]
-    var showprevbtn = document.getElementById("showpreviewdata"+suffix);
-    var showinputbtn = document.getElementById("showinputdata"+suffix);
-    var color = "#F002"
-    if (input.parentElement.parentElement) {
-        color = input.parentElement.parentElement.style["background-color"];
-    }
-    if (isValidHttpUrl(input.value)) {
-        if(showinputbtn){
-            showinputbtn.style.visibility = 'visible'
-        }
-        if(showprevbtn){ 
-            showprevbtn.style.visibility = 'visible';
-            showpreview_handler(showprevbtn,null,input,color)
-        } else {
-            showpreview(null,color,input.value);
-        }
+function preview_handler(file_input,url_input,preview_button,background_color="#0000") {
+    var output = false;
+    if (isValidHttpUrl(url_input.value)){
+        showPreview(null,url_input.value,background_color);
+        output = true;
+    } else if (file_input.files.length){
+        showPreview(file_input.files[0],null,background_color);
+        output = true;
     } else {
-        const fileInput = document.getElementById("data"+suffix);
-        if (fileInput.files.length) {
-            if(showprevbtn){ 
-                showprevbtn.style.visibility = 'visible';
-                showpreview_handler(showprevbtn,fileInput.files[0],input,color)
-            } else {
-                showpreview(fileInput.files[0],color);
-            }
-        } else{
-            if(showinputbtn){
-                showinputbtn.style.visibility = 'hidden'
-            }
-            if(showprevbtn){ 
-                showprevbtn.style.visibility = 'hidden';
-            }
-            showpreview();
-        }
+        output = false;
     }
-}
 
-function showpreview_handler(self,file,url,background_color="#0F02") {
     document.querySelectorAll("DIV.showPreviewButton").forEach((button) => {
         button.style.border = 'none';
     });
-    self.style.border = '2px dotted white';
-    if (isValidHttpUrl(url.value)){
-        showpreview(null,background_color,url.value);
+    if (preview_button) {
+        preview_button.style.border = output ? '2px dotted white' : 'none';
+        preview_button.style.visibility = output ? 'visible' : 'none';
+    }
+    return output;
+
+}
+
+function full_input_handler(file_input,url_input,preview_button,input_button,background_color="#0000") {
+    if (preview_handler(file_input,url_input,preview_button,background_color)) {
+        if(input_button){input_button.style.visibility = 'visible';}
+        return true;
     } else {
-        showpreview(file,background_color);
+        if(input_button){
+            input_button.style.visibility = 'hidden';
+            input_button.style.border = 'none';
+            input_button.textContent = 'Show Input';
+        }
+        return false;
     }
 }
 
-function inputdiv(self,preview,div,url,previewId,background_color="#0F02") {
-    if (div.style.display === 'none' || div.style.display === '') {
-        div.style.display = 'block';
-        self.textContent = 'Hide Input';
-        showpreview_handler(preview,document.getElementById(previewId).files[0],url,background_color)
+function preview_button_handler(suffix,preview_button,background_color="#0000") {
+    const file_input = document.getElementById(`data${suffix}`);
+    const url_input = document.getElementById(`urldata${suffix}`);
+    preview_handler(file_input,url_input,preview_button,background_color);
+}
+
+function input_button_handler(suffix,input_button,background_color="#0000") {
+    const file_input = document.getElementById(`data${suffix}`);
+    const url_input = document.getElementById(`urldata${suffix}`);
+    const preview_button = document.getElementById(`showpreviewdata${suffix}`);
+    const input_div = document.getElementById(`inputdivdata${suffix}`);
+    if (SPLIT_VIEW_ENABLED) {
+        // reset other input divs
+        document.querySelectorAll(".upload-split-view").forEach((e) => {
+            if (e != input_div) {
+                e.style.display = 'none'
+            }
+        });
+        // reset other input buttons
+        document.querySelectorAll("DIV.showInputButton").forEach((e) => {
+            e.textContent = 'Show Input';
+            e.style.border = 'none';
+        });
+        input_button.style.border = '2px dotted white';
+    }
+    if (input_div.style.display === 'none' || input_div.style.display === '') {
+        input_div.style.display = 'block';
+        input_button.textContent = 'Hide Input';
+        
+        full_input_handler(file_input,url_input,preview_button,input_button,background_color);
 
         const right_column = document.querySelector(".right-column");
         if (right_column) {
             right_column.style["background-color"] = background_color;
         }
     } else {
-        div.style.display = 'none';
+        input_div.style.display = 'none';
         self.textContent = 'Show Input';
-    }
-    if (split_view_enabled) {
-        document.querySelectorAll(".upload-split-view").forEach((input) => {
-            if (input != div) {
-                input.style.display = 'none'
-            }
-        });
-        document.querySelectorAll("DIV.showInputButton").forEach((button) => {
-            if (button != self){
-                button.textContent = 'Show Input';
-                button.style.border = 'none';
-            }
-        });
-        self.style.border = '2px dotted white';
+        input_button.style.border = 'none';
     }
 }
 
+function urlInputEvent(e){
+    urlInput(e.target)
+}
+
+function urlInput(url_input) {
+    const suffix = url_input.name.split("url")[1]
+    var preview_button = document.getElementById("showpreviewdata"+suffix);
+    var input_button = document.getElementById("showinputdata"+suffix);
+    var background_color = "#0000"
+    if (url_input.parentElement.parentElement) {
+        background_color = url_input.parentElement.parentElement.style["background-color"];
+    }
+    const file_input = document.getElementById("data"+suffix);
+    full_input_handler(file_input, url_input,preview_button,input_button,background_color)
+}
+
+// updatetracker
+
+function fileSize(size) {
+    var i = Math.floor(Math.log(size) / Math.log(1024));
+    return (size / Math.pow(1024, i)).toFixed(2) * 1 + ['B', 'kB', 'MB', 'GB', 'TB'][i];
+}
+
+function updateTracker(e) {
+    var size = 0;
+    var upbtn = document.getElementById("uploadbutton");
+    var tracker = document.getElementById("upload_size_tracker");
+    var lockbtn = false;
+    var previewed = false;
+    
+    // check that each individual file is less than the max file size
+    document.querySelectorAll("#large_upload_form input[type='file']").forEach((file_input) => {
+        const suffix = file_input.id.split("data")[1];
+        const url_input = document.querySelector(`input[name=url${suffix}]`);
+        const cancel_button = document.getElementById("cancel"+file_input.id);
+        const preview_button = document.getElementById("showpreview"+file_input.id);
+        const input_button = document.getElementById("showinput"+file_input.id);
+        const browse_button = document.getElementById("browse"+file_input.id)
+        const background_color = document.getElementById("row"+file_input.id).style["background-color"];
+        var toobig = false;
+        previewed = full_input_handler(file_input,url_input,preview_button,input_button,background_color);
+        if (file_input.files.length) {
+            if(cancel_button) cancel_button.style.visibility = 'visible';
+            
+            for (var i = 0; i < file_input.files.length; i++) {
+                size += file_input.files[i].size + 1024; // extra buffer for metadata
+                if (window.shm_max_size > 0 && file_input.files[i].size > window.shm_max_size) {
+                    toobig = true;
+                }
+            }
+            if (toobig) {
+                lockbtn = true;
+                browse_button.style = 'color:red';
+            } else {
+                browse_button.style = 'color:inherit';
+            }
+        } else {
+            if(cancel_button) cancel_button.style.visibility = 'hidden';
+            browse_button.style = 'color:inherit';
+        }
+    });
+    if (!previewed) {
+        showPreview();
+    }
+
+    // check that the total is less than the max total size
+    if (size) {
+        tracker.innerText = fileSize(size);
+        if (window.shm_max_total_size > 0 && size > window.shm_max_total_size) {
+            lockbtn = true;
+            tracker.style = 'color:red';
+        } else {
+            tracker.style = 'color:inherit';
+        }
+    } else {
+        tracker.innerText = '0MB';
+    }
+    upbtn.disabled = lockbtn;
+}
+
+// file handling
 function clearFiles(){
     document.querySelectorAll("#large_upload_form input[type='file']").forEach((input) => {
             input.value="";
@@ -169,6 +240,7 @@ function distributefiles(){
     updateTracker();
 }
 
+// tag handling
 const preset_tags = {
     "red_fox":["red_fur","white_fur","black_nose","orange_eyes","white_tail_tip"],
     "arctic_fox":["white_fur","black_nose","orange_eyes","white_tail_tip"],
@@ -203,7 +275,7 @@ function presettags(self) {
     if (self.nodeName === "OPTION"){
         split_id = self.parentNode.id.split("_");
     } else {split_id = self.id.split("_");}
-    var suffix = split_id[1];
+    const suffix = split_id[1];
     if (split_id[0] === "tagsDropdown"){
         tag = self.value;
         add = true;
@@ -211,6 +283,7 @@ function presettags(self) {
         tag = self.value;
         add = self.checked;
     }
+    if (!(suffix in changed_tags)) changed_tags[suffix] = [];
     if (self.type === "radio" || self.nodeName === "OPTION"){
         if (suffix in previous_presettag){
             preset_tags[previous_presettag[suffix]].forEach((tagg) =>{
@@ -229,100 +302,49 @@ function presettags(self) {
     updateTags(self)
 }
 
-function updateTracker(e) {
-    var size = 0;
-    var upbtn = document.getElementById("uploadbutton");
-    var tracker = document.getElementById("upload_size_tracker");
-    var lockbtn = false;
-    var previewed = false;
-    
-    // check that each individual file is less than the max file size
-    document.querySelectorAll("#large_upload_form input[type='file']").forEach((input) => {
-        const suffix = input.id.split("data")[1];
-        var cancelbtn = document.getElementById("cancel"+input.id);
-        var showprevbtn = document.getElementById("showpreview"+input.id);
-        var showinputbtn = document.getElementById("showinput"+input.id);
-        var inputbutton = document.getElementById("browse"+input.id)
-        var TR_color = document.getElementById("row"+input.id)
-        const url_input = document.querySelector(`input[name=url${suffix}]`);
-        var toobig = false;
-        if (input.files.length) {
-            if(cancelbtn) cancelbtn.style.visibility = 'visible';
-            if(showinputbtn) {
-                showinputbtn.style.visibility = 'visible'
-                if (url_input){
-                    showpreview_handler(showprevbtn,input.files[0],url_input,TR_color.style["background-color"])
-                } else{
-                showpreview(input.files[0],TR_color.style["background-color"])}
-                previewed = true;
-            }
-            if(showprevbtn) showprevbtn.style.visibility = 'visible';
-            for (var i = 0; i < input.files.length; i++) {
-                size += input.files[i].size + 1024; // extra buffer for metadata
-                if (window.shm_max_size > 0 && input.files[i].size > window.shm_max_size) {
-                    toobig = true;
-                }
+function getUrlTag(url) {
+    const mimeTypes = {
+        'jpg': 'image',
+        'jpeg': 'image',
+        'png': 'image',
+        'bmp': 'image',
+        'webp': 'image',
+        'svg': 'image',
 
-            }
-            if (toobig) {
-                lockbtn = true;
-                inputbutton.style = 'color:red';
-            } else {
-                inputbutton.style = 'color:inherit';
-            }
-        } else {
-            if(cancelbtn) cancelbtn.style.visibility = 'hidden';
-            if (url_input && isValidHttpUrl(url_input.value)) {
-                
-                if(showinputbtn){
-                    showinputbtn.style.visibility = 'visible'
-                }
-                if(showprevbtn){ 
-                    showprevbtn.style.visibility = 'visible';
-                    showpreview_handler(showprevbtn,null,url_input,TR_color.style["background-color"])
-                } else {
-                    showpreview(null,TR_color.style["background-color"],url_input.value);
-                }
-                previewed = true;
-            } else {
-                
-                if(showinputbtn) showinputbtn.style.visibility = 'hidden';
-                if(showprevbtn) showprevbtn.style.visibility = 'hidden';
-                inputbutton.style = 'color:inherit';
-            }
-        }
-    });
-    if (!previewed) {
-        showpreview()
-    }
+        'gif': 'gif',
+        
+        'mp4': 'video',
+        'webm': 'video',
+        'ogv': 'video',
+        'mov': 'video',
+        'avi': 'video',
+        'mkv': 'video'
+    };
 
-    // check that the total is less than the max total size
-    if (size) {
-        tracker.innerText = fileSize(size);
-        if (window.shm_max_total_size > 0 && size > window.shm_max_total_size) {
-            lockbtn = true;
-            tracker.style = 'color:red';
-        } else {
-            tracker.style = 'color:inherit';
-        }
-    } else {
-        tracker.innerText = '0MB';
-    }
-    upbtn.disabled = lockbtn;
+    return mimeTypes[url.split('.').pop().toLowerCase().split('?')[0].split('#')[0]] || null;
 }
 
 function updateTags(self) {
-    const split_id = self.id.split("_");
+    var split_id = "";
+    if (self.nodeName === "OPTION"){
+        split_id = self.parentNode.id.split("_");
+    } else {split_id = self.id.split("_");}
     const suffix = split_id[1];
-    const tagsinput = document.getElementById("tags"+suffix);
-    const fileInput = document.getElementById("data"+suffix);
+    const tags_input = document.getElementById(`tags${suffix}`);
+    const file_input = document.getElementById(`data${suffix}`);
+    const url_input = document.getElementById(`urldata${suffix}`);
     var tags = [];
     if (!(suffix in changed_tags)) changed_tags[suffix] = [];
     if (split_id !== "tagsDropdown"){
         if (!changed_tags[suffix].includes(self.value)) changed_tags[suffix].push(self.value);
     }
-    if (fileInput.files[0]){
-        const splitType = fileInput.files[0].type.split("/");
+    if (isValidHttpUrl(url_input.value)) {
+        const type_tag = getUrlTag(url_input.value);
+        if (type_tag) {
+            tags.push(type_tag);
+        }
+    } else if (file_input.files[0]){
+        const splitType = file_input.files[0].type.split("/");
         if (splitType[0] === "video"){
             tags.push("video");
         }
@@ -333,7 +355,7 @@ function updateTags(self) {
                 tags.push("image");
         }
     }
-    if (tagsinput){
+    if (tags_input){
         document.querySelectorAll("#tagsInput_" + suffix).forEach((input) =>{
             if (input.checked) {
                 tags.push(input.value);
@@ -344,8 +366,8 @@ function updateTags(self) {
         });
     }
 
-    tagsinput.value = tags.join(" ");
-    tagsinput.dispatchEvent(new Event('input'));
+    tags_input.value = tags.join(" ");
+    tags_input.dispatchEvent(new Event('input'));
 }
 
 function clearInputs(self) {
@@ -386,9 +408,6 @@ function copyTagsTo(self, target){
     }
 }
 
-// when single > lock species, age. Mutiple > unlock age. multiple species unlocks all
-// when red_fox > appear muzzle marking
-
 const makeCheckbox = {"multiple":["Age","EyesMouth1","EyesMouth2"],"multiple_species":["Species","Age","EyesMouth1","EyesMouth2"]};
 const makeRadio = {"single":["Species","Age","EyesMouth1","EyesMouth2"],"multiple":["Species"]};
 const appears = {"red_fox":["Muzzle"]};
@@ -417,6 +436,29 @@ function checkboxRadio(self){
     }
 
 }
+
+function radio_unsetInit() {
+    document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach((radio) => {
+        radio.previousChecked = radio.checked;
+        radio.addEventListener('click', function(event) {
+            if (radio.type === "radio"){
+                if (radio.previousChecked) {
+                    radio.checked = false;
+                    radio.previousChecked = false;
+                    updateTags(radio);
+                    event.preventDefault();
+                } else {
+                    document.querySelectorAll('input[name="' + radio.name + '"]').forEach((r) => {
+                        r.previousChecked = false;
+                    });
+                    radio.previousChecked = true;
+                }
+            }
+        });
+    });
+}
+
+// page dynamics
 const upload_style = document.createElement('style');
 upload_style.innerHTML = `
   DIV.upload-split-view {
@@ -463,7 +505,7 @@ function sliderInit() {
             leftColumn.style.width = `${newLeftWidth}%`;
             rightColumn.style.width = `${newRightWidth}%`;
             upload_style_rule.style.left = `${inputleft}%`;
-            if (preview_enabled && !split_view_enabled)
+            if (PREVIEW_ENABLED && !SPLIT_VIEW_ENABLED)
                 rightColumn.firstChild.style.width = `${(newRightWidth/100)*containerRect.width}px`;
         }
 
@@ -539,25 +581,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     dropZoneInit();
     sliderInit();
+    radio_unsetInit();
     document.querySelectorAll(".disabledOnStartup").forEach((el) => {
         el.disabled = true;
     });
-    document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach((radio) => {
-        radio.previousChecked = radio.checked;
-        radio.addEventListener('click', function(event) {
-            if (radio.type === "radio"){
-                if (radio.previousChecked) {
-                    radio.checked = false;
-                    radio.previousChecked = false;
-                    updateTags(radio);
-                    event.preventDefault();
-                } else {
-                    document.querySelectorAll('input[name="' + radio.name + '"]').forEach((r) => {
-                        r.previousChecked = false;
-                    });
-                    radio.previousChecked = true;
-                }
-            }
-        });
-    });
+
 });
