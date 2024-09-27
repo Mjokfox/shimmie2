@@ -19,15 +19,19 @@ class UploadLimit extends DataHandlerExtension
     {
         global $config;
         $config->set_default_int("upload_refresh",86400);
-        foreach (array_keys(UserClass::$known_classes) as $name) {
+        foreach (UserClass::$known_classes as $name => $value) {
+            if ($name == "hellbanned" || !$value->can(Permissions::CREATE_IMAGE) || $value->can(Permissions::BULK_IMPORT)) {
+                continue;
+            }
             $config->set_default_int("upload_limit:$name",20);
         }
     }
 
     public function onInitUserConfig(InitUserConfigEvent $event): void
     {
+        global $config;
         $event->user_config->set_default_int("last_upload", 0);
-        $event->user_config->set_default_int("left_upload", 20); 
+        $event->user_config->set_default_int("left_upload", $config->get_int("upload_limit:".$event->user->class->name)); 
     }
 
     public function onSetupBuilding(SetupBuildingEvent $event): void
@@ -42,7 +46,10 @@ class UploadLimit extends DataHandlerExtension
         $sb->str_body.="<th><b>Upload limit</b></th>";
         $sb->end_table_row();
         $sb->end_table_head();
-        foreach (array_keys(UserClass::$known_classes) as $name) {
+        foreach (UserClass::$known_classes as $name => $value) {
+            if ($name == "hellbanned" || !$value->can(Permissions::CREATE_IMAGE) || $value->can(Permissions::BULK_IMPORT)) {
+                continue;
+            }
             $sb->start_table_row();
             $sb->str_body.="<td><b>$name</b></td>";
             $sb->start_table_cell();
@@ -51,7 +58,7 @@ class UploadLimit extends DataHandlerExtension
             $sb->end_table_row();
         }
         $sb->end_table();
-        $sb->add_label("<br><b>Users with BULK_IMPORT permission bypass the limit.</b>");
+        $sb->add_label("<br><b>Classes with BULK_IMPORT permission bypass any limit.</b>");
     }
     
     public function onUserPageBuilding(UserPageBuildingEvent $event): void
@@ -60,7 +67,7 @@ class UploadLimit extends DataHandlerExtension
         if ($event->display_user->can(Permissions::BULK_IMPORT)){
             $uploads_left = "∞ (admin)";
             $formatted_time = "0";
-        } else{
+        } else if ($event->display_user->can(Permissions::CREATE_IMAGE)){
             $duser_config = UserConfig::get_for_user($event->display_user->id);
             $uploads_left = $duser_config->get_int("left_upload");
             $unixT = (int)date("U");
@@ -75,6 +82,9 @@ class UploadLimit extends DataHandlerExtension
                 $remainingSeconds = $seconds % 60;
                 $formatted_time = ($hours == 0 ? "" : ("$hours hour(s), ")) . ($minutes == 0 ? "" : ("$minutes minute(s), ")) . "$remainingSeconds second(s)";
             }
+        } else {
+            $uploads_left = "0 (Cannot upload)";
+            $formatted_time = "∞";
         }
         $html = emptyHTML(
             LABEL("Current amount of uploads left: $uploads_left"),BR(),
@@ -86,7 +96,7 @@ class UploadLimit extends DataHandlerExtension
     public function onDataUpload(DataUploadEvent $event): void
     {
         global $user;
-        if (!($this->supported_mime($event->mime) || $user->can(Permissions::BULK_IMPORT))) {
+        if (!$this->supported_mime($event->mime)) {
             global $config, $page, $user_config;
             // code shamelessly stolen from extension.php, need to do this check to not decrement the counter on an otherwise failed upload
             $existing = Image::by_hash(\Safe\md5_file($event->tmpname));
@@ -105,27 +115,28 @@ class UploadLimit extends DataHandlerExtension
                     throw new UploadException(">>{$existing->id} already has hash {$existing->hash}");
                 }
             }
-
-            $unixT = (int)date("U");
-            $deltaT = $unixT - $user_config->get_int("last_upload");
-            $refresh_interval = $config->get_int("upload_refresh");
-            if ($deltaT > $refresh_interval) {
-                $user_config->set_int("last_upload",$unixT);
-                $name = $user->class->name;
-                $uploads_left = $config->get_int("upload_limit:$name");
-                $user_config->set_int("left_upload",$uploads_left); 
-            } else {
-                $uploads_left = $user_config->get_int("left_upload");
-            }
-            if ($uploads_left < 1) {
-                $seconds = $refresh_interval - $deltaT;
-                $hours = floor($seconds / 3600);
-                $minutes = floor(($seconds % 3600) / 60);
-                $remainingSeconds = $seconds % 60;
-                $formatted_time = ($hours == 0 ? "" : ("$hours hour(s), ")) . ($minutes == 0 ? "" : ("$minutes minute(s), ")) . "$remainingSeconds second(s)";
-                throw new UploadException("Upload limit reached, please wait $formatted_time before trying again.");
-            } else{
-                $user_config->set_int("left_upload",$uploads_left-1);
+            if (!$user->can(Permissions::BULK_IMPORT)){
+                $unixT = (int)date("U");
+                $deltaT = $unixT - $user_config->get_int("last_upload");
+                $refresh_interval = $config->get_int("upload_refresh");
+                if ($deltaT > $refresh_interval) {
+                    $user_config->set_int("last_upload",$unixT);
+                    $name = $user->class->name;
+                    $uploads_left = $config->get_int("upload_limit:$name");
+                    $user_config->set_int("left_upload",$uploads_left); 
+                } else {
+                    $uploads_left = $user_config->get_int("left_upload");
+                }
+                if ($uploads_left < 1) {
+                    $seconds = $refresh_interval - $deltaT;
+                    $hours = floor($seconds / 3600);
+                    $minutes = floor(($seconds % 3600) / 60);
+                    $remainingSeconds = $seconds % 60;
+                    $formatted_time = ($hours == 0 ? "" : ("$hours hour(s), ")) . ($minutes == 0 ? "" : ("$minutes minute(s), ")) . "$remainingSeconds second(s)";
+                    throw new UploadException("Upload limit reached, please wait $formatted_time before trying again.");
+                } else{
+                    $user_config->set_int("left_upload",$uploads_left-1);
+                }
             }
             
         }
