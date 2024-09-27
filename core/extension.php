@@ -313,21 +313,22 @@ abstract class DataHandlerExtension extends Extension
                 // We DO support this extension - but the file looks corrupt
                 throw new UploadException("Invalid or corrupted file");
             }
-
-            $existing = Image::by_hash(\Safe\md5_file($event->tmpname));
-            if (!is_null($existing)) {
-                if ($config->get_string(ImageConfig::UPLOAD_COLLISION_HANDLER) == ImageConfig::COLLISION_MERGE) {
-                    // Right now tags are the only thing that get merged, so
-                    // we can just send a TagSetEvent - in the future we might
-                    // want a dedicated MergeEvent?
-                    if (!empty($event->metadata['tags'])) {
-                        $tags = Tag::explode($existing->get_tag_list() . " " . $event->metadata['tags']);
-                        send_event(new TagSetEvent($existing, $tags));
+            if (!Extension::is_enabled(UploadLimitInfo::KEY)) {
+                $existing = Image::by_hash(\Safe\md5_file($event->tmpname));
+                if (!is_null($existing)) {
+                    if ($config->get_string(ImageConfig::UPLOAD_COLLISION_HANDLER) == ImageConfig::COLLISION_MERGE) {
+                        // Right now tags are the only thing that get merged, so
+                        // we can just send a TagSetEvent - in the future we might
+                        // want a dedicated MergeEvent?
+                        if (!empty($event->metadata['tags'])) {
+                            $tags = Tag::explode($existing->get_tag_list() . " " . $event->metadata['tags']);
+                            send_event(new TagSetEvent($existing, $tags));
+                        }
+                        $event->images[] = $existing;
+                        return;
+                    } else {
+                        throw new UploadException(">>{$existing->id} already has hash {$existing->hash}");
                     }
-                    $event->images[] = $existing;
-                    return;
-                } else {
-                    throw new UploadException(">>{$existing->id} already has hash {$existing->hash}");
                 }
             }
 
