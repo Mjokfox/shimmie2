@@ -9,11 +9,6 @@ namespace Shimmie2;
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 const DATA_DIR = "data";
-function debug_log($data) {
-    $equals = str_repeat("=", 50);
-    $output = is_array($data) ? implode(',', $data) : $data;
-    error_log("\n".$equals."\n".time()." Debug: " . $output ."\n". $equals);
-}
 
 function get_theme(): string
 {

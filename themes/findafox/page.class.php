@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{BODY, DIV, LI, A, IMG, rawHTML, emptyHTML, UL, ARTICLE, FOOTER, EM, HEADER, H1, NAV};
+use function MicroHTML\{BODY, DIV, LI, A, BR, IMG, joinHTML, rawHTML, emptyHTML, UL, ARTICLE, FOOTER, EM, HEADER, H1, NAV};
 
 /**
  * Name: Danbooru 2 Theme
@@ -143,5 +143,28 @@ class customPage extends Page
             "class" => $active ? "current-page" : "tab",
             "href" => $link->make_link(),
         ], $desc);
+    }
+
+    protected function footer_html(): HTMLElement
+    {
+        global $config;
+        $debug = get_debug_info();
+        $contact_link = contact_link();
+        $footer_html = $config->get_string("footer_html");
+        if (!($footer_html == "" || $footer_html == null)){
+            $footer_html = str_replace('%d', $debug, $footer_html);
+            $footer_html = str_replace('%c', $contact_link, $footer_html);
+            return rawHTML($footer_html);
+        }
+        return joinHTML("", [
+            "Media © their respective owners, ",
+            A(["href" => "https://code.shishnet.org/shimmie2/", "title" => $debug], "Shimmie"),
+            " © ",
+            A(["href" => "https://www.shishnet.org/"], "Shish"),
+            " & ",
+            A(["href" => "https://github.com/shish/shimmie2/graphs/contributors"], "The Team"),
+            " 2007-2024, based on the Danbooru concept.",
+            $contact_link ? emptyHTML(BR(), A(["href" => $contact_link], "Contact")) : ""
+        ]);
     }
 }
