@@ -67,7 +67,9 @@ class EmailVerification extends Extension
             $ruser = User::by_name($user->name);
             
             if ($event->req_POST('id') == $ruser->id) {
-                $this->send_verification_mail($ruser->get_auth_token(), $ruser->email);
+                if ($ruser->email){
+                    $this->send_verification_mail($ruser->get_auth_token(), $ruser->email);
+                } else {$page->flash("no email set, cannot send verification email");}
                 $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(make_link("user"));
             }
@@ -98,16 +100,18 @@ class EmailVerification extends Extension
         $ruser = User::by_name($user->name);
         $duser = $event->display_user;
         if ($ruser->class->name == "user" && $duser == $ruser) {
-            $html = emptyHTML();
-            $html->appendChild(SHM_USER_FORM(
-                $event->display_user,
-                "user_admin/send_verification_mail",
-                "",
-                emptyHTML()
-                ,
-                "Resend verification email"
-            ));
-            $page->add_block(new Block("Verify", $html, "main", 61));
+            if ($duser->email){
+                $html = emptyHTML();
+                $html->appendChild(SHM_USER_FORM(
+                    $duser,
+                    "user_admin/send_verification_mail",
+                    "",
+                    emptyHTML()
+                    ,
+                    "Resend verification email"
+                ));
+                $page->add_block(new Block("Verify", $html, "main", 61));
+            }
         }
     }
 
