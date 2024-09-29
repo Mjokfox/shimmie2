@@ -639,6 +639,10 @@ form+form {
 	DIV.grid-cell:nth-child(even), DIV.grid-cell-wide:nth-child(even) {
 		background-color: #FFF1;
 	}
+
+	INPUT.label-margin {
+		margin-bottom: unset;
+	}
 }
 
 @media only screen and (max-width:1500px) {
@@ -758,6 +762,10 @@ DIV.grid-cell-separator {
 	border-left-width: 1px;
 	border-left-style: solid;
 	height:100%;
+}
+
+.label-margin {
+	margin-bottom: 5px;
 }
 
 .grid-cell-content {

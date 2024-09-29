@@ -407,6 +407,7 @@ function get_categories_html(string $suffix): HTMLElement
             $count_array = [];
             $radio_categories = ["Time"]; // still some hardcoded bits tho...
             $hidden_categories = ["Genus", "Name","Type"];
+            $wide_categories = ["Meta","Activity"];
             foreach (array_keys($category_tags) as $category_tag) {
                 if (in_array($category_tag,$hidden_categories)) continue;
                 $string_array = explode(":",$category_tag);
@@ -425,12 +426,13 @@ function get_categories_html(string $suffix): HTMLElement
                 $count_array[$category_upper_name][$category_lower_name] = count($category_tags[$category_tag]);
                 $input_array[$category_upper_name][$category_lower_name] = emptyHTML();
                 $type = in_array($category_lower_name,$radio_categories) ? "radio" : "checkbox";
+                $stop = $count_array[$category_upper_name][$category_lower_name] / (in_array($category_lower_name,$wide_categories) ? 4 : 2);
+                $i = 0;
                 foreach($category_tags[$category_tag] as $tag){
-                    $input_array[$category_upper_name][$category_lower_name]->appendChild(make_input_label($suffix,$tag,$category_lower_name,$type,"","",in_array($tag,$preselect_tags)));
-                    
+                    $input_array[$category_upper_name][$category_lower_name]->appendChild(make_input_label($suffix,$tag,$category_lower_name,$type,"", $i < $stop && $i % 4 == 3 ? "label-margin" : "",in_array($tag,$preselect_tags)));
+                    $i++;
                 }
             }
-            $wide_categories = ["Meta","Activity"];
             foreach(array_keys($category_array) as $category){
                 foreach(array_keys($input_array[$category]) as $lower_category){
                     $rows = max(4, ceil($count_array[$category][$lower_category] / (in_array($lower_category,$wide_categories) ? 4 : 2 )));
