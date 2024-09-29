@@ -67,11 +67,7 @@ class EmailVerification extends Extension
             $ruser = User::by_name($user->name);
             
             if ($event->req_POST('id') == $ruser->id) {
-                if($this->send_verification_mail($ruser->get_auth_token(), $ruser->email)) {
-                    $page->flash("Email verification mail sent, please check your inbox and spam");
-                } else {
-                    $page->flash("Email verification mail failed to send, please retry later to verify");
-                }
+                $this->send_verification_mail($ruser->get_auth_token(), $ruser->email);
                 $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(make_link("user"));
             }
@@ -85,11 +81,7 @@ class EmailVerification extends Extension
             if ($this->user_can_edit_user($user, $ruser)) {
                 if ($ruser->class->name === "verified" || $ruser->class->name === "user") {
                     $ruser->set_class("user");
-                    if($this->send_verification_mail($ruser->get_auth_token(), $input['address'])) {
-                        $page->flash("New email verification mail sent, please check your inbox and spam");
-                    } else {
-                        $page->flash("Verification mail failed to send, please retry later to re-verify");
-                    }
+                    $this->send_verification_mail($ruser->get_auth_token(), $input['address']);
                 }
 
             }
@@ -98,11 +90,7 @@ class EmailVerification extends Extension
 
     public function onUserCreation(UserCreationEvent $event): void{
         global $page;
-        if($this->send_verification_mail($event->get_user()->get_auth_token(), $event->email)) {
-            $page->flash("Email verification mail sent, please check your inbox and spam");
-        } else {
-            $page->flash("Email verification mail failed to send, please retry later to verify");
-        }
+        $this->send_verification_mail($event->get_user()->get_auth_token(), $event->email);
     }
 
     public function onUserPageBuilding(UserPageBuildingEvent $event): void {
@@ -123,14 +111,16 @@ class EmailVerification extends Extension
         }
     }
 
-    public function send_verification_mail(string $token, string $email): bool
+    public function send_verification_mail(string $token, string $email): void
     {
         global $page;
         if ($email === "") {
             $page->flash("No email set, site usage is limited until youre a verified user, you can set an email on this page below");
+            return;
         }
         if ($token === "") {
-            $page->flash("verification email failed to send, to verify please try again by clicking this link: <a href='/resend-verification-mail'>Verify email</a>");
+            $page->flash("verification email failed to send, to verify please try again by clicking the button in the account panel");
+            return;
         }
         $verification_url = "https://findafox.net/email_verification?token=$token"; //yeah lets hardcode for now
         $to = $email;
@@ -144,9 +134,9 @@ class EmailVerification extends Extension
             'X-Mailer' => 'PHP/' . phpversion()
         );
         if (mail($to, $subject, $message, $headers)) {
-            return true;
+            $page->flash("Email verification mail sent, please check your inbox and spam");
         } else {
-            return false;
+            $page->flash("Email verification mail failed to send, please retry later to verify");
         }
     }
 

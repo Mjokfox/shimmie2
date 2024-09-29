@@ -42,10 +42,8 @@ class Dmca extends Extension
                 'X-Mailer: PHP/' . phpversion();
 
         if (mail($to, $subject, $message, $headers)) {
-            error_log('Email sent successfully: '.$_POST['dmca_email']." : ".$_POST['dmca_input']);
             return true;
         } else {
-            error_log('Failed to send email: '.$_POST['dmca_email']." : ".$_POST['dmca_input']);
             return false;
         }
     }
