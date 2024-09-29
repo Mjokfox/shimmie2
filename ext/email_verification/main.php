@@ -54,7 +54,7 @@ class EmailVerification extends Extension
                 if ($token != null) {
                     if ($token === $ruser->get_auth_token()) {
                         $ruser->set_class("verified");
-                        $page->flash("Email verified");
+                        $page->flash("Email verified!");
                         $page->add_block(new Block("Email verified", rawHTML(""), "main", 1));
                     }
                     else {
@@ -92,6 +92,7 @@ class EmailVerification extends Extension
 
     public function onUserCreation(UserCreationEvent $event): void{
         global $page;
+        $page->flash("Welcome to FindAfox, ". $event->username ."!");
         $this->send_verification_mail($event->get_user()->get_auth_token(), $event->email);
     }
 
@@ -119,11 +120,11 @@ class EmailVerification extends Extension
     {
         global $page;
         if ($email === "") {
-            $page->flash("No email set, site usage is limited until youre a verified user, you can set an email on this page below");
+            $page->flash("You are now registered as a basic user, having a maximum of 20 uploads per day, email verified users get 100 uploads per day and the ability to bulk download images. This is as an anti spam measure, no data will be sold to third parties.");
             return;
         }
         if ($token === "") {
-            $page->flash("verification email failed to send, to verify please try again by clicking the button in the account panel");
+            $page->flash("verification email failed to send, to verify please try again by clicking the button in the account panel to become verified user");
             return;
         }
         $verification_url = "https://findafox.net/email_verification?token=$token"; //yeah lets hardcode for now
@@ -140,7 +141,7 @@ class EmailVerification extends Extension
         if (mail($to, $subject, $message, $headers)) {
             $page->flash("Email verification mail sent, please check your inbox and spam");
         } else {
-            $page->flash("Email verification mail failed to send, please retry later to verify");
+            $page->flash("Email verification mail failed to send, please retry later to become verified user");
         }
     }
 
