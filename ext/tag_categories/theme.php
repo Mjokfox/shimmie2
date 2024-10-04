@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+use function MicroHTML\emptyHTML;
 use function MicroHTML\rawHTML;
+use function MicroHTML\DIV;
 
 class TagCategoriesTheme extends Themelet
 {
@@ -264,17 +266,42 @@ class TagCategoriesTheme extends Themelet
         ';
     }
 
-    public function show_count_tag_categories(Page $page, array $dict)
+    public function show_count_tag_categories(Page $page)
     {
-        $html = '<table class="table-odd noborders"><tr><th>tag</th><th>count</th><tr>';
-        foreach($dict as $row){
-            $html .= "<tr><td>".$row["tag"]."</td><td>".$row["count"]."</td></tr>";
+        global $database;
+        $dict[] = $database->get_all(
+            'SELECT tags.tag, tags.count
+            FROM tags
+            ORDER BY tags.count ASC;'
+        );
+        $dict[] = $database->get_all(
+            'SELECT tags.tag, tags.count
+            FROM tags, image_tag_categories_tags itct
+            WHERE tags.id = itct.tag_id
+            ORDER BY tags.count ASC;'
+        );
+        $dict[] = $database->get_all(
+            'SELECT tags.tag, tags.count
+            FROM tags
+            WHERE tags.id NOT IN (SELECT itct.tag_id FROM image_tag_categories_tags itct)
+            ORDER BY tags.count ASC;'
+        );
+        $labels = ["All tags", "In categories", "Outside categories"];
+        $i = 0;
+        $html = emptyHTML();
+        foreach($dict as $dic){
+            $label = $labels[$i++];
+            $temphtml = "<div><h2>$label</h2><table class='table-odd noborders'><tr><th>tag</th><th>count</th><tr>";
+            foreach($dic as $row){
+                $temphtml .= "<tr><td>".$row["tag"]."</td><td>".$row["count"]."</td></tr>";
+            }
+            $temphtml .= "</table></div>";
+            $html->appendChild(rawHTML($temphtml));
         }
-        $html .= "</table>";
         $page->set_title("Tag Categories counts");
         $page->set_heading("Tag Categories counts");
         
-        $page->add_block(new Block("Tag Categories counts", rawHTML($html), "main", 10));
+        $page->add_block(new Block("Tag Categories counts", DIV(["style" => "display:flex;justify-content:space-evenly;"],$html), "main", 10));
         $page->add_block(new NavBlock());
     }
 

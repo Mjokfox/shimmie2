@@ -106,12 +106,7 @@ class TagCategories extends Extension
             $page->set_redirect(make_link("tags/categories"));
         }
         else if ($event->page_matches("admin/count_categories_tags", method: "GET")){
-            $this->theme->show_count_tag_categories($page, $database->get_all(
-            'SELECT tags.tag, tags.count
-            FROM tags, image_tag_categories_tags itct
-            WHERE tags.id = itct.tag_id
-            ORDER BY tags.count ASC;'
-            ));
+            $this->theme->show_count_tag_categories($page);
         }
         else if ($event->page_matches("admin/count_categories_tags", method: "POST")){
             $page->set_mode(PageMode::REDIRECT);
