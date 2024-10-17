@@ -442,7 +442,7 @@ class TagList extends Extension
 
         $tags = $database->get_all($query, $args);
         if (count($tags) > 0) {
-            $this->theme->display_split_related_block($page, $tags);
+            $this->theme->display_split_related_block($page, $tags, $image->id);
         }
     }
 

@@ -1,8 +1,10 @@
 backup
 data
+/themes/*/static
+*.old
 .docker/entrypoint.d/config.json
 .sl
-
+.vscode/*
 #Composer
 composer.phar
 /vendor/

@@ -133,6 +133,8 @@ function loadCache(?string $dsn): CacheInterface
                 ], ['prefix' => 'shm:']);
                 $c = new \Naroga\RedisCache\Redis($redis);
             }
+        } elseif ($dsn === "apcu://" || $dsn === "apc://") {
+            $c = new \Sabre\Cache\Apcu();
         }
     }
     if (is_null($c)) {

@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{INPUT};
+use function MicroHTML\{INPUT,TD};
 
 class PostTitlesTheme extends Themelet
 {
@@ -16,6 +16,17 @@ class PostTitlesTheme extends Themelet
             "Title",
             $title,
             $can_set ? INPUT(["type" => "text", "name" => "title", "value" => $title]) : null
+        );
+    }
+
+    public function get_upload_specific_html($suffix): HTMLElement
+    {
+        return TD(
+            INPUT([
+                "type" => "text",
+                "name" => "title{$suffix}",
+                "value" => ($suffix == 0) ? @$_GET['title'] : null,
+            ])
         );
     }
 }

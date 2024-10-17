@@ -375,7 +375,8 @@ class Image implements \ArrayAccess
     #[Field(name: "image_link")]
     public function get_image_link(): string
     {
-        return $this->get_link(ImageConfig::ILINK, '_images/$hash/$id%20-%20$tags.$ext', 'image/$id/$id%20-%20$tags.$ext');
+        // return $this->get_link(ImageConfig::ILINK, '_images/$hash/$id%20-%20$tags.$ext', 'image/$id/$id%20-%20$tags.$ext');
+        return $this->get_link(ImageConfig::ILINK, '_images/$hash.$ext', 'image/$id/$hash.$ext');
     }
 
     /**
