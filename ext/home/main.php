@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+use MicroHTML\HTMLElement;
+
 class Home extends Extension
 {
     /** @var HomeTheme */
@@ -14,12 +16,13 @@ class Home extends Extension
         global $config, $page;
         if ($event->page_matches("home")) {
             $base_href = get_base_href();
-            $sitename = $config->get_string(SetupConfig::TITLE);
+            // $sitename = $config->get_string(SetupConfig::TITLE);
+            $sitename = $config->get_string('home_title') ?: $config->get_string(SetupConfig::TITLE);
             $theme_name = $config->get_string(SetupConfig::THEME);
 
             $body = $this->get_body();
 
-            $this->theme->display_page($page, $sitename, $base_href, $theme_name, $body);
+            $this->theme->display_page($page, $sitename, $body);
         }
     }
 
@@ -34,17 +37,19 @@ class Home extends Extension
         }
 
         $sb = $event->panel->create_new_block("Home Page");
-        $sb->add_longtext_option("home_links", 'Page Links (Use BBCode, leave blank for defaults)');
+        $sb->add_text_option("home_title", "Home title ");
+        $sb->add_longtext_option("home_links", '<br>Page Links (Use BBCode, leave blank for defaults)');
         $sb->add_longtext_option("home_text", "<br>Page Text:<br>");
         $sb->add_choice_option("home_counter", $counters, "<br>Counter: ");
     }
 
 
-    private function get_body(): string
+    private function get_body(): HTMLElement
     {
         // returns just the contents of the body
         global $config;
         $base_href = get_base_href();
+        // $sitename = $config->get_string('home_title') ?: $config->get_string(SetupConfig::TITLE);
         $sitename = $config->get_string(SetupConfig::TITLE);
         $contact_link = contact_link();
         if (is_null($contact_link)) {

@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{INPUT,SCRIPT};
+use function MicroHTML\{INPUT,SCRIPT,rawHTML};
 
 /**
  * @phpstan-type NoteHistory array{image_id:int,note_id:int,review_id:int,user_name:string,note:string,date:string}
@@ -63,12 +63,12 @@ class NotesTheme extends Themelet
         }
         $page->add_html_header(SCRIPT(
             ["type" => "text/javascript"],
-            "
+            rawHTML("
             window.notes = ".\Safe\json_encode($to_json).";
             window.notes_image_id = $image_id;
             window.notes_admin = ".($adminOptions ? "true" : "false").";
             window.notes_edit = ".($editOptions ? "true" : "false").";
-            "
+            ")
         ));
     }
 
@@ -89,8 +89,7 @@ class NotesTheme extends Themelet
         $this->display_paginator($page, "note/list", null, $pageNumber, $totalPages);
 
         $page->set_title("Notes");
-        $page->set_heading("Notes");
-        $page->add_block(new Block("Notes", $pool_images, "main", 20));
+        $page->add_block(new Block("Notes", rawHTML($pool_images), "main", 20));
     }
 
     /**
@@ -110,8 +109,7 @@ class NotesTheme extends Themelet
         $this->display_paginator($page, "requests/list", null, $pageNumber, $totalPages);
 
         $page->set_title("Note Requests");
-        $page->set_heading("Note Requests");
-        $page->add_block(new Block("Note Requests", $pool_images, "main", 20));
+        $page->add_block(new Block("Note Requests", rawHTML($pool_images), "main", 20));
     }
 
     /**
@@ -169,8 +167,7 @@ class NotesTheme extends Themelet
         $html = $this->get_history($histories);
 
         $page->set_title("Note Updates");
-        $page->set_heading("Note Updates");
-        $page->add_block(new Block("Note Updates", $html, "main", 10));
+        $page->add_block(new Block("Note Updates", rawHTML($html), "main", 10));
 
         $this->display_paginator($page, "note/updated", null, $pageNumber, $totalPages);
     }
@@ -185,10 +182,25 @@ class NotesTheme extends Themelet
         $html = $this->get_history($histories);
 
         $page->set_title("Note History");
-        $page->set_heading("Note History");
-        $page->add_block(new Block("Note History", $html, "main", 10));
+        $page->add_block(new Block("Note History", rawHTML($html), "main", 10));
 
         $this->display_paginator($page, "note/updated", null, $pageNumber, $totalPages);
+    }
+
+    /**
+     * @param NoteHistory[] $histories
+     */
+    public function display_image_history(array $histories, int $imageID, int $pageNumber, int $totalPages): void
+    {
+        global $page;
+
+        $html = $this->get_history($histories);
+
+        $page->set_title("Note History #$imageID");
+        $page->set_heading("Note History #$imageID");
+        $page->add_block(new Block("Note History #$imageID", rawHTML($html), "main", 10));
+
+        $this->display_paginator($page, "note_history/$imageID", null, $pageNumber, $totalPages);
     }
 
     public function get_help_html(): string

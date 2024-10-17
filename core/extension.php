@@ -28,31 +28,9 @@ abstract class Extension
     public function __construct(?string $class = null)
     {
         $class = $class ?? get_called_class();
-        $this->theme = $this->get_theme_object($class);
+        $this->theme = Themelet::get_for_extension_class($class);
         $this->info = ExtensionInfo::get_for_extension_class($class);
         $this->key = $this->info->key;
-    }
-
-    /**
-     * Find the theme object for a given extension.
-     */
-    private function get_theme_object(string $base): Themelet
-    {
-        $base = str_replace("Shimmie2\\", "", $base);
-        $custom = "Shimmie2\Custom{$base}Theme";
-        $normal = "Shimmie2\\{$base}Theme";
-
-        if (class_exists($custom)) {
-            $c = new $custom();
-            assert(is_a($c, Themelet::class));
-            return $c;
-        } elseif (class_exists($normal)) {
-            $n = new $normal();
-            assert(is_a($n, Themelet::class));
-            return $n;
-        } else {
-            return new Themelet();
-        }
     }
 
     /**
@@ -181,14 +159,16 @@ abstract class ExtensionInfo
     {
         if ($this->supported === null) {
             $this->check_support();
+            assert(!is_null($this->supported));
         }
         return $this->supported;
     }
 
     public function get_support_info(): string
     {
-        if ($this->supported === null) {
+        if ($this->support_info === null) {
             $this->check_support();
+            assert(!is_null($this->support_info));
         }
         return $this->support_info;
     }
@@ -333,21 +313,22 @@ abstract class DataHandlerExtension extends Extension
                 // We DO support this extension - but the file looks corrupt
                 throw new UploadException("Invalid or corrupted file");
             }
-
-            $existing = Image::by_hash(\Safe\md5_file($event->tmpname));
-            if (!is_null($existing)) {
-                if ($config->get_string(ImageConfig::UPLOAD_COLLISION_HANDLER) == ImageConfig::COLLISION_MERGE) {
-                    // Right now tags are the only thing that get merged, so
-                    // we can just send a TagSetEvent - in the future we might
-                    // want a dedicated MergeEvent?
-                    if(!empty($event->metadata['tags'])) {
-                        $tags = Tag::explode($existing->get_tag_list() . " " . $event->metadata['tags']);
-                        send_event(new TagSetEvent($existing, $tags));
+            if (!Extension::is_enabled(UploadLimitInfo::KEY)) {
+                $existing = Image::by_hash(\Safe\md5_file($event->tmpname));
+                if (!is_null($existing)) {
+                    if ($config->get_string(ImageConfig::UPLOAD_COLLISION_HANDLER) == ImageConfig::COLLISION_MERGE) {
+                        // Right now tags are the only thing that get merged, so
+                        // we can just send a TagSetEvent - in the future we might
+                        // want a dedicated MergeEvent?
+                        if (!empty($event->metadata['tags'])) {
+                            $tags = Tag::explode($existing->get_tag_list() . " " . $event->metadata['tags']);
+                            send_event(new TagSetEvent($existing, $tags));
+                        }
+                        $event->images[] = $existing;
+                        return;
+                    } else {
+                        throw new UploadException(">>{$existing->id} already has hash {$existing->hash}");
                     }
-                    $event->images[] = $existing;
-                    return;
-                } else {
-                    throw new UploadException(">>{$existing->id} already has hash {$existing->hash}");
                 }
             }
 
@@ -373,12 +354,10 @@ abstract class DataHandlerExtension extends Extension
 
             // If everything is OK, then move the file to the archive
             $filename = warehouse_path(Image::IMAGE_DIR, $event->hash);
-            if (!@copy($event->tmpname, $filename)) {
-                $errors = error_get_last();
-                throw new UploadException(
-                    "Failed to copy file from uploads ({$event->tmpname}) to archive ($filename): ".
-                    "{$errors['type']} / {$errors['message']}"
-                );
+            try {
+                \Safe\copy($event->tmpname, $filename);
+            } catch (\Exception $e) {
+                throw new UploadException("Failed to copy file from uploads ({$event->tmpname}) to archive ($filename): ".$e->getMessage());
             }
 
             $event->images[] = $iae->image;

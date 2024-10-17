@@ -7,7 +7,6 @@ namespace Shimmie2;
 use MicroCRUD\ActionColumn;
 use MicroCRUD\StringColumn;
 use MicroCRUD\DateColumn;
-use MicroCRUD\TextColumn;
 use MicroCRUD\Table;
 
 use function MicroHTML\{INPUT,emptyHTML};
@@ -24,7 +23,7 @@ class HashBanTable extends Table
         $this->limit = 1000000;
         $this->set_columns([
             new StringColumn("hash", "Hash"),
-            new TextColumn("reason", "Reason"),
+            new BBCodeColumn("reason", "Reason"),
             new DateColumn("date", "Date"),
             new ActionColumn("hash"),
         ]);
@@ -91,8 +90,8 @@ class ImageBan extends Extension
 
         if ($event->page_matches("image_hash_ban/add", method: "POST", permission: Permissions::BAN_IMAGE)) {
             $input = validate_input(["c_hash" => "optional,string", "c_reason" => "string", "c_image_id" => "optional,int"]);
-            $image = isset($input['c_image_id']) ? Image::by_id($input['c_image_id']) : null;
-            $hash = isset($input["c_hash"]) ? $input["c_hash"] : $image->hash;
+            $image = isset($input['c_image_id']) ? Image::by_id_ex($input['c_image_id']) : null;
+            $hash = isset($input["c_hash"]) ? $input["c_hash"] : ($image ? $image->hash : null);
             $reason = isset($input['c_reason']) ? $input['c_reason'] : "DNP";
 
             if ($hash) {
@@ -119,7 +118,9 @@ class ImageBan extends Extension
             $t = new HashBanTable($database->raw_db());
             $t->token = $user->get_auth_token();
             $t->inputs = $event->GET;
-            $this->theme->display_crud("Post Bans", $t->table($t->query()), $t->paginator());
+            $page->set_title("Post Bans");
+            $page->add_block(new NavBlock());
+            $page->add_block(new Block(null, emptyHTML($t->table($t->query()), $t->paginator())));
         }
     }
 

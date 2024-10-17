@@ -114,7 +114,10 @@ class Upload extends Extension
         $config->set_default_int(UploadConfig::COUNT, 3);
         $config->set_default_int(UploadConfig::SIZE, parse_shorthand_int('1MB'));
         $config->set_default_int(UploadConfig::MIN_FREE_SPACE, parse_shorthand_int('100MB'));
+        $config->set_default_bool(UploadConfig::SPLITVIEW, false);
+        $config->set_default_bool(UploadConfig::PREVIEW, true);
         $config->set_default_bool(UploadConfig::TLSOURCE, true);
+        $config->set_default_string("upload_order","");
 
         $this->is_full = false;
 
@@ -154,6 +157,8 @@ class Upload extends Extension
         $sb->add_label("<i>PHP Limit = " . ini_get('max_file_uploads') . "</i>");
         $sb->add_shorthand_int_option(UploadConfig::SIZE, "<br/>Max size per file: ");
         $sb->add_label("<i>PHP Limit = " . ini_get('upload_max_filesize') . "</i>");
+        $sb->add_bool_option(UploadConfig::SPLITVIEW, "<br/>Upload page split input: ");
+        $sb->add_bool_option(UploadConfig::PREVIEW, "<br/>Show image preview: ");
         $sb->add_choice_option(UploadConfig::TRANSLOAD_ENGINE, $tes, "<br/>Transload: ");
         $sb->add_bool_option(UploadConfig::TLSOURCE, "<br/>Use transloaded URL as source if none is provided: ");
 
@@ -161,6 +166,8 @@ class Upload extends Extension
         $sb->add_bool_option(UploadConfig::MIME_CHECK_ENABLED, "Enable upload MIME checks", true);
         $sb->add_multichoice_option(UploadConfig::ALLOWED_MIME_STRINGS, $this->get_mime_options(), "Allowed MIME uploads", true);
         $sb->end_table();
+        $sb->add_label("Category order, comma separated, the same names you see on the upload page:<br/>");
+        $sb->add_longtext_option("upload_order");
     }
 
     /**
@@ -219,15 +226,13 @@ class Upload extends Extension
 
         if ($event->page_matches("upload", method: "GET", permission: Permissions::CREATE_IMAGE)) {
             if ($this->is_full) {
-                $this->theme->display_error(507, "Error", "Can't upload images: disk nearly full");
-                return;
+                throw new ServerError("Can't upload images: disk nearly full");
             }
             $this->theme->display_page($page);
         }
         if ($event->page_matches("upload", method: "POST", permission: Permissions::CREATE_IMAGE)) {
             if ($this->is_full) {
-                $this->theme->display_error(507, "Error", "Can't upload images: disk nearly full");
-                return;
+                throw new ServerError("Can't upload images: disk nearly full");
             }
             $results = [];
 
@@ -319,7 +324,7 @@ class Upload extends Extension
                     }
                     return $event->images;
                 });
-                foreach($new_images as $image) {
+                foreach ($new_images as $image) {
                     $results[] = new UploadSuccess($name, $image->id);
                 }
             } catch (UploadException $ex) {
@@ -351,7 +356,7 @@ class Upload extends Extension
 
             // Parse metadata
             $s_filename = find_header($headers, 'Content-Disposition');
-            $h_filename = ($s_filename ? preg_replace('/^.*filename="([^ ]+)"/i', '$1', $s_filename) : null);
+            $h_filename = ($s_filename ? preg_replace_ex('/^.*filename="([^ ]+)"/i', '$1', $s_filename) : null);
             $filename = $h_filename ?: basename($url);
 
             $new_images = $database->with_savepoint(function () use ($tmp_filename, $filename, $slot, $metadata) {
@@ -361,7 +366,7 @@ class Upload extends Extension
                 }
                 return $event->images;
             });
-            foreach($new_images as $image) {
+            foreach ($new_images as $image) {
                 $results[] = new UploadSuccess($url, $image->id);
             }
         } catch (UploadException $ex) {

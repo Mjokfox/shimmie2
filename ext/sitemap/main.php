@@ -52,17 +52,17 @@ class XMLSitemap extends Extension
         );
 
         /* --- Add 20 most used tags --- */
-        foreach ($database->get_col("SELECT tag FROM tags ORDER BY count DESC LIMIT 20") as $tag) {
-            $urls[] = new XMLSitemapURL(
-                "post/list/$tag/1",
-                "weekly",
-                "0.9",
-                date("Y-m-d")
-            );
-        }
+        // foreach ($database->get_col("SELECT tag FROM tags WHERE count > 0 ORDER BY count DESC LIMIT 20") as $tag) {
+        //     $urls[] = new XMLSitemapURL(
+        //         "post/list/$tag/1",
+        //         "weekly",
+        //         "0.9",
+        //         date("Y-m-d")
+        //     );
+        // }
 
         /* --- Add latest images to sitemap with higher priority --- */
-        foreach(Search::find_images(limit: 50) as $image) {
+        foreach (Search::find_images(limit: 50) as $image) {
             $urls[] = new XMLSitemapURL(
                 "post/view/$image->id",
                 "weekly",
@@ -72,17 +72,17 @@ class XMLSitemap extends Extension
         }
 
         /* --- Add other tags --- */
-        foreach ($database->get_col("SELECT tag FROM tags ORDER BY count DESC LIMIT 10000 OFFSET 21") as $tag) {
-            $urls[] = new XMLSitemapURL(
-                "post/list/$tag/1",
-                "weekly",
-                "0.7",
-                date("Y-m-d")
-            );
-        }
+        // foreach ($database->get_col("SELECT tag FROM tags WHERE count > 0 ORDER BY count DESC LIMIT 10000 OFFSET 21") as $tag) {
+        //     $urls[] = new XMLSitemapURL(
+        //         "post/list/$tag/1",
+        //         "weekly",
+        //         "0.7",
+        //         date("Y-m-d")
+        //     );
+        // }
 
         /* --- Add all other images to sitemap with lower priority --- */
-        foreach(Search::find_images(offset: 51, limit: 10000) as $image) {
+        foreach (Search::find_images(offset: 51, limit: 10000) as $image) {
             $urls[] = new XMLSitemapURL(
                 "post/view/$image->id",
                 "monthly",
@@ -102,7 +102,7 @@ class XMLSitemap extends Extension
     {
         $xml = "<" . "?xml version=\"1.0\" encoding=\"utf-8\"?" . ">\n" .
         "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n";
-        foreach($urls as $url) {
+        foreach ($urls as $url) {
             $link = make_http(make_link($url->url));
             $xml .= "
     <url>
@@ -127,7 +127,7 @@ class XMLSitemap extends Extension
             return true;
         }
 
-        $sitemap_generation_interval = 86400; // allow new site map every day
+        $sitemap_generation_interval = 3600; // allow new site map every hour
         $last_generated_time = filemtime($cache_path);
 
         // if file doesn't exist, return true
@@ -135,7 +135,7 @@ class XMLSitemap extends Extension
             return true;
         }
 
-        // if it's been a day since last sitemap creation, return true
+        // if it's been an hour since last sitemap creation, return true
         return ($last_generated_time + $sitemap_generation_interval < time());
     }
 }

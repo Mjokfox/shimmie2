@@ -19,7 +19,6 @@ class ETTheme extends Themelet
         global $page;
 
         $page->set_title("System Info");
-        $page->set_heading("System Info");
         $page->add_block(new NavBlock());
         $page->add_block(new Block("Information:", $this->build_data_form($yaml)));
     }
@@ -29,17 +28,15 @@ class ETTheme extends Themelet
         return FORM(
             ["action" => "https://shimmie.shishnet.org/register.php", "method" => "POST"],
             INPUT(["type" => "hidden", "name" => "registration_api", "value" => "2"]),
-            P(
-                "Your stats are useful so that I know which combinations of ".
-                "web servers / databases / etc I need to support :)"
-            ),
-            P(TEXTAREA(
+            "Your stats are useful so that I know which combinations of ".
+                "web servers / databases / etc I need to support :)",
+            TEXTAREA(
                 ["name" => 'data', "style" => "width: 100%; height: 20em;"],
                 $yaml
-            )),
-            P(INPUT(
+            ),
+            INPUT(
                 ["type" => 'submit', "value" => 'Click to send to Shish', "style" => "width: 100%; padding: 1em;"]
-            )),
+            ),
         );
     }
 }

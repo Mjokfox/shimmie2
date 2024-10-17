@@ -56,7 +56,7 @@ class ExtManagerTheme extends Themelet
                 continue;
             }
 
-            if($extension->category !== $last_cat) {
+            if ($extension->category !== $last_cat) {
                 $last_cat = $extension->category;
                 $categories[] = $last_cat;
                 $tbody->appendChild(
@@ -101,7 +101,7 @@ class ExtManagerTheme extends Themelet
             ));
         }
 
-        if($editable) {
+        if ($editable) {
             foreach ($extensions as $extension) {
                 if ($extension->visibility === ExtensionVisibility::HIDDEN && !$extension->core) {
                     $form->appendChild(INPUT([
@@ -115,14 +115,13 @@ class ExtManagerTheme extends Themelet
 
         $cat_html = [
             A(["href" => make_link()], "Index"),
-            BR(),
+            " ",
         ];
         foreach ($categories as $cat) {
             $cat_html[] = A(["href" => "#".$cat->value], $cat->value);
         }
 
         $page->set_title("Extensions");
-        $page->set_heading("Extensions");
         $page->add_block(new Block("Navigation", \MicroHTML\joinHTML(BR(), $cat_html), "left", 0));
         $page->add_block(new Block("Extension Manager", $form));
     }

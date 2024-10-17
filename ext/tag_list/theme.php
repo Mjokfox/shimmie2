@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+use function MicroHTML\{A, BR, rawHTML, emptyHTML,DIV,H3};
+
 class TagListTheme extends Themelet
 {
     public string $heading = "";
     public string $list = "";
-    public ?string $navigation;
     private mixed $tagcategories = null;
 
     public function set_heading(string $text): void
@@ -21,17 +22,29 @@ class TagListTheme extends Themelet
         $this->list = $list;
     }
 
-    public function set_navigation(string $nav): void
-    {
-        $this->navigation = $nav;
-    }
-
     public function display_page(Page $page): void
     {
         $page->set_title("Tag List");
         $page->set_heading($this->heading);
-        $page->add_block(new Block("Tags", $this->list));
-        $page->add_block(new Block("Navigation", $this->navigation, "left", 0));
+        $page->add_block(new Block("Tags", rawHTML($this->list)));
+
+        $nav = emptyHTML(
+            A(["href" => make_link()], "Index"),
+            BR(),
+            rawHTML("&nbsp;"),
+            BR(),
+            A(["href" => make_link("tags/map")], "Map"),
+            BR(),
+            A(["href" => make_link("tags/alphabetic")], "Alphabetic"),
+            BR(),
+            A(["href" => make_link("tags/popularity")], "Popularity"),
+            BR(),
+            rawHTML("&nbsp;"),
+            BR(),
+            A(["href" => modify_current_url(["mincount" => 1])], "Show All"),
+        );
+
+        $page->add_block(new Block("Navigation", $nav, "left", 0));
     }
 
     // =======================================================================
@@ -63,7 +76,7 @@ class TagListTheme extends Themelet
     /**
      * @param array<array{tag: string, count: int}> $tag_infos
      */
-    public function display_split_related_block(Page $page, array $tag_infos): void
+    public function display_split_related_block(Page $page, array $tag_infos, $image_id): void
     {
         global $config;
 
@@ -74,14 +87,16 @@ class TagListTheme extends Themelet
         if (Extension::is_enabled(TagCategoriesInfo::KEY)) {
             $this->tagcategories = new TagCategories();
             $tag_category_dict = $this->tagcategories->getKeyedDict();
+            $categorized_tags = $this->tagcategories->getCategorizedTagsforImageId($image_id);
         } else {
             $tag_category_dict = [];
+            $categorized_tags = [];
         }
         $tag_categories_html = [];
         $tag_categories_count = [];
 
         foreach ($tag_infos as $row) {
-            $split = self::return_tag($row, $tag_category_dict);
+            $split = self::return_tag($row, $tag_category_dict, $categorized_tags);
             $category = $split[0];
             $tag_html = $split[1];
             if (!isset($tag_categories_html[$category])) {
@@ -106,19 +121,34 @@ class TagListTheme extends Themelet
             $main_html = null;
         }
         unset($tag_categories_html[' ']);
-
+        $categories_display_names= [];
         foreach (array_keys($tag_categories_html) as $category) {
             if ($tag_categories_count[$category] < 2) {
-                $category_display_name = html_escape($tag_category_dict[$category]['display_singular']);
+                $categories_display_names[$tag_category_dict[$category]['display_singular']] = $tag_categories_html[$category];
             } else {
-                $category_display_name = html_escape($tag_category_dict[$category]['display_multiple']);
+                $categories_display_names[$tag_category_dict[$category]['display_multiple']] = $tag_categories_html[$category];
             }
-            $page->add_block(new Block($category_display_name, $tag_categories_html[$category], "left", 9));
+        }
+        ksort($categories_display_names);
+        if (array_key_exists("Meta", $categories_display_names)) {
+            $metaLeftValue = $categories_display_names["Meta"];
+            unset($categories_display_names["Meta"]);
+            $categories_display_names["Meta"] = $metaLeftValue;
+        }
+        $tagshtml = emptyHTML();
+        foreach (array_keys($categories_display_names) as $categories_display_name) {
+            $tagshtml->appendChild(H3(html_escape($categories_display_name)));
+            $tagshtml->appendChild(rawHTML($categories_display_names[$categories_display_name]));
         }
 
+
         if ($main_html !== null) {
-            $page->add_block(new Block("Tags", $main_html, "left", 10));
+            $tagshtml->appendChild(DIV(
+                H3("Misc"),
+                DIV(["class" => "blockbody"],rawHTML($main_html)),
+            ));
         }
+        $page->add_block(new Block(null, $tagshtml, "left", 10,"Tagsleft"));
     }
 
     /**
@@ -133,14 +163,16 @@ class TagListTheme extends Themelet
         if (Extension::is_enabled(TagCategoriesInfo::KEY)) {
             $this->tagcategories = new TagCategories();
             $tag_category_dict = $this->tagcategories->getKeyedDict();
+            $categorized_tags = $this->tagcategories->getCategorizedTags();
         } else {
+            $categorized_tags = [];
             $tag_category_dict = [];
         }
         $main_html = $this->get_tag_list_preamble();
 
         foreach ($tag_infos as $row) {
-            $split = $this->return_tag($row, $tag_category_dict);
-            //$category = $split[0];
+            $split = $this->return_tag($row, $tag_category_dict, $categorized_tags);
+            $category = $split[0];
             $tag_html = $split[1];
             $main_html .= "<tr>$tag_html</tr>";
         }
@@ -162,7 +194,7 @@ class TagListTheme extends Themelet
             $config->get_string(TagListConfig::RELATED_SORT)
         );
 
-        $page->add_block(new Block($block_name, $main_html, "left", 10));
+        $page->add_block(new Block($block_name, rawHTML($main_html), "left", 10));
     }
 
     /**
@@ -178,7 +210,7 @@ class TagListTheme extends Themelet
         );
         $main_html .= "&nbsp;<br><a class='more' href='".make_link("tags")."'>Full List</a>\n";
 
-        $page->add_block(new Block("Popular Tags", $main_html, "left", 60));
+        $page->add_block(new Block("Popular Tags", rawHTML($main_html), "left", 60));
     }
 
     /**
@@ -195,7 +227,7 @@ class TagListTheme extends Themelet
         );
         $main_html .= "&nbsp;<br><a class='more' href='".make_link("tags")."'>Full List</a>\n";
 
-        $page->add_block(new Block("Refine Search", $main_html, "left", 60));
+        $page->add_block(new Block("Refine Search", rawHTML($main_html), "left", 60));
     }
 
     /**
@@ -203,7 +235,7 @@ class TagListTheme extends Themelet
      * @param array<string, array{color: string}> $tag_category_dict
      * @return array{0: string, 1: string}
      */
-    public function return_tag(array $row, array $tag_category_dict): array
+    public function return_tag(array $row, array $tag_category_dict, ?array $categorized_tags = []): array
     {
         global $config;
 
@@ -213,15 +245,16 @@ class TagListTheme extends Themelet
 
         $tag_category_css = '';
         $tag_category_style = '';
-        $h_tag_split = explode(':', html_escape($tag), 2);
+        // $h_tag_split = explode(':', html_escape($tag), 2);
         $category = ' ';
 
         // we found a tag, see if it's valid!
-        if ((count($h_tag_split) > 1) and array_key_exists($h_tag_split[0], $tag_category_dict)) {
-            $category = $h_tag_split[0];
-            $h_tag = $h_tag_split[1];
-            $tag_category_css .= ' tag_category_'.$category;
-            $tag_category_style .= 'style="color:'.html_escape($tag_category_dict[$category]['color']).';" ';
+        if (array_key_exists($tag, $categorized_tags)) {
+            if (array_key_exists($categorized_tags[$tag], $tag_category_dict)){
+                $category = $categorized_tags[$tag];
+                $tag_category_css .= ' tag_category_'.$category;
+                $tag_category_style .= 'style="color:'.html_escape($tag_category_dict[$category]['color']).';" ';
+            }
         }
 
         $h_tag_no_underscores = str_replace("_", " ", $h_tag);

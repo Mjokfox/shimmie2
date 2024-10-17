@@ -23,7 +23,7 @@ class ReverseSearchLinks extends Extension
 
         // only support image types
         $supported_types = [MimeType::JPEG, MimeType::GIF, MimeType::PNG, MimeType::WEBP];
-        if(in_array($event->image->get_mime(), $supported_types)) {
+        if (in_array($event->image->get_mime(), $supported_types)) {
             $this->theme->reverse_search_block($page, $event->image);
         }
     }
@@ -35,6 +35,7 @@ class ReverseSearchLinks extends Extension
      * @var string[]
      */
     protected array $SERVICES = [
+        'Google',
         'SauceNAO',
         'TinEye',
         'trace.moe',
@@ -50,7 +51,7 @@ class ReverseSearchLinks extends Extension
         global $config;
         $config->set_default_array(
             ReverseSearchLinksConfig::ENABLED_SERVICES,
-            ['SauceNAO', 'TinEye', 'trace.moe', 'ascii2d', 'Yandex']
+            ['Google', 'SauceNAO', 'TinEye', 'trace.moe', 'ascii2d', 'Yandex']
         );
     }
 }

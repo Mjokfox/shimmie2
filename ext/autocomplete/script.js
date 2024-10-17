@@ -7,7 +7,7 @@
 function getCurrentWord(element) {
 	let text = element.value;
 	let pos = element.selectionStart;
-	var start = text.lastIndexOf(' ', pos-1);
+	var start = Math.max(text.lastIndexOf(' ', pos-1),text.lastIndexOf('\n', pos-1));
 	if(start === -1) {
 		start = 0;
 	}
@@ -15,6 +15,30 @@ function getCurrentWord(element) {
 		start++; // skip the space
 	}
 	return text.substring(start, pos);
+}
+
+/**
+ * foo => ['', 'foo']
+ * -foo => ['-', 'foo']
+ * "-foo" => ['', '-foo']
+ * "-foo => ['', '-foo']  <-- even if the user is still typing and hasn't put the end quote yet
+ *
+ * @param {string} word
+ */
+function splitOperands(word) {
+	const matches = word.match(/^([-]*)"?(.*?)"?$/);
+	return [matches[1], matches[2]];
+}
+
+/**
+ * Quote a word if it uses any operands
+ */
+function quoteIfNeeded(word) {
+	const [ops, term] = splitOperands(word);
+	if(ops !== '') {
+		word = '"' + word + '"';
+	}
+	return word;
 }
 
 /**
@@ -28,30 +52,29 @@ function updateCompletions(element) {
 	// highlightCompletion(element, -1);
 	element.selected_completion = -1;
 
-	// get the word before the cursor
-	var word = getCurrentWord(element);
-
-	// search for completions
+	// cancel any pending completions
 	if(element.completer_timeout !== null) {
 		clearTimeout(element.completer_timeout);
 		element.completer_timeout = null;
 	}
-	if(word === '' || word === '-') {
+
+	// get the word before the cursor
+	var [ops, word] = splitOperands(getCurrentWord(element));
+	if(word === '') {
 		element.completions = {};
 		renderCompletions(element);
 	}
 	else {
 		element.completer_timeout = setTimeout(() => {
-			const wordWithoutMinus = word.replace(/^-/, '');
-			fetch(shm_make_link('api/internal/autocomplete', {s: wordWithoutMinus})).then(
-				(response) => response.json()
-			).then((json) => {
-				if(element.selected_completion !== -1) {
-					return; // user has started to navigate the completions, so don't update them
-				}
-				element.completions = json;
-				renderCompletions(element);
-			});
+			fetch(shm_make_link('api/internal/autocomplete', {s: word}))
+				.then((response) => response.json())
+				.then((json) => {
+					if(element.selected_completion !== -1) {
+						return; // user has started to navigate the completions, so don't update them
+					}
+					element.completions = json;
+					renderCompletions(element);
+				});
 		}, 250);
 		renderCompletions(element);	
 	}
@@ -98,7 +121,8 @@ function renderCompletions(element) {
 	Object.keys(completions).filter(
 		(key) => {
 			let k = key.toLowerCase();
-			let w = word.replace(/^-/, '').toLowerCase();
+			let [ops, term] = splitOperands(word);
+			let w = term.toLowerCase();
 			return (k.startsWith(w) || k.split(':').some((k) => k.startsWith(w)))
 		}
 	).slice(0, 100).forEach((key, i) => {
@@ -140,8 +164,10 @@ function renderCompletions(element) {
 		let br = element.getBoundingClientRect();
 		completions_el.style.minWidth = br.width + 'px';
 		completions_el.style.maxWidth = 'calc(100vw - 2rem - ' + br.left + 'px)';
-		completions_el.style.left = window.scrollX + br.left + 'px';
-		completions_el.style.top = window.scrollY + (br.top + br.height) + 'px';
+		if (!element.parentNode.classList.contains("dont-offset")){
+			completions_el.style.left = window.scrollX + br.left + 'px';
+			completions_el.style.top = window.scrollY + (br.top + br.height) + 'px';
+		}
 	}
 }
 
@@ -170,23 +196,22 @@ function setCompletion(element, new_word) {
 	}
 
 	// get the word before the cursor
-	var start = text.lastIndexOf(' ', pos-1);
+	var start = Math.max(text.lastIndexOf(' ', pos-1),text.lastIndexOf('\n', pos-1));
+	// var entstart = text.lastIndexOf("\n", pos-1);
 	if(start === -1) {
 		start = 0;
 	}
 	else {
 		start++; // skip the space
 	}
-	var end = text.indexOf(' ', pos);
+	var end = Math.max(text.indexOf(' ', pos-1),text.indexOf('\n', pos-1));
 	if(end === -1) {
 		end = text.length;
 	}
 
 	// replace the word with the completion
-	if(text[start] === '-') {
-		new_word = '-' + new_word;
-	}
-	new_word += ' ';
+	const [old_ops, old_word] = splitOperands(getCurrentWord(element));
+	new_word = old_ops + quoteIfNeeded(new_word) + ' ';
 	element.value = text.substring(0, start) + new_word + text.substring(end);
 	element.selectionStart = start + new_word.length;
 	element.selectionEnd = start + new_word.length;
@@ -243,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				highlightCompletion(element, element.selected_completion+1);
 			}
 			// if enter or right are pressed while a completion is selected, add the selected completion
-			else if((event.code === "Enter" || event.code == "ArrowRight") && element.selected_completion !== -1) {
+			else if((event.code === "Enter" || event.code == "ArrowRight" || event.code == "Tab") && element.selected_completion !== -1) {
 				event.preventDefault();
 				const key = Object.keys(element.completions)[element.selected_completion]
 				setCompletion(element, key);

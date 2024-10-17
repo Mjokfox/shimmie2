@@ -43,24 +43,24 @@ class ViewPost extends Extension
             }
 
             if (is_null($image)) {
-                $this->theme->display_error(404, "Post not found", "No more posts");
-                return;
+                $page->set_mode(PageMode::REDIRECT);
+                $page->set_redirect(make_link("post/view/{$image_id}", $query));
+            } else {
+                $page->set_mode(PageMode::REDIRECT);
+                $page->set_redirect(make_link("post/view/{$image->id}", $query));
             }
-
-            $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(make_link("post/view/{$image->id}", $query));
         } elseif ($event->page_matches("post/view/{image_id}")) {
             if (!is_numeric($event->get_arg('image_id'))) {
                 // For some reason there exists some very broken mobile client
                 // who follows up every request to '/post/view/123' with
                 // '/post/view/12300000000000Image 123: tags' which spams the
                 // database log with 'integer out of range'
-                $this->theme->display_error(404, "Post not found", "Invalid post ID");
-                return;
+                throw new PostNotFound("Invalid post ID");
             }
 
             $image_id = $event->get_iarg('image_id');
             $image = Image::by_id_ex($image_id);
+            $page->set_title(str_replace("_"," ",implode(", ",preg_grep("/\b\w*fox\w*\b/i",$image->get_tag_array()))));
             send_event(new DisplayingImageEvent($image));
         } elseif ($event->page_matches("post/set", method: "POST")) {
             $image_id = int_escape($event->req_POST('image_id'));
@@ -76,7 +76,7 @@ class ViewPost extends Extension
                 }
                 $page->set_redirect(make_link("post/view/$image_id", null, $query));
             } else {
-                $this->theme->display_error(403, "Post Locked", "An admin has locked this post");
+                throw new PermissionDenied("An admin has locked this post");
             }
         }
     }

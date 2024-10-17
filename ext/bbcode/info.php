@@ -16,7 +16,7 @@ class BBCodeInfo extends ExtensionInfo
     public bool $core = true;
     public string $description = "Turns BBCode into HTML";
     public ?string $documentation =
-"  Basic formatting tags:
+        "  Basic formatting tags:
    <ul>
      <li>[b]<b>bold</b>[/b]
      <li>[i]<i>italic</i>[/i]
@@ -34,6 +34,7 @@ class BBCodeInfo extends ExtensionInfo
    Link tags:
    <ul>
      <li>[img]url[/img]
+     <li>[img]site://_images/image.jpg[/img]
      <li>[url]<a href=\"{self::SHIMMIE_URL}\">https://code.shishnet.org/</a>[/url]
      <li>[url=<a href=\"{self::SHIMMIE_URL}\">https://code.shishnet.org/</a>]some text[/url]
      <li>[url]site://ext_doc/bbcode[/url]

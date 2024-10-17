@@ -41,7 +41,7 @@ class RSSImages extends Extension
             $search_terms = Tag::explode($event->get_arg('search', ""));
             $page_number = $event->get_iarg('page_num', 1);
             $page_size = $config->get_int(IndexConfig::IMAGES);
-            if (SPEED_HAX && $page_number > 9) {
+            if (Extension::is_enabled(SpeedHaxInfo::KEY) && $config->get_bool(SpeedHaxConfig::RSS_LIMIT) && $page_number > 9) {
                 return;
             }
             $images = Search::find_images(($page_number - 1) * $page_size, $page_size, $search_terms);
@@ -146,5 +146,11 @@ class RSSImages extends Extension
         if ($event->parent == "posts") {
             $event->add_nav_link("posts_rss", new Link('rss/images'), "Feed");
         }
+    }
+
+    public function onRobotsBuilding(RobotsBuildingEvent $event): void
+    {
+        // rss links dont have to be indexed
+        $event->add_disallow("rss");
     }
 }

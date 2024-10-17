@@ -60,28 +60,23 @@ class UserConfigTheme extends Themelet
 			".make_form(make_link("user_config/save"))."
 			    <input type='hidden' name='id' value='".$user->id."'>
 				<div class='setupblocks'>$setupblock_html</div>
-				<input type='submit' value='Save Settings'>
+				<input class='setupsubmit' type='submit' value='Save Settings'>
 			</form>
 			";
 
         $page->set_title("User Options");
-        $page->set_heading("User Options");
         $page->add_block(new NavBlock());
-        $page->add_block(new Block("User Options", $table));
+        $page->add_block(new Block(null, rawHTML($table), id: "Setupmain"));
         $page->set_mode(PageMode::PAGE);
     }
 
     protected function sb_to_html(SetupBlock $block): string
     {
-        $h = $block->header;
-        $b = $block->body;
-        $i = preg_replace('/[^a-zA-Z0-9]/', '_', $h) . "-setup";
-        $html = "
+        return "
 			<section class='setupblock'>
-				<b class='shm-toggler' data-toggle-sel='#$i'>$h</b>
-				<br><div id='$i'>$b</div>
+				<h3>{$block->header}</h3>
+				<div class='blockbody'>{$block->str_body}</div>
 			</section>
 		";
-        return $html;
     }
 }

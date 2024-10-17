@@ -187,6 +187,17 @@ class PrivMsg extends Extension
         }
     }
 
+    public function onPageNavBuilding(PageNavBuildingEvent $event): void
+    {
+        global $user;
+        if ($user->can(Permissions::READ_PM)) {
+            $count = $this->count_pms($user);
+            if ($count > 0){
+                $event->add_nav_link("pm", new Link('user#private-messages'), "Messages (".$count.")",null,11);
+            }
+        }
+    }
+
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         global $user;
@@ -231,7 +242,7 @@ class PrivMsg extends Extension
             $pm_id = $event->get_iarg('pm_id');
             $pm = $database->get_row("SELECT * FROM private_message WHERE id = :id", ["id" => $pm_id]);
             if (is_null($pm)) {
-                $this->theme->display_error(404, "No such PM", "There is no PM #$pm_id");
+                throw new ObjectNotFound("No such PM");
             } elseif (($pm["to_id"] == $user->id) || $user->can(Permissions::VIEW_OTHER_PMS)) {
                 $from_user = User::by_id((int)$pm["from_id"]);
                 if ($pm["to_id"] == $user->id) {
@@ -240,7 +251,7 @@ class PrivMsg extends Extension
                 }
                 $pmo = PM::from_row($pm);
                 $this->theme->display_message($page, $from_user, $user, $pmo);
-                if($user->can(Permissions::SEND_PM)) {
+                if ($user->can(Permissions::SEND_PM)) {
                     $this->theme->display_composer($page, $user, $from_user, "Re: ".$pmo->subject);
                 }
             } else {
@@ -251,7 +262,7 @@ class PrivMsg extends Extension
             $pm_id = int_escape($event->req_POST("pm_id"));
             $pm = $database->get_row("SELECT * FROM private_message WHERE id = :id", ["id" => $pm_id]);
             if (is_null($pm)) {
-                $this->theme->display_error(404, "No such PM", "There is no PM #$pm_id");
+                throw new ObjectNotFound("No such PM");
             } elseif (($pm["to_id"] == $user->id) || $user->can(Permissions::VIEW_OTHER_PMS)) {
                 $database->execute("DELETE FROM private_message WHERE id = :id", ["id" => $pm_id]);
                 $cache->delete("pm-count-{$user->id}");
@@ -293,7 +304,7 @@ class PrivMsg extends Extension
         global $database;
 
         return cache_get_or_set(
-            "pm-count:{$user->id}",
+            "pm-count-{$user->id}",
             fn () => $database->get_one("
                 SELECT count(*)
                 FROM private_message
