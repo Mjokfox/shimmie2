@@ -75,10 +75,4 @@ class RandomImage extends Extension
         // Its random so indexing it wont do any good
         $event->add_disallow("random_image");
     }
-
-    public function onRobotsBuilding(RobotsBuildingEvent $event): void
-    {
-        // Its random so indexing it wont do any good
-        $event->add_disallow("random_image");
-    }
 }
