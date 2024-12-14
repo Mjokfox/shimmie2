@@ -251,6 +251,12 @@ class NumericScore extends Extension
         }
     }
 
+    public function onRobotsBuilding(RobotsBuildingEvent $event): void
+    {
+        // no need to index popular post lists
+        $event->add_disallow("popular_by*");
+    }
+
     public function onNumericScoreSet(NumericScoreSetEvent $event): void
     {
         global $user;

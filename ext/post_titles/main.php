@@ -75,6 +75,16 @@ class PostTitles extends Extension
         $sb->end_table();
     }
 
+    public function onUploadHeaderBuilding(UploadHeaderBuildingEvent $event): void
+    {
+        $event->add_part("title", 12);
+    }
+
+    public function onUploadSpecificBuilding(UploadSpecificBuildingEvent $event): void
+    {
+        $event->add_part($this->theme->get_upload_specific_html($event->suffix), 12);
+    }
+
     public function onBulkExport(BulkExportEvent $event): void
     {
         $event->fields["title"] = $event->image['title'];

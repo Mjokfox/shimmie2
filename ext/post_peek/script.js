@@ -33,21 +33,35 @@ function postPeekAddPeeker() {
         var mime =parent.dataset["mime"];
         if(mime.match(mimeRegex)) {
             var linkElement = document.createElement("DIV");
-            linkElement.innerHTML = "&#x1F50D;";
+
             linkElement.style.position = "absolute";
             linkElement.style.top = "4px";
             linkElement.style.left = "4px";
-            linkElement.style.width = "10px";
-            linkElement.style.height = "10px";
-            linkElement.style.fontSize = "20px";
-            linkElement.style.color = "red";
+            if (mime.split("/")[1] === "gif"){
+                linkElement.innerHTML = mime.split("/")[1];
+                linkElement.style.padding = "4px";
+                linkElement.style.paddingBottom = "1px";
+                linkElement.style.fontSize = "14px";
+                linkElement.style.color = "white";
+                linkElement.style.background = "#2e2e4c";
+                linkElement.style.borderRadius = "4px";
+                linkElement.style.border = "1px solid white";
+                // parent.appendChild(linkElement);
+                // return;
+            } else{
+                linkElement.innerHTML = "&#x1F50D;";
+                linkElement.style.width = "10px";
+                linkElement.style.height = "10px";
+                linkElement.style.fontSize = "20px";
+                linkElement.style.color = "red";
+            }
 
             var width = parseInt(parent.dataset["width"]);
             var height = parseInt(parent.dataset["height"]);
 
             linkElement.onmouseenter = function(e) {
                 let imgElement = document.createElement("IMG");
-                imgElement.src = item.src.replace("thumb/", "image/").replace("_thumbs/", "_images/");
+                imgElement.src = item.src.replace("thumb/", "image/").replace("thumbs/", "images/");
                 imgElement.style.width = "100%";
                 imgElement.style.aheight = "100%";
 

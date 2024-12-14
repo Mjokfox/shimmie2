@@ -55,7 +55,6 @@ class Block
         $this->body = $body;
         $this->section = $section;
         $this->position = $position;
-
         if (is_null($id)) {
             $id = (empty($header) ? 'unknown' : $header) . $section;
         }

@@ -1,0 +1,54 @@
+.RIS-container {
+    margin: 0 auto;
+    width: 51%;
+    padding:10px;
+    background-color: #0f81;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.RIS-subcontainer {
+    width:100%;
+    box-sizing: border-box;
+    border-style: dotted;
+    background-color: #fff1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.RIS-spacer {
+    padding-right:11.5em;
+}
+
+@media only screen and (min-resolution: 2dppx) and (orientation: portrait) {
+    .RIS-spacer {
+        padding-right:0em;
+    }
+}
+.RIS-group {
+    display:flex;
+    width:75%;
+}
+
+.RIS-file-block {
+    height:300px;
+    width:75%;
+    display:flex;
+    align-items:center;
+}
+
+.RIS-browse {
+    color: var(--link-default);
+}
+
+.RIS-browse:hover {
+    color: var(--link-hover);
+    text-decoration: underline;
+}
+
+.shm-image-list LABEL {
+    display:flex;
+    flex-direction:column;
+}
