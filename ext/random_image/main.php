@@ -38,7 +38,7 @@ class RandomImage extends Extension
                 case "widget":
                     $page->set_mode(PageMode::DATA);
                     $page->set_mime(MimeType::HTML);
-                    $page->set_data((string)$this->theme->build_thumb_html($image));
+                    $page->set_data((string)$this->theme->build_thumb($image));
                     break;
                 default:
                     throw new PostNotFound("'$action' is not an option for this api, 'redirect', 'static', 'view' and 'widget' are");

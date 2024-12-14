@@ -828,4 +828,16 @@ DIV.showInputButton, DIV.showPreviewButton {
 	margin-bottom: 1rem;
 }
 
+.atoz A {
+	padding-right:4px;
+}
+
+.ars A, A.tag_info_link {
+	color: inherit;
+}
+
+.tag_list TBODY TR {
+	color: var(--link-default)
+}
+
 /* end of changes */

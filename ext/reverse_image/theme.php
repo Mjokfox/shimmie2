@@ -90,7 +90,7 @@ class ReverseImageTheme extends Themelet
         foreach (array_keys($ids) as $id) {
             $similarity = 100*round(1 - $ids[$id],2);
             $table .= LABEL("Similarity: $similarity%",
-            $this->build_thumb_html(Image::by_id($id)));
+            $this->build_thumb(Image::by_id($id)));
         }
         $table .= "</div>";
         $html->appendChild(rawHTML($table));

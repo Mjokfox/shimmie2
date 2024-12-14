@@ -183,106 +183,38 @@ class TagCategories extends Extension
 
         return $tc_keyed_dict;
     }
-
-    public function getCategorizedTagsforImageId($image_id): array
+    public static function getCategorizedTags(): array
     {
         global $database;
-        $query = "
-        SELECT tags.tag, COALESCE(c.category, 'Uncategorized') AS category_name
-        FROM tags, image_tags it
-        LEFT JOIN image_tag_categories_tags ct ON it.tag_id = ct.tag_id
-        LEFT JOIN image_tag_categories c ON ct.category_id = c.id
-        WHERE tags.id = it.tag_id
-        AND	it.image_id = :image_id;
-        ";
-         $args = ["image_id" => $image_id];
+        static $tc_category_dict = null;
+            if ($tc_category_dict === null){
+            $query = "
+            SELECT c.category, t.tag
+            FROM image_tag_categories_tags ct
+            JOIN image_tag_categories c ON ct.category_id = c.id
+            JOIN tags t ON ct.tag_id = t.id;
+            ";
 
-         $tc_dict = $database->get_all($query, $args);
+            $tc_dict = $database->get_all($query);
 
-         foreach ($tc_dict as $row) {
-             $categorized_tags[$row['tag']] = $row["category_name"];
-         }
-
-         return $categorized_tags;
-    }
-
-    public function getCategorizedTags(): array
-    {
-        global $database;
-        $query = "
-        SELECT c.category, t.tag
-        FROM image_tag_categories_tags ct
-        JOIN image_tag_categories c ON ct.category_id = c.id
-        JOIN tags t ON ct.tag_id = t.id;
-        ";
-
-         $tc_dict = $database->get_all($query);
-
-         foreach ($tc_dict as $row) {
-             $categorized_tags[$row['tag']] = $row["category"];
-         }
-
-         return $categorized_tags;
-    }
-
-    public function getCategorizedTagsforImageId($image_id): array
-    {
-        global $database;
-        $query = "
-        SELECT tags.tag, COALESCE(c.category, 'Uncategorized') AS category_name
-        FROM tags, image_tags it
-        LEFT JOIN image_tag_categories_tags ct ON it.tag_id = ct.tag_id
-        LEFT JOIN image_tag_categories c ON ct.category_id = c.id
-        WHERE tags.id = it.tag_id
-        AND	it.image_id = :image_id;
-        ";
-         $args = ["image_id" => $image_id];
-
-         $tc_dict = $database->get_all($query, $args);
-
-         foreach ($tc_dict as $row) {
-             $categorized_tags[$row['tag']] = $row["category_name"];
-         }
-
-         return $categorized_tags;
-    }
-
-    public function getCategorizedTags(): array
-    {
-        global $database;
-        $query = "
-        SELECT c.category, t.tag
-        FROM image_tag_categories_tags ct
-        JOIN image_tag_categories c ON ct.category_id = c.id
-        JOIN tags t ON ct.tag_id = t.id;
-        ";
-
-         $tc_dict = $database->get_all($query);
-
-         foreach ($tc_dict as $row) {
-             $categorized_tags[$row['tag']] = $row["category"];
-         }
-
-         return $categorized_tags;
+            foreach ($tc_dict as $row) {
+                $tc_category_dict[$row['tag']] = $row["category"];
+            }
+        }
+        return $tc_category_dict;
     }
 
     public static function get_tag_category(string $tag): ?string
     {
-        $tag_category_dict = static::getKeyedDict();
-        $tag_split = explode(':', $tag, 2);
-        if (count($tag_split) > 1 && array_key_exists($tag_split[0], $tag_category_dict)) {
-            return $tag_split[0];
+        $tag_category_dict = static::getCategorizedTags();
+        if (array_key_exists($tag,$tag_category_dict)){
+            return $tag_category_dict[$tag];
         }
         return null;
     }
 
     public static function get_tag_body(string $tag): string
     {
-        $tag_category_dict = static::getKeyedDict();
-        $tag_split = explode(':', $tag, 2);
-        if (count($tag_split) > 1 && array_key_exists($tag_split[0], $tag_category_dict)) {
-            return $tag_split[1];
-        }
         return $tag;
     }
 
@@ -293,10 +225,9 @@ class TagCategories extends Extension
         $tag_category_dict = static::getKeyedDict();
 
         // we found a tag, see if it's valid!
-        $h_tag_split = explode(':', $h_tag, 2);
-        if ((count($h_tag_split) > 1) and array_key_exists($h_tag_split[0], $tag_category_dict)) {
-            $category = $h_tag_split[0];
-            $h_tag = $h_tag_split[1];
+        $tag_category_dict = static::getCategorizedTags();
+        if (array_key_exists($h_tag,$tag_category_dict)){
+            $category = $tag_category_dict[$h_tag];
             $tag_category_css = ' tag_category_'.$category;
             $tag_category_style = 'style="color:'.html_escape($tag_category_dict[$category]['color']).';" ';
             $h_tag_no_underscores = str_replace("_", " ", $h_tag);

@@ -130,7 +130,7 @@ class TagMap extends Extension
             $scale = (float)$row['scaled'];
             $size = sprintf("%.2f", $scale < 0.5 ? 0.5 : $scale);
             $html->appendChild(rawHTML("&nbsp;"));
-            $html->appendChild($this->theme->build_tag($tag, style: "font-size: {$size}em"));
+            $html->appendChild($this->theme->build_tag($tag, style: "font-size: {$size}em;"));
             $html->appendChild(rawHTML("&nbsp;"));
         }
 
