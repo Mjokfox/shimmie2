@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{A, BR, rawHTML, emptyHTML, TABLE, COLGROUP, COL, THEAD, TH, TR, TD, SPAN};
+use function MicroHTML\{A, BR, rawHTML, emptyHTML,DIV,H3, TABLE, COLGROUP, COL, THEAD, TH, TR, TD, SPAN};
 use function MicroHTML\joinHTML;
 
 class TagListTheme extends Themelet
@@ -59,6 +59,8 @@ class TagListTheme extends Themelet
     {
         global $config;
 
+        $search = in_array("search",$_GET) ? explode(" ",$_GET["search"]) : [""];
+
         if ($config->get_string(TagListConfig::RELATED_SORT) == TagListConfig::SORT_ALPHABETICAL) {
             usort($tag_infos, fn ($a, $b) => strcasecmp($a['tag'], $b['tag']));
         }
@@ -72,12 +74,11 @@ class TagListTheme extends Themelet
         $tag_categories_count = [];
 
         foreach ($tag_infos as $row) {
-            $tag = $row['tag'];
-            $category = TagCategories::get_tag_category($tag);
+            $category = TagCategories::get_tag_category($row["tag"]);
             if (!isset($tag_categories_html[$category])) {
                 $tag_categories_html[$category] = $this->get_tag_list_preamble();
             }
-            $tag_categories_html[$category]->appendChild(self::build_tag_row($row));
+            $tag_categories_html[$category]->appendChild(self::build_tag_row($row,$search));
 
             if (!isset($tag_categories_count[$category])) {
                 $tag_categories_count[$category] = 0;
@@ -87,18 +88,44 @@ class TagListTheme extends Themelet
 
         ksort($tag_categories_html);
         foreach (array_keys($tag_categories_html) as $category) {
-            if ($category == '') {
-                $category_display_name = 'Tags';
-                $prio = 10;
-            } elseif ($tag_categories_count[$category] < 2) {
-                $category_display_name = $tag_category_dict[$category]['display_singular'];
-                $prio = 9;
-            } else {
-                $category_display_name = $tag_category_dict[$category]['display_multiple'];
-                $prio = 9;
-            }
-            $page->add_block(new Block($category_display_name, $tag_categories_html[$category], "left", $prio));
+            $tag_categories_html[$category] .= '</tbody></table>';
         }
+
+        asort($tag_categories_html);
+        if (isset($tag_categories_html[null])) {
+            $main_html = $tag_categories_html[null];
+        } else {
+            $main_html = null;
+        }
+        unset($tag_categories_html[null]);
+        $categories_display_names= [];
+        foreach (array_keys($tag_categories_html) as $category) {
+            if ($tag_categories_count[$category] < 2) {
+                $categories_display_names[$tag_category_dict[$category]['display_singular']] = $tag_categories_html[$category];
+            } else {
+                $categories_display_names[$tag_category_dict[$category]['display_multiple']] = $tag_categories_html[$category];
+            }
+        }
+        ksort($categories_display_names);
+        if (array_key_exists("Meta", $categories_display_names)) {
+            $metaLeftValue = $categories_display_names["Meta"];
+            unset($categories_display_names["Meta"]);
+            $categories_display_names["Meta"] = $metaLeftValue;
+        }
+        $tagshtml = emptyHTML();
+        foreach (array_keys($categories_display_names) as $categories_display_name) {
+            $tagshtml->appendChild(H3(html_escape($categories_display_name)));
+            $tagshtml->appendChild(rawHTML($categories_display_names[$categories_display_name]));
+        }
+
+
+        if ($main_html !== null) {
+            $tagshtml->appendChild(DIV(
+                H3("Other"),
+                DIV(["class" => "blockbody"],rawHTML($main_html)),
+            ));
+        }
+        $page->add_block(new Block(null, $tagshtml, "left", 10,"Tagsleft"));
     }
 
     /**
@@ -142,7 +169,6 @@ class TagListTheme extends Themelet
     public function display_refine_block(Page $page, array $tag_infos, array $search): void
     {
         global $config;
-
         $main_html = emptyHTML(
             $this->get_tag_list_html(
                 $tag_infos,
@@ -167,18 +193,15 @@ class TagListTheme extends Themelet
 
         $tag = $row['tag'];
         $count = $row['count'];
-
+        $props = [];
         if (Extension::is_enabled(TagCategoriesInfo::KEY)) {
-            $tag_category_dict = TagCategories::getKeyedDict();
-            $tag_category = TagCategories::get_tag_category($tag);
-            $tag_body = TagCategories::get_tag_body($tag);
-        } else {
-            $tag_category_dict = [];
-            $tag_category = null;
-            $tag_body = $tag;
+            $category = TagCategories::get_tag_category($tag);
+            if (!is_null($category)) {
+                $tag_category_dict = TagCategories::getKeyedDict();
+                $props["style"] = "color:".$tag_category_dict[$category]['color'].";";
+            }
         }
-
-        $tr = TR();
+        $tr = TR($props);
 
         $info_link_template = $config->get_string(TagListConfig::INFO_LINK);
         if (!empty($info_link_template)) {
@@ -197,9 +220,8 @@ class TagListTheme extends Themelet
         $tr->appendChild(TD(
             ["class" => "tag_name_cell"],
             emptyHTML(
+                $search ? $this->ars($search, $tag) : emptyHTML(), " ",
                 $this->build_tag($tag, show_underscores: false, show_category: false),
-                " ",
-                $search ? $this->ars($search, $tag) : emptyHTML(),
             )
         ));
 
@@ -241,7 +263,7 @@ class TagListTheme extends Themelet
     {
         if (in_array($tag, $search) || in_array("-$tag", $search)) {
             $new_search = array_diff($search, [$tag, "-$tag"]);
-            return A(["href" => search_link($new_search), "title" => "Remove", "rel" => "nofollow",], "[x]");
+            return A(["href" => search_link($new_search), "title" => "Remove", "rel" => "nofollow",], "x");
         }
         return null;
     }
@@ -253,7 +275,7 @@ class TagListTheme extends Themelet
     {
         if (!in_array($tag, $search)) {
             $new_search = array_merge(array_diff($search, ["-$tag"]), [$tag]);
-            return A(["href" => search_link($new_search), "title" => "Add", "rel" => "nofollow"], "[+]");
+            return A(["href" => search_link($new_search), "title" => "Add", "rel" => "nofollow"], "+");
         }
         return null;
     }
@@ -265,7 +287,7 @@ class TagListTheme extends Themelet
     {
         if (!in_array("-$tag", $search)) {
             $search = array_merge(array_diff($search, [$tag]), ["-$tag"]);
-            return A(["href" => search_link($search), "title" => "Subtract", "rel" => "nofollow"], "[-]");
+            return A(["href" => search_link($search), "title" => "Subtract", "rel" => "nofollow"], "–");
         }
         return null;
     }

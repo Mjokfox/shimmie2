@@ -114,7 +114,10 @@ class Upload extends Extension
         $config->set_default_int(UploadConfig::COUNT, 3);
         $config->set_default_int(UploadConfig::SIZE, parse_shorthand_int('1MB'));
         $config->set_default_int(UploadConfig::MIN_FREE_SPACE, parse_shorthand_int('100MB'));
+        $config->set_default_bool(UploadConfig::SPLITVIEW, false);
+        $config->set_default_bool(UploadConfig::PREVIEW, true);
         $config->set_default_bool(UploadConfig::TLSOURCE, true);
+        $config->set_default_string("upload_order","");
 
         $this->is_full = false;
 
@@ -154,6 +157,8 @@ class Upload extends Extension
         $sb->add_label("<i>PHP Limit = " . ini_get('max_file_uploads') . "</i>");
         $sb->add_shorthand_int_option(UploadConfig::SIZE, "<br/>Max size per file: ");
         $sb->add_label("<i>PHP Limit = " . ini_get('upload_max_filesize') . "</i>");
+        $sb->add_bool_option(UploadConfig::SPLITVIEW, "<br/>Upload page split input: ");
+        $sb->add_bool_option(UploadConfig::PREVIEW, "<br/>Show image preview: ");
         $sb->add_choice_option(UploadConfig::TRANSLOAD_ENGINE, $tes, "<br/>Transload: ");
         $sb->add_bool_option(UploadConfig::TLSOURCE, "<br/>Use transloaded URL as source if none is provided: ");
 
@@ -161,6 +166,8 @@ class Upload extends Extension
         $sb->add_bool_option(UploadConfig::MIME_CHECK_ENABLED, "Enable upload MIME checks", true);
         $sb->add_multichoice_option(UploadConfig::ALLOWED_MIME_STRINGS, $this->get_mime_options(), "Allowed MIME uploads", true);
         $sb->end_table();
+        $sb->add_label("Category order, comma separated, the same names you see on the upload page:<br/>");
+        $sb->add_longtext_option("upload_order");
     }
 
     /**
@@ -246,6 +253,14 @@ class Upload extends Extension
             }
 
             $this->theme->display_upload_status($page, $results);
+        }
+        if ($event->page_matches("upload_duplicate", method: "POST", authed: false)) {
+            $page->set_mode(PageMode::DATA);
+            if (Image::by_hash($event->POST["md5"])){
+                $page->set_data("1");
+            } else{
+                $page->set_data("0");
+            }
         }
     }
 

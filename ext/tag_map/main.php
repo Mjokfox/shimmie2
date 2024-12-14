@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+use MicroHTML\HTMLElement;
+
+use function MicroHTML\{rawHTML, emptyHTML, BR, SPAN, A, P, HR};
+
 require_once "config.php";
 
 class TagMap extends Extension
@@ -42,12 +46,20 @@ class TagMap extends Extension
                 $tags_min = $config->get_int(TagMapConfig::TAGS_MIN);	// get the default.
             }
 
-            match ($sub) {
-                'map' => $this->theme->display_map($tags_min, $this->get_map_data($starts_with, $tags_min)),
-                'alphabetic' => $this->theme->display_alphabetic($starts_with, $tags_min, $this->get_alphabetic_data($starts_with, $tags_min)),
-                'popularity' => $this->theme->display_popularity($this->get_popularity_data($tags_min)),
-                default => null,
-            };
+            switch ($sub) {
+                case 'map':
+                    $this->theme->display_page("Tag Map", $this->build_tag_map($starts_with, $tags_min));
+                    break;
+                case 'alphabetic':
+                    $this->theme->display_page("Alphabetic Tag List", $this->build_tag_alphabetic($starts_with, $tags_min));
+                    break;
+                case 'popularity':
+                    $this->theme->display_page("Tag List by Popularity", $this->build_tag_popularity($tags_min));
+                    break;
+                default:
+                    // don't display anything
+                    break;
+            }
         } elseif ($event->page_matches("tags")) {
             $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("tags/map"));
@@ -76,14 +88,30 @@ class TagMap extends Extension
         $sb->add_bool_option(TagMapConfig::PAGES, "<br>Paged tag lists: ");
     }
 
-    /**
-     * @return array<array{tag:string,scaled:float}>
-     */
-    private function get_map_data(string $starts_with, int $tags_min): array
+    private function build_az(int $tags_min): HTMLElement
     {
         global $database;
 
-        return $database->get_all("
+        $tag_data = $database->get_col("
+			SELECT DISTINCT
+				LOWER(substr(tag, 1, 1))
+			FROM tags
+			WHERE count >= :tags_min
+			ORDER BY LOWER(substr(tag, 1, 1))
+		", ["tags_min" => $tags_min]);
+
+        $html = SPAN(["class" => "atoz"]);
+        foreach ($tag_data as $a) {
+            $html->appendChild(A(["href" => modify_current_url(["starts_with" => $a])], $a));
+        }
+        return emptyHTML($html, P(), HR());
+    }
+
+    private function build_tag_map(string $starts_with, int $tags_min): HTMLElement
+    {
+        global $config, $database;
+
+        $tag_data = $database->get_all("
             SELECT
                 tag,
                 FLOOR(LN(LN(count - :tags_min + 1)+1)*1.5*100)/100 AS scaled
@@ -92,28 +120,79 @@ class TagMap extends Extension
             AND LOWER(tag) LIKE LOWER(:starts_with)
             ORDER BY LOWER(tag)
         ", ["tags_min" => $tags_min, "starts_with" => $starts_with]);
+
+        $html = emptyHTML();
+        if ($config->get_bool(TagMapConfig::PAGES)) {
+            $html->appendChild($this->build_az($tags_min));
+        }
+        foreach ($tag_data as $row) {
+            $tag = $row['tag'];
+            $scale = (float)$row['scaled'];
+            $size = sprintf("%.2f", $scale < 0.5 ? 0.5 : $scale);
+            $html->appendChild(rawHTML("&nbsp;"));
+            $html->appendChild($this->theme->build_tag($tag, style: "font-size: {$size}em;"));
+            $html->appendChild(rawHTML("&nbsp;"));
+        }
+
+        return $html;
     }
 
-    /**
-     * @return array<array{tag:string,count:int}>
-     */
-    private function get_alphabetic_data(string $starts_with, int $tags_min): array
+    private function build_tag_alphabetic(string $starts_with, int $tags_min): HTMLElement
     {
         global $config, $database;
 
-        return $database->get_pairs("
+        $tag_data = $database->get_pairs("
             SELECT tag, count
             FROM tags
             WHERE count >= :tags_min
             AND LOWER(tag) LIKE LOWER(:starts_with)
             ORDER BY LOWER(tag)
         ", ["tags_min" => $tags_min, "starts_with" => $starts_with]);
+
+        $html = emptyHTML();
+        if ($config->get_bool(TagMapConfig::PAGES)) {
+            $html->appendChild($this->build_az($tags_min));
+        }
+
+        /*
+          strtolower() vs. mb_strtolower()
+          ( See https://www.php.net/manual/en/function.mb-strtolower.php for more info )
+
+          PHP5's strtolower function does not support Unicode (UTF-8) properly, so
+          you have to use another function, mb_strtolower, to handle UTF-8 strings.
+
+          What's worse is that mb_strtolower is horribly SLOW.
+
+          It would probably be better to have a config option for the Tag List that
+          would allow you to specify if there are UTF-8 tags.
+
+        */
+        mb_internal_encoding('UTF-8');
+
+        $lastLetter = "";
+        # postres utf8 string sort ignores punctuation, so we get "aza, a-zb, azc"
+        # which breaks down into "az, a-, az" :(
+        ksort($tag_data, SORT_STRING | SORT_FLAG_CASE);
+        $n = 0;
+        foreach ($tag_data as $tag => $count) {
+            // In PHP, $array["10"] sets the array key as int(10), not string("10")...
+            $tag = (string)$tag;
+            if ($lastLetter != mb_strtolower(substr($tag, 0, strlen($starts_with) + 1))) {
+                $lastLetter = mb_strtolower(substr($tag, 0, strlen($starts_with) + 1));
+                if ($n++ > 0) {
+                    $html->appendChild(BR());
+                    $html->appendChild(BR());
+                }
+                $html->appendChild($lastLetter);
+                $html->appendChild(BR());
+            }
+            $html->appendChild($this->theme->build_tag($tag));
+        }
+
+        return $html;
     }
 
-    /**
-     * @return array<array{tag:string,count:int,scaled:float}>
-     */
-    private function get_popularity_data(int $tags_min): array
+    private function build_tag_popularity(int $tags_min): HTMLElement
     {
         global $config, $database;
 
@@ -123,11 +202,30 @@ class TagMap extends Extension
             $tags_min = 1;
         }
 
-        return $database->get_all("
+        $tag_data = $database->get_all("
             SELECT tag, count, FLOOR(LOG(10, count)) AS scaled
             FROM tags
             WHERE count >= :tags_min
             ORDER BY count DESC, tag ASC
         ", ["tags_min" => $tags_min]);
+
+        $html = emptyHTML(rawHTML("Results grouped by log<sub>10</sub>(n)"));
+        $lastLog = "";
+        foreach ($tag_data as $row) {
+            $tag = $row['tag'];
+            $count = $row['count'];
+            $scaled = $row['scaled'];
+            if ($lastLog != $scaled) {
+                $lastLog = $scaled;
+                $html->appendChild(BR());
+                $html->appendChild(BR());
+                $html->appendChild("$lastLog");
+                $html->appendChild(BR());
+            }
+            $html->appendChild($this->theme->build_tag($tag));
+            $html->appendChild(rawHTML("&nbsp;($count)&nbsp;&nbsp;"));
+        }
+
+        return $html;
     }
 }

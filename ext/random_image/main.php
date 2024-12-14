@@ -23,15 +23,25 @@ class RandomImage extends Extension
             if (!$image) {
                 throw new PostNotFound("Couldn't find any posts randomly");
             }
-
-            if ($action === "download") {
-                send_event(new ImageDownloadingEvent($image, $image->get_image_filename(), $image->get_mime(), $event->GET));
-            } elseif ($action === "view") {
-                send_event(new DisplayingImageEvent($image));
-            } elseif ($action === "widget") {
-                $page->set_mode(PageMode::DATA);
-                $page->set_mime(MimeType::HTML);
-                $page->set_data($this->theme->build_thumb($image));
+            switch ($action) {
+                case "download":
+                    $page->set_mode(PageMode::REDIRECT);
+                    $page->set_redirect($image->get_image_link());
+                    break;
+                case "static":
+                    $page->set_filename($image->filename,"inline");
+                    send_event(new ImageDownloadingEvent($image, $image->get_image_filename(), $image->get_mime(), $event->GET));
+                    break;
+                case "view":
+                    send_event(new DisplayingImageEvent($image));
+                    break;
+                case "widget":
+                    $page->set_mode(PageMode::DATA);
+                    $page->set_mime(MimeType::HTML);
+                    $page->set_data((string)$this->theme->build_thumb($image));
+                    break;
+                default:
+                    throw new PostNotFound("'$action' is not an option for this api, 'redirect', 'static', 'view' and 'widget' are");
             }
         }
     }
@@ -58,5 +68,11 @@ class RandomImage extends Extension
         if ($event->parent == "posts") {
             $event->add_nav_link("posts_random", new Link('random_image/view'), "Random Post");
         }
+    }
+
+    public function onRobotsBuilding(RobotsBuildingEvent $event): void
+    {
+        // Its random so indexing it wont do any good
+        $event->add_disallow("random_image");
     }
 }
