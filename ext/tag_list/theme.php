@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{A, BR, rawHTML, emptyHTML, TABLE, COLGROUP, COL, THEAD, TH, TR, TD, SPAN};
+use function MicroHTML\{A, BR, rawHTML, emptyHTML,DIV,H3, TABLE, COLGROUP, COL, THEAD, TH, TR, TD, SPAN};
 use function MicroHTML\joinHTML;
 
 class TagListTheme extends Themelet
@@ -55,7 +55,7 @@ class TagListTheme extends Themelet
     /**
      * @param array<array{tag: string, count: int}> $tag_infos
      */
-    public function display_split_related_block(Page $page, array $tag_infos): void
+    public function display_split_related_block(Page $page, array $tag_infos, $image_id): void
     {
         global $config;
 
@@ -64,16 +64,20 @@ class TagListTheme extends Themelet
         }
 
         if (Extension::is_enabled(TagCategoriesInfo::KEY)) {
-            $tag_category_dict = TagCategories::getKeyedDict();
+            $this->tagcategories = new TagCategories();
+            $tag_category_dict = $this->tagcategories->getKeyedDict();
+            $categorized_tags = $this->tagcategories->getCategorizedTagsforImageId($image_id);
         } else {
             $tag_category_dict = [];
+            $categorized_tags = [];
         }
         $tag_categories_html = [];
         $tag_categories_count = [];
 
         foreach ($tag_infos as $row) {
-            $tag = $row['tag'];
-            $category = TagCategories::get_tag_category($tag);
+            $split = self::return_tag($row, $tag_category_dict, $categorized_tags);
+            $category = $split[0];
+            $tag_html = $split[1];
             if (!isset($tag_categories_html[$category])) {
                 $tag_categories_html[$category] = $this->get_tag_list_preamble();
             }
@@ -87,18 +91,75 @@ class TagListTheme extends Themelet
 
         ksort($tag_categories_html);
         foreach (array_keys($tag_categories_html) as $category) {
-            if ($category == '') {
-                $category_display_name = 'Tags';
-                $prio = 10;
-            } elseif ($tag_categories_count[$category] < 2) {
-                $category_display_name = $tag_category_dict[$category]['display_singular'];
-                $prio = 9;
-            } else {
-                $category_display_name = $tag_category_dict[$category]['display_multiple'];
-                $prio = 9;
-            }
-            $page->add_block(new Block($category_display_name, $tag_categories_html[$category], "left", $prio));
+            $tag_categories_html[$category] .= '</tbody></table>';
         }
+
+        asort($tag_categories_html);
+        if (isset($tag_categories_html[' '])) {
+            $main_html = $tag_categories_html[' '];
+        } else {
+            $main_html = null;
+        }
+        unset($tag_categories_html[' ']);
+        $categories_display_names= [];
+        foreach (array_keys($tag_categories_html) as $category) {
+            if ($tag_categories_count[$category] < 2) {
+                $categories_display_names[$tag_category_dict[$category]['display_singular']] = $tag_categories_html[$category];
+            } else {
+                $categories_display_names[$tag_category_dict[$category]['display_multiple']] = $tag_categories_html[$category];
+            }
+        }
+        ksort($categories_display_names);
+        if (array_key_exists("Meta", $categories_display_names)) {
+            $metaLeftValue = $categories_display_names["Meta"];
+            unset($categories_display_names["Meta"]);
+            $categories_display_names["Meta"] = $metaLeftValue;
+        }
+        $tagshtml = emptyHTML();
+        foreach (array_keys($categories_display_names) as $categories_display_name) {
+            $tagshtml->appendChild(H3(html_escape($categories_display_name)));
+            $tagshtml->appendChild(rawHTML($categories_display_names[$categories_display_name]));
+        }
+
+
+        if ($main_html !== null) {
+            $tagshtml->appendChild(DIV(
+                H3("Misc"),
+                DIV(["class" => "blockbody"],rawHTML($main_html)),
+            ));
+        }
+        $page->add_block(new Block(null, $tagshtml, "left", 10,"Tagsleft"));
+    }
+
+    /**
+     * @param array<array{tag: string, count: int}> $tag_infos
+     */
+    private function get_tag_list_html(array $tag_infos, string $sort): string
+    {
+        if ($sort == TagListConfig::SORT_ALPHABETICAL) {
+            asort($tag_infos);
+        }
+
+        if (Extension::is_enabled(TagCategoriesInfo::KEY)) {
+            $this->tagcategories = new TagCategories();
+            $tag_category_dict = $this->tagcategories->getKeyedDict();
+            $categorized_tags = $this->tagcategories->getCategorizedTags();
+        } else {
+            $categorized_tags = [];
+            $tag_category_dict = [];
+        }
+        $main_html = $this->get_tag_list_preamble();
+
+        foreach ($tag_infos as $row) {
+            $split = $this->return_tag($row, $tag_category_dict, $categorized_tags);
+            $category = $split[0];
+            $tag_html = $split[1];
+            $main_html .= "<tr>$tag_html</tr>";
+        }
+
+        $main_html .= '</tbody></table>';
+
+        return $main_html;
     }
 
     /**

@@ -50,11 +50,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	if(document.location.hash.length > 3) {
 		var query = document.location.hash.substring(1);
+		var decodequery = decodeURIComponent(query.split("=")[1]);
+		if(decodequery.match(/^order[=:]/)){
+			const thing = document.getElementById("post_controls");
+			if (thing) thing.parentElement.removeChild(thing);
+			document.querySelectorAll("LINK#prevlink").forEach(function(e) {
+				e.parentElement.removeChild(e);
+			});
+			document.querySelectorAll("LINK#nextlink").forEach(function(e) {
+				e.parentElement.removeChild(e);
+			});
+		} else {
+			updateAttr("LINK#prevlink", "href", query);
+			updateAttr("LINK#nextlink", "href", query);
+			updateAttr("A#prevlink", "href", query);
+			updateAttr("A#nextlink", "href", query);
+			updateAttr("A#searchlink", "href", query);
+			updateAttr("form#image_delete_form", "action", query);
+		}
 
-		updateAttr("LINK#prevlink", "href", query);
-		updateAttr("LINK#nextlink", "href", query);
-		updateAttr("A#prevlink", "href", query);
-		updateAttr("A#nextlink", "href", query);
-		updateAttr("form#image_delete_form", "action", query);
+		var searchinput = document.getElementById("searchinput");
+		if (searchinput) searchinput.value = decodequery;
+		var searchlink = document.getElementById("searchlink");
+		if (searchlink) searchlink.innerHTML = "Search: " + decodequery;
 	}
 });

@@ -242,7 +242,7 @@ class PostTags extends Extension
 
     public function onUploadHeaderBuilding(UploadHeaderBuildingEvent $event): void
     {
-        $event->add_part("Tags", 10);
+        // $event->add_part("Tags", 100);
     }
 
     public function onUploadCommonBuilding(UploadCommonBuildingEvent $event): void
@@ -252,7 +252,7 @@ class PostTags extends Extension
 
     public function onUploadSpecificBuilding(UploadSpecificBuildingEvent $event): void
     {
-        $event->add_part($this->theme->get_upload_specific_html($event->suffix), 10);
+        $event->add_part($this->theme->get_upload_specific_html($event->suffix), 100);
     }
 
     private function mass_tag_edit(string $search, string $replace, bool $commit): void
