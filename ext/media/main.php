@@ -708,6 +708,7 @@ class Media extends Extension
             throw new MediaException("Could not load image: " . $image_filename);
         }
 
+        assert($new_width > 0 && $new_height > 0);
         $image_resized = imagecreatetruecolor($new_width, $new_height);
         if ($image_resized === false) {
             throw new MediaException("Could not create output image with dimensions $new_width x $new_height ");
@@ -859,9 +860,8 @@ class Media extends Extension
         }
         // error_log("Getting size with `$cmd`");
 
-        $regex_sizes = "/Video: .* ([0-9]{1,4})x([0-9]{1,4})/";
-        if (\Safe\preg_match($regex_sizes, $output, $regs)) {
-            if (\Safe\preg_match("/displaymatrix: rotation of (90|270).00 degrees/", $output)) {
+        if (preg_match("/Video: .* ([0-9]{1,4})x([0-9]{1,4})/", $output, $regs)) {
+            if (preg_match("/displaymatrix: rotation of (90|270).00 degrees/", $output)) {
                 $size = [(int)$regs[2], (int)$regs[1]];
             } else {
                 $size = [(int)$regs[1], (int)$regs[2]];
@@ -951,6 +951,8 @@ class Media extends Extension
         $a = (int)hexdec(substr($hex, 0, 2));
         $b = (int)hexdec(substr($hex, 2, 2));
         $c = (int)hexdec(substr($hex, 4, 2));
+        // hexdec(2-digits) will only be int<0, 255>, but phpstan doesn't know that
+        // @phpstan-ignore-next-line
         $col = imagecolorallocate($im, $a, $b, $c);
         assert($col !== false);
         return $col;

@@ -35,7 +35,7 @@ class SearchTermParseEvent extends Event
 
         if ($term !== null) {
             // pull any operands off the start of the search term
-            while (is_string($term) && !empty($term) && array_key_exists($term[0], TAG_OPERANDS)) {
+            while (!empty($term) && array_key_exists($term[0], TAG_OPERANDS)) {
                 $operand = TAG_OPERANDS[$term[0]];
                 $term = substr($term, 1);
                 $this->$operand = true;
@@ -81,7 +81,8 @@ class SearchTermParseEvent extends Event
         if (is_null($this->term)) {
             return null;
         }
-        if (\Safe\preg_match($regex, $this->term, $matches) === 1) {
+        if (\Safe\preg_match($regex, $this->term, $matches)) {
+            // @phpstan-ignore-next-line
             return $matches;
         }
         return null;
@@ -94,13 +95,13 @@ class SearchTermParseException extends InvalidInput
 
 class PostListBuildingEvent extends Event
 {
-    /** @var string[] */
+    /** @var list<string> */
     public array $search_terms = [];
     /** @var array<int,string> */
     public array $parts = [];
 
     /**
-     * @param string[] $search
+     * @param list<string> $search
      */
     public function __construct(array $search)
     {

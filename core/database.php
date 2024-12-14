@@ -82,7 +82,7 @@ class Database
 
     private function connect_engine(): void
     {
-        if (\Safe\preg_match("/^([^:]*)/", $this->dsn, $matches)) {
+        if (preg_match("/^([^:]*)/", $this->dsn, $matches)) {
             $db_proto = $matches[1];
         } else {
             throw new ServerError("Can't figure out database engine");
@@ -281,13 +281,14 @@ class Database
      * Execute an SQL query and return the first column of each row.
      *
      * @param QueryArgs $args
-     * @return array<mixed>
+     * @return list<mixed>
      */
     public function get_col(string $query, array $args = []): array
     {
         $_start = ftime();
         $res = $this->_execute($query, $args)->fetchAll(PDO::FETCH_COLUMN);
         $this->count_time("get_col", $_start, $query, $args);
+        // @phpstan-ignore-next-line -- this is a list, but fetchAll is typed as array
         return $res;
     }
 
@@ -398,22 +399,12 @@ class Database
      */
     public function count_tables(): int
     {
-        if ($this->get_engine()->id === DatabaseDriverID::MYSQL) {
-            return count(
-                $this->get_all("SHOW TABLES")
-            );
-        } elseif ($this->get_engine()->id === DatabaseDriverID::PGSQL) {
-            return count(
-                $this->get_all("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
-            );
-        } elseif ($this->get_engine()->id === DatabaseDriverID::SQLITE) {
-            return count(
-                $this->get_all("SELECT name FROM sqlite_master WHERE type = 'table'")
-            );
-        } else {
-            $did = (string)$this->get_engine()->id;
-            throw new ServerError("Can't count tables for database type {$did}");
-        }
+        $sql = match ($this->get_engine()->id) {
+            DatabaseDriverID::MYSQL => "SHOW TABLES",
+            DatabaseDriverID::PGSQL => "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'",
+            DatabaseDriverID::SQLITE => "SELECT name FROM sqlite_master WHERE type = 'table'",
+        };
+        return count($this->get_col($sql));
     }
 
     public function raw_db(): PDO

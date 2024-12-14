@@ -22,12 +22,6 @@ class CommentListTheme extends Themelet
     {
         global $config, $page, $user;
 
-        // aaaaaaargh php
-        assert(is_array($images));
-        assert(is_numeric($page_number));
-        assert(is_numeric($total_pages));
-        assert(is_bool($can_post));
-
         // parts for the whole page
         $prev = $page_number - 1;
         $next = $page_number + 1;
@@ -54,7 +48,7 @@ class CommentListTheme extends Themelet
             $image = $pair[0];
             $comments = $pair[1];
 
-            $thumb_html = $this->build_thumb_html($image);
+            $thumb_html = $this->build_thumb($image);
             $comment_html = "";
 
             $comment_count = count($comments);
@@ -196,7 +190,7 @@ class CommentListTheme extends Themelet
         $h_index = "<a href='".make_link()."'>Index</a>";
         $h_next = ($page_number >= $total_pages) ? "Next" : "<a href='$next'>Next</a>";
 
-        $page->set_title(html_escape($user->name)."'s comments");
+        $page->set_title("{$user->name}'s comments");
         $page->add_block(new Block("Navigation", rawHTML($h_prev.' | '.$h_index.' | '.$h_next), "left", 0));
         $this->display_paginator($page, "comment/beta-search/{$user->name}", null, $page_number, $total_pages);
     }

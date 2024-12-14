@@ -307,6 +307,7 @@ class FetchException extends \Exception
 }
 
 /**
+ * @param non-empty-string $url
  * @return array<string, string|string[]>
  */
 function fetch_url(string $url, string $mfile): array
@@ -318,12 +319,12 @@ function fetch_url(string $url, string $mfile): array
         assert($ch !== false);
         $fp = \Safe\fopen($mfile, "w");
 
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        # curl_setopt($ch, CURLOPT_VERBOSE, 1);
-        curl_setopt($ch, CURLOPT_HEADER, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        # curl_setopt($ch, CURLOPT_VERBOSE, true);
+        curl_setopt($ch, CURLOPT_HEADER, true);
         curl_setopt($ch, CURLOPT_REFERER, $url);
         curl_setopt($ch, CURLOPT_USERAGENT, "Shimmie-".VERSION);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
         $response = curl_exec($ch);
         if ($response === false) {
@@ -384,7 +385,7 @@ function path_to_tags(string $path): array
 {
     $matches = [];
     $tags = [];
-    if (\Safe\preg_match("/\d+ - (.+)\.([a-zA-Z0-9]+)/", basename($path), $matches)) {
+    if (preg_match("/\d+ - (.+)\.([a-zA-Z0-9]+)/", basename($path), $matches)) {
         $tags = explode(" ", $matches[1]);
     }
 
@@ -810,7 +811,7 @@ function shm_tempnam(string $prefix = ""): string
 function load_balance_url(string $tmpl, string $hash, int $n = 0): string
 {
     $matches = [];
-    if (\Safe\preg_match("/(.*){(.*)}(.*)/", $tmpl, $matches)) {
+    if (preg_match("/(.*){(.*)}(.*)/", $tmpl, $matches)) {
         $pre = $matches[1];
         $opts = $matches[2];
         $post = $matches[3];

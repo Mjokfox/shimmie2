@@ -28,11 +28,22 @@ class Themelet
         return self::$common;
     }
 
-    public function build_thumb_html(Image $image): HTMLElement
+    public function build_tag(
+        string $tag,
+        bool $show_underscores = true,
+        bool $show_category = true,
+        ?string $style = null,
+    ): HTMLElement {
+        $c = self::get_common();
+        assert(is_a($c, CommonElementsTheme::class));
+        return $c->build_tag($tag, $show_underscores, $show_category, $style);
+    }
+
+    public function build_thumb(Image $image): HTMLElement
     {
         $c = self::get_common();
         assert(is_a($c, CommonElementsTheme::class));
-        return $c->build_thumb_html($image);
+        return $c->build_thumb($image);
     }
 
     public function display_paginator(Page $page, string $base, ?string $query, int $page_number, int $total_pages, bool $show_random = false): void

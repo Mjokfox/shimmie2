@@ -25,29 +25,21 @@ class WikiTheme extends Themelet
             $nav_page->body = "";
         }
 
-        $tfe = send_event(new TextFormattingEvent($nav_page->body));
+        $body_html = format_text($nav_page->body);
 
         // only the admin can edit the sidebar
         if ($user->can(Permissions::WIKI_ADMIN)) {
-            $tfe->formatted .= "<p>(<a href='".make_link("wiki/wiki:sidebar/edit")."'>Edit</a>)";
-        }
-
-        // see if title is a category'd tag
-        $title_html = html_escape($wiki_page->title);
-        if (Extension::is_enabled(TagCategoriesInfo::KEY)) {
-            $tagcategories = new TagCategories();
-            $tag_category_dict = $tagcategories->getKeyedDict();
-            $title_html = $tagcategories->getTagHtml($title_html, $tag_category_dict);
+            $body_html .= "<p>(<a href='".make_link("wiki/wiki:sidebar/edit")."'>Edit</a>)";
         }
 
         if (!$wiki_page->exists) {
             $page->set_code(404);
         }
 
-        $page->set_title(html_escape($wiki_page->title));
+        $page->set_title($wiki_page->title);
         $page->add_block(new NavBlock());
-        $page->add_block(new Block("Wiki Index", rawHTML($tfe->formatted), "left", 20));
-        $page->add_block(new Block($title_html, $this->create_display_html($wiki_page)));
+        $page->add_block(new Block("Wiki Index", rawHTML($body_html), "left", 20));
+        $page->add_block(new Block($wiki_page->title, $this->create_display_html($wiki_page)));
     }
 
     /**
@@ -62,14 +54,14 @@ class WikiTheme extends Themelet
             $html .= "<tr><td><a href='".make_link("wiki/$title", "revision=$rev")."'>{$rev}</a></td><td>{$row['date']}</td></tr>";
         }
         $html .= "</table>";
-        $page->set_title(html_escape($title));
+        $page->set_title($title);
         $page->add_block(new NavBlock());
-        $page->add_block(new Block(html_escape($title), rawHTML($html)));
+        $page->add_block(new Block($title, rawHTML($html)));
     }
 
     public function display_page_editor(Page $page, WikiPage $wiki_page): void
     {
-        $page->set_title(html_escape($wiki_page->title));
+        $page->set_title($wiki_page->title);
         $page->add_block(new NavBlock());
         $page->add_block(new Block("Editor", $this->create_edit_html($wiki_page)));
     }
@@ -97,6 +89,52 @@ class WikiTheme extends Themelet
         );
     }
 
+    protected function format_wiki_page(WikiPage $page): HTMLElement
+    {
+        global $database, $config;
+
+        $text = "{body}";
+
+        // if this is a tag page, add tag info
+        $tag = $database->get_one("SELECT tag FROM tags WHERE tag = :tag", ["tag" => $page->title]);
+        if (!is_null($tag)) {
+            $text = $config->get_string(WikiConfig::TAG_PAGE_TEMPLATE);
+
+            if (Extension::is_enabled(AliasEditorInfo::KEY)) {
+                $aliases = $database->get_col("
+                    SELECT oldtag
+                    FROM aliases
+                    WHERE newtag = :title
+                    ORDER BY oldtag ASC
+                ", ["title" => $tag]);
+
+                if (!empty($aliases)) {
+                    $text = str_replace("{aliases}", implode(", ", $aliases), $text);
+                } else {
+                    $text = str_replace("{aliases}", $config->get_string(WikiConfig::EMPTY_TAGINFO), $text);
+                }
+            }
+
+            if (Extension::is_enabled(AutoTaggerInfo::KEY)) {
+                $auto_tags = $database->get_one("
+                    SELECT additional_tags
+                    FROM auto_tag
+                    WHERE tag = :title
+                ", ["title" => $tag]);
+
+                if (!empty($auto_tags)) {
+                    $text = str_replace("{autotags}", $auto_tags, $text);
+                } else {
+                    $text = str_replace("{autotags}", $config->get_string(WikiConfig::EMPTY_TAGINFO), $text);
+                }
+            }
+        }
+
+        $text = str_replace("{body}", $page->body, $text);
+
+        return rawHTML(format_text($text));
+    }
+
     protected function create_display_html(WikiPage $page): HTMLElement
     {
         global $user;
@@ -104,7 +142,7 @@ class WikiTheme extends Themelet
         $u_title = url_escape($page->title);
         $owner = $page->get_owner();
 
-        $formatted_body = rawHTML(Wiki::format_tag_wiki_page($page));
+        $formatted_body = self::format_wiki_page($page);
 
         $edit = TR();
         if (Wiki::can_edit($user, $page)) {

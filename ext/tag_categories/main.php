@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\rawHTML;
-
 require_once "config.php";
 
 class TagCategories extends Extension
@@ -169,14 +167,18 @@ class TagCategories extends Extension
     /**
      * @return array<string, array{category: string, display_singular: string, display_multiple: string, color: string}>
      */
-    public function getKeyedDict(): array
+    public static function getKeyedDict(): array
     {
         global $database;
-        $tc_dict = $database->get_all('SELECT * FROM image_tag_categories');
-        $tc_keyed_dict = [];
+        static $tc_keyed_dict = null;
 
-        foreach ($tc_dict as $row) {
-            $tc_keyed_dict[(string)$row['category']] = $row;
+        if (is_null($tc_keyed_dict)) {
+            $tc_keyed_dict = [];
+            $tc_dict = $database->get_all('SELECT * FROM image_tag_categories');
+
+            foreach ($tc_dict as $row) {
+                $tc_keyed_dict[(string)$row['category']] = $row;
+            }
         }
 
         return $tc_keyed_dict;
@@ -223,12 +225,72 @@ class TagCategories extends Extension
          return $categorized_tags;
     }
 
-    /**
-     * @param array<string, array{color: string}> $tag_category_dict
-     */
-    public function getTagHtml(string $h_tag, array $tag_category_dict, string $extra_text = ''): string
+    public function getCategorizedTagsforImageId($image_id): array
+    {
+        global $database;
+        $query = "
+        SELECT tags.tag, COALESCE(c.category, 'Uncategorized') AS category_name
+        FROM tags, image_tags it
+        LEFT JOIN image_tag_categories_tags ct ON it.tag_id = ct.tag_id
+        LEFT JOIN image_tag_categories c ON ct.category_id = c.id
+        WHERE tags.id = it.tag_id
+        AND	it.image_id = :image_id;
+        ";
+         $args = ["image_id" => $image_id];
+
+         $tc_dict = $database->get_all($query, $args);
+
+         foreach ($tc_dict as $row) {
+             $categorized_tags[$row['tag']] = $row["category_name"];
+         }
+
+         return $categorized_tags;
+    }
+
+    public function getCategorizedTags(): array
+    {
+        global $database;
+        $query = "
+        SELECT c.category, t.tag
+        FROM image_tag_categories_tags ct
+        JOIN image_tag_categories c ON ct.category_id = c.id
+        JOIN tags t ON ct.tag_id = t.id;
+        ";
+
+         $tc_dict = $database->get_all($query);
+
+         foreach ($tc_dict as $row) {
+             $categorized_tags[$row['tag']] = $row["category"];
+         }
+
+         return $categorized_tags;
+    }
+
+    public static function get_tag_category(string $tag): ?string
+    {
+        $tag_category_dict = static::getKeyedDict();
+        $tag_split = explode(':', $tag, 2);
+        if (count($tag_split) > 1 && array_key_exists($tag_split[0], $tag_category_dict)) {
+            return $tag_split[0];
+        }
+        return null;
+    }
+
+    public static function get_tag_body(string $tag): string
+    {
+        $tag_category_dict = static::getKeyedDict();
+        $tag_split = explode(':', $tag, 2);
+        if (count($tag_split) > 1 && array_key_exists($tag_split[0], $tag_category_dict)) {
+            return $tag_split[1];
+        }
+        return $tag;
+    }
+
+    public static function getTagHtml(string $h_tag, string $extra_text = ''): string
     {
         $h_tag_no_underscores = str_replace("_", " ", $h_tag);
+
+        $tag_category_dict = static::getKeyedDict();
 
         // we found a tag, see if it's valid!
         $h_tag_split = explode(':', $h_tag, 2);

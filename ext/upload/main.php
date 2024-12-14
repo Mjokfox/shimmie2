@@ -344,6 +344,7 @@ class Upload extends Extension
     }
 
     /**
+     * @param non-empty-string $url
      * @param array<string, string> $metadata
      * @return UploadResult[]
      */

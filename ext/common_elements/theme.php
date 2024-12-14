@@ -10,11 +10,43 @@ use function MicroHTML\{A,B,BR,IMG,emptyHTML,joinHTML,LINK};
 
 class CommonElementsTheme extends Themelet
 {
+    public function build_tag(
+        string $tag,
+        bool $show_underscores = true,
+        bool $show_category = true,
+        ?string $style = null,
+    ): HTMLElement {
+        $props = [
+            "href" => search_link([$tag]),
+            "class" => "tag",
+            "style" => $style,
+            "title" => "View all posts tagged $tag"
+        ];
+        $body = $tag;
+
+        if (Extension::is_enabled(TagCategoriesInfo::KEY)) {
+            $category = TagCategories::get_tag_category($tag);
+            if (!is_null($category)) {
+                $tag_category_dict = TagCategories::getKeyedDict();
+                $props["class"] = "tag tag_category_$category";
+                $props["style"] = "color:".$tag_category_dict[$category]['color'].";";
+
+                if ($show_category === false) {
+                    $body = TagCategories::get_tag_body($tag);
+                }
+            }
+        }
+
+        $body = $show_underscores ? $body : str_replace("_", " ", $body);
+
+        return A($props, $body);
+    }
+
     /**
      * Generic thumbnail code; returns HTML rather than adding
      * a block since thumbs tend to go inside blocks...
      */
-    public function build_thumb_html(Image $image): HTMLElement
+    public function build_thumb(Image $image): HTMLElement
     {
         global $config;
 

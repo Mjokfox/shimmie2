@@ -4,73 +4,52 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A, BR, rawHTML, emptyHTML,DIV,H3};
+use MicroHTML\HTMLElement;
+
+use function MicroHTML\{A, BR, rawHTML, emptyHTML,DIV,H3, TABLE, COLGROUP, COL, THEAD, TH, TR, TD, SPAN,DIV,H3};
+use function MicroHTML\joinHTML;
 
 class TagListTheme extends Themelet
 {
-    public string $heading = "";
-    public string $list = "";
-    private mixed $tagcategories = null;
-
-    public function set_heading(string $text): void
-    {
-        $this->heading = $text;
-    }
-
-    public function set_tag_list(string $list): void
-    {
-        $this->list = $list;
-    }
-
-    public function display_page(Page $page): void
-    {
-        $page->set_title("Tag List");
-        $page->set_heading($this->heading);
-        $page->add_block(new Block("Tags", rawHTML($this->list)));
-
-        $nav = emptyHTML(
-            A(["href" => make_link()], "Index"),
-            BR(),
-            rawHTML("&nbsp;"),
-            BR(),
-            A(["href" => make_link("tags/map")], "Map"),
-            BR(),
-            A(["href" => make_link("tags/alphabetic")], "Alphabetic"),
-            BR(),
-            A(["href" => make_link("tags/popularity")], "Popularity"),
-            BR(),
-            rawHTML("&nbsp;"),
-            BR(),
-            A(["href" => modify_current_url(["mincount" => 1])], "Show All"),
-        );
-
-        $page->add_block(new Block("Navigation", $nav, "left", 0));
-    }
-
-    // =======================================================================
-
-    protected function get_tag_list_preamble(): string
+    protected function get_tag_list_preamble(): HTMLElement
     {
         global $config;
 
-        $tag_info_link_is_visible = !is_null($config->get_string(TagListConfig::INFO_LINK));
-        $tag_count_is_visible = $config->get_bool("tag_list_numbers");
+        $tag_info_link_is_visible = !empty($config->get_string(TagListConfig::INFO_LINK));
+        $tag_count_is_visible = $config->get_bool(TagListConfig::SHOW_NUMBERS);
 
-        return '
-			<table class="tag_list">
-				<colgroup>' .
-                    ($tag_info_link_is_visible ? '<col class="tag_info_link_column">' : '') .
-                    ('<col class="tag_name_column">') .
-                    ($tag_count_is_visible ? '<col class="tag_count_column">' : '') . '
-				</colgroup>
-				<thead>
-					<tr>' .
-                        ($tag_info_link_is_visible ? '<th class="tag_info_link_cell"></th>' : '') .
-                        ('<th class="tag_name_cell">Tag</th>') .
-                        ($tag_count_is_visible ? '<th class="tag_count_cell">#</th>' : '') . '
-					</tr>
-				</thead>
-				<tbody>';
+        return TABLE(
+            ["class" => "tag_list"],
+            COLGROUP(
+                ($tag_info_link_is_visible ? COL(["class" => "tag_info_link_column"]) : ''),
+                COL(["class" => "tag_name_column"]),
+                ($tag_count_is_visible ? COL(["class" => "tag_count_column"]) : '')
+            ),
+            THEAD(
+                TR(
+                    ($tag_info_link_is_visible ? TH(["class" => "tag_info_link_cell"]) : ''),
+                    TH(["class" => "tag_name_cell"], "Tag"),
+                    ($tag_count_is_visible ? TH(["class" => "tag_count_cell"], "#") : '')
+                )
+            ),
+        );
+    }
+
+    /**
+     * @param array<array{tag: string, count: int}> $tag_infos
+     * @param string[] $search
+     */
+    private function get_tag_list_html(array $tag_infos, string $sort, array $search = []): HTMLElement
+    {
+        if ($sort === TagListConfig::SORT_ALPHABETICAL) {
+            usort($tag_infos, fn ($a, $b) => strcasecmp($a['tag'], $b['tag']));
+        }
+
+        $table = $this->get_tag_list_preamble();
+        foreach ($tag_infos as $row) {
+            $table->appendChild(self::build_tag_row($row, $search));
+        }
+        return $table;
     }
 
     /**
@@ -81,7 +60,7 @@ class TagListTheme extends Themelet
         global $config;
 
         if ($config->get_string(TagListConfig::RELATED_SORT) == TagListConfig::SORT_ALPHABETICAL) {
-            asort($tag_infos);
+            usort($tag_infos, fn ($a, $b) => strcasecmp($a['tag'], $b['tag']));
         }
 
         if (Extension::is_enabled(TagCategoriesInfo::KEY)) {
@@ -102,7 +81,7 @@ class TagListTheme extends Themelet
             if (!isset($tag_categories_html[$category])) {
                 $tag_categories_html[$category] = $this->get_tag_list_preamble();
             }
-            $tag_categories_html[$category] .= "<tr>$tag_html</tr>";
+            $tag_categories_html[$category]->appendChild(self::build_tag_row($row));
 
             if (!isset($tag_categories_count[$category])) {
                 $tag_categories_count[$category] = 0;
@@ -110,6 +89,7 @@ class TagListTheme extends Themelet
             $tag_categories_count[$category] += 1;
         }
 
+        ksort($tag_categories_html);
         foreach (array_keys($tag_categories_html) as $category) {
             $tag_categories_html[$category] .= '</tbody></table>';
         }
@@ -194,7 +174,7 @@ class TagListTheme extends Themelet
             $config->get_string(TagListConfig::RELATED_SORT)
         );
 
-        $page->add_block(new Block($block_name, rawHTML($main_html), "left", 10));
+        $page->add_block(new Block($block_name, $main_html, "left", 10));
     }
 
     /**
@@ -204,13 +184,16 @@ class TagListTheme extends Themelet
     {
         global $config;
 
-        $main_html = $this->get_tag_list_html(
-            $tag_infos,
-            $config->get_string(TagListConfig::POPULAR_SORT)
+        $main_html = emptyHTML(
+            $this->get_tag_list_html(
+                $tag_infos,
+                $config->get_string(TagListConfig::POPULAR_SORT)
+            ),
+            rawHTML("&nbsp;"),
+            BR(),
+            A(["class" => "more", "href" => make_link("tags")], "Full List")
         );
-        $main_html .= "&nbsp;<br><a class='more' href='".make_link("tags")."'>Full List</a>\n";
-
-        $page->add_block(new Block("Popular Tags", rawHTML($main_html), "left", 60));
+        $page->add_block(new Block("Popular Tags", $main_html, "left", 60));
     }
 
     /**
@@ -221,117 +204,130 @@ class TagListTheme extends Themelet
     {
         global $config;
 
-        $main_html = $this->get_tag_list_html(
-            $tag_infos,
-            $config->get_string(TagListConfig::POPULAR_SORT)
+        $main_html = emptyHTML(
+            $this->get_tag_list_html(
+                $tag_infos,
+                $config->get_string(TagListConfig::POPULAR_SORT),
+                $search
+            ),
+            rawHTML("&nbsp;"),
+            BR(),
+            A(["class" => "more", "href" => make_link("tags")], "Full List")
         );
-        $main_html .= "&nbsp;<br><a class='more' href='".make_link("tags")."'>Full List</a>\n";
 
-        $page->add_block(new Block("Refine Search", rawHTML($main_html), "left", 60));
+        $page->add_block(new Block("Refine Search", $main_html, "left", 60));
     }
 
     /**
      * @param array{tag: string, count: int} $row
-     * @param array<string, array{color: string}> $tag_category_dict
-     * @return array{0: string, 1: string}
+     * @param string[] $search
      */
-    public function return_tag(array $row, array $tag_category_dict, ?array $categorized_tags = []): array
+    protected function build_tag_row(array $row, array $search = []): HTMLElement
     {
         global $config;
 
-        $display_html = '';
         $tag = $row['tag'];
-        $h_tag = html_escape($tag);
-
-        $tag_category_css = '';
-        $tag_category_style = '';
-        // $h_tag_split = explode(':', html_escape($tag), 2);
-        $category = ' ';
-
-        // we found a tag, see if it's valid!
-        if (array_key_exists($tag, $categorized_tags)) {
-            if (array_key_exists($categorized_tags[$tag], $tag_category_dict)){
-                $category = $categorized_tags[$tag];
-                $tag_category_css .= ' tag_category_'.$category;
-                $tag_category_style .= 'style="color:'.html_escape($tag_category_dict[$category]['color']).';" ';
-            }
-        }
-
-        $h_tag_no_underscores = str_replace("_", " ", $h_tag);
         $count = $row['count'];
-        // if($n++) $display_html .= "\n<br/>";
-        if (!is_null($config->get_string(TagListConfig::INFO_LINK))) {
-            $link = html_escape(str_replace('$tag', url_escape($tag), $config->get_string(TagListConfig::INFO_LINK)));
-            $display_html .= '<td class="tag_info_link_cell"> <a class="tag_info_link'.$tag_category_css.'" '.$tag_category_style.'href="'.$link.'">?</a></td>';
-        }
-        $link = $this->tag_link($row['tag']);
-        $display_html .= '<td class="tag_name_cell"> <a class="tag_name'.$tag_category_css.'" '.$tag_category_style.'href="'.$link.'">'.$h_tag_no_underscores.'</a></td>';
 
-        if ($config->get_bool("tag_list_numbers")) {
-            $display_html .= "<td class='tag_count_cell'> <span class='tag_count'>$count</span></td>";
+        if (Extension::is_enabled(TagCategoriesInfo::KEY)) {
+            $tag_category_dict = TagCategories::getKeyedDict();
+            $tag_category = TagCategories::get_tag_category($tag);
+            $tag_body = TagCategories::get_tag_body($tag);
+        } else {
+            $tag_category_dict = [];
+            $tag_category = null;
+            $tag_body = $tag;
         }
 
-        return [$category, $display_html];
+        $tr = TR();
+
+        $info_link_template = $config->get_string(TagListConfig::INFO_LINK);
+        if (!empty($info_link_template)) {
+            $tr->appendChild(TD(
+                ["class" => "tag_info_link_cell"],
+                A(
+                    [
+                        "class" => "tag_info_link",
+                        "href" => str_replace('$tag', url_escape($tag), $info_link_template),
+                    ],
+                    "?"
+                )
+            ));
+        }
+
+        $tr->appendChild(TD(
+            ["class" => "tag_name_cell"],
+            emptyHTML(
+                $this->build_tag($tag, show_underscores: false, show_category: false),
+                " ",
+                $search ? $this->ars($search, $tag) : emptyHTML(),
+            )
+        ));
+
+        if ($config->get_bool(TagListConfig::SHOW_NUMBERS)) {
+            $tr->appendChild(TD(
+                ["class" => "tag_count_cell"],
+                SPAN(["class" => "tag_count"], $count)
+            ));
+        }
+
+        return $tr;
     }
 
     /**
      * @param string[] $tags
      */
-    protected function ars(string $tag, array $tags): string
+    protected function ars(array $tags, string $tag): HTMLElement
     {
         // FIXME: a better fix would be to make sure the inputs are correct
         $tag = strtolower($tag);
         $tags = array_map("strtolower", $tags);
-        $html = "";
-        $html .= " <span class='ars'>(";
-        $html .= $this->get_add_link($tags, $tag);
-        $html .= $this->get_remove_link($tags, $tag);
-        $html .= $this->get_subtract_link($tags, $tag);
-        $html .= ")</span>";
-        return $html;
+        return SPAN(
+            ["class" => "ars"],
+            joinHTML(
+                " ",
+                [
+                    $this->get_add_link($tags, $tag),
+                    $this->get_remove_link($tags, $tag),
+                    $this->get_subtract_link($tags, $tag),
+                ]
+            ),
+        );
     }
 
     /**
-     * @param string[] $tags
+     * @param string[] $search
      */
-    protected function get_remove_link(array $tags, string $tag): string
+    protected function get_remove_link(array $search, string $tag): ?HTMLElement
     {
-        if (!in_array($tag, $tags) && !in_array("-$tag", $tags)) {
-            return "";
-        } else {
-            $tags = array_diff($tags, [$tag, "-$tag"]);
-            return "<a href='".$this->tag_link(join(' ', $tags))."' title='Remove' rel='nofollow'>R</a>";
+        if (in_array($tag, $search) || in_array("-$tag", $search)) {
+            $new_search = array_diff($search, [$tag, "-$tag"]);
+            return A(["href" => search_link($new_search), "title" => "Remove", "rel" => "nofollow",], "[x]");
         }
+        return null;
     }
 
     /**
-     * @param string[] $tags
+     * @param string[] $search
      */
-    protected function get_add_link(array $tags, string $tag): string
+    protected function get_add_link(array $search, string $tag): ?HTMLElement
     {
-        if (in_array($tag, $tags)) {
-            return "";
-        } else {
-            $tags = array_diff($tags, ["-$tag"]) + [$tag];
-            return "<a href='".$this->tag_link(join(' ', $tags))."' title='Add' rel='nofollow'>A</a>";
+        if (!in_array($tag, $search)) {
+            $new_search = array_merge(array_diff($search, ["-$tag"]), [$tag]);
+            return A(["href" => search_link($new_search), "title" => "Add", "rel" => "nofollow"], "[+]");
         }
+        return null;
     }
 
     /**
-     * @param string[] $tags
+     * @param string[] $search
      */
-    protected function get_subtract_link(array $tags, string $tag): string
+    protected function get_subtract_link(array $search, string $tag): ?HTMLElement
     {
-        if (in_array("-$tag", $tags)) {
-            return "";
-        } else {
-            $tags = array_diff($tags, [$tag]) + ["-$tag"];
-            return "<a href='".$this->tag_link(join(' ', $tags))."' title='Subtract' rel='nofollow'>S</a>";
+        if (!in_array("-$tag", $search)) {
+            $search = array_merge(array_diff($search, [$tag]), ["-$tag"]);
+            return A(["href" => search_link($search), "title" => "Subtract", "rel" => "nofollow"], "[-]");
         }
-    }
-
-    public function tag_link(string $tag): string
-    {
-        return search_link([$tag]);
+        return null;
     }
 }

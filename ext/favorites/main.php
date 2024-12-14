@@ -13,8 +13,6 @@ class FavoriteSetEvent extends Event
     public function __construct(int $image_id, User $user, bool $do_set)
     {
         parent::__construct();
-        assert(is_int($image_id));
-        assert(is_bool($do_set));
 
         $this->image_id = $image_id;
         $this->user = $user;
@@ -257,8 +255,8 @@ class Favorites extends Extension
             );
         }
         $database->execute(
-            "UPDATE images SET favorites=(SELECT COUNT(*) FROM user_favorites WHERE image_id=:image_id) WHERE id=:user_id",
-            ["image_id" => $image_id, "user_id" => $user_id]
+            "UPDATE images SET favorites=(SELECT COUNT(*) FROM user_favorites WHERE image_id=:image_id) WHERE id=:image_id",
+            ["image_id" => $image_id]
         );
     }
 

@@ -80,7 +80,8 @@ class TagTermCheckEvent extends Event
     public function matches(string $regex): ?array
     {
         $matches = [];
-        if (\Safe\preg_match($regex, $this->term, $matches) === 1) {
+        if (\Safe\preg_match($regex, $this->term, $matches)) {
+            // @phpstan-ignore-next-line
             return $matches;
         }
         return null;
@@ -108,8 +109,8 @@ class TagTermParseEvent extends Event
     public function matches(string $regex): ?array
     {
         $matches = [];
-        if (\Safe\preg_match($regex, $this->term, $matches) === 1) {
-            return $matches;
+        if (preg_match($regex, $this->term, $matches)) {
+            return array_values($matches);
         }
         return null;
     }

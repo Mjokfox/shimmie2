@@ -106,7 +106,7 @@ and of course start organising your images :-)
         $h_query = html_escape($query);
         $table = "<div class='shm-image-list' data-query='$h_query'>";
         foreach ($images as $image) {
-            $table .= $this->build_thumb_html($image);
+            $table .= $this->build_thumb($image);
         }
         $table .= "</div>";
         return rawHTML($table);
@@ -124,16 +124,11 @@ and of course start organising your images :-)
                 $short_wiki_description = '';
                 if ($wikiPage->id != -1) {
                     // only show first line of wiki
-                    $short_wiki_description = explode("\n", $wikiPage->body, 2)[0];
-
-                    $tfe = send_event(new TextFormattingEvent($short_wiki_description));
-                    $short_wiki_description = $tfe->formatted;
+                    $short_wiki_description = format_text(explode("\n", $wikiPage->body, 2)[0]);
                 }
                 $wikiLink = make_link("wiki/$st");
                 if (Extension::is_enabled(TagCategoriesInfo::KEY)) {
-                    $tagcategories = new TagCategories();
-                    $tag_category_dict = $tagcategories->getKeyedDict();
-                    $st = $tagcategories->getTagHtml(html_escape($st), $tag_category_dict);
+                    $st = TagCategories::getTagHtml(html_escape($st));
                 }
                 $short_wiki_description = '<h2>'.$st.'&nbsp;<a href="'.$wikiLink.'"><sup>ⓘ</sup></a></h2>'.$short_wiki_description;
                 $page->add_block(new Block(null, rawHTML($short_wiki_description), "main", 0, "short-wiki-description"));
@@ -262,7 +257,7 @@ and of course start organising your images :-)
             //
             BR(),
             P("Searching for posts by source."),
-            SHM_COMMAND_EXAMPLE("source=https:///google.com/", 'Returns posts with a source of "https://google.com/".'),
+            SHM_COMMAND_EXAMPLE("source=https://google.com/", 'Returns posts with a source of "https://google.com/".'),
             SHM_COMMAND_EXAMPLE("source=any", "Returns posts with a source set."),
             SHM_COMMAND_EXAMPLE("source=none", "Returns posts without a source set."),
             //

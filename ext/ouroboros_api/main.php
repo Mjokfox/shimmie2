@@ -201,7 +201,7 @@ class _SafeOuroborosTag
 
 class OuroborosAPI extends Extension
 {
-    private ?string $type;
+    private string $type;
 
     public const HEADER_HTTP_200 = 'OK';
     public const MSG_HTTP_200 = 'Request was successful';
@@ -244,7 +244,7 @@ class OuroborosAPI extends Extension
     {
         global $page, $user;
 
-        if (\Safe\preg_match("%\.(xml|json)$%", implode('/', $event->args), $matches) === 1) {
+        if (preg_match("%\.(xml|json)$%", implode('/', $event->args), $matches)) {
             $this->type = $matches[1];
             if ($this->type == 'json') {
                 $page->set_mime('application/json; charset=utf-8');
@@ -419,9 +419,6 @@ class OuroborosAPI extends Extension
         $results = Search::find_images(max($start, 0), min($limit, 100), $tags);
         $posts = [];
         foreach ($results as $img) {
-            if (!is_object($img)) {
-                continue;
-            }
             $posts[] = new _SafeOuroborosImage($img);
         }
         $this->sendData('post', $posts, max($start, 0));
@@ -445,7 +442,7 @@ class OuroborosAPI extends Extension
                         WHERE count >= :tags_min
                         ORDER BY LOWER(substr(tag, 1, 1)) LIMIT :start, :max_items
                     ",
-                    ['tags_min' => $config->get_int(TagListConfig::TAGS_MIN), 'start' => $start, 'max_items' => $limit]
+                    ['tags_min' => $config->get_int(TagMapConfig::TAGS_MIN), 'start' => $start, 'max_items' => $limit]
                 );
                 break;
             case 'count':
@@ -457,7 +454,7 @@ class OuroborosAPI extends Extension
                         WHERE count >= :tags_min
                         ORDER BY count DESC, tag ASC LIMIT :start, :max_items
                     ",
-                    ['tags_min' => $config->get_int(TagListConfig::TAGS_MIN), 'start' => $start, 'max_items' => $limit]
+                    ['tags_min' => $config->get_int(TagMapConfig::TAGS_MIN), 'start' => $start, 'max_items' => $limit]
                 );
                 break;
         }
@@ -620,6 +617,6 @@ class OuroborosAPI extends Extension
      */
     private function match(PageRequestEvent $event, string $page): bool
     {
-        return (\Safe\preg_match("%{$page}\.(xml|json)$%", implode('/', $event->args), $matches) === 1);
+        return (preg_match("%{$page}\.(xml|json)$%", implode('/', $event->args), $matches) === 1);
     }
 }

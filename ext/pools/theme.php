@@ -134,8 +134,7 @@ class PoolsTheme extends Themelet
                     $this->sidebar_options($page, $pool, $check_all);
                 }
             }
-            $tfe = send_event(new TextFormattingEvent($pool->description));
-            $page->add_block(new Block(html_escape($pool->title), rawHTML($tfe->formatted), "main", 10));
+            $page->add_block(new Block($pool->title, rawHTML(format_text($pool->description)), "main", 10));
         }
     }
 
@@ -152,7 +151,7 @@ class PoolsTheme extends Themelet
 
         $image_list = DIV(["class" => "shm-image-list"]);
         foreach ($images as $image) {
-            $image_list->appendChild($this->build_thumb_html($image));
+            $image_list->appendChild($this->build_thumb($image));
         }
 
         $page->add_block(new Block("Viewing Posts", $image_list, "main", 30));
@@ -249,7 +248,7 @@ class PoolsTheme extends Themelet
         $image_list = DIV(["class" => "shm-image-list"]);
         foreach ($images as $image) {
             $image_list->appendChild(
-                SPAN(["class" => "thumb"], $this->build_thumb_html($image), BR(), INPUT(["type" => "checkbox", "name" => "check[]", "value" => $image->id])),
+                SPAN(["class" => "thumb"], $this->build_thumb($image), BR(), INPUT(["type" => "checkbox", "name" => "check[]", "value" => $image->id])),
             );
         }
         $form->appendChild($image_list);
@@ -280,7 +279,7 @@ class PoolsTheme extends Themelet
         foreach ($images as $i => $image) {
             $image_list->appendChild(SPAN(
                 ["class" => "thumb"],
-                $this->build_thumb_html($image),
+                $this->build_thumb($image),
                 INPUT(["type" => "number", "name" => "order_{$image->id}", "value" => $image['image_order'], "style" => "max-width: 50px;"]),
             ));
         }
@@ -315,7 +314,7 @@ class PoolsTheme extends Themelet
         foreach ($images as $image) {
             $image_list->appendChild(SPAN(
                 ["class" => "thumb"],
-                $this->build_thumb_html($image),
+                $this->build_thumb($image),
                 INPUT(["type" => "checkbox", "name" => "check[]", "value" => $image->id])
             ));
         }
