@@ -29,11 +29,7 @@ class CommonElementsTheme extends Themelet
             if (!is_null($category)) {
                 $tag_category_dict = TagCategories::getKeyedDict();
                 $props["class"] = "tag tag_category_$category";
-                $props["style"] = "color:".$tag_category_dict[$category]['color'].";";
-
-                if ($show_category === false) {
-                    $body = TagCategories::get_tag_body($tag);
-                }
+                $props["style"] .= "color:".$tag_category_dict[$category]['color'].";";
             }
         }
 

@@ -147,4 +147,10 @@ class RSSImages extends Extension
             $event->add_nav_link("posts_rss", new Link('rss/images'), "Feed");
         }
     }
+
+    public function onRobotsBuilding(RobotsBuildingEvent $event): void
+    {
+        // rss links dont have to be indexed
+        $event->add_disallow("rss");
+    }
 }

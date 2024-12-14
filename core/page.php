@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{emptyHTML, rawHTML, HTML, HEAD, BODY, TITLE, LINK, SCRIPT, A, B, joinHTML, BR, H1, HEADER as HTML_HEADER, NAV, ARTICLE, FOOTER, SECTION, H3, DIV};
+use function MicroHTML\{emptyHTML, rawHTML, HTML, HEAD, BODY, TITLE, LINK, META, SCRIPT, A, B, joinHTML, BR, H1, HEADER as HTML_HEADER, NAV, ARTICLE, FOOTER, SECTION, H3, DIV};
 
 require_once "core/event.php";
 
@@ -383,6 +383,7 @@ class Page
         $theme_name = $config->get_string(SetupConfig::THEME, 'default');
 
         # static handler will map these to themes/foo/static/bar.ico or ext/static_files/static/bar.ico
+        /*
         $this->add_html_header(LINK([
             'rel' => 'icon',
             'type' => 'image/x-icon',
@@ -391,6 +392,34 @@ class Page
         $this->add_html_header(LINK([
             'rel' => 'apple-touch-icon',
             'href' => "$data_href/apple-touch-icon.png"
+        ]), 42);
+        */
+
+        $this->add_html_header(LINK([
+            'rel' => 'icon', 'type' => 'image/png',
+            'href' => "$data_href/favicon-48x48.png",
+            'sizes' => '48x48'
+        ]), 41);
+        $this->add_html_header(LINK([
+            'rel' => 'icon', 'type' => 'image/svg+xml',
+            'href' => "$data_href/favicon.svg"
+        ]), 42);
+        $this->add_html_header(LINK([
+            'rel' => 'shortcut icon',
+            'href' => "$data_href/favicon.ico"
+        ]), 42);
+        $this->add_html_header(LINK([
+            'rel' => 'apple-touch-icon',
+            'sizes' => '180x180',
+            'href' => "$data_href/apple-touch-icon.png"
+        ]), 42);
+        $this->add_html_header(META([
+            'name' => 'apple-mobile-web-app-title',
+            'content' => 'FindaFox'
+        ]), 42);
+        $this->add_html_header(LINK([
+            'rel' => 'manifest',
+            'href' => "$data_href/site.webmanifest"
         ]), 42);
 
         //We use $config_latest to make sure cache is reset if config is ever updated.

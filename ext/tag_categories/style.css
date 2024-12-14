@@ -44,3 +44,15 @@
 	width:1.25rem;
 	border-radius:4px;
 }
+
+TABLE.noborders {
+	border-collapse: collapse;
+}
+
+TABLE.noborders TBODY TR TD{
+	padding-right:5px;
+}
+
+TABLE.table-odd TBODY TR:nth-child(even) {
+	background-color: #fff2;
+}

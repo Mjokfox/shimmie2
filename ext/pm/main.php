@@ -187,6 +187,17 @@ class PrivMsg extends Extension
         }
     }
 
+    public function onPageNavBuilding(PageNavBuildingEvent $event): void
+    {
+        global $user;
+        if ($user->can(Permissions::READ_PM)) {
+            $count = $this->count_pms($user);
+            if ($count > 0){
+                $event->add_nav_link("pm", new Link('user#private-messages'), "Messages (".$count.")",null,11);
+            }
+        }
+    }
+
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         global $user;

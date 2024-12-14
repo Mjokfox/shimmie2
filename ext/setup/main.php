@@ -420,6 +420,8 @@ class Setup extends Extension
         $sb->add_text_option(SetupConfig::FRONT_PAGE, "<br>Front page: ");
         $sb->add_text_option(SetupConfig::MAIN_PAGE, "<br>Main page: ");
         $sb->add_text_option("contact_link", "<br>Contact URL: ");
+        $sb->add_longtext_option("footer_html", "<br>Footer html: ");
+        $sb->add_label("<br> %c for contact link, %d for debug info");
         $sb->add_choice_option(SetupConfig::THEME, $themes, "<br>Theme: ");
         //$sb->add_multichoice_option("testarray", array("a" => "b", "c" => "d"), "<br>Test Array: ");
         $sb->add_bool_option(SetupConfig::NICE_URLS, "<br>Nice URLs: ");

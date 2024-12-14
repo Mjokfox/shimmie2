@@ -173,6 +173,12 @@ class Forum extends Extension
 
     }
 
+    public function onRobotsBuilding(RobotsBuildingEvent $event): void
+    {
+        // forum doesnt have to be indexed
+        $event->add_disallow("forum");
+    }
+
     private function get_total_pages_for_thread(int $threadID): int
     {
         global $database, $config;

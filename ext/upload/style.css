@@ -1,7 +1,100 @@
 TABLE#large_upload_form.form {
-	width: 100%;
+    width: 100%;
 }
 
 .mini_upload INPUT {
-	width: 100%;
+    width: 100%;
+}
+
+.container {
+    display: flex;
+    margin: 20px;
+    position: relative;
+}
+
+
+.left-column, .right-column {
+    overflow: auto;
+}
+
+.left-column {
+    width: 50%;
+}
+
+.right-column {
+    width: 49%;
+    padding-left: 20px;
+    background-color: #fff1;
+    min-height: 80vh;
+}
+
+.divider {
+    width: 5px;
+    cursor: col-resize;
+    background-color: #ccc;
+    position: relative;
+    z-index: 1;
+}
+
+.upload-section {
+    margin-bottom: 20px;
+}
+
+.file-input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.table-section {
+    margin-bottom: 20px;
+}
+
+.button {
+    padding: 10px 20px;
+    margin-right: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.upload-split-view {
+    left: 51%;
+    transform:translate(0%,-50%);
+    position: fixed;
+    top: 52%;
+}
+
+IMG.upload-split-view {
+    max-height: 78vh;
+    width: 37%;
+}
+
+.media-preview {
+    padding: 10px;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+}
+
+.media-preview IMG, VIDEO {
+    max-height: 50vh;
+    max-width: 100%;
+    display: block;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    padding: 5px;
+}
+
+.media-preview B {
+    padding-top: 5px;
+}
+
+.upload-button {
+    padding: 10px 20px;
+    background-color: #008CBA;
+    color: white;
+    border: none;
+    cursor: pointer;
 }

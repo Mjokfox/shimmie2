@@ -365,7 +365,7 @@ class Notes extends Extension
         //$result = $database->get_all("SELECT * FROM pool_images WHERE pool_id=:pool_id", ['pool_id'=>$poolID]);
         $image_ids = $database->get_col(
             "
-			SELECT DISTINCT image_id
+			SELECT DISTINCT image_id, date, id
 			FROM notes
 			WHERE enable = :enable
 			ORDER BY date DESC, id DESC LIMIT :limit OFFSET :offset",
@@ -390,7 +390,7 @@ class Notes extends Extension
 
         $result = $database->execute(
             "
-				SELECT DISTINCT image_id
+				SELECT DISTINCT image_id, date, id
 				FROM note_request
 				ORDER BY date DESC, id DESC LIMIT :limit OFFSET :offset",
             ["offset" => $pageNumber * $requestsPerPage, "limit" => $requestsPerPage]

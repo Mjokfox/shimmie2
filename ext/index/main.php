@@ -136,6 +136,14 @@ class Index extends Extension
         }
     }
 
+    public function onRobotsBuilding(RobotsBuildingEvent $event): void
+    {
+        // Stop the crawl of not nice urls
+        global $config;
+        if ($config->get_bool(SetupConfig::NICE_URLS))
+            $event->add_disallow("index.php*");
+    }
+
     public function onCliGen(CliGenEvent $event): void
     {
         $event->app->register('search')

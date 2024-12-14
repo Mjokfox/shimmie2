@@ -10,7 +10,6 @@ namespace Shimmie2;
 
 const DATA_DIR = "data";
 
-
 function get_theme(): string
 {
     global $config;
