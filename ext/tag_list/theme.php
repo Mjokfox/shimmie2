@@ -59,7 +59,7 @@ class TagListTheme extends Themelet
     {
         global $config;
 
-        $search = in_array("search",$_GET) ? explode(" ",$_GET["search"]) : [""];
+        $search = array_key_exists("search",$_GET) ? explode(" ",$_GET["search"]) : [""];
 
         if ($config->get_string(TagListConfig::RELATED_SORT) == TagListConfig::SORT_ALPHABETICAL) {
             usort($tag_infos, fn ($a, $b) => strcasecmp($a['tag'], $b['tag']));
