@@ -620,7 +620,7 @@ function copyTagsTo(self, target){
 
 const makeCheckbox = {"multiple":["Age","EyesMouth1","EyesMouth2"],"multiple_species":["Species","Age","EyesMouth1","EyesMouth2"]};
 const makeRadio = {"single":["Species","Age","EyesMouth1","EyesMouth2"],"multiple":["Species"]};
-const appears = {"red_fox":["Muzzle"]};
+// const appears = {"red_fox":["Muzzle"]};
 
 function checkboxRadio(self){
     const suffix = self.id.split("_")[1]
@@ -636,14 +636,15 @@ function checkboxRadio(self){
                 el.type = "radio";
             });
         });
-    } if (self.value in appears){
-        appears[self.value].forEach((name) => {
-            document.querySelectorAll(`input[name="${name}_${suffix}"]`).forEach((el) =>{
-                el.disabled = !self.checked;
-                el.checked = false;
-            });
-        });
-    }
+    } 
+    // if (self.value in appears){
+    //     appears[self.value].forEach((name) => {
+    //         document.querySelectorAll(`input[name="${name}_${suffix}"]`).forEach((el) =>{
+    //             el.disabled = !self.checked;
+    //             el.checked = false;
+    //         });
+    //     });
+    // }
 
 }
 
@@ -795,9 +796,9 @@ document.addEventListener('DOMContentLoaded', () => {
     dropZoneInit();
     sliderInit();
     radio_unsetInit();
-    document.querySelectorAll(".disabledOnStartup").forEach((el) => {
-        el.disabled = true;
-    });
+    // document.querySelectorAll(".disabledOnStartup").forEach((el) => {
+    //     el.disabled = true;
+    // });
 
 });
 }

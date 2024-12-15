@@ -322,7 +322,7 @@ function get_categories_html(string $suffix): HTMLElement
                     }
                 }
                 elseif (in_array("muzzle",$tagarray)){
-                    $tempHtmls[3]->appendChild(make_input_label($suffix,$tag,"Muzzle","checkbox","","disabledOnStartup"));
+                    $tempHtmls[3]->appendChild(make_input_label($suffix,$tag,"Muzzle","checkbox","",""));
                     $counts[3]++;
                 }
                 elseif (in_array("mouth",$tagarray)){
