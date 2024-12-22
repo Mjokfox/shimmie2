@@ -13,7 +13,6 @@ class BBCodeInfo extends ExtensionInfo
     public string $url = self::SHIMMIE_URL;
     public array $authors = self::SHISH_AUTHOR;
     public string $license = self::LICENSE_GPLV2;
-    public bool $core = true;
     public string $description = "Turns BBCode into HTML";
     public ?string $documentation =
         "  Basic formatting tags:

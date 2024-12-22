@@ -122,10 +122,11 @@ class CustomCommentListTheme extends CommentListTheme
         if ($trim) {
             return "<p class='comment'>$h_userlink $h_del<br/>$h_posted<br/>$h_comment</p>";
         } else {
+            $h_reply = " > <a href='javascript: replyTo($i_image_id, $i_comment_id, \"$h_name\")'>Reply</a>";
             return "
-				<table class='comment'><tr>
+				<table class='comment' id=\"c$i_comment_id\"><tr>
 					<td class='meta'>$h_userlink<br/>$h_posted$h_del</td>
-					<td>$h_comment</td>
+					<td>$h_comment<br><br>$h_reply</td>
 				</tr></table>
 			";
         }

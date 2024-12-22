@@ -249,7 +249,19 @@ FOOTER>DIV {
 	max-height: 128px;
 }
 
+.markdown BLOCKQUOTE { 
+	border-left: .25rem solid var(--zebra-heading-fg);
+}
+.markdown PRE {
+	padding-top: 10px;
+}
+.markdown IMG {
+	max-width: 128px;
+	max-height: 128px;
+}
+
 CODE {
+	display: block;
 	border: 1px solid #08F;
 	background: #AAF4;
 	font-size: 0.9rem;

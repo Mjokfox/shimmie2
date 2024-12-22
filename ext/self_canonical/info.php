@@ -10,7 +10,7 @@ class SelfCanonicalInfo extends ExtensionInfo
 
     public string $key = self::KEY;
     public string $name = "Self Canonical";
-    public array $authors = ["Mjokfox"];
+    public array $authors = ["Mjokfox" => "mjokfox@findafox.net"];
     public string $license = self::LICENSE_GPLV2;
     public ExtensionVisibility $visibility = ExtensionVisibility::ADMIN;
     public ExtensionCategory $category = ExtensionCategory::OBSERVABILITY;

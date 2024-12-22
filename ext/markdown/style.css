@@ -1,0 +1,20 @@
+.markdown {
+	word-break: break-all;
+}
+.markdown BLOCKQUOTE {
+	border: 1px solid black;
+	padding: .5rem;
+	background: #fff3;
+}
+.markdown .anchor A.alink {
+	visibility: hidden;
+}
+.markdown .anchor:hover A.alink {
+	visibility: visible;
+}
+
+.markdown .spoiler{
+	background-color:#000;
+	color:#000;
+	border: 1px solid #888;
+}

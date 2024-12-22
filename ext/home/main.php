@@ -75,14 +75,14 @@ class Home extends Extension
         if (strlen($config->get_string('home_links', '')) > 0) {
             $main_links = $config->get_string('home_links');
         } else {
-            $main_links = '[url=site://post/list]Posts[/url][url=site://comment/list]Comments[/url][url=site://tags]Tags[/url]';
+            $main_links = '[Posts](site://post/list)[Comments](site://comment/list)[Tags](site://tags)';
             if (Extension::is_enabled(PoolsInfo::KEY)) {
-                $main_links .= '[url=site://pool/list]Pools[/url]';
+                $main_links .= '[Pools](site://pool/list)';
             }
             if (Extension::is_enabled(WikiInfo::KEY)) {
-                $main_links .= '[url=site://wiki]Wiki[/url]';
+                $main_links .= '[Wiki](site://wiki)';
             }
-            $main_links .= '[url=site://ext_doc]Documentation[/url]';
+            $main_links .= '[Documentation](site://ext_doc)';
         }
         $main_links = format_text($main_links);
         $main_text = $config->get_string('home_text', '');
