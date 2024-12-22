@@ -34,7 +34,7 @@ class Markdown extends FormatterExtension
         $text = preg_replace_ex('/^&gt;\s+(.+)/m', '<blockquote><small>$1</small></blockquote>', $text);
         $text = preg_replace_ex('/&gt;&gt;(\d+)(#c?\d+)?/s', '<a class="shm-clink" data-clink-sel="$2" href="'.make_link('post/view/$1$2').'">&gt;&gt;$1$2</a>', $text);
         $text = preg_replace_ex('!\[anchor=(.*?)\](.*?)\[/anchor\]!s', '<span class="anchor">$2 <a class="alink" href="#bb-$1" name="bb-$1" title="link to this anchor"> ¶ </a></span>', $text);  // add "bb-" to avoid clashing with eg #top
-        $text = preg_replace_ex('/(^|[^\!])wiki:(\S+)/s', '$1<a href="'.make_link('wiki/$1').'">$2</a>', $text);
+        $text = preg_replace_ex('/(^|[^\!])wiki:(\S+)/s', '$1<a href="'.make_link('wiki/$2').'">$2</a>', $text);
         $text = preg_replace_ex('/\!wiki:(\S+)/s', '<a href="'.make_link('wiki/$1').'">wiki:$1</a>', $text);
         $text = preg_replace_ex("!^(?:\*|-|\+)\s(.*)!m", "<li>$1</li>", $text);
         $text = preg_replace_ex("!^(\d+)\.\s(.*)!m", "<ol start=\"$1\"><li>$2</li></ol>", $text);
