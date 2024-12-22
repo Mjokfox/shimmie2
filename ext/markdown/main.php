@@ -78,17 +78,19 @@ class Markdown extends FormatterExtension
     }
 
     private function encode_links(string $text): string {
-        $text = preg_replace_callback('/\(((?:https?|ftp|irc|mailto|site):\/\/)([^\)\[\]]+)\)/s',function($matches) {return "({url!}".base64_encode($matches[1].str_replace(" ","%20",$matches[2]))."{/url!})";}, $text);
-        $text = preg_replace_callback('/((?:https?|ftp|irc|mailto|site):\/\/[^\s\)\[\]]+)/s',function($matches) {return "{url!}".base64_encode($matches[1])."{/url!}";}, $text);
+        $text = preg_replace_callback('/\(((?:https?|ftp|irc|mailto|site):\/\/)([^\)\[\]]+)\)/m',function($matches) {return "({url!}".base64_encode($matches[1].str_replace(" ","%20",$matches[2]))."{/url!})";}, $text);
+        $text = preg_replace_callback('/((?:https?|ftp|irc|mailto|site):\/\/[^\s\)\[\]]+)/m',function($matches) {return "{url!}".base64_encode($matches[1])."{/url!}";}, $text);
+        $text = preg_replace_callback('/\[(.+?)\]\(/m',function($matches) {return "[{alt!}".base64_encode($matches[1])."{/alt!}](";}, $text);
         return $text;
     }
     private function insert_links(string $text): string {
-        $text = preg_replace_callback('/\#\{url!\}(.+?)\{\/url!\}/s',function($matches) {return base64_decode($matches[1]);},$text);
+        $text = preg_replace_callback('/\{alt!\}(.+?)\{\/alt!\}/m',function($matches) {return base64_decode($matches[1]);},$text);
+        $text = preg_replace_callback('/\#\{url!\}(.+?)\{\/url!\}/m',function($matches) {return base64_decode($matches[1]);},$text);
         $text = preg_replace_callback('/!\[(.+?)\]\(\{url!\}(.+?)\{\/url!\}\)/m',function($matches) {return "<img alt='".$matches[1]."' src='".base64_decode($matches[2])."'>";}, $text); // image
         $text = preg_replace_callback('/\[(.+?)\]\(\{url!\}(.+?)\{\/url!\}\)/m',function($matches) {return "<a href='".base64_decode($matches[2])."'>".$matches[1]."</a>";}, $text); // []()
         $text = preg_replace_callback('/!\{url!\}(.+?)\{\/url!\}/m',function($matches) {return "<img alt='user image' src='".base64_decode($matches[1])."'>";}, $text); // image
         $text = preg_replace_callback('/\{url!\}(.+?)\{\/url!\}/m', function($matches) {$url = base64_decode($matches[1]);return "<a href='$url'>$url</a>";}, $text);
-        $text = preg_replace_ex('/site:\/\/([^\s\)\[\]\'\"\>\<]+)/s',make_link('$1'),$text);
+        $text = preg_replace_ex('/site:\/\/([^\s\)\[\]\'\"\>\<]+)/m',make_link('$1'),$text);
         return $text;
     }
 
