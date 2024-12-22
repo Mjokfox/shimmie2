@@ -15,6 +15,7 @@ class Markdown extends FormatterExtension
     public function _format(string $text): string
     {
         $text = $this->extract_code($text);
+        $text = $this->encode_links($text);
         $text = preg_replace_ex("!\*\*\*(.*?)\*\*\*!", "<b><i>$1</b></i>", $text); // bi
         $types = ["\*\*","\*","__","_","~~","\^"]; // b, i, u, sub, s, sup
         $replacements = ["b","i","u","sub","s","sup"];
@@ -31,12 +32,6 @@ class Markdown extends FormatterExtension
         $text = preg_replace_ex('/^&gt;\((\S+)\)\s+(.+)/m', "<blockquote><i><b>$1</b> said:</i><br><small>$2</small></blockquote>", $text);
         $text = preg_replace_ex('/^&gt;\s+(.+)/m', '<blockquote><small>$1</small></blockquote>', $text);
         $text = preg_replace_ex('/&gt;&gt;(\d+)(#c?\d+)?/s', '<a class="shm-clink" data-clink-sel="$2" href="'.make_link('post/view/$1$2').'">&gt;&gt;$1$2</a>', $text);
-        $text = preg_replace_ex('/(?<!{{LINKPLACEHOLDER}})!\[(.+?)\]\(((?:https?|ftp|irc|mailto|site):\/\/[^\s|[]+)\)/s', '<img alt="{{LINKPLACEHOLDER}}$1" src="{{LINKPLACEHOLDER}}$2">', $text); // image
-        $text = preg_replace_ex('/(?<!{{LINKPLACEHOLDER}})\[(.+?)\]\(((?:https?|ftp|irc|mailto|site):\/\/[^\s|[]+)\)/s', '<a href="{{LINKPLACEHOLDER}}$2">{{LINKPLACEHOLDER}}$1</a>', $text); // []()
-        $text = preg_replace_ex('/(?<!{{LINKPLACEHOLDER}})!((?:https?|ftp|irc|mailto|site):\/\/\S+)/s', '<img alt="user image" src="{{LINKPLACEHOLDER}}$1">', $text); // image
-        $text = preg_replace_ex('/(?<!{{LINKPLACEHOLDER}})((?:https?|ftp|irc|mailto|site):\/\/\S+)/s', '<a href="{{LINKPLACEHOLDER}}$1">{{LINKPLACEHOLDER}}$1</a>', $text);
-        $text = preg_replace_ex('/site:\/\/(\S+)/s',make_link('$1'),$text);
-        $text = str_replace('{{LINKPLACEHOLDER}}', '', $text);
         $text = preg_replace_ex('!\[anchor=(.*?)\](.*?)\[/anchor\]!s', '<span class="anchor">$2 <a class="alink" href="#bb-$1" name="bb-$1" title="link to this anchor"> ¶ </a></span>', $text);  // add "bb-" to avoid clashing with eg #top
         $text = preg_replace_ex('/(^|[^\!])wiki:(\S+)/s', '$1<a href="'.make_link('wiki/$1').'">$2</a>', $text);
         $text = preg_replace_ex('/\!wiki:(\S+)/s', '<a href="'.make_link('wiki/$1').'">wiki:$1</a>', $text);
@@ -57,6 +52,7 @@ class Markdown extends FormatterExtension
         $text = preg_replace_ex("#<br><(li|ul|ol|/ul|/ol)#s", "<\\1", $text);
         $text = preg_replace_ex("#\[align=(left|center|right)\](.*?)\[\/align\]#s", "<div style='text-align:\\1;'>\\2</div>", $text);
         $text = preg_replace_ex('/\|\|(.*?)\|\|/s', '<span class="spoiler" title="spoilered text" onclick="markdown_spoiler(this);">$1</span>', $text);
+        $text = $this->insert_links($text);
         $text = $this->insert_code($text);
         return $text;
     }
@@ -78,6 +74,21 @@ class Markdown extends FormatterExtension
         $text = preg_replace_ex("!\[/?(list|ul|ol)\]!", "", $text);
         $text = preg_replace_ex("#\[align=(left|center|right)\](.*?)\[\/align\]#s", "$2", $text);
         $text = preg_replace_ex('/\|\|(.*?)\|\|/s', '$1', $text); // spoiler
+        return $text;
+    }
+
+    private function encode_links(string $text): string {
+        $text = preg_replace_callback('/\(((?:https?|ftp|irc|mailto|site):\/\/)([^\)\[\]]+)\)/s',function($matches) {return "({url!}".base64_encode($matches[1].str_replace(" ","%20",$matches[2]))."{/url!})";}, $text);
+        $text = preg_replace_callback('/((?:https?|ftp|irc|mailto|site):\/\/[^\s\)\[\]]+)/s',function($matches) {return "{url!}".base64_encode($matches[1])."{/url!}";}, $text);
+        return $text;
+    }
+    private function insert_links(string $text): string {
+        $text = preg_replace_callback('/\#\{url!\}(.+?)\{\/url!\}/s',function($matches) {return base64_decode($matches[1]);},$text);
+        $text = preg_replace_callback('/!\[(.+?)\]\(\{url!\}(.+?)\{\/url!\}\)/m',function($matches) {return "<img alt='".$matches[1]."' src='".base64_decode($matches[2])."'>";}, $text); // image
+        $text = preg_replace_callback('/\[(.+?)\]\(\{url!\}(.+?)\{\/url!\}\)/m',function($matches) {return "<a href='".base64_decode($matches[2])."'>".$matches[1]."</a>";}, $text); // []()
+        $text = preg_replace_callback('/!\{url!\}(.+?)\{\/url!\}/m',function($matches) {return "<img alt='user image' src='".base64_decode($matches[1])."'>";}, $text); // image
+        $text = preg_replace_callback('/\{url!\}(.+?)\{\/url!\}/m', function($matches) {$url = base64_decode($matches[1]);return "<a href='$url'>$url</a>";}, $text);
+        $text = preg_replace_ex('/site:\/\/([^\s\)\[\]\'\"\>\<]+)/s',make_link('$1'),$text);
         return $text;
     }
 

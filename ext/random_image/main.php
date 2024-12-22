@@ -28,10 +28,6 @@ class RandomImage extends Extension
                     $page->set_mode(PageMode::REDIRECT);
                     $page->set_redirect($image->get_image_link());
                     break;
-                case "static":
-                    $page->set_filename($image->filename,"inline");
-                    send_event(new ImageDownloadingEvent($image, $image->get_image_filename(), $image->get_mime(), $event->GET));
-                    break;
                 case "view":
                     send_event(new DisplayingImageEvent($image));
                     break;
@@ -41,7 +37,8 @@ class RandomImage extends Extension
                     $page->set_data((string)$this->theme->build_thumb($image));
                     break;
                 default:
-                    throw new PostNotFound("'$action' is not an option for this api, 'redirect', 'static', 'view' and 'widget' are");
+                    $page->set_filename($image->filename,"inline");
+                    send_event(new ImageDownloadingEvent($image, $image->get_image_filename(), $image->get_mime(), $event->GET));
             }
         }
     }
