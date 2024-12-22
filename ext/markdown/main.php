@@ -14,6 +14,7 @@ class Markdown extends FormatterExtension
 
     public function _format(string $text): string
     {
+        $text = preg_replace_callback("/\\\(.)/s", function($matches) {return "\\".base64_encode($matches[1])."\\";},$text);
         $text = $this->extract_code($text);
         $text = $this->encode_links($text);
         $text = preg_replace_ex("!\*\*\*(.*?)\*\*\*!", "<b><i>$1</b></i>", $text); // bi
@@ -54,6 +55,7 @@ class Markdown extends FormatterExtension
         $text = preg_replace_ex('/\|\|(.*?)\|\|/s', '<span class="spoiler" title="spoilered text" onclick="markdown_spoiler(this);">$1</span>', $text);
         $text = $this->insert_links($text);
         $text = $this->insert_code($text);
+        $text = preg_replace_callback("/\\\(.+?)\\\/s", function($matches) {return base64_decode($matches[1]);},$text);
         return $text;
     }
 
