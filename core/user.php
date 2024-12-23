@@ -270,7 +270,7 @@ class User
     public function get_session_id(): string
     {
         global $config;
-        return hash("sha3-256", $this->passhash . get_session_ip($config) . SECRET);
+        return hash("sha3-256", $this->passhash . SECRET);
     }
 
     public function set_login_cookie(): void

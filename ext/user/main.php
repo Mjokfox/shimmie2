@@ -136,7 +136,7 @@ class UserPage extends Extension
     {
         global $config;
         $config->set_default_bool(UserAccountsConfig::SIGNUP_ENABLED, true);
-        $config->set_default_int(UserAccountsConfig::LOGIN_MEMORY, 365);
+        $config->set_default_int(UserAccountsConfig::LOGIN_MEMORY, 30);
         $config->set_default_bool(UserAccountsConfig::LOGIN_TAC_BBCODE, true);
         $config->set_default_bool(UserAccountsConfig::USER_EMAIL_REQUIRED, false);
 
