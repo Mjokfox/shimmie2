@@ -25,6 +25,23 @@ class CommentPostingEvent extends Event
     }
 }
 
+class CommentEditingEvent extends Event
+{
+    public int $image_id;
+    public int $comment_id;
+    public User $user;
+    public string $comment;
+
+    public function __construct(int $image_id, int $comment_id, User $user, string $comment)
+    {
+        parent::__construct();
+        $this->image_id = $image_id;
+        $this->comment_id = $comment_id;
+        $this->user = $user;
+        $this->comment = $comment;
+    }
+}
+
 /**
  * A comment is being deleted. Maybe used by spam
  * detectors to get a feel for what should be deleted
@@ -105,6 +122,24 @@ class Comment
     public static function get_comments(Image $post): array
     {
         return CommentList::get_comments($post->id);
+    }
+
+    public static function by_id(int $comment_id): ?Comment
+    {
+        global $database;
+        if ($comment_id > 2 ** 32) {
+            // for some reason bots query huge numbers and pollute the DB error logs...
+            return null;
+        }
+        $query = "SELECT users.id as user_id, users.name as user_name, users.email as user_email, users.class as user_class,
+				comments.comment as comment, comments.id as comment_id,
+				comments.image_id as image_id, comments.owner_ip as poster_ip,
+				comments.posted as posted
+			FROM comments
+			LEFT JOIN users ON comments.owner_id=users.id
+			WHERE comments.id = :id;";
+        $row = $database->get_row($query, ["id" => $comment_id]);
+        return ($row ? new Comment($row) : null);
     }
 
     #[Mutation(name: "create_comment")]
@@ -207,14 +242,16 @@ class CommentList extends Extension
             $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("post/view/$i_iid", null, "comment_on_$i_iid"));
         }
-        if ($event->page_matches("comment/delete/{comment_id}/{image_id}", permission: Permissions::DELETE_COMMENT)) {
+        elseif ($event->page_matches("comment/delete/{comment_id}/{image_id}")) {
+            if ($user->can(Permissions::DELETE_COMMENT) || Comment::by_id($event->get_iarg('comment_id'))->owner_id === $user->id){
             // FIXME: post, not args
-            send_event(new CommentDeletionEvent($event->get_iarg('comment_id')));
-            $page->flash("Deleted comment");
-            $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(referer_or(make_link("post/view/" . $event->get_iarg('image_id'))));
+                send_event(new CommentDeletionEvent($event->get_iarg('comment_id')));
+                $page->flash("Deleted comment");
+                $page->set_mode(PageMode::REDIRECT);
+                $page->set_redirect(referer_or(make_link("post/view/" . $event->get_iarg('image_id'))));
+            } else throw new PermissionDenied("Permission Denied: You cant just go around and delete others' comments.");
         }
-        if ($event->page_matches("comment/bulk_delete", method: "POST", permission: Permissions::DELETE_COMMENT)) {
+        elseif ($event->page_matches("comment/bulk_delete", method: "POST", permission: Permissions::DELETE_COMMENT)) {
             $ip = $event->req_POST('ip');
 
             $comment_ids = $database->get_col("
@@ -232,7 +269,7 @@ class CommentList extends Extension
             $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("admin"));
         }
-        if ($event->page_matches("comment/list", paged: true)) {
+        elseif ($event->page_matches("comment/list", paged: true)) {
             $threads_per_page = 10;
 
             $speed_hax = (Extension::is_enabled(SpeedHaxInfo::KEY) && $config->get_bool(SpeedHaxConfig::RECENT_COMMENTS));
@@ -282,7 +319,17 @@ class CommentList extends Extension
 
             $this->theme->display_comment_list($images, $current_page + 1, $total_pages, $user->can(Permissions::CREATE_COMMENT));
         }
-        if ($event->page_matches("comment/beta-search/{search}", paged: true)) {
+        elseif ($event->page_matches("comment/edit", method: "POST", permission: Permissions::CREATE_COMMENT)) {
+            $cid = int_escape($event->req_POST('comment_id'));
+            if ($user->can(Permissions::DELETE_COMMENT) || Comment::by_id($cid)->owner_id === $user->id){
+                $i_iid = int_escape($event->req_POST('image_id'));
+                send_event(new CommentEditingEvent($i_iid, $cid, $user, $event->req_POST('comment')));
+                $page->set_mode(PageMode::REDIRECT);
+                $page->set_redirect(make_link("post/view/$i_iid", null, "c$cid"));
+
+            } else throw new PermissionDenied("Permission Denied: You cant edit others' comments, thats not how you win arguments online");
+        }
+        elseif ($event->page_matches("comment/beta-search/{search}", paged: true)) {
             $search = $event->get_arg('search');
             $page_num = $event->get_iarg('page_num', 1) - 1;
             $duser = User::by_name($search);
@@ -343,6 +390,11 @@ class CommentList extends Extension
     public function onCommentPosting(CommentPostingEvent $event): void
     {
         $this->add_comment_wrapper($event->image_id, $event->user, $event->comment);
+    }
+
+    public function onCommentEditing(CommentEditingEvent $event): void
+    {
+        $this->edit_comment($event->image_id, $event->comment_id, $event->user, $event->comment);
     }
 
     public function onCommentDeletion(CommentDeletionEvent $event): void
@@ -573,10 +625,29 @@ class CommentList extends Extension
         log_info("comment", "Comment #$cid added to >>$image_id: $snippet");
     }
 
+    private function edit_comment(int $image_id, int $comment_id, User $user, string $comment) {
+        if (!$user->can(Permissions::BYPASS_COMMENT_CHECKS)) {
+            // will raise an exception if anything is wrong
+            $this->comment_checks($image_id, $user, $comment);
+        }
+        global $database;
+        $query = "UPDATE comments
+        SET owner_ip = :ip,
+        posted = now(),
+        comment = :comment
+        WHERE id = :id;
+        ";
+        $args = [
+            "ip" => get_real_ip(),
+            "comment" => "$comment\n*(edited)*",
+            "id" => $comment_id
+        ];
+        $database->execute($query,$args);
+    }
+
     private function comment_checks(int $image_id, User $user, string $comment): void
     {
         global $config, $page;
-
         // basic sanity checks
         if (!$user->can(Permissions::CREATE_COMMENT)) {
             throw new CommentPostingException("Anonymous posting has been disabled");
@@ -585,17 +656,17 @@ class CommentList extends Extension
         } elseif (trim($comment) == "") {
             throw new CommentPostingException("Comments need text...");
         } elseif (strlen($comment) > 9000) {
-            throw new CommentPostingException("Comment too long~");
+            throw new CommentPostingException("Comment too long");
         }
 
         // advanced sanity checks
         elseif (strlen($comment) / strlen(\Safe\gzcompress($comment)) > 10) {
-            throw new CommentPostingException("Comment too repetitive~");
+            throw new CommentPostingException("Comment too repetitive");
         } elseif ($user->is_anonymous() && ($_POST['hash'] != $this->get_hash())) {
             $page->add_cookie("nocache", "Anonymous Commenter", time() + 60 * 60 * 24, "/");
             throw new CommentPostingException(
                 "Comment submission form is out of date; refresh the ".
-                    "comment form to show you aren't a spammer~"
+                    "comment form to show you aren't a spammer"
             );
         }
 

@@ -852,4 +852,8 @@ DIV.showInputButton, DIV.showPreviewButton {
 	color: var(--link-default)
 }
 
+.c-edit {
+	color: var(--link-default);
+}
+
 /* end of changes */

@@ -115,8 +115,12 @@ class CustomCommentListTheme extends CommentListTheme
 
         $h_userlink = "<a class='username' href='".make_link("user/$h_name")."'>$h_name</a>";
         $h_del = "";
-        if ($user->can(Permissions::DELETE_COMMENT)) {
+        if ($user->can(Permissions::DELETE_COMMENT) || $user->id === $comment->owner_id) {
             $h_del = " - " . $this->delete_link($i_comment_id, $i_image_id, $comment->owner_name, $tfe->stripped);
+        }
+        $h_edit = "";
+        if ($user->can(Permissions::DELETE_COMMENT) || ($user->can(Permissions::CREATE_COMMENT) && $user->id === $comment->owner_id)) {
+            $h_edit = " - " . $this->edit_button($i_comment_id, $i_image_id);
         }
         //$h_imagelink = $trim ? "<a href='".make_link("post/view/$i_image_id")."'>&gt;&gt;&gt;</a>\n" : "";
         if ($trim) {
@@ -126,9 +130,32 @@ class CustomCommentListTheme extends CommentListTheme
             return "
 				<table class='comment' id=\"c$i_comment_id\"><tr>
 					<td class='meta'>$h_userlink<br/>$h_posted$h_del</td>
-					<td>$h_comment<br><br>$h_reply</td>
+					<td>$h_comment<br><br>$h_reply $h_edit</td>
 				</tr></table>
 			";
         }
+    }
+
+    protected function build_postbox(int $image_id): string
+    {
+        global $config;
+
+        $hash = CommentList::get_hash();
+        $h_captcha = $config->get_bool("comment_captcha") ? captcha_get_html() : "";
+
+        return '
+		<div class="comment comment_add" id="cadd'.$image_id.'">
+			'.make_form(make_link("comment/add")).'
+				<input type="hidden" name="image_id" value="'.$image_id.'" />
+				<input type="hidden" name="hash" value="'.$hash.'" />
+				<textarea id="comment_on_'.$image_id.'" name="comment" rows="5" cols="50"></textarea>
+				'.$h_captcha.'
+				<br><input type="submit" value="Post Comment" />
+			</form>
+		</div>
+		';
+    }
+    protected function edit_button(int $comment_id, int $image_id): string{
+        return "<a class=\"c-edit\" onclick='create_edit_box(this,$image_id,$comment_id)'>Edit</a>";
     }
 }
