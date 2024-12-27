@@ -17,7 +17,9 @@ class CustomViewPostTheme extends ViewPostTheme
     {
         global $page;
         $page->set_heading(html_escape($image->get_tag_list()));
-        $page->add_block(new Block("Search", $this->build_navigation($image), "left", 0));
+        $nav = $this->build_navigation($image);
+        $page->add_block(new Block("Search", $nav, "left", 0, "search-bar"));
+        $page->add_block(new Block("Search", $nav, "main", 5, "mobile-search"));
         $page->add_block(new Block("Information", $this->build_information($image), "left", 15));
         $page->add_block(new Block(null, $this->build_info($image, $editor_parts), "main", 15));
         $page->add_block(new Block(null, $this->build_pin($image), "main", 2,"post_controls"));
@@ -98,11 +100,11 @@ class CustomViewPostTheme extends ViewPostTheme
         $page->add_html_header(LINK(["id" => "nextlink", "rel" => "next", "href" => make_link("post/next/{$image->id}", $query)]));
         $page->add_html_header(LINK(["id" => "prevlink", "rel" => "previous", "href" => make_link("post/prev/{$image->id}", $query)]));
         return DIV(["class" => "post-controls"],
-            A(["href" => make_link("post/prev/{$image->id}", $query), "id" => "prevlink"], "⮪ Prev"),
+            A(["href" => make_link("post/prev/{$image->id}", $query), "id" => "prevlink"], "<< Prev"),
             SPAN(["class" => "post-controls-center"],
                 A(["href" => make_link("post/list/",$query), "id" => "searchlink"], "Search" . (isset($_GET['search']) ? ": ".$_GET['search'] : ""))
             ),
-            A(["href" => make_link("post/next/{$image->id}", $query), "id" => "nextlink"], "Next ⮫"),
+            A(["href" => make_link("post/next/{$image->id}", $query), "id" => "nextlink"], "Next >>"),
         );
     }
 }

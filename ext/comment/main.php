@@ -643,6 +643,11 @@ class CommentList extends Extension
             "id" => $comment_id
         ];
         $database->execute($query,$args);
+
+        $snippet = substr($comment, 0, 100);
+        $snippet = str_replace("\n", " ", $snippet);
+        $snippet = str_replace("\r", " ", $snippet);
+        log_info("comment", "Comment #$comment_id edited to >>$image_id: $snippet");
     }
 
     private function comment_checks(int $image_id, User $user, string $comment): void

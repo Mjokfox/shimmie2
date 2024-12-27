@@ -65,7 +65,7 @@ class ReverseImage extends Extension
             else {
                 $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect("reverse_image_search");
-                $page->flash("No file or url given");
+                $page->flash("Something broke in the backed or no file or url given");
             }
         } else if ($event->page_matches("reverse_image_search_fromupload", method: "POST", authed: false)) {
             $ids = $this->reverse_image_search_post();
@@ -255,7 +255,7 @@ class ReverseImage extends Extension
         curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
         $result=curl_exec($ch);
         curl_close($ch);
-
+        if (!$result) return false;
         $json = json_decode($result,true);
 
         if (!isset($json["features"])) return false;

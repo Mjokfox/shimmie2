@@ -2,6 +2,12 @@
     DIV.silly-cookie-container {
         position: relative;
         bottom: unset;
+        padding: 0px;
+    }
+
+    DIV.silly-cookie-container *{
+        padding: 5px 20px;
+        font-size: 1em;
     }
 
     DIV.silly-cookie-subcontainer {

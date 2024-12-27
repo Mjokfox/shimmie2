@@ -142,7 +142,7 @@ class CustomCommentListTheme extends CommentListTheme
 
         $hash = CommentList::get_hash();
         $h_captcha = $config->get_bool("comment_captcha") ? captcha_get_html() : "";
-
+        //<a class="c-add" onclick=document.getElementById("cadd'.$image_id.'").style["display"]="unset">Add comment</a>
         return '
 		<div class="comment comment_add" id="cadd'.$image_id.'">
 			'.make_form(make_link("comment/add")).'

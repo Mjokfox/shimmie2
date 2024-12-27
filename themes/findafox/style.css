@@ -256,8 +256,8 @@ FOOTER>DIV {
 	padding-top: 10px;
 }
 .markdown IMG {
-	max-width: 128px;
-	max-height: 128px;
+	max-width: 256px;
+	max-height: 256px;
 }
 
 CODE {
@@ -333,7 +333,6 @@ TABLE.tag_list>THEAD {
 
 TABLE.tag_list>TBODY>TR>TD {
 	display: inline;
-	padding: 0;
 	line-height: 1em;
 }
 
@@ -551,8 +550,8 @@ form+form {
 	:root {
 		--rowm: 2;
 	}
-	body {
-		font-size: x-large;
+	body:not(.layout-front-page) {
+		font-size: 3em;
 	}
 	BODY.layout-grid {
 		grid-template-columns: auto;
@@ -572,7 +571,6 @@ form+form {
 	NAV {
 		grid-column: 1;
 		grid-row: 2;
-		margin: auto;
 		width: auto;
 		display: flex;
 	}
@@ -582,8 +580,28 @@ form+form {
 		grid-row: 4;
 	}
 
+	H3 {
+		font-size: 3rem;
+	}
+
+	SECTION#mobile-search {
+		display:unset;
+	}
+
+	SECTION#search-bar {
+		display:none;
+	}
+
+	HEADER ul.flat-list {
+		display: none;
+	}
+
 	.withleft {
 		margin: 0;
+	}
+
+	TABLE.form, TABLE.form.image_info{
+		width: unset;
 	}
 
 	#image-list .blockbody {
@@ -599,14 +617,21 @@ form+form {
 		display: none;
 	}
 
-	#Popular_Tagsleft {
-		font-size: 50%;
-	}
-	NAV:has(#Tagsleft) {
+	NAV {
 		grid-row: 3;
+		flex-direction: column;
 	}
-	ARTICLE:has(#Imagemain) {
+	ARTICLE {
 		grid-row: 2;
+	}
+
+	.markdown IMG {
+		max-width: 256px;
+  		max-height: 256px;
+	}
+
+	.markdown CODE {
+		font-size: inherit;
 	}
 	.upload-split-view {
 		right: unset;
@@ -659,6 +684,39 @@ form+form {
 
 	INPUT.label-margin {
 		margin-bottom: unset;
+	}
+
+	.reverse_image_link IMG {
+		width: 48px;
+		margin-right: 32px;
+	}
+
+	#site-title {
+		font-size: 1.5em;
+	}
+
+	DIV.title-container {
+		display:flex;
+	}
+
+	DIV.mobile-burger {
+		margin-left: auto;
+		margin-right: 1em;
+		display:block;
+		text-align: center;
+	}
+	DIV.mobile-burger A{
+		font-size: 2.5em;
+		padding: 1px 0.25em;
+		background-color: var(--header-selected);
+	}
+
+	DIV.mobile-burger A:hover{
+		color: var(--text);
+	}
+
+	.comment .meta {
+		padding-right: 1.5em;
 	}
 }
 
@@ -844,6 +902,10 @@ DIV.showInputButton, DIV.showPreviewButton {
 	padding-right:4px;
 }
 
+TD.tag_info_link_cell{
+	margin-right: .2em;
+}
+
 .ars A, A.tag_info_link {
 	color: inherit;
 }
@@ -854,6 +916,18 @@ DIV.showInputButton, DIV.showPreviewButton {
 
 .c-edit {
 	color: var(--link-default);
+}
+
+INPUT.autocomplete_tags {
+	max-width: 100vw;
+}
+
+#mobile-search {
+	display:none;
+}
+
+.mobile-burger {
+	display:none;
 }
 
 /* end of changes */

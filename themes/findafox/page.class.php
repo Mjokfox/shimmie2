@@ -122,7 +122,13 @@ class customPage extends Page
         return BODY(
             $this->body_attrs(),
             HEADER(
-                $title_link,
+                DIV(["class" => "title-container"],$title_link,
+                DIV(["class" => "mobile-burger",],
+                    A([
+                        "onclick" => '$(".flat-list").toggle();$(this).text($(this).text() === "≡" ? "×" : "≡");'
+                    ],"≡"))
+                ),
+                
                 UL(["id" => "navbar", "class" => "flat-list"], $custom_links),
                 UL(["id" => "subnavbar", "class" => "flat-list"], $custom_sublinks),
             ),
