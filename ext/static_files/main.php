@@ -10,6 +10,8 @@ class RobotsBuildingEvent extends Event
     public array $parts = [
         "User-agent: SemrushBot",
         "Disallow: /",
+        "User-agent: MJ12bot",
+        "Disallow: / ",
         "User-agent: *",
         // Site is rate limited to 1 request / sec,
         // returns 503 for more than that
