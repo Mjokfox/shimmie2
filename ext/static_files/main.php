@@ -8,10 +8,6 @@ class RobotsBuildingEvent extends Event
 {
     /** @var string[] */
     public array $parts = [
-        "User-agent: SemrushBot",
-        "Disallow: /",
-        "User-agent: MJ12bot",
-        "Disallow: / ",
         "User-agent: *",
         // Site is rate limited to 1 request / sec,
         // returns 503 for more than that
@@ -34,7 +30,8 @@ class StaticFiles extends Extension
             $rbe = send_event(new RobotsBuildingEvent());
             $page->set_mode(PageMode::DATA);
             $page->set_mime("text/plain");
-            $page->set_data(join("\n", $rbe->parts));
+            $data = join("\n",[$config->get_string("robots_txt_bef"), join("\n", $rbe->parts),$config->get_string("robots_txt_aft")]);
+            $page->set_data($data);
         }
 
         // hax.
@@ -56,6 +53,13 @@ class StaticFiles extends Extension
                 $page->set_mime(MimeType::get_for_file($filename));
             }
         }
+    }
+
+    public function onSetupBuilding(SetupBuildingEvent $event): void
+    {
+        $sb = $event->panel->create_new_block("Robots");
+        $sb->add_longtext_option("robots_txt_bef", "Text to add before the main user-agent *");
+        $sb->add_longtext_option("robots_txt_aft", "Text to add after*");
     }
 
     /**
