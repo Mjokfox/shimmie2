@@ -780,6 +780,30 @@ function dropZoneInit(){
     }
 }
 
+function parse_params() {
+    const params = new URLSearchParams(window.location.href);
+    if (params.has("media")) {
+        const media_url = params.get("media");
+        var source = ""
+        if (params.has("sourcejs")) {
+            source = params.get("sourcejs");
+        }
+        const url_input = document.getElementById("urldata0")
+        if (urlInput) {
+            url_input.value = media_url;
+            const source_input = document.querySelector("INPUT[name='source0']")
+            if (source_input){
+                source_input.value = source;
+            }
+            url_input.dispatchEvent(new Event("input", { bubbles: true }))
+            document.getElementById("showinputdata0").click();
+            if (typeof get_predictions === 'function'){
+                get_predictions("0");
+            }
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     if(document.getElementById("upload_size_tracker")) {
         document.querySelectorAll("#large_upload_form input[type='file']").forEach((el) => {
@@ -796,9 +820,9 @@ document.addEventListener('DOMContentLoaded', () => {
     dropZoneInit();
     sliderInit();
     radio_unsetInit();
+    parse_params();
     // document.querySelectorAll(".disabledOnStartup").forEach((el) => {
     //     el.disabled = true;
     // });
-
 });
 }

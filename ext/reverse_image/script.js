@@ -46,73 +46,74 @@ document.addEventListener('DOMContentLoaded', () => {
 
 }
 
+var used_array = [];
+async function get_predictions(id) {
+    if (used_array.includes(id)){
+        return;
+    }
+    used_array.push(id);
+    const url_input =  document.getElementById(`urldata${id}`);
+    const file_input = document.getElementById(`data${id}`);
+    const data = new FormData()
+    data.append('file', file_input.files[0])
+    data.append('url_input', url_input.value)
+
+    const tag_n = await fetch('/reverse_image_search_fromupload', 
+        {
+            method: 'POST',
+            body: data
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();  // Parse the JSON response
+        }).catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+            return;
+        });
+
+    if (tag_n) {
+        const inputdiv = document.getElementById(`inputdivdata${id}`);
+        if (ENABLE_AUTO_TAG){
+            inputdiv.querySelectorAll("input[type=radio], input[type=checkbox]").forEach((input) => {
+                input.checked = false;
+                if (input.parentElement){
+                    input.parentElement.style["background-color"] = "rgba(127,0,0,0.25)";
+                }
+            });
+        } else {
+            inputdiv.querySelectorAll("input[type=radio], input[type=checkbox]").forEach((input) => {
+                if (input.parentElement){
+                    input.parentElement.style["background-color"] = "rgba(127,0,0,0.25)";
+                }
+            });
+        }
+        const sim_max = Object.values(tag_n)[0];
+        const threshold = 2.55*AUTO_TAG_THRESHOLD;
+        for (const [tag, similarity] of Object.entries(tag_n)) {
+            const el = inputdiv.querySelector(`input[value=${CSS.escape(tag)}]`)
+            if (el && el.parentElement) {
+                const r = 127*(1- (similarity/sim_max));
+                const g = 255*(similarity/sim_max);
+                el.parentElement.style["background-color"] = `rgba(${r},${g},0,0.5)`;
+                if (g > threshold) {
+                    el.parentElement.style["font-weight"] = "bold";
+                    if (ENABLE_AUTO_TAG){
+                        el.checked = true;
+                    }
+                }
+            }
+        };
+        const el = document.getElementById(`usertags_${id}`)
+        if (el){
+            el.dispatchEvent(new Event('input'));
+        }    
+        
+    }
+}
+
 // tag prediction
 if (window.location.pathname === "/upload"){
-    var used_array = [];
-    async function get_predictions(id) {
-        if (used_array.includes(id)){
-            return;
-        }
-        used_array.push(id);
-        const url_input =  document.getElementById(`urldata${id}`);
-        const file_input = document.getElementById(`data${id}`);
-        const data = new FormData()
-        data.append('file', file_input.files[0])
-        data.append('url_input', url_input.value)
-
-        const tag_n = await fetch('/reverse_image_search_fromupload', 
-            {
-                method: 'POST',
-                body: data
-            }).then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();  // Parse the JSON response
-            }).catch(error => {
-                console.error('There was a problem with the fetch operation:', error);
-                return;
-            });
-
-        if (tag_n) {
-            const inputdiv = document.getElementById(`inputdivdata${id}`);
-            if (ENABLE_AUTO_TAG){
-                inputdiv.querySelectorAll("input[type=radio], input[type=checkbox]").forEach((input) => {
-                    input.checked = false;
-                    if (input.parentElement){
-                        input.parentElement.style["background-color"] = "rgba(127,0,0,0.25)";
-                    }
-                });
-            } else {
-                inputdiv.querySelectorAll("input[type=radio], input[type=checkbox]").forEach((input) => {
-                    if (input.parentElement){
-                        input.parentElement.style["background-color"] = "rgba(127,0,0,0.25)";
-                    }
-                });
-            }
-            const sim_max = Object.values(tag_n)[0];
-            const threshold = 2.55*AUTO_TAG_THRESHOLD;
-            for (const [tag, similarity] of Object.entries(tag_n)) {
-                const el = inputdiv.querySelector(`input[value=${CSS.escape(tag)}]`)
-                if (el && el.parentElement) {
-                    const r = 127*(1- (similarity/sim_max));
-                    const g = 255*(similarity/sim_max);
-                    el.parentElement.style["background-color"] = `rgba(${r},${g},0,0.5)`;
-                    if (g > threshold) {
-                        el.parentElement.style["font-weight"] = "bold";
-                        if (ENABLE_AUTO_TAG){
-                            el.checked = true;
-                        }
-                    }
-                }
-            };
-            const el = document.getElementById(`usertags_${id}`)
-            if (el){
-                el.dispatchEvent(new Event('input'));
-            }    
-            
-        }
-    }
     function make_predict_button(id){
         const input = document.createElement("input");
         input.id = `predict-button_${id}`;
@@ -154,5 +155,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
 });
-
 }
