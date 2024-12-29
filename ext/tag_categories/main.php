@@ -220,14 +220,14 @@ class TagCategories extends Extension
     {
         $h_tag_no_underscores = str_replace("_", " ", $h_tag);
 
-        $tag_category_dict = static::getKeyedDict();
+        $keyed_dict = static::getKeyedDict();
 
         // we found a tag, see if it's valid!
         $tag_category_dict = static::getCategorizedTags();
         if (array_key_exists($h_tag,$tag_category_dict)){
             $category = $tag_category_dict[$h_tag];
             $tag_category_css = ' tag_category_'.$category;
-            $tag_category_style = 'style="color:'.html_escape($tag_category_dict[$category]['color']).';" ';
+            $tag_category_style = 'style="color:'.html_escape($keyed_dict[$category]['color']).';" ';
             $h_tag_no_underscores = str_replace("_", " ", $h_tag);
 
             $h_tag_no_underscores = '<span class="'.$tag_category_css.'" '.$tag_category_style.'>'.$h_tag_no_underscores.$extra_text.'</span>';

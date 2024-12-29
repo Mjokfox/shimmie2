@@ -28,9 +28,6 @@ class CustomWikiTheme extends WikiTheme
 
         // see if title is a category'd tag
         $title_html = html_escape($wiki_page->title);
-        if (Extension::is_enabled(TagCategoriesInfo::KEY)) {
-            $title_html = Tagcategories::getTagHtml($title_html);
-        }
 
         if (!$wiki_page->exists) {
             $page->set_code(404);
