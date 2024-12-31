@@ -249,6 +249,10 @@ FOOTER>DIV {
 	max-height: 128px;
 }
 
+.markdown {
+	list-style-position: inside;
+}
+
 .markdown BLOCKQUOTE { 
 	border-left: .25rem solid var(--zebra-heading-fg);
 }
@@ -348,19 +352,6 @@ TABLE.tag_list>TBODY>TR>TD:after {
 
 .more {
 	content: "More â";
-}
-
-.comment {
-	margin-bottom: 8px;
-}
-
-.comment .meta {
-	width: 15rem;
-	color: var(--comment-meta);
-}
-
-.comment TD {
-	text-align: left;
 }
 
 .withleft {
@@ -718,6 +709,10 @@ form+form {
 	.comment .meta {
 		padding-right: 1.5em;
 	}
+
+	.comment IMG.avatar {
+		max-height: 192px;
+	}
 }
 
 @media only screen and (max-width:1500px) {
@@ -929,5 +924,32 @@ INPUT.autocomplete_tags {
 .mobile-burger {
 	display:none;
 }
+
+.comment .avatar {
+	max-width: 90%;
+	max-height: 96px;
+	margin: auto;
+  	display: flex;
+}
+
+.comment {
+	margin-bottom: 8px;
+	background-color: var(--header-selected);
+}
+
+.comment .c_body {
+	padding-left: .5em;
+}
+
+.comment TD {
+	text-align: left;
+}
+
+.comment .meta {
+	width: 12rem;
+	color: var(--comment-meta);
+	background-color: #8881;
+}
+
 
 /* end of changes */
