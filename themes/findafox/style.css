@@ -933,6 +933,11 @@ INPUT.autocomplete_tags {
   	display: flex;
 }
 
+.image_info .avatar {
+	max-width: 90%;
+	max-height: 96px;
+}
+
 .comment {
 	margin-bottom: 8px;
 	background-color: var(--header-selected);
@@ -952,5 +957,20 @@ INPUT.autocomplete_tags {
 	background-color: #8881;
 }
 
+#blotter .blockbody div {
+	font-size: 1em;
+	display: flex;
+	justify-content: center;
+	background-color: var(--header-selected);
+	padding: 2px;
+}
+
+.blotter span:has(a) {
+	padding: 2px;
+}
+
+#blotter2-toggle:visited, #blotter2-toggle {
+	color: var(--text);
+}
 
 /* end of changes */
