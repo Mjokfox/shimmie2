@@ -114,4 +114,9 @@ class Blotter extends Extension
         );
         $this->theme->display_blotter($entries);
     }
+
+    public function get_priority(): int
+    {
+        return 99;
+    }  // after static files
 }
