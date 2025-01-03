@@ -14,8 +14,8 @@ function markdown_format(text)
 	text = extract_code(text);
 	text = encode_links(text);
 	text = text.replaceAll(/\*\*\*(.*?)\*\*\*/g, "<b><i>$1</b></i>"); // bi
-	let types = ["\\*\\*", "\\*", "__", "_", "~~", "\\^"]; // b, i, u, sub, s, sup
-	let replacements = ["b","i","u","sub","s","sup"];
+	let types = ["\\*\\*", "\\*", "___", "__", "~~", "\\^"]; // b, i, sub, u, s, sup
+	let replacements = ["b","i","sub","u","s","sup"];
 	types.forEach((el, i) => {
 		let r = replacements[i];
 		let regex = new RegExp(`${el}(.*?)${el}`, "g");

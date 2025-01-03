@@ -626,13 +626,13 @@ function checkboxRadio(self){
     const suffix = self.id.split("_")[1]
     if (self.value in makeCheckbox){
         makeCheckbox[self.value].forEach((name) => {
-            document.querySelectorAll(`input[name="${name}_${suffix}"]`).forEach((el) =>{
+            document.querySelectorAll(`input[var="${name}_${suffix}"]`).forEach((el) =>{
                 el.type = "checkbox";
             });
         });
     } if (self.value in makeRadio){
         makeRadio[self.value].forEach((name) => {
-            document.querySelectorAll(`input[name="${name}_${suffix}"]`).forEach((el) =>{
+            document.querySelectorAll(`input[var="${name}_${suffix}"]`).forEach((el) =>{
                 el.type = "radio";
             });
         });
@@ -659,9 +659,11 @@ function radio_unsetInit() {
                     updateTags(radio);
                     event.preventDefault();
                 } else {
-                    document.querySelectorAll('input[name="' + radio.name + '"]').forEach((r) => {
+                    document.querySelectorAll('input[var="' + radio.getAttribute("var") + '"]').forEach((r) => {
+                        r.checked = false;
                         r.previousChecked = false;
                     });
+                    radio.checked = true;
                     radio.previousChecked = true;
                 }
             }

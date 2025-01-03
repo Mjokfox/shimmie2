@@ -143,7 +143,7 @@ function make_input_label($suffix,$tag,$id,$type="radio",$onclicks="",$class="",
         array_merge(
             [
                 "type" => "{$type}",
-                "name" => "{$id}_{$suffix}",
+                "var" => "{$id}_{$suffix}",
                 "id" => "tagsInput_{$suffix}",
                 "class" => "tagsInput_{$suffix} {$class}",
                 "value" => $tag,
