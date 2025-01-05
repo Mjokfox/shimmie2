@@ -973,4 +973,9 @@ INPUT.autocomplete_tags {
 	color: var(--text);
 }
 
+.pm-edit {
+	margin-left: .6rem;
+	padding: 0 .3rem;
+}
+
 /* end of changes */
