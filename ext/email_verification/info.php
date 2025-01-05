@@ -14,6 +14,6 @@ class EmailVerificationInfo extends ExtensionInfo
     public string $license = self::LICENSE_GPLV2;
     public ExtensionVisibility $visibility = ExtensionVisibility::ADMIN;
     public ExtensionCategory $category = ExtensionCategory::ADMIN;
-    public string $description = "Adds email verification (HARDCODED BITS CURRENTLY)";
+    public string $description = "Adds email verification";
     public bool $core = true;
 }

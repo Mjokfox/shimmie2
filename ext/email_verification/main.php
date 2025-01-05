@@ -48,52 +48,57 @@ class EmailVerification extends Extension
         global $page, $user;
         
         if ($event->page_matches("email_verification",method:"GET")) {
-            $ruser = User::by_name($user->name); // need non cached user
-            if ($ruser->class->name === "user"){
+            $user = User::by_id($user->id); // cached user can give problems
+            if ($user->class->name === "user"){
                 $token = $_GET['token'];
                 if ($token != null) {
-                    if ($token === $ruser->get_auth_token()) {
-                        $ruser->set_class("verified");
+                    if ($token === $this->get_email_token($user, $user->email)) {
+                        $user->set_class("verified");
                         $page->flash("Email verified!");
                         $page->add_block(new Block("Email verified", rawHTML(""), "main", 1));
                     }
                     else {
-                        throw new PermissionDenied("Permission Denied: Invalid Token (Are you opening the verification link in the same browser?)");
+                        throw new PermissionDenied("Verification failed: Invalid Token (Are you logged in?)");
                     }
                 } else {throw new PermissionDenied("Permission Denied: No token supplied");}
-            } else {throw new PermissionDenied("Permission Denied: You are already verified!");}
+            } else {throw new PermissionDenied("Your email is already verified!");}
         } 
-        else if ($event->page_matches("user_admin/send_verification_mail",method:"POST")){
-            $ruser = User::by_name($user->name);
-            
-            if ($event->req_POST('id') == $ruser->id) {
-                if ($ruser->email){
-                    $this->send_verification_mail($ruser->get_auth_token(), $ruser->email);
+        elseif ($event->page_matches("user_admin/send_verification_mail",method:"POST")){
+            $user = User::by_id($user->id);
+            if ($event->req_POST('id') == $user->id) {
+                if ($user->email){
+                    $this->send_verification_mail($this->get_email_token($user, $user->email), $user->email);
                 } else {$page->flash("no email set, cannot send verification email");}
                 $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(make_link("user"));
             }
         } 
-        else if ($event->page_matches("user_admin/change_email", method: "POST")) {
+        elseif ($event->page_matches("user_admin/change_email", method: "POST")) {
             $input = validate_input([
                 'id' => 'user_id,exists',
                 'address' => 'email',
             ]);
-            $ruser = User::by_id($input['id']);
-            if ($this->user_can_edit_user($user, $ruser)) {
-                if ($ruser->class->name === "verified" || $ruser->class->name === "user") {
-                    $ruser->set_class("user");
-                    $this->send_verification_mail($ruser->get_auth_token(), $input['address']);
+            $duser = User::by_id($input['id']);
+            if ($this->user_can_edit_user($user, $duser)) {
+                if ($duser->class->name === "verified" || $duser->class->name === "user") {
+                    $duser->set_class("user");
+                    $this->send_verification_mail($this->get_email_token($duser, $input['address']), $input['address']);
                 }
-
             }
         }
+    }
+
+    public function onSetupBuilding(SetupBuildingEvent $event): void
+    {
+        $sb = $event->panel->create_new_block("Email verification");
+        $sb->add_text_option(EmailVerificationConfig::EMAIL_SENDER, "The email from which verification mails are sent from: ");
+        $sb->add_text_option(EmailVerificationConfig::DEFAULT_MESSAGE, "<br>The message shown to users without email: ");
     }
 
     public function onUserCreation(UserCreationEvent $event): void{
         global $page;
         $page->flash("Welcome to FindAfox, ". $event->username ."!");
-        $this->send_verification_mail($event->get_user()->get_auth_token(), $event->email);
+        $this->send_verification_mail($this->get_email_token($event->get_user(),$event->email), $event->email);
     }
 
     public function onUserPageBuilding(UserPageBuildingEvent $event): void {
@@ -118,24 +123,26 @@ class EmailVerification extends Extension
 
     public function send_verification_mail(string $token, string $email): void
     {
-        global $page;
+        global $page, $config;
         if ($email === "") {
-            $page->flash("You are now registered as a basic user, having a maximum of 20 uploads per day, email verified users get 100 uploads per day and the ability to bulk download images. This is as an anti spam measure, no data will be sold to third parties.");
+            $page->flash($config->get_string(EmailVerificationConfig::DEFAULT_MESSAGE));
             return;
         }
         if ($token === "") {
             $page->flash("verification email failed to send, to verify please try again by clicking the button in the account panel to become verified user");
             return;
         }
-        $verification_url = "https://findafox.net/email_verification?token=$token"; //yeah lets hardcode for now
+        $sender = $config->get_string(EmailVerificationConfig::EMAIL_SENDER);
+        $server_name = $_SERVER['SERVER_NAME'];
+        $verification_url = "https://$server_name/email_verification?token=$token";
         $to = $email;
-        $subject = 'Verify your email';
-        $message = "Your email verification link, please open it in the same browser as you need to be logged in<br><a href=$verification_url>$verification_url</a>";
+        $subject = 'Verify your email address';
+        $message = "Your email verification link, you require to be logged in when you open the link<br><a href=$verification_url>$verification_url</a>";
         $headers = array(
             'Content-type' => 'text/html',
-            'Sender' => 'mjokfox@findafox.net', //yeah lets hardcode for now
-            'From' => 'Email verification findafox <mjokfox@findafox.net>',
-            'Reply-To' => 'findafox staff <mjokfox@findafox.net>',
+            'Sender' => $sender,
+            'From' => "Email verification $server_name <$sender>",
+            'Reply-To' => "$server_name admins <$sender>",
             'X-Mailer' => 'PHP/' . phpversion()
         );
         if (mail($to, $subject, $message, $headers)) {
@@ -162,4 +169,10 @@ class EmailVerification extends Extension
             throw new PermissionDenied("You need to be an admin to change other people's details");
         }
     }
+
+    public function get_email_token(User $user, string $email): string 
+    {
+        return hash("sha3-256", $email. $user->get_session_id() . SECRET);
+    }
+    
 }
