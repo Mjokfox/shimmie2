@@ -77,7 +77,7 @@ class ReverseImage extends Extension
                 $image = Image::by_id($first);
                 $closest = [
                     "id" => $first,
-                    "link" => $image->get_image_link(),
+                    "link" => $image->get_thumb_link(),
                     "width" => $image->width,
                     "height" => $image->height,
                     "filesize" => $image->filesize,
