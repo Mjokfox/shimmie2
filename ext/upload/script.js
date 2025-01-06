@@ -94,21 +94,17 @@ function showPreview(file, url = "", background_color = "#0000") {
             let mediaElement;
             const isVideo = file ? file.type.startsWith('video') : url.match(/\.(mp4|webm)$/i);
             const size = file ? fileSize(file.size) : "unknown size";
-
+            const infob = document.createElement('b');
             if (isVideo) {
                 mediaElement = document.createElement('video');
                 mediaElement.controls = true;
                 mediaElement.oncanplay = function() {
-                    const infob = document.createElement('b');
                     infob.textContent = `${mediaElement.videoWidth} x ${mediaElement.videoHeight}, ${size}`
-                    mediaPreview.appendChild(infob);
                 };
             } else {
                 mediaElement = document.createElement('img');
                 mediaElement.onload = function() {
-                    const infob = document.createElement('b');
                     infob.textContent = `${mediaElement.naturalWidth} x ${mediaElement.naturalHeight}, ${size}`
-                    mediaPreview.appendChild(infob);
                 };
             }
             if (file) {
@@ -121,6 +117,7 @@ function showPreview(file, url = "", background_color = "#0000") {
                 mediaElement.src = url;
             }
             mediaPreview.appendChild(mediaElement);
+            mediaPreview.appendChild(infob);
             mediaPreview.style.display = 'flex';
             mediaPreview.style["background-color"] = background_color;
         } else {

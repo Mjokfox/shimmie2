@@ -52,3 +52,14 @@
     display:flex;
     flex-direction:column;
 }
+
+#duplicate_img .auto_dupe {
+    border:3px double lime;
+    max-width:75%;
+    max-height:75%;
+}
+
+#duplicate_img .no_auto_dupe {
+    max-width:25%;
+    max-height:25%;
+}

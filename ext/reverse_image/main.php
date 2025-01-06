@@ -17,6 +17,7 @@ class ReverseImage extends Extension
         global $config;
         $config->set_default_int(ReverseImageConfig::CONF_MAX_LIMIT, 10);
         $config->set_default_int(ReverseImageConfig::CONF_DEFAULT_AMOUNT, 5);
+        $config->set_default_int(ReverseImageConfig::SIMILARITY_DUPLICATE, 3);
         $config->set_default_string(ReverseImageConfig::CONF_URL, "127.0.0.1:10017");
     }
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
@@ -53,7 +54,7 @@ class ReverseImage extends Extension
     }
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $user, $page;
+        global $user, $page,$config;
         if ($event->page_matches("reverse_image_search", method: "GET")) {
             $this->theme->display_page();
         } else if ($event->page_matches("reverse_image_search", method: "POST", authed: false)) {
@@ -71,8 +72,20 @@ class ReverseImage extends Extension
             $ids = $this->reverse_image_search_post();
             $page->set_mode(PageMode::DATA);
             if (count($ids) > 0){
+                $threshold = $config->get_int(ReverseImageConfig::SIMILARITY_DUPLICATE)/100;
+                $first = array_key_first($ids);
+                $image = Image::by_id($first);
+                $closest = [
+                    "id" => $first,
+                    "link" => $image->get_image_link(),
+                    "width" => $image->width,
+                    "height" => $image->height,
+                    "filesize" => $image->filesize,
+                    "auto_dupe" => $ids[$first] < $threshold
+                ];
                 $tag_n = $this->tags_from_features_id($ids);
-                $page->set_data(json_encode($tag_n));
+                $json_input = ["tags" => $tag_n,"closest" => $closest];
+                $page->set_data(json_encode($json_input));
                 $page->set_filename('tag_occurrences.json','Content-Type: application/json');
             }
             else {
@@ -109,6 +122,7 @@ class ReverseImage extends Extension
         $sb = $event->panel->create_new_block("Reverse image search");
         $sb->add_int_option(ReverseImageConfig::CONF_MAX_LIMIT, "Maximum reverse image search results: ");
         $sb->add_int_option(ReverseImageConfig::CONF_DEFAULT_AMOUNT, "<br/>Default reverse image search results: ");
+        $sb->add_int_option(ReverseImageConfig::SIMILARITY_DUPLICATE, "<br/>The similarity in % when its a duplicate: ");
         $sb->add_text_option(ReverseImageConfig::CONF_URL, "<br/>Python engine url: ");
     }
 

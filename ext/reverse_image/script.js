@@ -46,8 +46,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
 }
 
-var used_array = [];
+function hide_dupe(id) {
+    hidden_dupes.push(id);
+    $("#duplicate_img").remove();
+}
+
+function make_duplicate_image(dup,id){
+    $("#duplicate_img").remove();
+    const $img = $("<img>", {"src":dup["link"]});
+    const $infob = $("<b>", {"text":`${dup["width"]} x ${dup["height"]}, ${fileSize(dup["filesize"])}`});
+    var html = "";
+    const hide_btn = `<b onclick="hide_dupe('${id}');">Hide</b>`
+    if (dup["auto_dupe"]){
+        html = `<span class="markdown">This image might already exist on the site, please check if yours is higher quality.<br> If yours is higher quality, please report the <a target="_blank" href="/post/view/${dup["id"]}">current post</a> with your source link. ${hide_btn}</span>`
+        $img.addClass("auto_dupe");
+    } else{
+        html = `<span class="markdown">Closest visually similar <a target="_blank" href="/post/view/${dup["id"]}">image on this site</a>, please check if it is not the same. ${hide_btn}</span>`
+        $img.addClass("no_auto_dupe");
+    }
+    const $div = $("<div>", {id: "duplicate_img", "class": "media-preview", "html": html});
+    $div.append($img);
+    $div.append($infob);
+    $("#mediaPreview").append($div)
+}
+
+const used_array = [];
+const dup_array = {};
+const hidden_dupes = [];
 async function get_predictions(id) {
+    if (dup_array[id] && !hidden_dupes.includes(id)){
+        make_duplicate_image(dup_array[id],id);
+    }
     if (used_array.includes(id)){
         return;
     }
@@ -73,6 +102,12 @@ async function get_predictions(id) {
         });
 
     if (tag_n) {
+        if(tag_n["closest"]) {
+            make_duplicate_image(tag_n["closest"],id)
+            dup_array[id] = tag_n["closest"];
+        }
+        if(!ENABLE_AUTO_PREDICT) return;
+
         const inputdiv = document.getElementById(`inputdivdata${id}`);
         if (ENABLE_AUTO_TAG){
             inputdiv.querySelectorAll("input[type=radio], input[type=checkbox]").forEach((input) => {
@@ -88,9 +123,9 @@ async function get_predictions(id) {
                 }
             });
         }
-        const sim_max = Object.values(tag_n)[0];
+        const sim_max = Object.values(tag_n["tags"])[0];
         const threshold = 2.55*AUTO_TAG_THRESHOLD;
-        for (const [tag, similarity] of Object.entries(tag_n)) {
+        for (const [tag, similarity] of Object.entries(tag_n["tags"])) {
             const el = inputdiv.querySelector(`input[value=${CSS.escape(tag)}]`)
             if (el && el.parentElement) {
                 const r = 127*(1- (similarity/sim_max));
@@ -129,7 +164,7 @@ if (window.location.pathname === "/upload"){
     }
     
     function input_button_predict(el){
-        if (el.style["visibility"] == "visible"){
+        if (el.style["border-style"] == "dotted"){
             id = el.id.split("data")[1];
             get_predictions(id);
         }
@@ -142,17 +177,15 @@ if (window.location.pathname === "/upload"){
     }
 document.addEventListener('DOMContentLoaded', () => {
     tags_predict_init();
-    if(ENABLE_AUTO_PREDICT){
-        var observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutationRecord) {
-                input_button_predict(mutationRecord.target);
-            });    
-        });
-        
-        document.querySelectorAll('.showInputButton').forEach((el) => {
-            observer.observe(el, { attributes : true, attributeFilter : ['style'] });
-        });
-    }
+    var observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutationRecord) {
+            input_button_predict(mutationRecord.target);
+        });    
+    });
+    
+    document.querySelectorAll('.showInputButton').forEach((el) => {
+        observer.observe(el, { attributes : true, attributeFilter : ['style'] });
+    });
     
 });
 }
