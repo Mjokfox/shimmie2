@@ -978,4 +978,8 @@ INPUT.autocomplete_tags {
 	padding: 0 .3rem;
 }
 
+a.filter-inactive:link {
+	text-decoration: line-through;
+	color: red;
+}
 /* end of changes */
