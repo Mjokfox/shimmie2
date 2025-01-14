@@ -978,7 +978,7 @@ INPUT.autocomplete_tags {
 	padding: 0 .3rem;
 }
 
-a.filter-inactive:link {
+a.filter-inactive {
 	text-decoration: line-through;
 	color: red;
 }
