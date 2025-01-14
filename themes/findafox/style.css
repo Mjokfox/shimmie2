@@ -271,6 +271,8 @@ CODE {
 	background: #AAF4;
 	font-size: 0.9rem;
 	padding: 8px;
+	font-family: monospace;
+  	line-height: 1em;
 }
 /* end of changes */
 
