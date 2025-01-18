@@ -62,11 +62,11 @@ async function checkDuplicate(file) {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
-            return response.text();  // Parse the JSON response
+            return response.json();
         }).catch(error => {
-            return "0";
+            return {"dup":"0"};
         });
-    return result === "1";
+    return result;
 }
 
 // preview and input div handling
@@ -278,8 +278,9 @@ function fileSize(size) {
 async function onFileChange(e) {
     if (e){
         if (e.target.files.length){
-            if (await checkDuplicate(e.target.files[0])){
-                create_flash(`This image already exist on the site: ${e.target.files[0].name}`);
+            const res = await checkDuplicate(e.target.files[0]);
+            if (res["dup"] == 1){
+                create_flash(`The image ${e.target.files[0].name} exactly matches <a href="/post/view/${res["id"]}">${res["id"]}</a>`)
                 e.target.value = "";
                 return;
             }
@@ -376,7 +377,7 @@ function create_flash(text) {
     const section = document.getElementById("Uploadmain")
     let flash = document.getElementById("flash")
     if (flash) {
-        flash.textContent = text;
+        flash.innerHTML = text;
         // sick interactive flash
         flash.style["transition"] = "background-color 0s";
         flash.style["background-color"] = "#FFF6";
@@ -387,7 +388,7 @@ function create_flash(text) {
     else if (section){
         flash = document.createElement("b");
         flash.id = "flash";
-        flash.textContent = text
+        flash.innerHTML = text
         section.parentNode.insertBefore(flash,section)
     }
 }
@@ -406,8 +407,9 @@ async function distributefiles(){
         const fileInput = fileInputs[i];
 
         if (override || !fileInput.files.length) {
-            if (await checkDuplicate(files[fileIndex])){
-                duplicates.push(files[fileIndex].name);
+            const res = await checkDuplicate(files[fileIndex])
+            if (res["dup"] == 1){
+                duplicates.push([files[fileIndex].name,res["id"]]);
                 fileIndex++;
                 continue;
             }
@@ -430,9 +432,17 @@ async function distributefiles(){
     }
     if (duplicates.length){
         let text = "";
-        if (duplicates.length == 1) text = "This image already exists on the site:"
-        else text = "These images already exist on the site:"
-        create_flash(`${text} ${duplicates.join(", ")}`);
+        if (duplicates.length == 1) {
+            const dup = duplicates[0];
+            text = `Your image, ${dup[0]}, exactly matches <a href=/post/view/${dup[1]}>${dup[1]}</a>`
+        }
+        else {
+            text = "These images already exist on the site:"
+            duplicates.forEach(dup => {
+                text = `${text} ${dup[0]} => <a href=/post/view/${dup[1]}>${dup[1]}</a>;`
+            })
+        }
+        create_flash(text);
     }
 }
 
