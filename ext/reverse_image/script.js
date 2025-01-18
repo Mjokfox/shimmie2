@@ -95,7 +95,7 @@ async function get_predictions(id) {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
-            return response.json();  // Parse the JSON response
+            return response.json();
         }).catch(error => {
             console.error('There was a problem with the fetch operation:', error);
             return;
@@ -111,7 +111,7 @@ async function get_predictions(id) {
         const inputdiv = document.getElementById(`inputdivdata${id}`);
         if (ENABLE_AUTO_TAG){
             inputdiv.querySelectorAll("input[type=radio], input[type=checkbox]").forEach((input) => {
-                input.checked = false;
+                if (input.checked){input.checked = false; input.previousChecked = false;}
                 if (input.parentElement){
                     input.parentElement.style["background-color"] = "rgba(127,0,0,0.25)";
                 }
@@ -134,7 +134,9 @@ async function get_predictions(id) {
                 if (g > threshold) {
                     el.parentElement.style["font-weight"] = "bold";
                     if (ENABLE_AUTO_TAG){
+                        el.dispatchEvent(new Event("click"));
                         el.checked = true;
+                        el.previousChecked = true;
                     }
                 }
             }
@@ -186,6 +188,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.showInputButton').forEach((el) => {
         observer.observe(el, { attributes : true, attributeFilter : ['style'] });
     });
-    
+    document.body.querySelectorAll("[id^='canceldata']").forEach((el) => {
+        el.addEventListener("click", () => {
+            const id = el.id.split("canceldata")[1];
+            if (id){
+                const index = used_array.indexOf(id);
+                if (index > -1) used_array.splice(index, 1);
+            }
+        })
+    });
 });
 }

@@ -871,6 +871,10 @@ DIV.grid-cell-separator {
 		overflow: scroll;
   		max-height: 95vh;
 	}
+
+	.upload-split-view > DIV {
+		margin-bottom: 1em;
+	}
 }
 
 DIV.grid-cell-content LABEL {

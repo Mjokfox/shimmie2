@@ -17,7 +17,7 @@ use function MicroHTML\INPUT;
 use function MicroHTML\emptyHTML;
 use function MicroHTML\NOSCRIPT;
 use function MicroHTML\DIV;
-use function MicroHTML\IMG;
+use function MicroHTML\B;
 use function MicroHTML\BR;
 use function MicroHTML\A;
 use function MicroHTML\LABEL;
@@ -67,6 +67,12 @@ class UploadTheme extends Themelet
                 DIV(
                     ["class" => "left-column"],
                     rawHTML("<noscript><h1>(this page requires javascript)</h1></noscript>"),
+                    DIV(["style" => "display:flex;justify-content:center"],
+                        B(["style" => "border:1px solid var(--text);padding:3px 1rem;"],
+                            "Before uploading, please read the ",
+                            A(["href" => "/wiki/upload_guidelines"],"guidelines")
+                        )
+                    ),
                     $split_view ? $preview_element : "",
                     DIV(["style" => "display: flex; align-items: center;"],
                         INPUT(["type" => "file",

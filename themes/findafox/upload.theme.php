@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Shimmie2;
 
 
-use function MicroHTML\{ emptyHTML, DIV, SPAN, TEXTAREA, TABLE, TR, TH, TD, INPUT, LABEL, BR, SELECT, OPTION};
+use function MicroHTML\{ emptyHTML, DIV, SPAN, TEXTAREA, TABLE, TR, TH, TD, INPUT, LABEL, BR,B, SELECT, OPTION};
 
 use MicroHTML\HTMLElement;
 
@@ -455,10 +455,12 @@ function get_categories_html(string $suffix): HTMLElement
     }
         $upload_count = $config->get_int(UploadConfig::COUNT) - 1;
         $output = emptyHTML();
+        $output->appendChild(DIV(["class" => "dont-offset"],
+        TEXTAREA(["name" => "faketags{$suffix}","id" => "usertags_{$suffix}","class" => "autocomplete_tags user-input-tags","placeholder" => "Custom tags","rows" => "2", "cols" => "15",]),));
         $output->appendChild(DIV(["class" => "upload-tags-grid"],$tags_input));
         $output->appendChild(DIV(["class" => "dont-offset"],
+            B("Tags from this panel:"),
             TEXTAREA(["name" => "faketags{$suffix}","id" => "faketags_{$suffix}","placeholder" => "Tags from the input panel above","readonly" => true,"rows" => "1", "cols" => "15","style" => "cursor:"]),
-            TEXTAREA(["name" => "faketags{$suffix}","id" => "usertags_{$suffix}","class" => "autocomplete_tags user-input-tags","placeholder" => "Any other tags you see fit","rows" => "2", "cols" => "15",]),
             INPUT(["type" => "text","name" => "tags{$suffix}","id" => "tags{$suffix}","readonly" => true, "style" => "display: none;"]),
             DIV(["style" => "display:flex"],
                INPUT(["type" => "button","id" => "Copy_{$suffix}","onclick" => "copyTagsTo(this,document.getElementById('CopyNumber_{$suffix}'))","value" => "Copy this input to:","style" => "width:auto; padding-left:10px;padding-right:10px; "]),

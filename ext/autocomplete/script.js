@@ -223,6 +223,7 @@ function setCompletion(element, new_word) {
 		clearTimeout(element.completer_timeout);
 		element.completer_timeout = null;
 	}
+	element.dispatchEvent(new Event("input"))
 }
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -579,6 +579,7 @@ function clearInputs(self) {
     const suffix = self.id.split("_")[1];
     document.querySelectorAll("#tagsInput_" + suffix).forEach((input) =>{
             input.checked = false;
+            input.previousChecked = false;
     });
     document.querySelectorAll("#tagsDropdown_" + suffix).forEach((input) =>{
             input.selectedIndex = 0;
@@ -605,7 +606,9 @@ function copyTagsTo(self, target){
 
     // Iterate over each pair of elements and copy the value
     selfElements.forEach((selfElement, index) => {
+        targetElements[index].type = selfElement.type;
         targetElements[index].checked = selfElement.checked;
+        targetElements[index].previousChecked = selfElement.previousChecked;
     });
     selfElementsDropdown.forEach((selfElementDropdown, index) => {
         targetElementsDropdown[index].value = selfElementDropdown.value;
@@ -663,6 +666,8 @@ function radio_unsetInit() {
                     radio.checked = true;
                     radio.previousChecked = true;
                 }
+            } else{
+                radio.previousChecked = radio.checked;
             }
         });
     });
