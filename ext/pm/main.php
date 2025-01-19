@@ -203,7 +203,7 @@ class PrivMsg extends Extension
 				from_ip SCORE_INET NOT NULL,
 				to_id INTEGER NOT NULL,
 				sent_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-				subject VARCHAR(64) NOT NULL,
+				subject VARCHAR(192) NOT NULL,
 				message TEXT NOT NULL,
 				is_read BOOLEAN NOT NULL DEFAULT FALSE,
 				FOREIGN KEY (from_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -226,6 +226,10 @@ class PrivMsg extends Extension
         if ($this->get_version("pm_version") < 3) {
             $database->standardise_boolean("private_message", "is_read", true);
             $this->set_version("pm_version", 3);
+        }
+        if ($this->get_version("pm_version") < 4) {
+            $database->execute("ALTER TABLE private_message ALTER COLUMN subject TYPE VARCHAR(192);"); // 64 got very annoying with how long RE: threads
+            $this->set_version("pm_version", 4);
         }
     }
 

@@ -58,8 +58,8 @@ function markdown_format(text)
 }
 
 function encode_links(text) {
-	text = text.replaceAll(/\(((?:https?|ftp|irc|mailto|site):\/\/)([^\)\[\]]+)\)/gm, function(m, c, c1) {return "({url!}"+window.btoa(c+c1.replaceAll(" ","%20",c1))+"{/url!})";});
-	text = text.replaceAll(/((?:https?|ftp|irc|mailto|site):\/\/[^\s\)\[\]]+)/gm, function(m, c) {return "{url!}"+window.btoa(c)+"{/url!}";});
+	text = text.replaceAll(/\(((?:(?:https?|ftp|irc|site):\/\/|mailto:))([^\)\[\]]+)\)/gm, function(m, c, c1) {return "({url!}"+window.btoa(c+c1.replaceAll(" ","%20",c1))+"{/url!})";});
+	text = text.replaceAll(/((?:(?:https?|ftp|irc|site):\/\/|mailto:)[^\s\)\[\]]+)/gm, function(m, c) {return "{url!}"+window.btoa(c)+"{/url!}";});
 	text = text.replaceAll(/\[(.+?)\]\(/gm, function(m, c) {return "[{alt!}"+window.btoa(c)+"{/alt!}](";});
 	return text;
 }
