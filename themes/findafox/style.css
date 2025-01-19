@@ -988,4 +988,8 @@ a.filter-inactive {
 	text-decoration: line-through;
 	color: red;
 }
+
+#pms TD{
+	max-width:32rem;
+}
 /* end of changes */
