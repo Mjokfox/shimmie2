@@ -51,7 +51,7 @@ async function computeMD5(file) {
 }
 
 async function checkDuplicate(file) {
-    md5 = await computeMD5(file);
+    const md5 = await computeMD5(file);
     const data = new FormData();
     data.append('md5', md5)
     const result = await fetch('/upload_duplicate', 

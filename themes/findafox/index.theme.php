@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\rawHTML;
+use function MicroHTML\{rawHTML, LINK};
 
 class CustomIndexTheme extends IndexTheme
 {
@@ -23,6 +23,12 @@ class CustomIndexTheme extends IndexTheme
         $page->add_block(new Block("Search", $nav, "left", 0,"search-bar"));
 
         $page->add_block(new Block("Search", $nav, "main", 5, "mobile-search"));
+
+        $next = $this->page_number + 1;
+        $prev = $this->page_number - 1;
+        $query = implode(" ",$this->search_terms);
+        if ($next <= $this->total_pages) $page->add_html_header(LINK(["id" => "nextlink", "rel" => "next", "href" => make_link("post/list".($query ? "/$query":"")."/$next")]));
+        if ($prev > 0) $page->add_html_header(LINK(["id" => "prevlink", "rel" => "previous", "href" => make_link("post/list".($query ? "/$query":"")."/$prev")]));
 
         if (count($images) > 0) {
             $this->display_page_images($page, $images);
