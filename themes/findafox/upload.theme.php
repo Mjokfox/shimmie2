@@ -220,7 +220,8 @@ function get_categories_html(string $suffix): HTMLElement
             t.tag AS tag_name
             FROM image_tag_categories_tags itct
             JOIN image_tag_categories itc ON itct.category_id = itc.id
-            JOIN tags t ON itct.tag_id = t.id;
+            JOIN tags t ON itct.tag_id = t.id
+            ORDER BY tag_name ASC;
         "),30);
         $category_tags = [];
         $preselect_tags = ["mouth_closed","eyes_open","adult","photo","color","wild"];
