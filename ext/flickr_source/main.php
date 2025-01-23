@@ -32,12 +32,13 @@ class FlickrSource extends Extension
     // }
     public function onAdminBuilding(AdminBuildingEvent $event): void
     {
-        global $page;
+        global $page, $database;
+        $start_id = $database->get_one("SELECT max(id)-100 from images;");
         $html = (string)SHM_SIMPLE_FORM(
             "admin/flickr_source",
             TABLE( 
             TR(
-                TD(["style" => "padding-right:5px"],B("Offset")),TD(INPUT(["type" => 'number', "name" => 'offset', "value" => "0", "style" => "width:5em"])),
+                TD(["style" => "padding-right:5px"],B("Start id")),TD(INPUT(["type" => 'number', "name" => 'id_offset', "value" => $start_id, "style" => "width:5em"])),
             ),
             TR(
                 TD(B("Limit")),TD(INPUT(["type" => 'number', "name" => 'limit', "value" => "100", "style" => "width:5em"])),
@@ -59,14 +60,14 @@ class FlickrSource extends Extension
                 FROM images
                 WHERE (source IS NULL OR source LIKE '%live.staticflickr%')
                 AND mime LIKE 'image/%'
-                OFFSET :offset
+                AND id > :id_offset
                 LIMIT :limit;";
-                $files = $database->get_all($query,["offset" => $event->params['offset'] | "0","limit" => $event->params['limit'] | "0"]);
+                $files = $database->get_all($query,["id_offset" => $event->params['id_offset'] | "0","limit" => $event->params['limit'] | "0"]);
                 $i = 0;
                 $j = 0;
                 $k = 0;
                 foreach ($files as $file) {
-                    if(preg_match("/\d{9,12}_[a-f0-9]{8,12}_[a-z0-9]+(\.jpg|\.png)$/", $file["filename"])){
+                    if(preg_match("/\d{7,13}_[a-f0-9]{7,13}_[a-z0-9]+(?:_d)?(\.jpg|\.png)$/", $file["filename"])){
                         $source = $this->getFlickrUrl(explode("_",$file["filename"])[0]);
                         if ($source !== "https://flickr.com/photos///"){
                             send_event(new SourceSetEvent(Image::by_id($file["id"]),$source));
