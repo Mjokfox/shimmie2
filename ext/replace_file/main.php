@@ -81,6 +81,10 @@ class ReplaceFile extends Extension
         $event->image->filesize = \Safe\filesize($target);
         $event->image->set_mime(MimeType::get_for_file($target));
         send_event(new MediaCheckPropertiesEvent($image));
+
+        if (count($_FILES) > 0 && array_key_exists('data', $_FILES))
+            $event->image->filename = $_FILES["data"]['name'];
+
         $image->save_to_db();
 
         send_event(new ThumbnailGenerationEvent($image));
