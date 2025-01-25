@@ -36,9 +36,10 @@ class CustomBlotterTheme extends BlotterTheme
             $cleaner_time = autodate($messy_date);
             $out_text = "Server news: {$clean_date} ($cleaner_time)";
             $in_text = $entry['entry_text'];
+            $id = $entry['id'];
             $html = "
-            <div class='blotter'>
-                <a href='#' id='blotter2-toggle' class='shm-blotter2-toggle'>
+            <div class='blotter' data-id='$id' style='display:none;'>
+                <a href='#' id='blotter2-toggle' class='shm-blotter2-toggle' style='margin-left:auto;'>
                     <div id='blotter1' class='shm-blotter1'>
                         <span>$out_text Click to Show/Hide</span>
                     </div>
@@ -46,6 +47,10 @@ class CustomBlotterTheme extends BlotterTheme
                 </a>
                 <span>
                     <a href='".make_link("blotter/list")."'>Show All</a>
+                    
+                </span>
+                <span class='shm-blotter-hide'>
+                    <a href='#' id='blotter-hide'>Hide forever</a>
                 </span>
             </div>
 		    ";

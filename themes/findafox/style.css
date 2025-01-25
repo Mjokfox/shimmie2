@@ -992,4 +992,8 @@ a.filter-inactive {
 #pms TD{
 	max-width:32rem;
 }
+
+.shm-blotter2-toggle, .shm-blotter-hide {
+	margin-left:auto;
+}
 /* end of changes */
