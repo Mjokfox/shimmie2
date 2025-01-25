@@ -15,3 +15,9 @@
 	color:#000;
 	border: 1px solid #888;
 }
+
+DIV.md-preview {
+	border: 1px solid var(--text);
+	box-sizing: border-box;
+	padding: .5em;
+}

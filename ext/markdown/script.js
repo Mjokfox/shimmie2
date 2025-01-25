@@ -89,27 +89,76 @@ function insert_code(text)
 	return text.replaceAll(/\[code!\](.*?)\[\/code!\]/gs, function(m, c) {return "<pre><code>"+window.atob(c)+"</code></pre>";});
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-	document.querySelectorAll(".shm-clink").forEach(function(el) {
-		var target_id = el.getAttribute("data-clink-sel");
-		if(target_id && document.getElementById(target_id.replace("#",""))) {
-			// if the target comment is already on this page, don't bother
-			// switching pages
-			// el.setAttribute("href", target_id);
+function to_innerHtml(value) {
+    var tempElement = document.createElement("div");
+    tempElement.textContent = value;
+    return tempElement.innerHTML;
+}
 
-			// highlight it when clicked
-			el.addEventListener("click", function(e) {
-				// This needs jQuery UI
-				$(target_id).highlight();
-			});
+function preview_markdown(el) {
+	const parent = el.parentNode;
+	const textarea = parent.querySelector("TEXTAREA");
+	if (textarea){
+		var preview_div = parent.querySelector("div.md-preview");
+		if (!preview_div) {
+			preview_div = document.createElement("div");
+			preview_div.classList = "md-preview";
 
-			// vanilla target name should already be in the URL tag, but this
-			// will include the anon ID as displayed on screen
-			el.innerHTML = "Replying to: @"+document.querySelector(target_id+" .username").innerHTML;
+			preview_span = document.createElement("span");
+			preview_span.classList = "markdown";
+			
+			preview_div.appendChild(preview_span);
+			parent.insertBefore(preview_div,textarea)
 		}
-	});
+		if (el.previewing){
+			textarea.style["display"] = "unset";
+			preview_div.style["display"] = "none";
+			el.value = "Preview";
+		} else {
+			textarea.style["display"] = "none";
+			preview_div.style["display"] = "block";
+			preview_div.firstChild.innerHTML = markdown_format(to_innerHtml(textarea.value));
+			el.value = "Edit";
+		}
+	}
+	el.previewing = !el.previewing
+}
+
+document.addEventListener('DOMContentLoaded', () => {
 	document.querySelectorAll("SPAN.markdown").forEach(function(e) {
 		e.original_innerHTML = e.innerHTML;
 		e.innerHTML = markdown_format(e.innerHTML);
+		e.querySelectorAll(".shm-clink").forEach(function(el) {
+			var target_id = el.getAttribute("data-clink-sel");
+			if(target_id && document.getElementById(target_id.replace("#",""))) {
+				// if the target comment is already on this page, don't bother
+				// switching pages
+				// el.setAttribute("href", target_id);
+	
+				// highlight it when clicked
+				el.addEventListener("click", function(e) {
+					// This needs jQuery UI
+					$(target_id).highlight();
+				});
+	
+				// vanilla target name should already be in the URL tag, but this
+				// will include the anon ID as displayed on screen
+				el.innerHTML = "Replying to: @"+document.querySelector(target_id+" .username").innerHTML;
+			}
+		});
+	})
+
+	document.querySelectorAll("TEXTAREA:not(.autocomplete_tags)").forEach(function(e) {
+		const A = document.createElement("input");
+		A.type = "button";
+		A.value = "Preview";
+		A.style["width"] = "5em";
+		A.classList = "markdown-preview";
+		A.setAttribute("onClick","preview_markdown(this);") // so it transfers over when copying
+		A.previewing = false;
+		e.parentNode.insertBefore(A,e);
+		e.parentNode.insertBefore(document.createElement("br"),e);
+		if (e.nextSibling && e.nextElementSibling.nodeName != "BR")
+			e.parentNode.insertBefore(document.createElement("br"),e.nextSibling);
 	})
 });
