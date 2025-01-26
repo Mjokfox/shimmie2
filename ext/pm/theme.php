@@ -92,7 +92,7 @@ EOD;
         $page->add_block(new Block("Write a PM", rawHTML($html), "main", 50));
     }
 
-    public function display_editor(Page $page, int $pm_id, string $subject = "", string $message = ""): void
+    public function display_editor(Page $page, int $pm_id, string $subject = "", string $message = "", int $to_id = null): void
     {
         global $user;
         $post_url = make_link("pm/edit");
@@ -108,7 +108,15 @@ $form
 </table>
 </form>
 EOD;
-        $page->add_block(new Block("Editing PM", rawHTML($html), "main", 50));
+        $page->add_block(new Block("Editing PM" . ($to_id ? " to ".User::by_id($to_id)->name : ""), rawHTML($html), "main", 50));
+    }
+
+    public function display_edit_button(Page $page, int $pm_id): void
+    {
+        global $user;
+        $url = make_link("pm/edit/$pm_id");
+        $html = "<a href='$url'>Edit</a>";
+        $page->add_block(new Block("", rawHTML($html), "main", 49));
     }
 
     public function display_message(Page $page, User $from, User $to, PM $pm): void
@@ -116,6 +124,6 @@ EOD;
         $page->set_title("Private Message");
         $page->set_heading($pm->subject);
         $page->add_block(new NavBlock());
-        $page->add_block(new Block("Message from {$from->name}", rawHTML(format_text($pm->message)), "main", 10));
+        $page->add_block(new Block("Message from {$from->name}:", rawHTML("<h2>{$pm->subject}</h2><hr><br>".format_text($pm->message)), "main", 10));
     }
 }

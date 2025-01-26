@@ -14,6 +14,7 @@ use function MicroHTML\{emptyHTML, SPAN};
 class SendPMEvent extends Event
 {
     public PM $pm;
+    public int $id;
 
     public function __construct(PM $pm)
     {
@@ -311,7 +312,8 @@ class PrivMsg extends Extension
                 $pmo = PM::from_row($pm);
                 $this->theme->display_message($page, $from_user, $user, $pmo);
                 if ($user->can(Permissions::SEND_PM)) {
-                    $this->theme->display_composer($page, $user, $from_user, "Re: ".$pmo->subject);
+                    if ($pm["from_id"] == $user->id) $this->theme->display_edit_button($page,$pmo->id);
+                    else $this->theme->display_composer($page, $user, $from_user, "Re: ".$pmo->subject);
                 }
             } else {
                 throw new PermissionDenied("You do not have permission to view this PM");
@@ -337,12 +339,13 @@ class PrivMsg extends Extension
             $from_id = $user->id;
             $subject = $event->req_POST("subject");
             $message = $event->req_POST("message");
-            send_event(new SendPMEvent(new PM($from_id, get_real_ip(), $to_id, $subject, $message)));
+            /** @var PM $PMe */
+            $PMe = send_event(new SendPMEvent(new PM($from_id, get_real_ip(), $to_id, $subject, $message)));
             
             $page->set_mode(PageMode::REDIRECT);
             $page->flash("PM sent");
-            $page->set_redirect(referer_or(make_link()));
-            
+            if ($PMe->id) $page->set_redirect(make_link("pm/read/{$PMe->id}"));
+            else $page->set_redirect(referer_or(make_link()));
         }
         elseif ($event->page_matches("pm/edit/{pm_id}", permission: Permissions::SEND_PM)) {
             $pm_id = $event->get_iarg('pm_id');
@@ -355,7 +358,7 @@ class PrivMsg extends Extension
                 if (substr($subject, -9) === " (edited)") {
                     $subject = substr($subject, 0, -9);
                 }
-                $this->theme->display_editor($page, $pmo->id, $subject, $pmo->message);
+                $this->theme->display_editor($page, $pmo->id, $subject, $pmo->message, $pmo->to_id);
             } else {
                 throw new PermissionDenied("You do not have permission to edit this PM");
             }
@@ -390,6 +393,7 @@ class PrivMsg extends Extension
             ["fromid" => $event->pm->from_id, "fromip" => $event->pm->from_ip,
             "toid" => $event->pm->to_id, "subject" => $event->pm->subject, "message" => $event->pm->message]
         );
+        $event->id = $database->get_last_insert_id("private_message_id_seq");
         $cache->delete("pm-count-{$event->pm->to_id}");
         log_info("pm", "Sent PM to User #{$event->pm->to_id}");
     }
