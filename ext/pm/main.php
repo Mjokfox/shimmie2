@@ -104,14 +104,14 @@ class PM
      * @return PM[]|null
      */
     #[Field(extends: "User", name: "private_messages", type: "[PrivateMessage!]")]
-    public static function get_pms_to(User $to): ?array
+    public static function get_pms_to(User $to, int $limit=null): ?array
     {
         global $database;
 
         $pms = [];
         $arr = $database->get_all(
-            "SELECT * FROM private_message WHERE to_id = :to_id ORDER BY sent_date DESC",
-            ["to_id" => $to->id]
+            "SELECT * FROM private_message WHERE to_id = :to_id AND archived_by IS DISTINCT FROM :to_id AND archived_by IS DISTINCT FROM -1 ORDER BY sent_date DESC LIMIT :limit",
+            ["to_id" => $to->id, "limit" => $limit]
         );
         foreach ($arr as $pm) {
             $pms[] = PM::from_row($pm);
@@ -123,14 +123,14 @@ class PM
      * @return PM[]|null
      */
     #[Field(extends: "User", name: "private_messages", type: "[PrivateMessage!]")]
-    public static function get_pms_by(User $by): ?array
+    public static function get_pms_by(User $by, int $limit=null): ?array
     {
         global $database;
 
         $pms = [];
         $arr = $database->get_all(
-            "SELECT * FROM private_message WHERE from_id = :from_id ORDER BY sent_date DESC",
-            ["from_id" => $by->id]
+            "SELECT * FROM private_message WHERE from_id = :from_id AND archived_by IS DISTINCT FROM :from_id AND archived_by IS DISTINCT FROM -1 ORDER BY sent_date DESC LIMIT :limit",
+            ["from_id" => $by->id, "limit" => $limit]
         );
         foreach ($arr as $pm) {
             $pms[] = PM::from_row($pm);
@@ -142,14 +142,33 @@ class PM
      * @return PM[]|null
      */
     #[Field(extends: "User", name: "private_messages", type: "[PrivateMessage!]")]
-    public static function get_pms_to_and_by(User $to, User $from): ?array
+    public static function get_pms_to_and_by(User $to, User $from, int $limit=null): ?array
     {
         global $database;
 
         $pms = [];
         $arr = $database->get_all(
-            "SELECT * FROM private_message WHERE from_id = :from_id AND to_id = :to_id ORDER BY sent_date DESC",
-            ["from_id" => $from->id,"to_id" => $to->id]
+            "SELECT * FROM private_message WHERE from_id = :from_id AND to_id = :to_id AND archived_by IS DISTINCT FROM :from_id AND archived_by IS DISTINCT FROM -1 ORDER BY sent_date DESC LIMIT :limit",
+            ["from_id" => $from->id,"to_id" => $to->id, "limit" => $limit]
+        );
+        foreach ($arr as $pm) {
+            $pms[] = PM::from_row($pm);
+        }
+        return $pms;
+    }
+
+    /**
+     * @return PM[]|null
+     */
+    #[Field(extends: "User", name: "private_messages", type: "[PrivateMessage!]")]
+    public static function get_pm_archive(User $of, int $limit=null): ?array
+    {
+        global $database;
+
+        $pms = [];
+        $arr = $database->get_all(
+            "SELECT * FROM private_message WHERE archived_by = :of_id OR ((from_id = :of_id OR to_id = :of_id) AND archived_by = -1 ) ORDER BY sent_date DESC LIMIT :limit",
+            ["of_id" => $of->id, "limit" => $limit]
         );
         foreach ($arr as $pm) {
             $pms[] = PM::from_row($pm);
@@ -170,7 +189,7 @@ class PM
         }
 
         return (int)$database->get_one(
-            "SELECT COUNT(*) FROM private_message WHERE to_id = :to_id AND is_read = :is_read",
+            "SELECT COUNT(*) FROM private_message WHERE to_id = :to_id AND is_read = :is_read AND archived_by IS DISTINCT FROM :to_id AND archived_by IS DISTINCT FROM -1",
             ["is_read" => false, "to_id" => $duser->id]
         );
     }
@@ -207,6 +226,7 @@ class PrivMsg extends Extension
 				subject VARCHAR(192) NOT NULL,
 				message TEXT NOT NULL,
 				is_read BOOLEAN NOT NULL DEFAULT FALSE,
+                archived_by INTEGER,
 				FOREIGN KEY (from_id) REFERENCES users(id) ON DELETE CASCADE,
 				FOREIGN KEY (to_id) REFERENCES users(id) ON DELETE CASCADE
 			");
@@ -232,6 +252,11 @@ class PrivMsg extends Extension
             $database->execute("ALTER TABLE private_message ALTER COLUMN subject TYPE VARCHAR(192);"); // 64 got very annoying with how long RE: threads
             $this->set_version("pm_version", 4);
         }
+        if ($this->get_version("pm_version") < 5) {
+            $database->execute("ALTER TABLE private_message
+			add column archived_by INTEGER;");
+            $this->set_version("pm_version", 5);
+        }
     }
 
     public function onPageNavBuilding(PageNavBuildingEvent $event): void
@@ -240,7 +265,7 @@ class PrivMsg extends Extension
         if ($user->can(Permissions::READ_PM)) {
             $count = $this->count_pms($user);
             if ($count > 0){
-                $event->add_nav_link("pm", new Link('user#private-messages'), "Messages (".$count.")",null,11);
+                $event->add_nav_link("pm", new Link('user#private-messages'), "Messages ($count)",null,11);
             }
         }
     }
@@ -252,7 +277,7 @@ class PrivMsg extends Extension
             if ($user->can(Permissions::READ_PM)) {
                 $count = $this->count_pms($user);
                 $h_count = $count > 0 ? SPAN(["class" => 'unread'], "($count)") : "";
-                $event->add_nav_link("pm", new Link('user#private-messages'), emptyHTML("Private Messages", $h_count));
+                $event->add_nav_link("pm", new Link("/pm/list/{$user->id}"), emptyHTML("Private Messages", $h_count));
             }
         }
     }
@@ -274,18 +299,18 @@ class PrivMsg extends Extension
         if (!$user->is_anonymous() && !$duser->is_anonymous()) {
             if ($user->can(Permissions::READ_PM)) {
                 if (($duser->id == $user->id) || $user->can(Permissions::VIEW_OTHER_PMS)){
-                    $pms = PM::get_pms_to($duser);
-                    if (!is_null($pms)) {
-                        $this->theme->display_pms($page, $pms);
+                    $pms = PM::get_pms_to($duser, 5,);
+                    if (!empty($pms)) {
+                        $this->theme->display_pms($page, $pms,from:true,more:$duser->id, archived:$duser->id);
                     }
-                    $sent_pms = PM::get_pms_by($duser);
-                    if (!is_null($sent_pms)){
-                        $this->theme->display_pms($page, $sent_pms,false,true);
+                    $sent_pms = PM::get_pms_by($duser, 5);
+                    if (!empty($sent_pms)){
+                        $this->theme->display_pms($page, $sent_pms, header:"Sent messages", to:true, edit:true, delete:true, more:$duser->id, archived:$duser->id);
                     }
                 } else{
-                    $pms = PM::get_pms_to_and_by($duser, $user);
-                    if (!is_null($pms)) {
-                        $this->theme->display_pms($page, $pms,false,true);
+                    $pms = PM::get_pms_to_and_by($duser, $user, 5);
+                    if (!empty($pms)) {
+                        $this->theme->display_pms($page, $pms, header:"Messages from you", to:true, edit:true, delete:true,more:$duser->id);
                     }
                 }
             }
@@ -317,6 +342,83 @@ class PrivMsg extends Extension
                 }
             } else {
                 throw new PermissionDenied("You do not have permission to view this PM");
+            }
+        } 
+        elseif ($event->page_matches("pm/list", method: "GET", permission: Permissions::READ_PM, paged:true)) {
+            $duser_id = $event->get_iarg('page_num', 0);
+            if (!$user->is_anonymous()) {
+                if ($duser_id == 0 || ($duser_id == $user->id)) {
+                    $pms = PM::get_pms_to($user);
+                    if (!empty($pms)) {
+                        $this->theme->display_pms($page, $pms, from:true, archived:$user->id);
+                    }
+                    $sent_pms = PM::get_pms_by($user);
+                    if (!empty($sent_pms)){
+                        $this->theme->display_pms($page, $sent_pms, header:"Sent messages", to:true, edit:true, delete:true, archived:$user->id);
+                    }
+                } elseif ($user->can(Permissions::VIEW_OTHER_PMS)) {
+                    $duser = User::by_id($duser_id);
+                    $pms = PM::get_pms_to($duser);
+                    if (!empty($pms)) {
+                        $this->theme->display_pms($page, $pms, from:true, archived:$duser->id);
+                    }
+                    $sent_pms = PM::get_pms_by($duser);
+                    if (!empty($sent_pms)){
+                        $this->theme->display_pms($page, $sent_pms, header:"Sent messages", to:true, edit:true, delete:true, archived:$duser->id);
+                    }
+                } else {
+                    $duser = User::by_id($duser_id);
+                    $pms = PM::get_pms_to_and_by($duser, $user);
+                    if (!empty($pms)) {
+                        $this->theme->display_pms($page, $pms, header:"Messages from you", to:true, edit:true, delete:true);
+                    } else {
+                        throw new ObjectNotFound("You have not sent anything to this user");
+                    }
+                }
+            } else {
+                throw new PermissionDenied("You are not allowed to see others' archives");
+            }
+        }
+        elseif ($event->page_matches("pm/archived", method: "GET", permission: Permissions::READ_PM, paged:true)) {
+            $duser_id = $event->get_iarg('page_num', 0);
+            if (!$user->is_anonymous()) {
+                if ($duser_id == 0 || ($duser_id == $user->id)) {
+                    $pms = PM::get_pm_archive($user);
+                    if (!empty($pms)) {
+                        $this->theme->display_pms($page, $pms, header:"Archive", from:true, to:true, edit:true, archive:false, delete:true);
+                    }
+                } elseif ($user->can(Permissions::VIEW_OTHER_PMS)) {
+                    $duser = User::by_id($duser_id);
+                    $pms = PM::get_pm_archive($duser);
+                    if (!empty($pms)) {
+                        $this->theme->display_pms($page, $pms, header:"Archive from {$duser->name}", from:true, to:true, edit:true, archive:false, delete:true);
+                    }
+                } else {
+                    throw new PermissionDenied("You are not allowed to see others' archives");
+                }
+            } else {
+                throw new PermissionDenied("You are not allowed to see others' archives");
+            }
+        }
+        elseif ($event->page_matches("pm/archive", method: "POST", permission: Permissions::READ_PM)) {
+            $pm_id = int_escape($event->req_POST("pm_id"));
+            $pm = $database->get_row("SELECT * FROM private_message WHERE id = :id", ["id" => $pm_id]);
+            if (is_null($pm)) {
+                throw new ObjectNotFound("No such PM");
+            } elseif (($pm["to_id"] == $user->id) || ($pm["from_id"] == $user->id)) {
+                if (is_null($pm["archived_by"])){
+                    $database->execute("UPDATE private_message SET archived_by = :u_id WHERE id = :id;", ["u_id" => $user->id, "id" => $pm_id]);
+                } elseif ($pm["archived_by"] != $user->id){
+                    $database->execute("UPDATE private_message SET archived_by = -1 WHERE id = :id;", ["id" => $pm_id]);
+                } else {
+                    throw new PermissionDenied("This PM is already archived for you");
+                }
+                if (($pm["to_id"] == $user->id)){
+                    $cache->delete("pm-count-{$user->id}");
+                } else $cache->delete("pm-count-".$pm["from_id"]);
+                log_info("pm", "Archived PM #$pm_id", "PM archived");
+                $page->set_mode(PageMode::REDIRECT);
+                $page->set_redirect(referer_or(make_link()));
             }
         }
         elseif ($event->page_matches("pm/delete", method: "POST", permission: Permissions::READ_PM)) {
@@ -421,6 +523,8 @@ class PrivMsg extends Extension
                 FROM private_message
                 WHERE to_id = :to_id
                 AND is_read = :is_read
+                AND archived_by IS DISTINCT FROM :to_id
+                AND archived_by IS DISTINCT FROM -1
             ", ["to_id" => $user->id, "is_read" => false]),
             600
         );

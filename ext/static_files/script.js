@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		let tid = $(elm).data("toggle-sel");
 		let tob = $(tid+" .blockbody");
 		$(elm).click(function(e) {
-			tob.slideToggle("slow");
+			tob.toggle();
 			if(sidebar_hidden.indexOf(tid) === -1) {
 				sidebar_hidden.push(tid);
 			}

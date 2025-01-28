@@ -49,7 +49,9 @@ class Block
      */
     public bool $is_content = true;
 
-    public function __construct(?string $header, HTMLElement $body, string $section = "main", int $position = 50, ?string $id = null)
+    public bool $hidable;
+
+    public function __construct(?string $header, HTMLElement $body, string $section = "main", int $position = 50, ?string $id = null, bool $hidable = false)
     {
         $this->header = $header;
         $this->body = $body;
@@ -60,6 +62,7 @@ class Block
         }
         $str_id = preg_replace_ex('/[^\w-]/', '', str_replace(' ', '_', $id));
         $this->id = $str_id;
+        $this->hidable = $hidable;
     }
 }
 
