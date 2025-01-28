@@ -31,6 +31,10 @@ class RandomImage extends Extension
                 case "view":
                     send_event(new DisplayingImageEvent($image));
                     break;
+                case "thumb":
+                    $page->set_mode(PageMode::REDIRECT);
+                    $page->set_redirect($image->get_thumb_link());
+                    break;
                 case "widget":
                     $page->set_mode(PageMode::DATA);
                     $page->set_mime(MimeType::HTML);
