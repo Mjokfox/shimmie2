@@ -355,6 +355,8 @@ class PrivMsg extends Extension
                     $sent_pms = PM::get_pms_by($user);
                     if (!empty($sent_pms)){
                         $this->theme->display_pms($page, $sent_pms, header:"Sent messages", to:true, edit:true, delete:true, archived:$user->id);
+                    } elseif (empty($pms)) {
+                        throw new ObjectNotFound("You have no messages to display!");
                     }
                 } elseif ($user->can(Permissions::VIEW_OTHER_PMS)) {
                     $duser = User::by_id($duser_id);
@@ -365,6 +367,8 @@ class PrivMsg extends Extension
                     $sent_pms = PM::get_pms_by($duser);
                     if (!empty($sent_pms)){
                         $this->theme->display_pms($page, $sent_pms, header:"Sent messages", to:true, edit:true, delete:true, archived:$duser->id);
+                    } elseif (empty($pms)) {
+                        throw new ObjectNotFound("You have no messages to display!");
                     }
                 } else {
                     $duser = User::by_id($duser_id);
@@ -386,12 +390,16 @@ class PrivMsg extends Extension
                     $pms = PM::get_pm_archive($user);
                     if (!empty($pms)) {
                         $this->theme->display_pms($page, $pms, header:"Archive", from:true, to:true, edit:true, archive:false, delete:true);
+                    } else {
+                        throw new ObjectNotFound("Your archive is empty!");
                     }
                 } elseif ($user->can(Permissions::VIEW_OTHER_PMS)) {
                     $duser = User::by_id($duser_id);
                     $pms = PM::get_pm_archive($duser);
                     if (!empty($pms)) {
                         $this->theme->display_pms($page, $pms, header:"Archive from {$duser->name}", from:true, to:true, edit:true, archive:false, delete:true);
+                    } else {
+                        throw new ObjectNotFound("{$duser->name}'s archive is empty!");
                     }
                 } else {
                     throw new PermissionDenied("You are not allowed to see others' archives");
