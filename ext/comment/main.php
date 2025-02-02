@@ -223,7 +223,7 @@ class CommentList extends Extension
         if ($this->get_version(CommentConfig::VERSION) < 4) {
             $database->execute("ALTER TABLE comments ADD COLUMN edited BOOLEAN DEFAULT FALSE NOT NULL;", []);
             $database->execute("UPDATE comments
-                SET comment = RTRIM(comment, '\n*(edited)*'),
+                SET comment = RTRIM(comment, '*(edited)*'),
                 edited = TRUE
                 WHERE comment LIKE '%*(edited)*';",[]);
             $this->set_version(CommentConfig::VERSION, 4);
