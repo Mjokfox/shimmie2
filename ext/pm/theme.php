@@ -117,7 +117,7 @@ class PrivMsgTheme extends Themelet
         $html = <<<EOD
 $form
 <input type="hidden" name="to_id" value="$to_id">
-<table style="width: 400px;" class="form">
+<table class="form pm-text">
 <tr><th>Subject:</th><td><input type="text" name="subject" value="$h_subject"></td></tr>
 <tr><td colspan="2"><textarea style="width: 100%" rows="6" name="message"></textarea></td></tr>
 <tr><td colspan="2"><input type="submit" value="Send"></td></tr>

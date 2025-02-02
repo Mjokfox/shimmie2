@@ -996,4 +996,8 @@ a.filter-inactive {
 .shm-blotter2-toggle, .shm-blotter-hide {
 	margin-left:auto;
 }
+
+table.pm-text {
+	width: min(30em,100%);
+}
 /* end of changes */

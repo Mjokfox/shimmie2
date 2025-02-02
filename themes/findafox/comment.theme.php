@@ -123,6 +123,7 @@ class CustomCommentListTheme extends CommentListTheme
         if ($user->can(Permissions::DELETE_COMMENT) || ($user->can(Permissions::CREATE_COMMENT) && $user->id === $comment->owner_id)) {
             $h_edit = " - " . $this->edit_button($i_comment_id, $i_image_id);
         }
+        $h_edited = $comment->edited ? "<br><em>(edited)</em>" : "";
         //$h_imagelink = $trim ? "<a href='".make_link("post/view/$i_image_id")."'>&gt;&gt;&gt;</a>\n" : "";
         if ($trim) {
             return "<p class='comment'>$h_userlink $h_del<br/>$h_posted<br/>$h_comment</p>";
@@ -130,7 +131,7 @@ class CustomCommentListTheme extends CommentListTheme
             $h_reply = " > <a href='javascript: replyTo($i_image_id, $i_comment_id, \"$h_name\")'>Reply</a>";
             return "
 				<table class='comment' id=\"c$i_comment_id\"><tr>
-					<td class='meta'>$h_userlink<br>$h_avatar<br/>$h_posted$h_del</td>
+					<td class='meta'>$h_userlink<br>$h_avatar<br/>$h_posted$h_del$h_edited</td>
 					<td class='c_body'>$h_comment<br><br>$h_reply $h_edit</td>
 				</tr></table>
 			";

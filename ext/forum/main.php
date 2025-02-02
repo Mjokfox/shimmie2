@@ -267,7 +267,7 @@ class Forum extends Extension
             "INNER JOIN forum_posts AS p " .
             "ON p.thread_id = f.id " .
             "GROUP BY f.id, f.sticky, f.title, f.date, u.name, u.email, u.class " .
-            "ORDER BY f.sticky ASC, f.uptodate DESC LIMIT :limit OFFSET :offset",
+            "ORDER BY f.sticky DESC, f.uptodate DESC LIMIT :limit OFFSET :offset",
             ["limit" => $threadsPerPage, "offset" => $pageNumber * $threadsPerPage]
         );
 

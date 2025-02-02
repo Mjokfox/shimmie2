@@ -14,14 +14,7 @@ function create_edit_box(e,imageId, commentId) {
             textarea.id = `edit_${commentId}`;
             const span = e.parentNode.querySelector("SPAN.markdown");
             if (span) {
-                let text = span.original_innerHTML;
-                const len = text.length;
-                const str = "\n*(edited)*"
-                const strlength = str.length;
-                if (text.substring(len-strlength,len) === str){
-                    text = text.substring(0,len-strlength);
-                }
-                textarea.innerHTML = text;
+                textarea.innerHTML = span.original_innerHTML;
             }
         }
         const submit = form.querySelector("input[type=submit]");

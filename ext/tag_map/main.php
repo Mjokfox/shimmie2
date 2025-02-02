@@ -54,7 +54,7 @@ class TagMap extends Extension
 
     public function onPageNavBuilding(PageNavBuildingEvent $event): void
     {
-        $event->add_nav_link("tags", new Link('tags/map'), "Tags");
+        $event->add_nav_link("tags", new Link('tags/popularity'), "Tags");
     }
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void

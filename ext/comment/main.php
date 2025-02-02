@@ -78,6 +78,7 @@ class Comment
     public string $poster_ip;
     #[Field]
     public string $posted;
+    public bool $edited;
 
     /**
      * @param array<string,mixed> $row
@@ -94,6 +95,7 @@ class Comment
         $this->image_id =  (int)$row['image_id'];
         $this->poster_ip =  $row['poster_ip'];
         $this->posted =  $row['posted'];
+        $this->edited = $row["edited"];
     }
 
     public static function count_comments_by_user(User $user): int
@@ -134,7 +136,7 @@ class Comment
         $query = "SELECT users.id as user_id, users.name as user_name, users.email as user_email, users.class as user_class,
 				comments.comment as comment, comments.id as comment_id,
 				comments.image_id as image_id, comments.owner_ip as poster_ip,
-				comments.posted as posted
+				comments.posted as posted, comments.edited as edited
 			FROM comments
 			LEFT JOIN users ON comments.owner_id=users.id
 			WHERE comments.id = :id;";
@@ -178,6 +180,7 @@ class CommentList extends Extension
 					owner_id INTEGER NOT NULL,
 					owner_ip SCORE_INET NOT NULL,
 					posted TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    edited BOOLEAN DEFAULT FALSE NOT NULL,
 					comment TEXT NOT NULL,
 					FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE,
 					FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE RESTRICT
@@ -185,7 +188,7 @@ class CommentList extends Extension
                 $database->execute("CREATE INDEX comments_image_id_idx ON comments(image_id)", []);
                 $database->execute("CREATE INDEX comments_owner_id_idx ON comments(owner_id)", []);
                 $database->execute("CREATE INDEX comments_posted_idx ON comments(posted)", []);
-                $this->set_version(CommentConfig::VERSION, 3);
+                $this->set_version(CommentConfig::VERSION, 4);
             }
 
             // the whole history
@@ -215,6 +218,15 @@ class CommentList extends Extension
             }
 
             // FIXME: add foreign keys, bump to v3
+        }
+
+        if ($this->get_version(CommentConfig::VERSION) < 4) {
+            $database->execute("ALTER TABLE comments ADD COLUMN edited BOOLEAN DEFAULT FALSE NOT NULL;", []);
+            $database->execute("UPDATE comments
+                SET comment = RTRIM(comment, '\n*(edited)*'),
+                edited = TRUE
+                WHERE comment LIKE '%*(edited)*';",[]);
+            $this->set_version(CommentConfig::VERSION, 4);
         }
     }
 
@@ -473,7 +485,7 @@ class CommentList extends Extension
 				users.id as user_id, users.name as user_name, users.email as user_email, users.class as user_class,
 				comments.comment as comment, comments.id as comment_id,
 				comments.image_id as image_id, comments.owner_ip as poster_ip,
-				comments.posted as posted
+				comments.posted as posted, comments.edited as edited
 			FROM comments
 			LEFT JOIN users ON comments.owner_id=users.id
 			ORDER BY comments.id DESC
@@ -491,7 +503,7 @@ class CommentList extends Extension
 				users.id as user_id, users.name as user_name, users.email as user_email, users.class as user_class,
 				comments.comment as comment, comments.id as comment_id,
 				comments.image_id as image_id, comments.owner_ip as poster_ip,
-				comments.posted as posted
+				comments.posted as posted, comments.edited as edited
 			FROM comments
 			LEFT JOIN users ON comments.owner_id=users.id
 			WHERE users.id = :user_id
@@ -511,7 +523,7 @@ class CommentList extends Extension
 				users.id as user_id, users.name as user_name, users.email as user_email, users.class as user_class,
 				comments.comment as comment, comments.id as comment_id,
 				comments.image_id as image_id, comments.owner_ip as poster_ip,
-				comments.posted as posted
+				comments.posted as posted, comments.edited as edited
 			FROM comments
 			LEFT JOIN users ON comments.owner_id=users.id
 			WHERE comments.image_id=:image_id
@@ -631,15 +643,22 @@ class CommentList extends Extension
             $this->comment_checks($image_id, $user, $comment);
         }
         global $database;
+        $edit_query = $database->get_driver_id() == DatabaseDriverID::PGSQL ?
+            "CASE 
+                WHEN posted < CURRENT_TIMESTAMP - INTERVAL '5 minutes' THEN TRUE 
+                ELSE edited 
+            END" : "TRUE";
         $query = "UPDATE comments
-        SET owner_ip = :ip,
-        posted = now(),
-        comment = :comment
-        WHERE id = :id;
+            SET owner_ip = :ip,
+                posted = CURRENT_TIMESTAMP,
+                comment = :comment,
+                edited = $edit_query
+            WHERE id = :id;
         ";
+        
         $args = [
             "ip" => get_real_ip(),
-            "comment" => "$comment\n*(edited)*",
+            "comment" => $comment,
             "id" => $comment_id
         ];
         $database->execute($query,$args);
