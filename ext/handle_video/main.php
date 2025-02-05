@@ -4,14 +4,6 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-abstract class VideoFileHandlerConfig
-{
-    public const PLAYBACK_AUTOPLAY = "video_playback_autoplay";
-    public const PLAYBACK_LOOP = "video_playback_loop";
-    public const PLAYBACK_MUTE = "video_playback_mute";
-    public const ENABLED_FORMATS = "video_enabled_formats";
-}
-
 class VideoFileHandler extends DataHandlerExtension
 {
     public const SUPPORTED_MIME = [
@@ -97,6 +89,7 @@ class VideoFileHandler extends DataHandlerExtension
                     $event->image->video_codec = $video_codec;
                     $event->image->audio = $audio;
                     if ($event->image->get_mime() == MimeType::MKV &&
+                        $event->image->video_codec != null &&
                         VideoContainers::is_video_codec_supported(VideoContainers::WEBM, $event->image->video_codec)) {
                         // WEBMs are MKVs with the VP9 or VP8 codec
                         // For browser-friendliness, we'll just change the mime type

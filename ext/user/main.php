@@ -136,6 +136,10 @@ class UserPage extends Extension
     {
         global $config;
         $config->set_default_bool(UserAccountsConfig::SIGNUP_ENABLED, true);
+        $config->set_default_string(
+            UserAccountsConfig::SIGNUP_DISABLED_MESSAGE,
+            "The board admin has disabled the ability to sign up for new accounts"
+        );
         $config->set_default_int(UserAccountsConfig::LOGIN_MEMORY, 30);
         $config->set_default_bool(UserAccountsConfig::LOGIN_TAC_BBCODE, true);
         $config->set_default_bool(UserAccountsConfig::USER_EMAIL_REQUIRED, false);
@@ -409,7 +413,7 @@ class UserPage extends Extension
 
         $hosts = [
             "None" => "none",
-            "Post id" => "post",
+            "Post ID" => "post",
             "Gravatar" => "gravatar"
         ];
 
@@ -461,7 +465,7 @@ class UserPage extends Extension
     public function onUserOptionsBuilding(UserOptionsBuildingEvent $event): void
     {
         global $config;
-        if ($config->get_string("avatar_host") === "post"){
+        if ($config->get_string("avatar_host") === "post") {
             $sb = $event->panel->create_new_block("Avatar");
             $sb->add_int_option("avatar_post_id", 'Avatar post ID: ');
         }
