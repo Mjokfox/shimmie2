@@ -14,4 +14,6 @@ abstract class ReverseImageConfig
     public const USER_ENABLE_AUTO = "reverse_image_automatic";
     public const USER_ENABLE_AUTO_SELECT = "reverse_image_automatic_select";
     public const USER_TAG_THRESHOLD = "reverse_image_tag_threshold";
+    public const SEARCH_ENABLE = "reverse_image_search_enable";
+    public const USER_SEARCH_ENABLE = "reverse_image_user_search_enable";
 }

@@ -6,26 +6,10 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{BODY, emptyHTML, TITLE, META, rawHTML};
+use function MicroHTML\{rawHTML, BODY};
 
-class HomeTheme extends Themelet
+class CustomhomeTheme extends HomeTheme
 {
-    public function display_page(Page $page, string $sitename, HTMLElement $body): void
-    {
-        $page->set_mode(PageMode::DATA);
-        $page->add_auto_html_headers();
-
-        $page->set_data((string)$page->html_html(
-            emptyHTML(
-                TITLE($sitename),
-                META(["http-equiv" => "Content-Type", "content" => "text/html;charset=utf-8"]),
-                META(["name" => "viewport", "content" => "width=device-width, initial-scale=1"]),
-                $page->get_all_html_headers(),
-            ),
-            $body
-        ));
-    }
-
     public function build_body(string $sitename, string $main_links, string $main_text, string $contact_link, string $num_comma, string $counter_text): HTMLElement
     {
         global $page, $config, $user_config;
@@ -36,24 +20,26 @@ class HomeTheme extends Themelet
         $counter_html = empty($counter_text) ? "" : "<div class='space' id='counter'>$counter_text</div>";
         $contact_link = empty($contact_link) ? "" : "<br><a href='$contact_link'>Contact</a> &ndash;";
         $search_html = "
-			<div class='space' id='search'>
-				<form action='".search_link()."' method='GET'>
-				<input name='search' size='30' type='search' placeholder='tag search' class='autocomplete_tags' value='' autofocus='autofocus' />
+            <div class='space search-bar' id='search'>
+				<form action='post/list' method='GET'>
+				<input name='search' size='30' type='search' value='' placeholder='tag search' class='autocomplete_tags' autofocus='autofocus' />
 				<input type='hidden' name='q' value='post/list'>
 				<input type='submit' value='Search'/>
 				</form>
-			</div>
+                
 		";
-        if (Extension::is_enabled(ReverseImageInfo::KEY) && $config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user_config->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE)) {
-            $search_html .= "
-            <div class='space' id='text-search'>
+		if (Extension::is_enabled(ReverseImageInfo::KEY) && $config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user_config->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE)) {
+			$search_html .= "<a href='#' onclick='$(\".search-bar\").toggle();'>To text search</a>
+			</div>
+			<div class='space search-bar' id='text-search' style='display:none'>
 				<form action='post/search' method='GET'>
-				<input name='search' size='30' type='search' value='' placeholder='text search' autofocus='autofocus' />
+				<input name='search' size='30' type='search' value='' placeholder='text search'/>
 				<input type='hidden' name='q' value='post/search'>
 				<input type='submit' value='Search'/>
 				</form>
+                <a href='#' onclick='$(\".search-bar\").toggle();'>To tag search</a>
 			</div>";
-        }
+		} else {$search_html .= "</div>";}
         return BODY(
             $page->body_attrs(),
             rawHTML("

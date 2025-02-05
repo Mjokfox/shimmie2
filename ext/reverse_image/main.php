@@ -19,6 +19,7 @@ class ReverseImage extends Extension
         $config->set_default_int(ReverseImageConfig::CONF_DEFAULT_AMOUNT, 5);
         $config->set_default_int(ReverseImageConfig::SIMILARITY_DUPLICATE, 3);
         $config->set_default_string(ReverseImageConfig::CONF_URL, "127.0.0.1:10017");
+        $config->set_default_bool(ReverseImageConfig::SEARCH_ENABLE, true);
     }
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
@@ -44,6 +45,7 @@ class ReverseImage extends Extension
         $event->user_config->set_default_bool(ReverseImageConfig::USER_ENABLE_AUTO, true);
         $event->user_config->set_default_bool(ReverseImageConfig::USER_ENABLE_AUTO_SELECT, false);
         $event->user_config->set_default_int(ReverseImageConfig::USER_TAG_THRESHOLD, 50);
+        $event->user_config->set_default_bool(ReverseImageConfig::USER_SEARCH_ENABLE, true);
     }
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
@@ -54,21 +56,80 @@ class ReverseImage extends Extension
     }
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $user, $page,$config;
-        if ($event->page_matches("reverse_image_search", method: "GET")) {
-            $this->theme->display_page();
-        } else if ($event->page_matches("reverse_image_search", method: "POST", authed: false)) {
-            $ids = $this->reverse_image_search_post();
-            if (count($ids) > 0){
-                $this->theme->display_page($_POST["reverse_image_limit"],$_POST["url_input"]);
-                $this->theme->display_results($ids,$_FILES['file']['tmp_name'],$_POST["url_input"]);
+        global $user, $page, $config, $user_config;
+        if ($event->page_matches("post/list", paged: true)
+            || $event->page_matches("post/list/{search}", paged: true)) {
+            if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user_config->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE)){
+                $this->theme->list_search($page);
             }
-            else {
+        }
+
+        elseif ($event->page_matches("post/view/{id}")) {
+            if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user_config->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE)){
+                $this->theme->view_search($page,$event->get_GET('search') ?? "");
+            }
+        }
+
+        elseif ($event->page_matches("post/search", paged: true)
+            || $event->page_matches("post/search/{search}", paged: true)
+        ) {
+            global $database;
+            $get_search = $event->get_GET('search');
+            if ($get_search || !($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user_config->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE))) {
                 $page->set_mode(PageMode::REDIRECT);
-                $page->set_redirect("reverse_image_search");
-                $page->flash("Something broke in the backed or no file or url given");
+                if (empty($get_search)){
+                    $page->set_redirect(make_link("/post/list"));
+                } else {
+                    $page->set_redirect(make_link("post/search/$get_search/1"));
+                }
+                return;
             }
-        } else if ($event->page_matches("reverse_image_search_fromupload", method: "POST", authed: false)) {
+            $search = $event->get_arg('search', "");
+            if (empty($search)) {
+                $page->set_mode(PageMode::REDIRECT);
+                $page->set_redirect(make_link("/post/list"));
+                return;
+            }
+            
+            $feat = $this->get_search_features($search);
+            if (!$feat){
+                $page->set_mode(PageMode::REDIRECT);
+                $page->flash("something went wrong");
+                $page->set_redirect(make_link("/post/list"));
+                return;
+            }
+            $page_number = $event->get_iarg('page_num', 1);
+            $page_size = $config->get_int("index_images");
+
+            $image_ids = $this->reverse_image_compare($feat, $page_size, ($page_number-1)*$page_size);
+            $in = implode(",",array_keys($image_ids));
+
+            $res = $database->get_all("SELECT images.* FROM images
+                WHERE id IN ($in)
+                order by array_position(array[$in], id);"
+                );
+            $images = [];
+            foreach($res as $r){
+                $images[] = new Image($r);
+            }
+            
+            $plbe = send_event(new PostListBuildingEvent([]));
+            $this->theme->list_search($page, $search);
+
+            $image_count = $database->get_one("SELECT count(id) from images;");
+
+
+            /** @var IndexTheme $IT */
+            $IT = Themelet::get_for_extension_class("Index");
+            $IT->set_page($page_number, (int)ceil($image_count/$page_size), [$search]);
+            $IT->display_page($page,$images);
+
+            if (count($plbe->parts) > 0) {
+                $IT->display_admin_block($plbe->parts);
+            }
+        }
+
+        elseif ($event->page_matches("reverse_image_search_fromupload", method: "POST", authed: false)) {
             $ids = $this->reverse_image_search_post();
             $page->set_mode(PageMode::DATA);
             if (count($ids) > 0){
@@ -92,7 +153,9 @@ class ReverseImage extends Extension
                 $page->set_data(json_encode(["No similar images found, either the file was not uploaded properly or no url given"]));
                 $page->set_filename('failed.json','Content-Type: application/json');
             }
-        } else if ($event->page_matches("upload", method: "GET", permission: Permissions::CREATE_IMAGE)) {
+        }
+
+        elseif ($event->page_matches("upload", method: "GET", permission: Permissions::CREATE_IMAGE)) {
             global $config, $user_config;
             $default_reverse_result_limit = $config->get_int(ReverseImageConfig::CONF_DEFAULT_AMOUNT);
             $enable_auto_pre = $user_config->get_bool(ReverseImageConfig::USER_ENABLE_AUTO);
@@ -116,7 +179,25 @@ class ReverseImage extends Extension
             const AUTO_TAG_THRESHOLD = $predict_threshold; 
             </script>"), "main", 100));
         }
+
+        elseif ($event->page_matches("reverse_image_search", method: "GET")) {
+            $this->theme->display_page();
+        }
+        
+        elseif ($event->page_matches("reverse_image_search", method: "POST", authed: false)) {
+            $ids = $this->reverse_image_search_post();
+            if (count($ids) > 0){
+                $this->theme->display_page($_POST["reverse_image_limit"],$_POST["url_input"]);
+                $this->theme->display_results($ids,$_FILES['file']['tmp_name'],$_POST["url_input"]);
+            }
+            else {
+                $page->set_mode(PageMode::REDIRECT);
+                $page->set_redirect("reverse_image_search");
+                $page->flash("Something broke in the backed or no file or url given");
+            }
+        }  
     }
+
     public function onSetupBuilding(SetupBuildingEvent $event): void
     {
         $sb = $event->panel->create_new_block("Reverse image search");
@@ -124,6 +205,7 @@ class ReverseImage extends Extension
         $sb->add_int_option(ReverseImageConfig::CONF_DEFAULT_AMOUNT, "<br/>Default reverse image search results: ");
         $sb->add_int_option(ReverseImageConfig::SIMILARITY_DUPLICATE, "<br/>The similarity in % when its a duplicate: ");
         $sb->add_text_option(ReverseImageConfig::CONF_URL, "<br/>Python engine url: ");
+        $sb->add_bool_option(ReverseImageConfig::SEARCH_ENABLE, "<br/>Enable text based search: ");
     }
 
     public function onAdminBuilding(AdminBuildingEvent $event): void
@@ -132,10 +214,14 @@ class ReverseImage extends Extension
     }
     public function onUserOptionsBuilding(UserOptionsBuildingEvent $event): void
     {
+        global $config;
         $sb = $event->panel->create_new_block("Reverse image search");
         $sb->add_bool_option(ReverseImageConfig::USER_ENABLE_AUTO, 'Enable automatic predicting: ');
         $sb->add_bool_option(ReverseImageConfig::USER_ENABLE_AUTO_SELECT, '<br>Enable automatic tagging: ');
         $sb->add_int_option(ReverseImageConfig::USER_TAG_THRESHOLD, '<br>The minimum percentage prediction to tag: ');
+        if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE)){
+            $sb->add_bool_option(ReverseImageConfig::USER_SEARCH_ENABLE, '<br>Enable text based search: ');
+        }
     }
 
     public function onAdminAction(AdminActionEvent $event): void
@@ -277,15 +363,40 @@ class ReverseImage extends Extension
 
     }
 
+    public function get_search_features($search): array|bool
+    {
+        global $config;
+        $uri = $config->get_string(ReverseImageConfig::CONF_URL);
+        $url = "$uri/search_features";
+        $ch = curl_init($url);
+        assert($ch !== false);
+        $post = array('search'=> $search);
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL,$url);
+        curl_setopt($ch, CURLOPT_POST,1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
+        $result=curl_exec($ch);
+        curl_close($ch);
+        if (!$result) return false;
+        $json = json_decode($result,true);
+
+        if (!isset($json["features"])) return false;
+        return $json["features"];
+    }
+
     // gets the closest image ids from the input features, returning an array[$limit] of these ids
-    private function reverse_image_compare($features,$limit): array
+    private function reverse_image_compare($features,$limit,$offset=null): array
     {
         global $database;
         $feature_array = "[" . implode(",",$features) . "]";
         $query = "SELECT image_id, features <=> :feature_array AS similarity
             FROM image_features
             ORDER BY similarity ASC
-            LIMIT :limit;";
+            LIMIT :limit";
+        if ($offset){
+            $query .= "\nOFFSET $offset";
+        }
         $args = ["feature_array" => $feature_array, "limit" => $limit];
         $image_ids = $database->get_pairs($query, $args);
         return $image_ids;

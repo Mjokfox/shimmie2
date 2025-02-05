@@ -18,8 +18,8 @@ class CustomViewPostTheme extends ViewPostTheme
         global $page;
         $page->set_heading(html_escape($image->get_tag_list()));
         $nav = $this->build_navigation($image);
-        $page->add_block(new Block("Search", $nav, "left", 0, "search-bar"));
-        $page->add_block(new Block("Search", $nav, "main", 5, "mobile-search"));
+        $page->add_block(new Block("Tag Search", $nav, "left", 0, "search-bar"));
+        $page->add_block(new Block("Tag Search", $nav, "main", 5, "mobile-search"));
         $page->add_block(new Block("Information", $this->build_information($image), "left", 15));
         $page->add_block(new Block(null, $this->build_info($image, $editor_parts), "main", 15));
         $page->add_block(new Block(null, $this->build_pin($image), "main", 2,"post_controls"));
@@ -83,9 +83,9 @@ class CustomViewPostTheme extends ViewPostTheme
     {
         //$h_pin = $this->build_pin($image);
         $h_search = "
-			<form action='".search_link()."' method='GET'>
-				<input id='searchinput' name='search' type='text' class='autocomplete_tags' value=\"".(isset($_GET['search']) ? $_GET['search'] : "")."\" style='width:75%'>
-				<input type='submit' value='Go' style='width:20%'>
+			<form action='".search_link()."' method='GET' class='search-bar '>
+				<input id='searchinput' name='search' type='text' placeholder='tags' class='autocomplete_tags' value=\"".(isset($_GET['search']) ? $_GET['search'] : "")."\">
+				<input type='submit' value='Go!'>
 				<input type='hidden' name='q' value='post/list'>
 			</form>
 		";

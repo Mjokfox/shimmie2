@@ -63,3 +63,5 @@
     max-width:25%;
     max-height:25%;
 }
+
+div#front-page > #text-search > form > input[type=submit]{padding: 4px 6px;}

@@ -578,12 +578,27 @@ form+form {
 		font-size: 3rem;
 	}
 
-	SECTION#mobile-search {
+	SECTION#mobile-search, SECTION#text-mobile-search {
 		display:unset;
 	}
 
-	SECTION#search-bar {
+	SECTION#search-bar, SECTION#search-bar-right, SECTION#text-search, SECTION#text-search-right {
 		display:none;
+	}
+
+	FORM.search-bar {
+		display:flex;
+		padding:0 2em 0 0;
+	}
+
+	FORM.search-bar INPUT[type=text] {
+		width:100%;
+		text-align:center;
+		margin-right: .5em;
+	}
+	
+	FORM.search-bar input {
+		width:3em
 	}
 
 	HEADER ul.flat-list {
@@ -924,7 +939,7 @@ INPUT.autocomplete_tags {
 	max-width: 100vw;
 }
 
-#mobile-search {
+#mobile-search, #text-mobile-search{
 	display:none;
 }
 
@@ -991,6 +1006,31 @@ a.filter-inactive {
 
 #pms TD{
 	max-width:32rem;
+}
+
+#text-search-right, #search-bar-right {
+	width:50%;
+	display: inline-block;
+	margin-top: 0;
+}
+
+#text-search-right {
+	float:right
+}
+
+FORM.full-width {
+    display:flex;
+    padding:0 2em 0 0;
+}
+
+FORM.full-width.search-bar INPUT[type=text] {
+    width:100%;
+	text-align:center;
+	margin-right: .5em;
+}
+
+FORM.full-width.search-bar input {
+    width:3em
 }
 
 .shm-blotter2-toggle, .shm-blotter-hide {

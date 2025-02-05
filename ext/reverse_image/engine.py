@@ -28,5 +28,21 @@ def extract_features():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/search_features', methods=['POST'])
+def search_features():
+    try:
+        search = request.values.get("search")
+
+        # Extract features
+        with torch.no_grad():
+            text_tokens = clip.tokenize([search]).to(device)
+            text_embedding = model.encode_text(text_tokens).cpu().numpy().tolist()
+
+        return jsonify({"features": text_embedding[0]})
+    except Exception as e:
+        print(e)
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=10017)

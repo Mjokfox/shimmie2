@@ -63,6 +63,7 @@ class customPage extends Page
         $user_block_html = [];
         $main_block_html = [];
         $sub_block_html = [];
+        $heading_html = [];
 
         foreach ($this->blocks as $block) {
             switch ($block->section) {
@@ -81,6 +82,8 @@ class customPage extends Page
                     }
                     $main_block_html[] = $this->block_html($block, false);
                     break;
+                case "heading":
+                    $heading_html[] = $block->body;
                 default:
                     print "<p>error: {$block->header} using an unknown section ({$block->section})";
                     break;
@@ -126,7 +129,8 @@ class customPage extends Page
                 DIV(["class" => "mobile-burger",],
                     A([
                         "onclick" => '$(".flat-list").toggle();$(this).text($(this).text() === "≡" ? "×" : "≡");'
-                    ],"≡"))
+                    ],"≡")),
+                ...$heading_html
                 ),
                 
                 UL(["id" => "navbar", "class" => "flat-list"], $custom_links),
