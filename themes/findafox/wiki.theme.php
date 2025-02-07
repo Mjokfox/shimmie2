@@ -53,19 +53,25 @@ class CustomWikiTheme extends WikiTheme
             )
             ORDER BY id DESC
             LIMIT 10;
-        ");
-        if (count($data) < 1){return DIV("No recent wiki changes");}
+        "
+        );
+        if (count($data) < 1) {
+            return DIV("No recent wiki changes");
+        }
 
         $html = emptyHTML();
         $time = time();
         $i = 0;
-        foreach($data as $row){
+        foreach ($data as $row) {
             $date = $row["date"];
-            if ($time - strtotime($date) > 2678400) break; // one month
+            if ($time - strtotime($date) > 2678400) {
+                break;
+            } // one month
             $i++;
             $title = $row["title"];
             $html->appendChild(
-                A(["href" => make_link("wiki/$title")],
+                A(
+                    ["href" => make_link("wiki/$title")],
                     ucfirst($title)
                 ),
                 rawHTML(" ".autodate($date)),

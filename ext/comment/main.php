@@ -225,7 +225,7 @@ class CommentList extends Extension
             $database->execute("UPDATE comments
                 SET comment = RTRIM(comment, '*(edited)*'),
                 edited = TRUE
-                WHERE comment LIKE '%*(edited)*';",[]);
+                WHERE comment LIKE '%*(edited)*';", []);
             $this->set_version(CommentConfig::VERSION, 4);
         }
     }
@@ -253,18 +253,18 @@ class CommentList extends Extension
             send_event(new CommentPostingEvent($i_iid, $user, $event->req_POST('comment')));
             $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("post/view/$i_iid", null, "comment_on_$i_iid"));
-        }
-        elseif ($event->page_matches("comment/delete/{comment_id}/{image_id}")) {
+        } elseif ($event->page_matches("comment/delete/{comment_id}/{image_id}")) {
             $comment = Comment::by_id($event->get_iarg('comment_id'));
-            if (!is_null($comment) && ($user->can(Permissions::DELETE_COMMENT) || $comment->owner_id === $user->id)){
-            // FIXME: post, not args
+            if (!is_null($comment) && ($user->can(Permissions::DELETE_COMMENT) || $comment->owner_id === $user->id)) {
+                // FIXME: post, not args
                 send_event(new CommentDeletionEvent($event->get_iarg('comment_id')));
                 $page->flash("Deleted comment");
                 $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(referer_or(make_link("post/view/" . $event->get_iarg('image_id'))));
-            } else throw new PermissionDenied("Permission Denied: You cant just go around and delete others' comments.");
-        }
-        elseif ($event->page_matches("comment/bulk_delete", method: "POST", permission: Permissions::DELETE_COMMENT)) {
+            } else {
+                throw new PermissionDenied("Permission Denied: You cant just go around and delete others' comments.");
+            }
+        } elseif ($event->page_matches("comment/bulk_delete", method: "POST", permission: Permissions::DELETE_COMMENT)) {
             $ip = $event->req_POST('ip');
 
             $comment_ids = $database->get_col("
@@ -281,8 +281,7 @@ class CommentList extends Extension
 
             $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("admin"));
-        }
-        elseif ($event->page_matches("comment/list", paged: true)) {
+        } elseif ($event->page_matches("comment/list", paged: true)) {
             $threads_per_page = 10;
 
             $speed_hax = (Extension::is_enabled(SpeedHaxInfo::KEY) && $config->get_bool(SpeedHaxConfig::RECENT_COMMENTS));
@@ -331,19 +330,19 @@ class CommentList extends Extension
             }
 
             $this->theme->display_comment_list($images, $current_page + 1, $total_pages, $user->can(Permissions::CREATE_COMMENT));
-        }
-        elseif ($event->page_matches("comment/edit", method: "POST", permission: Permissions::CREATE_COMMENT)) {
+        } elseif ($event->page_matches("comment/edit", method: "POST", permission: Permissions::CREATE_COMMENT)) {
             $cid = int_escape($event->req_POST('comment_id'));
             $comment = Comment::by_id($cid);
-            if (!is_null($comment) && ($user->can(Permissions::DELETE_COMMENT) || $comment->owner_id === $user->id)){
+            if (!is_null($comment) && ($user->can(Permissions::DELETE_COMMENT) || $comment->owner_id === $user->id)) {
                 $i_iid = int_escape($event->req_POST('image_id'));
                 send_event(new CommentEditingEvent($i_iid, $cid, $user, $event->req_POST('comment')));
                 $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(make_link("post/view/$i_iid", null, "c$cid"));
 
-            } else throw new PermissionDenied("Permission Denied: You cant edit others' comments, thats not how you win arguments online");
-        }
-        elseif ($event->page_matches("comment/beta-search/{search}", paged: true)) {
+            } else {
+                throw new PermissionDenied("Permission Denied: You cant edit others' comments, thats not how you win arguments online");
+            }
+        } elseif ($event->page_matches("comment/beta-search/{search}", paged: true)) {
             $search = $event->get_arg('search');
             $page_num = $event->get_iarg('page_num', 1) - 1;
             $duser = User::by_name($search);
@@ -639,7 +638,8 @@ class CommentList extends Extension
         log_info("comment", "Comment #$cid added to >>$image_id: $snippet");
     }
 
-    private function edit_comment(int $image_id, int $comment_id, User $user, string $comment): void {
+    private function edit_comment(int $image_id, int $comment_id, User $user, string $comment): void
+    {
         if (!$user->can(Permissions::BYPASS_COMMENT_CHECKS)) {
             // will raise an exception if anything is wrong
             $this->comment_checks($image_id, $user, $comment);
@@ -657,13 +657,13 @@ class CommentList extends Extension
                 edited = $edit_query
             WHERE id = :id;
         ";
-        
+
         $args = [
             "ip" => get_real_ip(),
             "comment" => $comment,
             "id" => $comment_id
         ];
-        $database->execute($query,$args);
+        $database->execute($query, $args);
 
         $snippet = substr($comment, 0, 100);
         $snippet = str_replace("\n", " ", $snippet);

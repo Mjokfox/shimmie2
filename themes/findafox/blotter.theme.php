@@ -21,7 +21,7 @@ class CustomBlotterTheme extends BlotterTheme
         $page->add_block(new Block(null, rawHTML($html), "main", 1, "blotter"));
     }
 
-        /**
+    /**
      * @param BlotterEntry[] $entries
      */
     private function get_html_for_blotter(array $entries): string
@@ -54,8 +54,7 @@ class CustomBlotterTheme extends BlotterTheme
                 </span>
             </div>
 		    ";
-        } 
-        else {
+        } else {
             $i_color = $config->get_string(BlotterConfig::COLOR, "#FF0000");
             $position = $config->get_string(BlotterConfig::POSITION, "subheading");
             $entries_list = "";
@@ -88,8 +87,7 @@ class CustomBlotterTheme extends BlotterTheme
             if ($count === 0) {
                 $out_text = "No blotter entries yet.";
                 $in_text = "Empty.";
-            } 
-            else {
+            } else {
                 $clean_date = date("m/d/y", \Safe\strtotime($entries[0]['entry_date']));
                 $out_text = "Blotter updated: {$clean_date}";
                 $in_text = "<ul>$entries_list</ul>";

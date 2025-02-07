@@ -15,11 +15,15 @@ class DmcaTheme extends Themelet
         $page->set_title("DMCA form");
         $html = SHM_SIMPLE_FORM(
             "dmca_submit",
-            DIV(["style" => "width:50%"],
+            DIV(
+                ["style" => "width:50%"],
                 "Your contact email",
-                INPUT(["type" => 'text',"required" => "true", "name" => 'dmca_email', "placeholder" => "email@example.com", "style" => "width:100%"]),BR(),BR(),
+                INPUT(["type" => 'text',"required" => "true", "name" => 'dmca_email', "placeholder" => "email@example.com", "style" => "width:100%"]),
+                BR(),
+                BR(),
                 "Reason(s) and offending image(s)",
-                TEXTAREA(["type" => 'number',"required" => "true", "name" => 'dmca_input', "rows" => "8", "style" => "width:100%", "placeholder" => "ID(s) or URL(s) for offending item or items to be removed. Include details of who owns the items and your proof that you hold the copyright to request this takedown"]),BR(),
+                TEXTAREA(["type" => 'number',"required" => "true", "name" => 'dmca_input', "rows" => "8", "style" => "width:100%", "placeholder" => "ID(s) or URL(s) for offending item or items to be removed. Include details of who owns the items and your proof that you hold the copyright to request this takedown"]),
+                BR(),
                 SHM_SUBMIT('submit'),
             )
         );

@@ -19,8 +19,8 @@ class Dmca extends Extension
         global $user, $page;
         if ($event->page_matches("dmca", method: "GET")) {
             $this->theme->display_page();
-        } else if ($event->page_matches("dmca_submit", method: "POST")) {
-            if($this->send_mail()){
+        } elseif ($event->page_matches("dmca_submit", method: "POST")) {
+            if ($this->send_mail()) {
                 $this->theme->display_submitted();
             } else {
                 $this->theme->display_failed();
@@ -32,7 +32,7 @@ class Dmca extends Extension
         global $page;
         if (!isset($_POST['dmca_email']) and
             !isset($_POST['dmca_input'])) {
-                return false;
+            return false;
         }
         $to = 'mjokfox@findafox.net';
         $subject = 'DMCA takedown request';

@@ -84,6 +84,7 @@ class customPage extends Page
                     break;
                 case "heading":
                     $heading_html[] = $block->body;
+                    // no break
                 default:
                     print "<p>error: {$block->header} using an unknown section ({$block->section})";
                     break;
@@ -114,8 +115,9 @@ class customPage extends Page
 
         $title_link = H1(
             ["id" => "site-title"],
-            A(["href" => make_link($main_page)],
-                IMG(["src" => "/web-app-manifest-192x192.png", "alt" => "", "class" => "logo"]), 
+            A(
+                ["href" => make_link($main_page)],
+                IMG(["src" => "/web-app-manifest-192x192.png", "alt" => "", "class" => "logo"]),
                 $site_name
             )
         );
@@ -125,14 +127,17 @@ class customPage extends Page
         return BODY(
             $this->body_attrs(),
             HEADER(
-                DIV(["class" => "title-container"],$title_link,
-                DIV(["class" => "mobile-burger",],
-                    A([
-                        "onclick" => '$(".flat-list").toggle();$(this).text($(this).text() === "≡" ? "×" : "≡");'
-                    ],"≡")),
-                ...$heading_html
+                DIV(
+                    ["class" => "title-container"],
+                    $title_link,
+                    DIV(
+                        ["class" => "mobile-burger",],
+                        A([
+                            "onclick" => '$(".flat-list").toggle();$(this).text($(this).text() === "≡" ? "×" : "≡");'
+                        ], "≡")
+                    ),
+                    ...$heading_html
                 ),
-                
                 UL(["id" => "navbar", "class" => "flat-list"], $custom_links),
                 UL(["id" => "subnavbar", "class" => "flat-list"], $custom_sublinks),
             ),
@@ -160,8 +165,8 @@ class customPage extends Page
         global $config;
         $debug = get_debug_info();
         $contact_link = contact_link() ?? "";
-        $footer_html = $config->get_string("footer_html","");
-        if (!($footer_html == "" || $footer_html == null)){
+        $footer_html = $config->get_string("footer_html", "");
+        if (!($footer_html == "" || $footer_html == null)) {
             $footer_html = str_replace('%d', $debug, $footer_html);
             $footer_html = str_replace('%c', $contact_link, $footer_html);
             /** @var string $footer_html */

@@ -22,7 +22,7 @@ class CustomViewPostTheme extends ViewPostTheme
         $page->add_block(new Block("Tag Search", $nav, "main", 5, "mobile-search"));
         $page->add_block(new Block("Information", $this->build_information($image), "left", 15));
         $page->add_block(new Block(null, $this->build_info($image, $editor_parts), "main", 15));
-        $page->add_block(new Block(null, $this->build_pin($image), "main", 2,"post_controls"));
+        $page->add_block(new Block(null, $this->build_pin($image), "main", 2, "post_controls"));
     }
 
     private function build_information(Image $image): HTMLElement
@@ -99,10 +99,12 @@ class CustomViewPostTheme extends ViewPostTheme
         $query = $this->get_query();
         $page->add_html_header(LINK(["id" => "nextlink", "rel" => "next", "href" => make_link("post/next/{$image->id}", $query)]));
         $page->add_html_header(LINK(["id" => "prevlink", "rel" => "previous", "href" => make_link("post/prev/{$image->id}", $query)]));
-        return DIV(["class" => "post-controls"],
+        return DIV(
+            ["class" => "post-controls"],
             A(["href" => make_link("post/prev/{$image->id}", $query), "id" => "prevlink"], "<< Next"),
-            SPAN(["class" => "post-controls-center"],
-                A(["href" => make_link("post/list/",$query), "id" => "searchlink"], "Search" . (isset($_GET['search']) ? ": ".$_GET['search'] : ""))
+            SPAN(
+                ["class" => "post-controls-center"],
+                A(["href" => make_link("post/list/", $query), "id" => "searchlink"], "Search" . (isset($_GET['search']) ? ": ".$_GET['search'] : ""))
             ),
             A(["href" => make_link("post/next/{$image->id}", $query), "id" => "nextlink"], "Prev >>"),
         );

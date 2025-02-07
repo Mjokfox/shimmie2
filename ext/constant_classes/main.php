@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-new UserClass("moderator", "user",[    
+new UserClass("moderator", "user", [
     Permissions::PERFORM_BULK_ACTIONS => true,
     Permissions::BULK_DOWNLOAD => true,
     Permissions::MANAGE_ALIAS_LIST => true,

@@ -9,7 +9,7 @@ use function MicroHTML\rawHTML;
 require_once "config.php";
 // https://openclipart.org/detail/314331/chocolate-chip-cookie
 class SillyCookies extends Extension
-{  
+{
     public function get_priority(): int
     {
         return 49;
@@ -42,6 +42,6 @@ class SillyCookies extends Extension
         $sb->add_text_option(SillyCookiesConfig::IMAGE_URL, "Image url: ");
         $sb->add_longtext_option(SillyCookiesConfig::COOKIES_TITLE, '<br>The title displayed above the image');
         $sb->add_longtext_option(SillyCookiesConfig::COOKIES_TEXT, '<br>The text to be displayed next to the image');
-        $sb->add_bool_option(SillyCookiesConfig::GIB,"Add cookie dispenser?: ");
+        $sb->add_bool_option(SillyCookiesConfig::GIB, "Add cookie dispenser?: ");
     }
 }

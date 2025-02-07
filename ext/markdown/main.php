@@ -23,7 +23,7 @@ class Markdown extends FormatterExtension
             $text = preg_replace_ex("!^$el (.+)!m", "$1<", $text);
         }
 
-        $text = preg_replace_ex('/!?\[(.+?)\]\(((?:https?|ftp|irc|mailto|site):\/\/[^\s|[]+)\)/s', '$2', $text); 
+        $text = preg_replace_ex('/!?\[(.+?)\]\(((?:https?|ftp|irc|mailto|site):\/\/[^\s|[]+)\)/s', '$2', $text);
         $text = preg_replace_ex("!\[anchor=(.*?)\](.*?)\[/anchor\]!s", '$2', $text);
         $text = preg_replace_ex("!\[/?(list|ul|ol)\]!", "", $text);
         $text = preg_replace_ex("#\[align=(left|center|right)\](.*?)\[\/align\]#s", "$2", $text);

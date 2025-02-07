@@ -11,7 +11,7 @@ class PrivMsgTheme extends Themelet
     /**
      * @param PM[] $pms
      */
-    public function display_pms(Page $page, array $pms, string $header = "Inbox", bool $to=false, bool $from=false, bool $edit=false, bool $archive=true, bool $delete=true, int $more=0,int $archived=0): void
+    public function display_pms(Page $page, array $pms, string $header = "Inbox", bool $to = false, bool $from = false, bool $edit = false, bool $archive = true, bool $delete = true, int $more = 0, int $archived = 0): void
     {
         global $user;
 
@@ -35,14 +35,16 @@ class PrivMsgTheme extends Themelet
                 } else {
                     $f_user = $user_cache[$uid];
                 }
-    
+
                 $user_name = $f_user->name;
                 $h_user = html_escape($user_name);
                 $user_url = make_link("user/".url_escape($user_name));
-                
+
                 $user_html .= "<td><a href='$user_url'>$h_user</a></td>";
                 $html .= $f_user->can(Permissions::HELLBANNED) ? "<tr class='hb'>" : "<tr>";
-            } else $html .= "<tr>";
+            } else {
+                $html .= "<tr>";
+            }
 
             if ($to) {
                 $uid = $pm->to_id;
@@ -52,32 +54,34 @@ class PrivMsgTheme extends Themelet
                 } else {
                     $p_user = $user_cache[$uid];
                 }
-    
+
                 $user_name = $p_user->name;
                 $h_user = html_escape($user_name);
                 $user_url = make_link("user/".url_escape($user_name));
-                
+
                 $user_html .= "<td><a href='$user_url'>$h_user</a></td>";
             }
 
             $pm_url = make_link("pm/read/".$pm->id);
             $arc_url = make_link("pm/archive");
             $del_url = make_link("pm/delete");
-            
+
             $h_date = substr(html_escape($pm->sent_date), 0, 16);
-            
+
             if (!$pm->is_read) {
                 $h_subject = "<b>$h_subject</b>";
                 $readYN = "N";
-            } else $readYN = "Y";
+            } else {
+                $readYN = "Y";
+            }
             $actions = [];
-            if ($archive){
+            if ($archive) {
                 $actions[] = "<div>".make_form($arc_url)."
                     <input type='hidden' name='pm_id' value='{$pm->id}'>
                     <input type='submit' value='Archive'>
                     </form></div>";
             }
-            if ($delete){
+            if ($delete) {
                 $actions[] = "<div class='pm-edit'>".make_form($del_url)."
                     <input type='hidden' name='pm_id' value='{$pm->id}'>
                     <input id='del-{$pm->id}' onclick=\"$('#del-{$pm->id}').hide();$('#con-{$pm->id}').show();\" type='button' value='Delete'>
@@ -88,7 +92,7 @@ class PrivMsgTheme extends Themelet
             if ($edit) {
                 $edit_url = make_link("pm/edit/".$pm->id);
                 $actions[] = "<button class='pm-edit' onclick=\"location.href='$edit_url'\" type='button'>Edit</button>";
-            } 
+            }
             $action_h = "<div style='display:flex;'>".implode($actions)."</div>";
             $html .= "
 			<td>$readYN</td>
@@ -102,8 +106,12 @@ class PrivMsgTheme extends Themelet
 				</tbody>
 			</table>
 		";
-        if ($more != 0) $html .= "<a href= '/pm/list/$more'>See all</a>";
-        if ($archived != 0) $html .= "<a style='margin-left:1em' href= '/pm/archived/$archived'>See archived messages</a>";
+        if ($more != 0) {
+            $html .= "<a href= '/pm/list/$more'>See all</a>";
+        }
+        if ($archived != 0) {
+            $html .= "<a style='margin-left:1em' href= '/pm/archived/$archived'>See archived messages</a>";
+        }
         $page->add_block(new Block($header, rawHTML($html), "main", 40, $header, hidable:true));
     }
 

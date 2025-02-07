@@ -291,10 +291,10 @@ class TagCategoriesTheme extends Themelet
         $labels = ["All tags", "In categories", "Outside categories"];
         $i = 0;
         $html = emptyHTML();
-        foreach($dict as $dic){
+        foreach ($dict as $dic) {
             $label = $labels[$i++];
             $temphtml = "<div><h2>$label</h2><table class='table-odd noborders'><tr><th>tag</th><th>count</th><tr>";
-            foreach($dic as $row){
+            foreach ($dic as $row) {
                 $temphtml .= "<tr><td>".$row["tag"]."</td><td>".$row["count"]."</td></tr>";
             }
             $temphtml .= "</table></div>";
@@ -302,8 +302,8 @@ class TagCategoriesTheme extends Themelet
         }
         $page->set_title("Tag Categories counts");
         $page->set_heading("Tag Categories counts");
-        
-        $page->add_block(new Block("Tag Categories counts", DIV(["style" => "display:flex;justify-content:space-evenly;"],$html), "main", 10));
+
+        $page->add_block(new Block("Tag Categories counts", DIV(["style" => "display:flex;justify-content:space-evenly;"], $html), "main", 10));
         $page->add_block(new NavBlock());
     }
 

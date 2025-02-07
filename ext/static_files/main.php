@@ -30,7 +30,7 @@ class StaticFiles extends Extension
             $rbe = send_event(new RobotsBuildingEvent());
             $page->set_mode(PageMode::DATA);
             $page->set_mime("text/plain");
-            $data = join("\n",[$config->get_string("robots_txt_bef"), join("\n", $rbe->parts),$config->get_string("robots_txt_aft")]);
+            $data = join("\n", [$config->get_string("robots_txt_bef"), join("\n", $rbe->parts),$config->get_string("robots_txt_aft")]);
             $page->set_data($data);
         }
 

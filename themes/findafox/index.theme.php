@@ -20,26 +20,36 @@ class CustomIndexTheme extends IndexTheme
 
         $this->display_page_header($page, $images);
         $path = "list";
-        if (\safe\preg_match("/^\/post\/(list|search)\//",$_SERVER['REQUEST_URI'],$matches)){
+        if (\safe\preg_match("/^\/post\/(list|search)\//", $_SERVER['REQUEST_URI'], $matches)) {
             /** @var array{0: string, 1: string} $matches */
             $path = $matches[1];
         }
         if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user_config->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE)) {
-            $pos = "main"; $id = "search-bar-right"; $class = "full-width";
-        } else {$pos = "left"; $id = "search-bar"; $class = "";}
+            $pos = "main";
+            $id = "search-bar-right";
+            $class = "full-width";
+        } else {
+            $pos = "left";
+            $id = "search-bar";
+            $class = "";
+        }
 
         $nav = $this->build_navigation($this->page_number, $this->total_pages, ($path === "list" ? $this->search_terms : []), $class);
-        
+
         $page->add_block(new Block("Tag Search", $nav, $pos, 2, $id));
 
         $page->add_block(new Block("Tag Search", $nav, "main", 5, "mobile-search"));
 
         $next = $this->page_number + 1;
         $prev = $this->page_number - 1;
-        $query = implode(" ",$this->search_terms);
+        $query = implode(" ", $this->search_terms);
 
-        if ($next <= $this->total_pages) $page->add_html_header(LINK(["id" => "nextlink", "rel" => "next", "href" => make_link("post/$path".($query ? "/$query":"")."/$next")]));
-        if ($prev > 0) $page->add_html_header(LINK(["id" => "prevlink", "rel" => "previous", "href" => make_link("post/$path".($query ? "/$query":"")."/$prev")]));
+        if ($next <= $this->total_pages) {
+            $page->add_html_header(LINK(["id" => "nextlink", "rel" => "next", "href" => make_link("post/$path".($query ? "/$query" : "")."/$next")]));
+        }
+        if ($prev > 0) {
+            $page->add_html_header(LINK(["id" => "prevlink", "rel" => "previous", "href" => make_link("post/$path".($query ? "/$query" : "")."/$prev")]));
+        }
 
         if (count($images) > 0) {
             $this->display_page_images($page, $images);
@@ -51,7 +61,7 @@ class CustomIndexTheme extends IndexTheme
     /**
      * @param string[] $search_terms
      */
-    protected function build_navigation(int $page_number, int $total_pages, array $search_terms, string $class=""): HTMLElement
+    protected function build_navigation(int $page_number, int $total_pages, array $search_terms, string $class = ""): HTMLElement
     {
         $h_search_string = count($search_terms) == 0 ? "" : html_escape(implode(" ", $search_terms));
         $h_search_link = search_link();
@@ -70,7 +80,7 @@ class CustomIndexTheme extends IndexTheme
     protected function display_page_images(Page $page, array $images): void
     {
         $path = "list";
-        if (\safe\preg_match("/^\/post\/(list|search)\//",$_SERVER['REQUEST_URI'],$matches)){
+        if (\safe\preg_match("/^\/post\/(list|search)\//", $_SERVER['REQUEST_URI'], $matches)) {
             /** @var array{0: string, 1: string} $matches */
             $path = $matches[1];
         }

@@ -59,7 +59,7 @@ class TagListTheme extends Themelet
     {
         global $config;
 
-        $search = array_key_exists("search",$_GET) ? explode(" ",$_GET["search"]) : [""];
+        $search = array_key_exists("search", $_GET) ? explode(" ", $_GET["search"]) : [""];
 
         if ($config->get_string(TagListConfig::RELATED_SORT) == TagListConfig::SORT_ALPHABETICAL) {
             usort($tag_infos, fn ($a, $b) => strcasecmp($a['tag'], $b['tag']));
@@ -78,7 +78,7 @@ class TagListTheme extends Themelet
             if (!isset($tag_categories_html[$category])) {
                 $tag_categories_html[$category] = $this->get_tag_list_preamble();
             }
-            $tag_categories_html[$category]->appendChild(self::build_tag_row($row,$search));
+            $tag_categories_html[$category]->appendChild(self::build_tag_row($row, $search));
 
             if (!isset($tag_categories_count[$category])) {
                 $tag_categories_count[$category] = 0;
@@ -98,7 +98,7 @@ class TagListTheme extends Themelet
             $main_html = null;
         }
         unset($tag_categories_html[null]);
-        $categories_display_names= [];
+        $categories_display_names = [];
         foreach (array_keys($tag_categories_html) as $category) {
             if ($tag_categories_count[$category] < 2) {
                 $categories_display_names[$tag_category_dict[$category]['display_singular']] = $tag_categories_html[$category];
@@ -122,10 +122,10 @@ class TagListTheme extends Themelet
         if ($main_html !== null) {
             $tagshtml->appendChild(DIV(
                 H3("Other"),
-                DIV(["class" => "blockbody"],rawHTML((string)$main_html)),
+                DIV(["class" => "blockbody"], rawHTML((string)$main_html)),
             ));
         }
-        $page->add_block(new Block(null, $tagshtml, "left", 10,"Tagsleft"));
+        $page->add_block(new Block(null, $tagshtml, "left", 10, "Tagsleft"));
     }
 
     /**
@@ -220,7 +220,8 @@ class TagListTheme extends Themelet
         $tr->appendChild(TD(
             ["class" => "tag_name_cell"],
             emptyHTML(
-                $search ? $this->ars($search, $tag) : emptyHTML(), " ",
+                $search ? $this->ars($search, $tag) : emptyHTML(),
+                " ",
                 $this->build_tag($tag, show_underscores: false, show_category: false),
             )
         ));

@@ -444,28 +444,38 @@ class Setup extends Extension
         $config = $event->config;
         $changes = [];
         foreach ($event->values as $key => $value) {
-            if (is_null($value)){
-                if (!is_null($config->get_string($key))) $changes[] = "$key set to null";
+            if (is_null($value)) {
+                if (!is_null($config->get_string($key))) {
+                    $changes[] = "$key set to null";
+                }
                 $config->delete($key);
-            } elseif (is_string($value)){
+            } elseif (is_string($value)) {
                 $old = $config->get_string($key);
-                if ($old !== $value) $changes[] = "$key changed from ($old) to ($value)";
+                if ($old !== $value) {
+                    $changes[] = "$key changed from ($old) to ($value)";
+                }
                 $config->set_string($key, $value);
-            } elseif (is_int($value)){
+            } elseif (is_int($value)) {
                 $old = $config->get_int($key);
-                if ($old !== $value) $changes[] = "$key changed from ($old) to ($value)";
+                if ($old !== $value) {
+                    $changes[] = "$key changed from ($old) to ($value)";
+                }
                 $config->set_int($key, $value);
-            } elseif (is_bool($value)){
+            } elseif (is_bool($value)) {
                 $old = $config->get_bool($key);
-                if ($old !== $value) $changes[] = "$key changed from (".($old ? "true":"false").") to (".($value ? "true":"false").")";
+                if ($old !== $value) {
+                    $changes[] = "$key changed from (".($old ? "true" : "false").") to (".($value ? "true" : "false").")";
+                }
                 $config->set_bool($key, $value);
-            } elseif (is_array($value)){
+            } elseif (is_array($value)) {
                 $old = $config->get_array($key);
-                if ($old !== $value) $changes[] = "$key changed from ([".implode(",",$old)."]) to ([".implode(",",$value)."])";
+                if ($old !== $value) {
+                    $changes[] = "$key changed from ([".implode(",", $old)."]) to ([".implode(",", $value)."])";
+                }
                 $config->set_array($key, $value);
             }
         }
-        $message = count($changes) > 0 ? implode(",\r\n",$changes) : "nothing changed";
+        $message = count($changes) > 0 ? implode(",\r\n", $changes) : "nothing changed";
         log_critical("setup", "Configuration updated: $message");
     }
 

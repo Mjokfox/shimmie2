@@ -26,4 +26,3 @@ class UserCSS extends Extension
         $sb->add_label("This controls the styling to be added on every page on this site.");
     }
 }
-

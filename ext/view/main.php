@@ -60,11 +60,11 @@ class ViewPost extends Extension
 
             $image_id = $event->get_iarg('image_id');
             $image = Image::by_id_ex($image_id);
-            $arr = preg_grep("/\b\w*fox\w*\b/i",$image->get_tag_array());
-            if ($arr){
-                $page->set_title(str_replace("_"," ",implode(", ",$arr)));
+            $arr = preg_grep("/\b\w*fox\w*\b/i", $image->get_tag_array());
+            if ($arr) {
+                $page->set_title(str_replace("_", " ", implode(", ", $arr)));
             } else {
-                $page->set_title(str_replace("_"," ",implode(", ",$image->get_tag_array())));
+                $page->set_title(str_replace("_", " ", implode(", ", $image->get_tag_array())));
             }
             send_event(new DisplayingImageEvent($image));
         } elseif ($event->page_matches("post/set", method: "POST")) {

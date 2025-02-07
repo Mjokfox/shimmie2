@@ -49,7 +49,7 @@ class UploadTheme extends Themelet
         $max_kb = to_shorthand_int($max_size);
         $max_total_size = parse_shorthand_int(ini_get('post_max_size') ?: "0");
         $max_total_kb = to_shorthand_int($max_total_size);
-        $upload_list = cache_get_or_set("upload_page",fn() => $this->build_upload_list(),900);
+        $upload_list = cache_get_or_set("upload_page", fn () => $this->build_upload_list(), 900);
 
         $common_fields = emptyHTML();
         $ucbe = send_event(new UploadCommonBuildingEvent());
@@ -57,9 +57,11 @@ class UploadTheme extends Themelet
             $common_fields->appendChild($part);
         }
         if ($preview_enabled) {
-            $preview_class = "media-preview".(!$split_view ? " upload-split-view":"");
-            $preview_element = DIV(["id"=>"mediaPreview", "class"=>$preview_class]);
-        } else $preview_element = "";
+            $preview_class = "media-preview".(!$split_view ? " upload-split-view" : "");
+            $preview_element = DIV(["id" => "mediaPreview", "class" => $preview_class]);
+        } else {
+            $preview_element = "";
+        }
         $form = SHM_FORM("upload", multipart: true, form_id: "file_upload");
         $form->appendChild(
             DIV(
@@ -67,14 +69,17 @@ class UploadTheme extends Themelet
                 DIV(
                     ["class" => "left-column"],
                     rawHTML("<noscript><h1>(this page requires javascript)</h1></noscript>"),
-                    DIV(["style" => "display:flex;justify-content:center"],
-                        B(["style" => "border:1px solid var(--text);padding:3px 1rem;"],
+                    DIV(
+                        ["style" => "display:flex;justify-content:center"],
+                        B(
+                            ["style" => "border:1px solid var(--text);padding:3px 1rem;"],
                             "Before uploading, please read the ",
-                            A(["href" => "/wiki/upload_guidelines"],"guidelines")
+                            A(["href" => "/wiki/upload_guidelines"], "guidelines")
                         )
                     ),
                     $split_view ? $preview_element : "",
-                    DIV(["style" => "display: flex; align-items: center;"],
+                    DIV(
+                        ["style" => "display: flex; align-items: center;"],
                         INPUT(["type" => "file",
                               "id" => "multiFileInput",
                               "multiple" => true,
@@ -85,9 +90,10 @@ class UploadTheme extends Themelet
                             "value" => "Multiple files input",
                             "onclick" => "document.getElementById('multiFileInput').click();" ,
                         ]),
-                        LABEL(["style" => "padding-left:5px"],
-                              INPUT(["type" => "checkbox", "id" => "multiFileOverride"]),
-                              " Overwrite current files?",
+                        LABEL(
+                            ["style" => "padding-left:5px"],
+                            INPUT(["type" => "checkbox", "id" => "multiFileOverride"]),
+                            " Overwrite current files?",
                         ),
                         INPUT([
                             "type" => "button",
@@ -96,10 +102,10 @@ class UploadTheme extends Themelet
                             "onclick" => "clearFiles();" ,
                         ]),
                     ),
-                    DIV(["id" => "dropZone"],
+                    DIV(
+                        ["id" => "dropZone"],
                         TABLE(
                             ["id" => "large_upload_form", "class" => "form"],
-
                             $common_fields,
                             $upload_list,
                             TR(
@@ -137,7 +143,7 @@ class UploadTheme extends Themelet
         $page->set_title("Upload");
         $page->add_block(new NavBlock());
         $page->add_block(new Block("Upload", $html, "main", 20));
-        
+
         if ($tl_enabled) {
             $page->add_block(new Block("Bookmarklets", $this->build_bookmarklets(), "left", 20));
         }
@@ -177,13 +183,14 @@ class UploadTheme extends Themelet
             foreach ($usfbe->get_parts() as $part) {
                 $specific_fields->appendChild($part);
             }
-            $color = "#".$colors[$i%11].$alpha;
+            $color = "#".$colors[$i % 11].$alpha;
 
             $upload_list->appendChild(
-                TR(["id"=> "rowdata{$i}","style" => "background-color:".$color],
+                TR(
+                    ["id" => "rowdata{$i}","style" => "background-color:".$color],
                     TD(
                         ["colspan" => 2, "style" => "white-space: nowrap;"],
-                       SPAN("{$i} "),
+                        SPAN("{$i} "),
                         DIV([
                             "id" => "canceldata{$i}",
                             "style" => "display:inline;margin-right:5px;font-size:15px;visibility:hidden;",
@@ -197,13 +204,12 @@ class UploadTheme extends Themelet
                             "multiple" => false,
                             "style" => "display:none",
                         ]),
-                       INPUT([
+                        INPUT([
                            "type" => "button",
                            "value" => "Browse...",
                            "id" => "browsedata{$i}",
                            "onclick" => "document.getElementById('data{$i}').click();" ,
                        ]),
-
                     ),
                     TD(
                         $tl_enabled ? INPUT([
@@ -213,39 +219,41 @@ class UploadTheme extends Themelet
                             "value" => ($i == 0) ? @$_GET['url'] : null,
                         ]) : null
                     ),
-                    TD(["style" => "text-align:center"],
+                    TD(
+                        ["style" => "text-align:center"],
                         DIV([
                             "id" => "showinputdata{$i}",
                             "style" => "display:inline;margin-right:5px;font-size:15px;visibility:hidden;",
                             "onclick" => "inputdiv(this,document.getElementById('inputdivdata{$i}'),'data{$i}','$color');",
                         ], "Show Input"),
-
                     ),
                     $preview_enabled ? TD(
-                       DIV([
+                        DIV([
                            "id" => "showpreviewdata{$i}",
                            "style" => "display:inline;margin-right:5px;font-size:15px;visibility:hidden;",
                            "onclick" => "showpreview(document.getElementById('data{$i}').files[0],'$color');",
                        ], "Preview"),
-
-                   ) : "",
-
+                    ) : "",
                 ),
-                TR(["style" => "background-color:".$color],
-                    TD( ["colspan" => "100%"],
-                    DIV([
-                            "id" => "inputdivdata{$i}",
-                            "style" => "display: none",
-                            "class" => $split_view ? "upload-split-view":"",
-                        ],
-                        TABLE(
-                            ["id" => "small_upload_form", "class" => "form","style"=>"width:100%"],
-                            TR(["class" => "header"],$headers),
-                            TR(["class" => "header"],
-                            $specific_fields,
-                            ),
-                        )
-                    ),
+                TR(
+                    ["style" => "background-color:".$color],
+                    TD(
+                        ["colspan" => "100%"],
+                        DIV(
+                            [
+                                "id" => "inputdivdata{$i}",
+                                "style" => "display: none",
+                                "class" => $split_view ? "upload-split-view" : "",
+                            ],
+                            TABLE(
+                                ["id" => "small_upload_form", "class" => "form","style" => "width:100%"],
+                                TR(["class" => "header"], $headers),
+                                TR(
+                                    ["class" => "header"],
+                                    $specific_fields,
+                                ),
+                            )
+                        ),
                     ),
                 )
             );

@@ -14,5 +14,5 @@ class ReverseImageInfo extends ExtensionInfo
     public string $license = self::LICENSE_GPLV2;
     public ExtensionCategory $category = ExtensionCategory::INTEGRATION;
     public string $description = "Adds the ability to reverse image search on the site";
-    public array $db_support = [DatabaseDriverID::PGSQL]; // requires cosine similarity (<=>) 
+    public array $db_support = [DatabaseDriverID::PGSQL]; // requires cosine similarity (<=>)
 }

@@ -501,7 +501,7 @@ class UserPage extends Extension
             $sb = $event->panel->create_new_block("Avatar");
             $sb->add_int_option(AvatarConfig::POST_AVATAR_ID, 'Avatar post ID: ');
             $image_id = $user_config->get_int(AvatarConfig::POST_AVATAR_ID, null);
-            if (!is_null($image_id)){
+            if (!is_null($image_id)) {
                 $sb->add_label("<br><a href=".make_link("set_avatar/$image_id").">Change cropping</a>");
             }
             $sb->add_label("<br>Manual position and scale:<br>");

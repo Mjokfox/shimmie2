@@ -13,7 +13,7 @@ class FlickrSource extends Extension
         return 2;
     }
     // public function onImageInfoSet(ImageInfoSetEvent $event): void
-    // {   
+    // {
     //     if (Extension::is_enabled(PostSourceInfo::KEY)){
     //         $slot = $event->slot;
     //         if(!($event->params["source"] || $event->params["source{$slot}"])){
@@ -28,7 +28,7 @@ class FlickrSource extends Extension
     //             }
     //         }
     //     }
-        
+
     // }
     public function onAdminBuilding(AdminBuildingEvent $event): void
     {
@@ -36,16 +36,17 @@ class FlickrSource extends Extension
         $start_id = $database->get_one("SELECT max(id)-100 from images;");
         $html = (string)SHM_SIMPLE_FORM(
             "admin/flickr_source",
-            TABLE( 
-            TR(
-                TD(["style" => "padding-right:5px"],B("Start id")),TD(INPUT(["type" => 'number', "name" => 'id_offset', "value" => $start_id, "style" => "width:5em"])),
+            TABLE(
+                TR(
+                    TD(["style" => "padding-right:5px"], B("Start id")),
+                    TD(INPUT(["type" => 'number', "name" => 'id_offset', "value" => $start_id, "style" => "width:5em"])),
+                ),
+                TR(
+                    TD(B("Limit")),
+                    TD(INPUT(["type" => 'number', "name" => 'limit', "value" => "100", "style" => "width:5em"])),
+                ),
             ),
-            TR(
-                TD(B("Limit")),TD(INPUT(["type" => 'number', "name" => 'limit', "value" => "100", "style" => "width:5em"])),
-            ),
-        ),
             SHM_SUBMIT('Find all flickr sources'),
-            
         );
         $page->add_block(new Block("Flickr Source", rawHTML($html)));
     }
@@ -53,7 +54,7 @@ class FlickrSource extends Extension
     public function onAdminAction(AdminActionEvent $event): void
     {
         global $database;
-        switch($event->action) {
+        switch ($event->action) {
             case "flickr_source":
                 $start_time = ftime();
                 $query = "SELECT id, filename
@@ -62,21 +63,22 @@ class FlickrSource extends Extension
                 AND mime LIKE 'image/%'
                 AND id > :id_offset
                 LIMIT :limit;";
-                $files = $database->get_all($query,["id_offset" => $event->params['id_offset'] | "0","limit" => $event->params['limit'] | "0"]);
+                $files = $database->get_all($query, ["id_offset" => $event->params['id_offset'] | "0","limit" => $event->params['limit'] | "0"]);
                 $i = 0;
                 $j = 0;
                 $k = 0;
                 foreach ($files as $file) {
-                    if(preg_match("/\d{7,13}_[a-f0-9]{7,13}_[a-z0-9]+(?:_d)?(\.jpg|\.png)$/", $file["filename"])){
-                        $source = $this->getFlickrUrl(explode("_",$file["filename"])[0]);
-                        if ($source !== "https://flickr.com/photos///"){
+                    if (preg_match("/\d{7,13}_[a-f0-9]{7,13}_[a-z0-9]+(?:_d)?(\.jpg|\.png)$/", $file["filename"])) {
+                        $source = $this->getFlickrUrl(explode("_", $file["filename"])[0]);
+                        if ($source !== "https://flickr.com/photos///") {
                             $image = Image::by_id($file["id"]);
-                            if (!is_null($image)){
-                                send_event(new SourceSetEvent($image,$source));
+                            if (!is_null($image)) {
+                                send_event(new SourceSetEvent($image, $source));
                                 $i++;
-                            } else {$j++;}
-                        }
-                        else{
+                            } else {
+                                $j++;
+                            }
+                        } else {
                             $j++;
                         }
                     } else {
@@ -91,22 +93,23 @@ class FlickrSource extends Extension
         }
     }
 
-    public function getFlickrUrl(int|string $id): string {
+    public function getFlickrUrl(int|string $id): string
+    {
         $url = "https://flickr.com/photo.gne?id={$id}";
 
         $ch = curl_init($url);
-    
+
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($ch, CURLOPT_HEADER, true);
         curl_setopt($ch, CURLOPT_NOBODY, true);
-    
+
         curl_exec($ch);
-    
+
         $redirectedUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
-    
+
         curl_close($ch);
-    
+
         return $redirectedUrl;
     }
 

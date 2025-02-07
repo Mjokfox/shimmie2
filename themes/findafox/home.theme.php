@@ -28,8 +28,8 @@ class CustomhomeTheme extends HomeTheme
 				</form>
                 
 		";
-		if (Extension::is_enabled(ReverseImageInfo::KEY) && $config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user_config->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE)) {
-			$search_html .= "<a href='#' onclick='$(\".search-bar\").toggle();'>To text search</a>
+        if (Extension::is_enabled(ReverseImageInfo::KEY) && $config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user_config->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE)) {
+            $search_html .= "<a href='#' onclick='$(\".search-bar\").toggle();'>To text search</a>
 			</div>
 			<div class='space search-bar' id='text-search' style='display:none'>
 				<form action='post/search' method='GET'>
@@ -39,7 +39,9 @@ class CustomhomeTheme extends HomeTheme
 				</form>
                 <a href='#' onclick='$(\".search-bar\").toggle();'>To tag search</a>
 			</div>";
-		} else {$search_html .= "</div>";}
+        } else {
+            $search_html .= "</div>";
+        }
         return BODY(
             $page->body_attrs(),
             rawHTML("

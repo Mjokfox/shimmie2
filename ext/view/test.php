@@ -41,7 +41,7 @@ class ViewPostTest extends ShimmiePHPUnitTestCase
         $image_id_3 = $this->post_image("tests/favicon.png", "test");
 
         // Front image: no next, has prev
-        
+
         $page = $this->get_page("post/next/$image_id_1");
         $this->assertEquals("/test/post/view/$image_id_1", $page->redirect);
 

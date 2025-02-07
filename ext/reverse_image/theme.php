@@ -10,7 +10,7 @@ use function MicroHTML\{H2, A,B, LABEL, BR, DIV, TABLE, TR, TD, INPUT, rawHTML, 
 
 class ReverseImageTheme extends Themelet
 {
-    public function build_navigation(string $search_string="",string $class=""): HTMLElement
+    public function build_navigation(string $search_string = "", string $class = ""): HTMLElement
     {
         $h_search_link = make_link("/post/search/1");
         return rawHTML("
@@ -22,18 +22,18 @@ class ReverseImageTheme extends Themelet
 		");
     }
 
-    public function list_search(Page $page,string $search="") : void
+    public function list_search(Page $page, string $search = ""): void
     {
-        $nav = $this->build_navigation($search,"full-width");
+        $nav = $this->build_navigation($search, "full-width");
         $page->add_block(new Block("Text Search", $nav, "left", 2, "text-search"));
     }
 
-    public function view_search(Page $page,string $search="") : void
+    public function view_search(Page $page, string $search = ""): void
     {
-        $nav = $this->build_navigation($search,"");
+        $nav = $this->build_navigation($search, "");
         $page->add_block(new Block("Text Search", $nav, "left", 2, "text-search-view"));
     }
-    public function display_page(string|null $r_i_l=null, string|null $url=null): void
+    public function display_page(string|null $r_i_l = null, string|null $url = null): void
     {
         global $page, $config;
         $max_reverse_result_limit = $config->get_int(ReverseImageConfig::CONF_MAX_LIMIT);
@@ -41,55 +41,63 @@ class ReverseImageTheme extends Themelet
 
         $html = SHM_FORM("reverse_image_search", multipart: true, form_id: "reverse_image_search");
         $html->appendChild(
-            DIV(["class" =>" RIS-spacer"],
-            DIV(["class" => "RIS-container"],
-            H2("Search for similar images on this website!"),
-            DIV(["id" => "dropZone","class" => "RIS-subcontainer"],
-                DIV(["class" => "RIS-file-block"],
-                    INPUT([
-                        "type" => "file",
-                        "id" => "file_input",
-                        "name" => "file",
-                        "accept" => "image/*",
-                        "multiple" => false,
-                        "style" => "display:none",
-                    ]),
-                    DIV(["style" => "margin:0 auto;"],
-                    B(["style" => "padding-right:0.5em;"],"Drag an image or"),
-                    B([
-                        "id" => "browse_button",
-                        "class" => "RIS-browse",
-                        "onclick" => "document.getElementById('file_input').click();"
+            DIV(
+                ["class" => " RIS-spacer"],
+                DIV(
+                    ["class" => "RIS-container"],
+                    H2("Search for similar images on this website!"),
+                    DIV(
+                        ["id" => "dropZone","class" => "RIS-subcontainer"],
+                        DIV(
+                            ["class" => "RIS-file-block"],
+                            INPUT([
+                                "type" => "file",
+                                "id" => "file_input",
+                                "name" => "file",
+                                "accept" => "image/*",
+                                "multiple" => false,
+                                "style" => "display:none",
+                            ]),
+                            DIV(
+                                ["style" => "margin:0 auto;"],
+                                B(["style" => "padding-right:0.5em;"], "Drag an image or"),
+                                B(
+                                    [
+                                    "id" => "browse_button",
+                                    "class" => "RIS-browse",
+                                    "onclick" => "document.getElementById('file_input').click();"
                     ],
-                    "upload a file"),
+                                    "upload a file"
+                                ),
+                            )
+                        ),
+                        DIV(
+                            ["class" => "RIS-group"],
+                            INPUT([
+                                "type" => "text",
+                                "id" => "url_input",
+                                "name" => "url_input",
+                                "value" => $url ?: "",
+                                "style" => "flex-grow:1; width:100%; padding:2px 10px;",
+                                "placeholder" => "Or paste image url"
+                            ]),
+                            SHM_SUBMIT('Search!', ["id" => "submit_button", "style" => "padding:2px;"]),
+                        ),
+                        DIV(
+                            ["class" => "RIS-group","style" => "justify-content: right;"],
+                            B(["style" => "margin-right:0.5em;"], "Amount of results:"),
+                            INPUT([
+                                "type" => "number",
+                                "name" => "reverse_image_limit",
+                                "value" => $r_i_l ?: $default_reverse_result_limit,
+                                "min" => "1",
+                                "max" => (string)$max_reverse_result_limit,
+                                "style" => "margin-right:0.5em;"
+                            ]),
+                            B("(max $max_reverse_result_limit)"),
+                        ),
                     )
-                ),
-                DIV(["class" => "RIS-group"],
-                    INPUT([
-                        "type" => "text",
-                        "id" => "url_input",
-                        "name" => "url_input",
-                        "value" => $url ?: "",
-                        "style" => "flex-grow:1; width:100%; padding:2px 10px;",
-                        "placeholder" => "Or paste image url"
-                    ]),
-                    
-                    SHM_SUBMIT('Search!',["id" => "submit_button", "style" => "padding:2px;"]),
-                ),
-                DIV(["class" => "RIS-group","style" => "justify-content: right;"],
-                    B(["style" => "margin-right:0.5em;"],"Amount of results:"),
-                    INPUT([
-                        "type" => "number",
-                        "name" => "reverse_image_limit",
-                        "value" => $r_i_l ?: $default_reverse_result_limit,
-                        "min" => "1",
-                        "max" => (string)$max_reverse_result_limit,
-                        "style" => "margin-right:0.5em;"
-                    ]),
-                    B("(max $max_reverse_result_limit)"),
-                ),
-            )
-            )
+                )
             )
         );
         $page->add_block(new Block(null, $html, "main", 20));
@@ -98,15 +106,15 @@ class ReverseImageTheme extends Themelet
     /**
      * @param int[] $ids
      */
-    public function display_results(array $ids,string $original_image_path, string $image_url): void
+    public function display_results(array $ids, string $original_image_path, string $image_url): void
     {
         global $page;
-        if ($image_url){
+        if ($image_url) {
             $src = $image_url;
-        } else{
+        } else {
             $fileType = mime_content_type($original_image_path);
             $imageData = file_get_contents($original_image_path);
-            if(!$imageData) {
+            if (!$imageData) {
                 throw new ServerError("Your input image got lost somehow, please try again");
             }
             $src = 'data:' . $fileType . ';base64,' . base64_encode($imageData);
@@ -119,11 +127,13 @@ class ReverseImageTheme extends Themelet
         );
         $table = "<div class='shm-image-list'>";
         foreach (array_keys($ids) as $id) {
-            $similarity = 100*round(1 - $ids[$id],2);
+            $similarity = 100 * round(1 - $ids[$id], 2);
             $image = Image::by_id($id);
-            if ($image){
-                $table .= LABEL("Similarity: $similarity%",
-                $this->build_thumb($image));
+            if ($image) {
+                $table .= LABEL(
+                    "Similarity: $similarity%",
+                    $this->build_thumb($image)
+                );
             }
         }
         $table .= "</div>";
@@ -136,16 +146,17 @@ class ReverseImageTheme extends Themelet
         global $page;
         $html = (string)SHM_SIMPLE_FORM(
             "admin/reverse_image",
-            TABLE( 
-            TR(
-                TD(["style" => "padding-right:5px"],B("Start id")),TD(INPUT(["type" => 'number', "name" => 'reverse_image_start_id', "value" => "0", "style" => "width:5em"])),
+            TABLE(
+                TR(
+                    TD(["style" => "padding-right:5px"], B("Start id")),
+                    TD(INPUT(["type" => 'number', "name" => 'reverse_image_start_id', "value" => "0", "style" => "width:5em"])),
+                ),
+                TR(
+                    TD(B("Limit")),
+                    TD(INPUT(["type" => 'number', "name" => 'reverse_image_limit', "value" => "100", "style" => "width:5em"])),
+                ),
             ),
-            TR(
-                TD(B("Limit")),TD(INPUT(["type" => 'number', "name" => 'reverse_image_limit', "value" => "100", "style" => "width:5em"])),
-            ),
-        ),
             SHM_SUBMIT('Extract features into database'),
-            
         );
         $page->add_block(new Block("Extract Features", rawHTML($html)));
     }

@@ -96,16 +96,13 @@ class TagCategories extends Extension
 
         if ($event->page_matches("tags/categories", method: "GET")) {
             $this->theme->show_tag_categories($page, $database->get_all('SELECT * FROM image_tag_categories'));
-        }
-        else if ($event->page_matches("tags/categories", method: "POST", permission: Permissions::EDIT_TAG_CATEGORIES)) {
+        } elseif ($event->page_matches("tags/categories", method: "POST", permission: Permissions::EDIT_TAG_CATEGORIES)) {
             $this->page_update();
             $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("tags/categories"));
-        }
-        else if ($event->page_matches("admin/count_categories_tags", method: "GET")){
+        } elseif ($event->page_matches("admin/count_categories_tags", method: "GET")) {
             $this->theme->show_count_tag_categories($page);
-        }
-        else if ($event->page_matches("admin/count_categories_tags", method: "POST")){
+        } elseif ($event->page_matches("admin/count_categories_tags", method: "POST")) {
             $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("admin/count_categories_tags"));
         }
@@ -130,11 +127,11 @@ class TagCategories extends Extension
             if (in_array($type, $types)) {
                 $event->add_querylet(
                     new Querylet("(
-					    SELECT count(distinct t.id)
-					    FROM tags t
-					    INNER JOIN image_tags it ON it.tag_id = t.id AND images.id = it.image_id
-					    WHERE LOWER(t.tag) LIKE LOWER('$type:%')) $cmp $count
-					")
+                        SELECT count(distinct t.id)
+                        FROM tags t
+                        INNER JOIN image_tags it ON it.tag_id = t.id AND images.id = it.image_id
+                        WHERE LOWER(t.tag) LIKE LOWER('$type:%')) $cmp $count
+                    ")
                 );
             }
         }
@@ -155,7 +152,7 @@ class TagCategories extends Extension
     public function onAdminAction(AdminActionEvent $event): void
     {
         global $database;
-        switch($event->action) {
+        switch ($event->action) {
             case "count_categories_tags":
                 $event->redirect = false;
                 break;
@@ -188,7 +185,7 @@ class TagCategories extends Extension
     {
         global $database;
         static $tc_category_dict = null;
-        if ($tc_category_dict === null){
+        if ($tc_category_dict === null) {
             $query = "
             SELECT c.category, t.tag
             FROM image_tag_categories_tags ct
@@ -211,7 +208,7 @@ class TagCategories extends Extension
         if (is_null($tag_category_dict)) {
             return null;
         }
-        if (array_key_exists($tag,$tag_category_dict)){
+        if (array_key_exists($tag, $tag_category_dict)) {
             return $tag_category_dict[$tag];
         }
         return null;
@@ -230,8 +227,8 @@ class TagCategories extends Extension
 
         // we found a tag, see if it's valid!
         $tag_category_dict = static::getCategorizedTags();
-        if (!is_null($tag_category_dict)){
-            if (array_key_exists($h_tag,$tag_category_dict)){
+        if (!is_null($tag_category_dict)) {
+            if (array_key_exists($h_tag, $tag_category_dict)) {
                 $category = $tag_category_dict[$h_tag];
                 $tag_category_css = ' tag_category_'.$category;
                 $tag_category_style = 'style="color:'.html_escape($keyed_dict[$category]['color']).';" ';
@@ -241,18 +238,20 @@ class TagCategories extends Extension
             } else {
                 $h_tag_no_underscores .= $extra_text;
             }
-    }
+        }
 
         return $h_tag_no_underscores;
     }
 
-    private function add_tags_to_category(string $category, string $tags) :void
+    private function add_tags_to_category(string $category, string $tags): void
     {
         global $database;
-        $tags = str_replace("\n",' ', $tags);
+        $tags = str_replace("\n", ' ', $tags);
         $tags = Tag::explode($tags, false);
         $tag_ids = [];
-        foreach ($tags as $tag){$tag_ids[] = Tag::get_or_create_id($tag);}
+        foreach ($tags as $tag) {
+            $tag_ids[] = Tag::get_or_create_id($tag);
+        }
 
         $query = "
         SELECT id
@@ -266,12 +265,12 @@ class TagCategories extends Extension
         INSERT INTO image_tag_categories_tags (category_id, tag_id)
         VALUES (:category_id, :tag_id);";
         $args = ["category_id" => $category_id];
-        foreach($tag_ids as $tag){
+        foreach ($tag_ids as $tag) {
             $args["tag_id"] = $tag;
-            $database->execute($query,$args);
+            $database->execute($query, $args);
         }
     }
-    private function delete_tags_from_category(string $category) :void
+    private function delete_tags_from_category(string $category): void
     {
         global $database;
         $database->execute(
@@ -281,7 +280,7 @@ class TagCategories extends Extension
                 FROM image_tag_categories
                 WHERE category = :category
         );',
-        [
+            [
             'category' => $category
         ]
         );
@@ -328,7 +327,7 @@ class TagCategories extends Extension
     public function page_update(): void
     {
         global $user, $database;
-        if (isset($_POST['tc_status'])){
+        if (isset($_POST['tc_status'])) {
             if (!isset($_POST['tc_status']) and
             !isset($_POST['tc_category']) and
             !isset($_POST['tc_display_singular']) and
@@ -353,7 +352,7 @@ class TagCategories extends Extension
                     ]
                 );
                 $this->delete_tags_from_category($_POST['tc_category']);
-                $this->add_tags_to_category($_POST['tc_category'],$_POST['tc_tag_list']);
+                $this->add_tags_to_category($_POST['tc_category'], $_POST['tc_tag_list']);
 
             } elseif ($_POST['tc_status'] == 'new') {
                 $database->execute(
@@ -366,7 +365,7 @@ class TagCategories extends Extension
                         'color' => $_POST['tc_color'],
                     ]
                 );
-                $this->add_tags_to_category($_POST['tc_category'],$_POST['tc_tag_list']);
+                $this->add_tags_to_category($_POST['tc_category'], $_POST['tc_tag_list']);
             } elseif ($_POST['tc_status'] == 'delete') {
                 $this->delete_tags_from_category($_POST['tc_category']);
                 $database->execute(

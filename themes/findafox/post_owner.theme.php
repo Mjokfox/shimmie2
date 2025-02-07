@@ -18,9 +18,8 @@ class CustomPostOwnerTheme extends PostOwnerTheme
         $ip = $user->can(Permissions::VIEW_IP) ? rawHTML(" (" . show_ip($image->owner_ip, "Post posted {$image->posted}") . ")") : "";
         return SHM_POST_INFO(
             "Uploader",
-            emptyHTML(A(["class" => "username", "href" => make_link("user/$owner")], $owner), $ip, ", ", $date,rawHTML("<br>".$image->get_owner()->get_avatar_html())),
+            emptyHTML(A(["class" => "username", "href" => make_link("user/$owner")], $owner), $ip, ", ", $date, rawHTML("<br>".$image->get_owner()->get_avatar_html())),
             $user->can(Permissions::EDIT_IMAGE_OWNER) ? INPUT(["type" => "text", "name" => "owner", "value" => $owner]) : null
-            
         );
     }
 }

@@ -32,14 +32,14 @@ new UserClass("user", "base", [
     Permissions::POOLS_UPDATE => true,
 ]);
 
-new UserClass("verified", "user",[    
+new UserClass("verified", "user", [
     Permissions::PERFORM_BULK_ACTIONS => true,
     Permissions::BULK_DOWNLOAD => true,
 ]);
 
 class EmailVerification extends Extension
 {
-    public function get_priority(): int 
+    public function get_priority(): int
     {
         return 75;
     }
@@ -55,34 +55,37 @@ class EmailVerification extends Extension
     public function onPageRequest(PageRequestEvent $event): void
     {
         global $page, $user;
-        
-        if ($event->page_matches("email_verification",method:"GET")) {
+
+        if ($event->page_matches("email_verification", method:"GET")) {
             $user = User::by_id($user->id); // cached user can give problems
-            if ($user->class->name === "user" && !is_null($user->email)){
+            if ($user->class->name === "user" && !is_null($user->email)) {
                 $token = $_GET['token'];
                 if ($token != null) {
                     if ($token === $this->get_email_token($user, $user->email)) {
                         $user->set_class("verified");
                         $page->flash("Email verified!");
                         $page->add_block(new Block("Email verified", rawHTML(""), "main", 1));
-                    }
-                    else {
+                    } else {
                         throw new PermissionDenied("Verification failed: Invalid Token (Are you logged in?)");
                     }
-                } else {throw new PermissionDenied("Permission Denied: No token supplied");}
-            } else {throw new PermissionDenied("Your email is already verified!");}
-        } 
-        elseif ($event->page_matches("user_admin/send_verification_mail",method:"POST")){
+                } else {
+                    throw new PermissionDenied("Permission Denied: No token supplied");
+                }
+            } else {
+                throw new PermissionDenied("Your email is already verified!");
+            }
+        } elseif ($event->page_matches("user_admin/send_verification_mail", method:"POST")) {
             $user = User::by_id($user->id);
             if ($event->req_POST('id') == $user->id) {
-                if ($user->email){
+                if ($user->email) {
                     $this->send_verification_mail($this->get_email_token($user, $user->email), $user->email);
-                } else {$page->flash("no email set, cannot send verification email");}
+                } else {
+                    $page->flash("no email set, cannot send verification email");
+                }
                 $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(make_link("user"));
             }
-        } 
-        elseif ($event->page_matches("user_admin/change_email", method: "POST")) {
+        } elseif ($event->page_matches("user_admin/change_email", method: "POST")) {
             $input = validate_input([
                 'id' => 'user_id,exists',
                 'address' => 'email',
@@ -104,25 +107,26 @@ class EmailVerification extends Extension
         $sb->add_text_option(EmailVerificationConfig::DEFAULT_MESSAGE, "<br>The message shown to users without email: ");
     }
 
-    public function onUserCreation(UserCreationEvent $event): void{
+    public function onUserCreation(UserCreationEvent $event): void
+    {
         global $page;
         $page->flash("Welcome to FindAfox, ". $event->username ."!");
-        $this->send_verification_mail($this->get_email_token($event->get_user(),$event->email), $event->email);
+        $this->send_verification_mail($this->get_email_token($event->get_user(), $event->email), $event->email);
     }
 
-    public function onUserPageBuilding(UserPageBuildingEvent $event): void {
+    public function onUserPageBuilding(UserPageBuildingEvent $event): void
+    {
         global $page, $user;
         $ruser = User::by_name($user->name);
         $duser = $event->display_user;
         if ($ruser->class->name == "user" && $duser == $ruser) {
-            if ($duser->email){
+            if ($duser->email) {
                 $html = emptyHTML();
                 $html->appendChild(SHM_USER_FORM(
                     $duser,
                     "user_admin/send_verification_mail",
                     "",
-                    emptyHTML()
-                    ,
+                    emptyHTML(),
                     "Resend verification email"
                 ));
                 $page->add_block(new Block("Verify", $html, "main", 61));
@@ -147,13 +151,13 @@ class EmailVerification extends Extension
         $to = $email;
         $subject = 'Verify your email address';
         $message = "Your email verification link, you require to be logged in when you open the link<br><a href=$verification_url>$verification_url</a>";
-        $headers = array(
+        $headers = [
             'Content-type' => 'text/html',
             'Sender' => $sender,
             'From' => "Email verification $server_name <$sender>",
             'Reply-To' => "$server_name admins <$sender>",
             'X-Mailer' => 'PHP/' . phpversion()
-        );
+        ];
         if (mail($to, $subject, $message, $headers)) {
             $page->flash("Email verification mail sent, please check your inbox and spam");
         } else {
@@ -179,9 +183,9 @@ class EmailVerification extends Extension
         }
     }
 
-    public function get_email_token(User $user, string $email): string 
+    public function get_email_token(User $user, string $email): string
     {
         return hash("sha3-256", $email. $user->get_session_id() . SECRET);
     }
-    
+
 }

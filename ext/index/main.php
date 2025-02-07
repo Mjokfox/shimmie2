@@ -139,8 +139,9 @@ class Index extends Extension
     {
         // Stop the crawl of not nice urls
         global $config;
-        if ($config->get_bool(SetupConfig::NICE_URLS))
+        if ($config->get_bool(SetupConfig::NICE_URLS)) {
             $event->add_disallow("index.php*");
+        }
     }
 
     public function onCliGen(CliGenEvent $event): void

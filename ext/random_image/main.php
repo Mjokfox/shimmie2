@@ -41,7 +41,7 @@ class RandomImage extends Extension
                     $page->set_data((string)$this->theme->build_thumb($image));
                     break;
                 default:
-                    $page->set_filename($image->filename,"inline");
+                    $page->set_filename($image->filename, "inline");
                     send_event(new ImageDownloadingEvent($image, $image->get_image_filename(), $image->get_mime(), $event->GET));
             }
         }

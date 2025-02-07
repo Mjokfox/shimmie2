@@ -115,7 +115,7 @@ class Upload extends Extension
         $config->set_default_bool(UploadConfig::SPLITVIEW, false);
         $config->set_default_bool(UploadConfig::PREVIEW, true);
         $config->set_default_bool(UploadConfig::TLSOURCE, true);
-        $config->set_default_string("upload_order","");
+        $config->set_default_string("upload_order", "");
 
         $this->is_full = false;
 
@@ -257,10 +257,10 @@ class Upload extends Extension
             /** @var string $hash */
             $hash = $event->POST["md5"];
             $image = Image::by_hash($hash);
-            if ($image){
-                $page->set_data(json_encode(["dup"=>"1","id"=>$image->id]));
-            } else{
-                $page->set_data(json_encode(["dup"=>"0"]));
+            if ($image) {
+                $page->set_data(json_encode(["dup" => "1","id" => $image->id]));
+            } else {
+                $page->set_data(json_encode(["dup" => "0"]));
             }
         }
     }
