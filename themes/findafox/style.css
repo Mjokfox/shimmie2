@@ -947,16 +947,8 @@ INPUT.autocomplete_tags {
 	display:none;
 }
 
-.comment .avatar {
-	max-width: 90%;
-	max-height: 96px;
-	margin: auto;
-  	display: flex;
-}
-
-.image_info .avatar {
-	max-width: 90%;
-	max-height: 96px;
+#Statsmain .avatar-container, .avatar-editor .avatar-container{
+	margin: 0;
 }
 
 .comment {
