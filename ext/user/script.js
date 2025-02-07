@@ -25,7 +25,7 @@ function zoom(timestamp) {
         image.style.transform = `scale(${scale/100})`;
 
         requestAnimationFrame(zoom);
-        previous = timestamp
+        previous = timestamp;
     }
 }
 
@@ -43,7 +43,7 @@ function zoom_change(e) {
 
     const scale = Math.round(image.scale);
     image.style.transform = `scale(${scale/100})`;
-    scale_input.value = Math.round(scale)
+    scale_input.value = Math.round(scale);
 }
 
 function zoom_init() {
@@ -55,7 +55,7 @@ let dragging = false;
 let prev_coords = [0,0];
 function start_image_drag(e) {
     dragging = true;
-    image.style.cursor = "grabbing"
+    image.style.cursor = "grabbing";
     const clientX = e.clientX || e.touches[0].clientX;
     const clientY = e.clientY || e.touches[0].clientY;
     prev_coords = [clientX, clientY];

@@ -31,7 +31,7 @@ class UploadLimit extends DataHandlerExtension
     {
         global $config;
         $event->user_config->set_default_int("last_upload", 0);
-        $event->user_config->set_default_int("left_upload", $config->get_int("upload_limit:".$event->user->class->name));
+        $event->user_config->set_default_int("left_upload", $config->get_int("upload_limit:".$event->user->class->name, 20));
     }
 
     public function onSetupBuilding(SetupBuildingEvent $event): void
