@@ -181,11 +181,14 @@ class TagCategories extends Extension
 
         return $tc_keyed_dict;
     }
-    public static function getCategorizedTags(): array
+    /**
+     * @return array{string:string}|null
+     */
+    public static function getCategorizedTags(): ?array
     {
         global $database;
         static $tc_category_dict = null;
-            if ($tc_category_dict === null){
+        if ($tc_category_dict === null){
             $query = "
             SELECT c.category, t.tag
             FROM image_tag_categories_tags ct
@@ -205,6 +208,9 @@ class TagCategories extends Extension
     public static function get_tag_category(string $tag): ?string
     {
         $tag_category_dict = static::getCategorizedTags();
+        if (is_null($tag_category_dict)) {
+            return null;
+        }
         if (array_key_exists($tag,$tag_category_dict)){
             return $tag_category_dict[$tag];
         }
@@ -224,21 +230,23 @@ class TagCategories extends Extension
 
         // we found a tag, see if it's valid!
         $tag_category_dict = static::getCategorizedTags();
-        if (array_key_exists($h_tag,$tag_category_dict)){
-            $category = $tag_category_dict[$h_tag];
-            $tag_category_css = ' tag_category_'.$category;
-            $tag_category_style = 'style="color:'.html_escape($keyed_dict[$category]['color']).';" ';
-            $h_tag_no_underscores = str_replace("_", " ", $h_tag);
+        if (!is_null($tag_category_dict)){
+            if (array_key_exists($h_tag,$tag_category_dict)){
+                $category = $tag_category_dict[$h_tag];
+                $tag_category_css = ' tag_category_'.$category;
+                $tag_category_style = 'style="color:'.html_escape($keyed_dict[$category]['color']).';" ';
+                $h_tag_no_underscores = str_replace("_", " ", $h_tag);
 
-            $h_tag_no_underscores = '<span class="'.$tag_category_css.'" '.$tag_category_style.'>'.$h_tag_no_underscores.$extra_text.'</span>';
-        } else {
-            $h_tag_no_underscores .= $extra_text;
-        }
+                $h_tag_no_underscores = '<span class="'.$tag_category_css.'" '.$tag_category_style.'>'.$h_tag_no_underscores.$extra_text.'</span>';
+            } else {
+                $h_tag_no_underscores .= $extra_text;
+            }
+    }
 
         return $h_tag_no_underscores;
     }
 
-    private function add_tags_to_category($category,$tags) :void
+    private function add_tags_to_category(string $category, string $tags) :void
     {
         global $database;
         $tags = str_replace("\n",' ', $tags);
@@ -263,7 +271,7 @@ class TagCategories extends Extension
             $database->execute($query,$args);
         }
     }
-    private function delete_tags_from_category($category) :void
+    private function delete_tags_from_category(string $category) :void
     {
         global $database;
         $database->execute(

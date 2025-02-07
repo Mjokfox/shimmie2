@@ -43,13 +43,22 @@ class EmailVerification extends Extension
     {
         return 75;
     }
+
+    public function onInitExt(InitExtEvent $event): void
+    {
+        global $config;
+
+        $config->set_default_string(EmailVerificationConfig::EMAIL_SENDER, "admin@domain.com");
+        $config->set_default_string(EmailVerificationConfig::DEFAULT_MESSAGE, "Cannot send email verification mail, no email set.");
+
+    }
     public function onPageRequest(PageRequestEvent $event): void
     {
         global $page, $user;
         
         if ($event->page_matches("email_verification",method:"GET")) {
             $user = User::by_id($user->id); // cached user can give problems
-            if ($user->class->name === "user"){
+            if ($user->class->name === "user" && !is_null($user->email)){
                 $token = $_GET['token'];
                 if ($token != null) {
                     if ($token === $this->get_email_token($user, $user->email)) {

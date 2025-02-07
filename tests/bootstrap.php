@@ -45,6 +45,13 @@ $page = new Page();
 _load_event_listeners();
 $config->set_string("thumb_engine", "static");
 $config->set_bool("nice_urls", true);
+foreach (UserClass::$known_classes as $name => $value) {
+    if ($name == "hellbanned" || !$value->can(Permissions::CREATE_IMAGE) || $value->can(Permissions::BULK_IMPORT)) {
+        continue;
+    }
+    $config->set_int("upload_limit:$name",100000);
+}
+$config->set_int("upload_limit:anonymous",100000);
 send_event(new DatabaseUpgradeEvent());
 send_event(new InitExtEvent());
 $user = User::by_id($config->get_int("anon_id", 0));

@@ -78,6 +78,6 @@ class StaticFiles extends Extension
 
     public function get_priority(): int
     {
-        return 98;
+        return 97;
     }  // before 404
 }

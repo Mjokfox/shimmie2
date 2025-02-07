@@ -115,14 +115,14 @@ class TagListTheme extends Themelet
         $tagshtml = emptyHTML();
         foreach (array_keys($categories_display_names) as $categories_display_name) {
             $tagshtml->appendChild(H3(html_escape($categories_display_name)));
-            $tagshtml->appendChild(rawHTML($categories_display_names[$categories_display_name]));
+            $tagshtml->appendChild(rawHTML((string)$categories_display_names[$categories_display_name]));
         }
 
 
         if ($main_html !== null) {
             $tagshtml->appendChild(DIV(
                 H3("Other"),
-                DIV(["class" => "blockbody"],rawHTML($main_html)),
+                DIV(["class" => "blockbody"],rawHTML((string)$main_html)),
             ));
         }
         $page->add_block(new Block(null, $tagshtml, "left", 10,"Tagsleft"));

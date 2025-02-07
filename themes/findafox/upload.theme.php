@@ -137,7 +137,7 @@ class CustomUploadTheme extends UploadTheme
     }
 }
 
-function make_input_label($suffix,$tag,$id,$type="radio",$onclicks="",$class="",$selected=false): HTMLElement
+function make_input_label(int|string $suffix,string $tag,int|string $id,string $type="radio",string $onclicks="",string $class="",bool $selected=false): HTMLElement
 {
     return LABEL(INPUT(
         array_merge(
@@ -154,7 +154,10 @@ function make_input_label($suffix,$tag,$id,$type="radio",$onclicks="",$class="",
                  "{$tag} ")
     ;
 }
-
+/**
+ * @param array<mixed> $array
+ * @param array<mixed> $customOrder
+ */
 function customSort(array &$array, array $customOrder): void { // custom sorting thingy
     usort($array, function($a, $b) use ($customOrder) {
         $indexA = array_search($a, $customOrder);
@@ -173,6 +176,10 @@ function customSort(array &$array, array $customOrder): void { // custom sorting
     });
 }
 
+/**
+ * @param array<mixed> $array
+ * @param array<mixed> $customOrder
+ */
 function customkSort(array &$array, array $customOrder): void { // custom key sorting thingy
     uksort($array, function($a, $b) use ($customOrder) {
         $indexA = array_search($a, $customOrder);
@@ -191,6 +198,10 @@ function customkSort(array &$array, array $customOrder): void { // custom key so
     });
 }
 
+/**
+ * @param array<mixed> $array
+ * @param array<mixed> $customOrder
+ */
 function customkciSort(array &$array, array $customOrder): void { // custom key case insensitive sorting thingy
     $customOrderLower = array_map('strtolower', $customOrder);
 
@@ -223,6 +234,7 @@ function get_categories_html(string $suffix): HTMLElement
             JOIN tags t ON itct.tag_id = t.id
             ORDER BY tag_name ASC;
         "),30);
+        /** @var array{string:mixed} $category_tags */
         $category_tags = [];
         $preselect_tags = ["mouth_closed","eyes_open","adult","photo","color","wild"];
         foreach ($res as $row) {

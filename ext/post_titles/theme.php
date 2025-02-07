@@ -19,7 +19,7 @@ class PostTitlesTheme extends Themelet
         );
     }
 
-    public function get_upload_specific_html($suffix): HTMLElement
+    public function get_upload_specific_html(int|string $suffix): HTMLElement
     {
         return TD(
             INPUT([

@@ -214,7 +214,7 @@ class PrivMsg extends Extension
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         global $database;
-
+        
         // shortcut to latest
         if ($this->get_version("pm_version") < 1) {
             $database->create_table("private_message", "
@@ -231,7 +231,7 @@ class PrivMsg extends Extension
 				FOREIGN KEY (to_id) REFERENCES users(id) ON DELETE CASCADE
 			");
             $database->execute("CREATE INDEX private_message__to_id ON private_message(to_id)");
-            $this->set_version("pm_version", 3);
+            $this->set_version("pm_version", 5);
         }
 
         if ($this->get_version("pm_version") < 2) {
@@ -449,7 +449,7 @@ class PrivMsg extends Extension
             $from_id = $user->id;
             $subject = $event->req_POST("subject");
             $message = $event->req_POST("message");
-            /** @var PM $PMe */
+            /** @var SendPMEvent $PMe */
             $PMe = send_event(new SendPMEvent(new PM($from_id, get_real_ip(), $to_id, $subject, $message)));
             
             $page->set_mode(PageMode::REDIRECT);

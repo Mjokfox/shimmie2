@@ -159,11 +159,12 @@ class customPage extends Page
     {
         global $config;
         $debug = get_debug_info();
-        $contact_link = contact_link();
-        $footer_html = $config->get_string("footer_html");
+        $contact_link = contact_link() ?? "";
+        $footer_html = $config->get_string("footer_html","");
         if (!($footer_html == "" || $footer_html == null)){
             $footer_html = str_replace('%d', $debug, $footer_html);
             $footer_html = str_replace('%c', $contact_link, $footer_html);
+            /** @var string $footer_html */
             return rawHTML($footer_html);
         }
         return joinHTML("", [

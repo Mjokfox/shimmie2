@@ -268,7 +268,7 @@ class TagCategoriesTheme extends Themelet
         ';
     }
 
-    public function show_count_tag_categories(Page $page)
+    public function show_count_tag_categories(Page $page): void
     {
         global $database;
         $dict[] = $database->get_all(

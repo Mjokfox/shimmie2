@@ -85,7 +85,7 @@ class CustomNumericScoreTheme extends NumericScoreTheme
         $page->add_block(new Block("", rawhtml($html), "main", 10,"Post_Scoremain"));
     }
 
-    private function get_my_vote($user_id,$image_id) : int
+    private function get_my_vote(int $user_id, int $image_id) : int
     {
         global $database;
         return $database->get_one("SELECT score 

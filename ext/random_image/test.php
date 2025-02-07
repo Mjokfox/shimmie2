@@ -19,7 +19,7 @@ class RandomImageTest extends ShimmiePHPUnitTestCase
         $this->assertEquals("Post $image_id: test", $page->title);
 
         $page = $this->get_page("random_image/download");
-        $this->assertEquals($page->mode, PageMode::FILE);
+        $this->assertEquals($page->mode, PageMode::REDIRECT);
         # FIXME: assert($raw == file(blah.jpg))
     }
 

@@ -95,7 +95,7 @@ class Comment
         $this->image_id =  (int)$row['image_id'];
         $this->poster_ip =  $row['poster_ip'];
         $this->posted =  $row['posted'];
-        $this->edited = $row["edited"];
+        $this->edited = (bool)$row["edited"];
     }
 
     public static function count_comments_by_user(User $user): int
@@ -255,7 +255,8 @@ class CommentList extends Extension
             $page->set_redirect(make_link("post/view/$i_iid", null, "comment_on_$i_iid"));
         }
         elseif ($event->page_matches("comment/delete/{comment_id}/{image_id}")) {
-            if ($user->can(Permissions::DELETE_COMMENT) || Comment::by_id($event->get_iarg('comment_id'))->owner_id === $user->id){
+            $comment = Comment::by_id($event->get_iarg('comment_id'));
+            if (!is_null($comment) && ($user->can(Permissions::DELETE_COMMENT) || $comment->owner_id === $user->id)){
             // FIXME: post, not args
                 send_event(new CommentDeletionEvent($event->get_iarg('comment_id')));
                 $page->flash("Deleted comment");
@@ -333,7 +334,8 @@ class CommentList extends Extension
         }
         elseif ($event->page_matches("comment/edit", method: "POST", permission: Permissions::CREATE_COMMENT)) {
             $cid = int_escape($event->req_POST('comment_id'));
-            if ($user->can(Permissions::DELETE_COMMENT) || Comment::by_id($cid)->owner_id === $user->id){
+            $comment = Comment::by_id($cid);
+            if (!is_null($comment) && ($user->can(Permissions::DELETE_COMMENT) || $comment->owner_id === $user->id)){
                 $i_iid = int_escape($event->req_POST('image_id'));
                 send_event(new CommentEditingEvent($i_iid, $cid, $user, $event->req_POST('comment')));
                 $page->set_mode(PageMode::REDIRECT);
@@ -637,7 +639,7 @@ class CommentList extends Extension
         log_info("comment", "Comment #$cid added to >>$image_id: $snippet");
     }
 
-    private function edit_comment(int $image_id, int $comment_id, User $user, string $comment) {
+    private function edit_comment(int $image_id, int $comment_id, User $user, string $comment): void {
         if (!$user->can(Permissions::BYPASS_COMMENT_CHECKS)) {
             // will raise an exception if anything is wrong
             $this->comment_checks($image_id, $user, $comment);

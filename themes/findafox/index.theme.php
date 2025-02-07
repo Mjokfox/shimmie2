@@ -21,6 +21,7 @@ class CustomIndexTheme extends IndexTheme
         $this->display_page_header($page, $images);
         $path = "list";
         if (\safe\preg_match("/^\/post\/(list|search)\//",$_SERVER['REQUEST_URI'],$matches)){
+            /** @var array{0: string, 1: string} $matches */
             $path = $matches[1];
         }
         if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user_config->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE)) {
@@ -70,6 +71,7 @@ class CustomIndexTheme extends IndexTheme
     {
         $path = "list";
         if (\safe\preg_match("/^\/post\/(list|search)\//",$_SERVER['REQUEST_URI'],$matches)){
+            /** @var array{0: string, 1: string} $matches */
             $path = $matches[1];
         }
         if (count($this->search_terms) > 0) {

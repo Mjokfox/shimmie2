@@ -22,18 +22,18 @@ class ReverseImageTheme extends Themelet
 		");
     }
 
-    public function list_search($page,$search="") : void
+    public function list_search(Page $page,string $search="") : void
     {
         $nav = $this->build_navigation($search,"full-width");
         $page->add_block(new Block("Text Search", $nav, "left", 2, "text-search"));
     }
 
-    public function view_search($page,$search="") : void
+    public function view_search(Page $page,string $search="") : void
     {
         $nav = $this->build_navigation($search,"");
         $page->add_block(new Block("Text Search", $nav, "left", 2, "text-search-view"));
     }
-    public function display_page($r_i_l=null,$url=null): void
+    public function display_page(string|null $r_i_l=null, string|null $url=null): void
     {
         global $page, $config;
         $max_reverse_result_limit = $config->get_int(ReverseImageConfig::CONF_MAX_LIMIT);
@@ -95,7 +95,10 @@ class ReverseImageTheme extends Themelet
         $page->add_block(new Block(null, $html, "main", 20));
     }
 
-    public function display_results($ids,$original_image_path,$image_url): void
+    /**
+     * @param int[] $ids
+     */
+    public function display_results(array $ids,string $original_image_path, string $image_url): void
     {
         global $page;
         if ($image_url){
@@ -103,6 +106,9 @@ class ReverseImageTheme extends Themelet
         } else{
             $fileType = mime_content_type($original_image_path);
             $imageData = file_get_contents($original_image_path);
+            if(!$imageData) {
+                throw new ServerError("Your input image got lost somehow, please try again");
+            }
             $src = 'data:' . $fileType . ';base64,' . base64_encode($imageData);
         }
         $html = emptyHTML();
@@ -114,8 +120,11 @@ class ReverseImageTheme extends Themelet
         $table = "<div class='shm-image-list'>";
         foreach (array_keys($ids) as $id) {
             $similarity = 100*round(1 - $ids[$id],2);
-            $table .= LABEL("Similarity: $similarity%",
-            $this->build_thumb(Image::by_id($id)));
+            $image = Image::by_id($id);
+            if ($image){
+                $table .= LABEL("Similarity: $similarity%",
+                $this->build_thumb($image));
+            }
         }
         $table .= "</div>";
         $html->appendChild(rawHTML($table));

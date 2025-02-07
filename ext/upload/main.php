@@ -254,7 +254,9 @@ class Upload extends Extension
         }
         if ($event->page_matches("upload_duplicate", method: "POST", authed: false)) {
             $page->set_mode(PageMode::DATA);
-            $image = Image::by_hash($event->POST["md5"]);
+            /** @var string $hash */
+            $hash = $event->POST["md5"];
+            $image = Image::by_hash($hash);
             if ($image){
                 $page->set_data(json_encode(["dup"=>"1","id"=>$image->id]));
             } else{

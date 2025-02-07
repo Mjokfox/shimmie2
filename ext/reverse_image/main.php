@@ -135,15 +135,17 @@ class ReverseImage extends Extension
             if (count($ids) > 0){
                 $threshold = $config->get_int(ReverseImageConfig::SIMILARITY_DUPLICATE)/100;
                 $first = array_key_first($ids);
-                $image = Image::by_id($first);
-                $closest = [
-                    "id" => $first,
-                    "link" => $image->get_thumb_link(),
-                    "width" => $image->width,
-                    "height" => $image->height,
-                    "filesize" => $image->filesize,
-                    "auto_dupe" => $ids[$first] < $threshold
-                ];
+                $image = Image::by_id((int)$first);
+                if (!is_null($image)){
+                    $closest = [
+                        "id" => $first,
+                        "link" => $image->get_thumb_link(),
+                        "width" => $image->width,
+                        "height" => $image->height,
+                        "filesize" => $image->filesize,
+                        "auto_dupe" => $ids[$first] < $threshold
+                    ];
+                } else $closest = null;
                 $tag_n = $this->tags_from_features_id($ids);
                 $json_input = ["tags" => $tag_n,"closest" => $closest];
                 $page->set_data(json_encode($json_input));
@@ -260,7 +262,11 @@ class ReverseImage extends Extension
         }
     }
 
-    public function tags_from_features_id($ids):array
+    /**
+     * @param int[] $ids
+     * @return array<string, mixed>
+     */
+    public function tags_from_features_id(array $ids): array
     {
         global $database;
         $ids_array = implode(",",array_keys($ids));
@@ -283,7 +289,10 @@ class ReverseImage extends Extension
     }
 
     // adds features belonging to id to database
-    public function add_features_to_db($features,$id): void
+    /**
+     * @param float[] $features
+     */
+    public function add_features_to_db(array $features, int $id): void
     {
         global $database;
         $feature_array = "[" . implode(",",$features) . "]";
@@ -293,7 +302,10 @@ class ReverseImage extends Extension
     }
 
     // downloads an image from a given url, returns the full image path
-    private function transload($url): string | null
+    /**
+     * @param non-empty-string $url
+     */
+    private function transload(string $url): string
     {
         $tmp_filename = shm_tempnam("transload");
         try {
@@ -305,6 +317,9 @@ class ReverseImage extends Extension
     }
 
     // helper function for the default post request
+    /**
+     * @return array<string, mixed>
+     */
     public function reverse_image_search_post(): array
     {
         global $page, $config;
@@ -325,17 +340,22 @@ class ReverseImage extends Extension
         $limit = isset($_POST["reverse_image_limit"]) ? $_POST["reverse_image_limit"] : $config->get_int(ReverseImageConfig::CONF_DEFAULT_AMOUNT);
         if ($limit > $config->get_int(ReverseImageConfig::CONF_MAX_LIMIT)) $limit = $config->get_int(ReverseImageConfig::CONF_MAX_LIMIT);
         return $this->reverse_image_compare($features,$limit);
-        
     }
 
     // helper function
-    public function get_image_features_by_hash($hash): array | bool
+    /**
+     * @return array<float>|false
+     */
+    public function get_image_features_by_hash(string $hash): array|false
     {
         return $this->get_image_features($_SERVER['DOCUMENT_ROOT'] ."/" . warehouse_path(Image::IMAGE_DIR, $hash));
     }
 
     // makes the post request to the engine.py, returns the features as array[512] or false if it failed
-    public function get_image_features($path): array|bool
+    /**
+     * @return array<float>|false
+     */
+    public function get_image_features(string $path): array|false
     {
         global $config;
         $uri = $config->get_string(ReverseImageConfig::CONF_URL);
@@ -350,9 +370,10 @@ class ReverseImage extends Extension
         $post = array('image'=> $cFile);
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL,$url);
-        curl_setopt($ch, CURLOPT_POST,1);
+        curl_setopt($ch, CURLOPT_POST,true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
-        curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER,true);
+        /** @var false|string $result */
         $result=curl_exec($ch);
         curl_close($ch);
         if (!$result) return false;
@@ -363,7 +384,10 @@ class ReverseImage extends Extension
 
     }
 
-    public function get_search_features($search): array|bool
+    /**
+     * @return array<float>|false
+     */
+    public function get_search_features(string $search): array|false
     {
         global $config;
         $uri = $config->get_string(ReverseImageConfig::CONF_URL);
@@ -373,9 +397,10 @@ class ReverseImage extends Extension
         $post = array('search'=> $search);
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL,$url);
-        curl_setopt($ch, CURLOPT_POST,1);
+        curl_setopt($ch, CURLOPT_POST,true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
-        curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
+        /** @var false|string $result */
         $result=curl_exec($ch);
         curl_close($ch);
         if (!$result) return false;
@@ -386,7 +411,11 @@ class ReverseImage extends Extension
     }
 
     // gets the closest image ids from the input features, returning an array[$limit] of these ids
-    private function reverse_image_compare($features,$limit,$offset=null): array
+    /**
+     * @param float[] $features
+     * @return array<string, mixed>
+     */
+    private function reverse_image_compare(array $features, int $limit, int $offset=null): array
     {
         global $database;
         $feature_array = "[" . implode(",",$features) . "]";

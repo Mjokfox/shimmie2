@@ -70,8 +70,11 @@ class FlickrSource extends Extension
                     if(preg_match("/\d{7,13}_[a-f0-9]{7,13}_[a-z0-9]+(?:_d)?(\.jpg|\.png)$/", $file["filename"])){
                         $source = $this->getFlickrUrl(explode("_",$file["filename"])[0]);
                         if ($source !== "https://flickr.com/photos///"){
-                            send_event(new SourceSetEvent(Image::by_id($file["id"]),$source));
-                            $i++;
+                            $image = Image::by_id($file["id"]);
+                            if (!is_null($image)){
+                                send_event(new SourceSetEvent($image,$source));
+                                $i++;
+                            } else {$j++;}
                         }
                         else{
                             $j++;
@@ -88,7 +91,7 @@ class FlickrSource extends Extension
         }
     }
 
-    public function getFlickrUrl($id): string {
+    public function getFlickrUrl(int|string $id): string {
         $url = "https://flickr.com/photo.gne?id={$id}";
 
         $ch = curl_init($url);

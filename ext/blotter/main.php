@@ -117,6 +117,6 @@ class Blotter extends Extension
 
     public function get_priority(): int
     {
-        return 99;
+        return 98;
     }  // after static files
 }
