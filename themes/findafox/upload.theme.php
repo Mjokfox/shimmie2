@@ -164,21 +164,22 @@ function make_input_label(int|string $suffix, string $tag, int|string $id, strin
  * @param array<mixed> $customOrder
  */
 function customSort(array &$array, array $customOrder): void // custom sorting thingy
-{usort($array, function ($a, $b) use ($customOrder) {
-    $indexA = array_search($a, $customOrder);
-    $indexB = array_search($b, $customOrder);
-    if ($indexA !== false && $indexB !== false) {
-        return $indexA <=> $indexB;
-    }
-    if ($indexA !== false) {
-        return -1;
-    }
+{
+    usort($array, function ($a, $b) use ($customOrder) {
+        $indexA = array_search($a, $customOrder);
+        $indexB = array_search($b, $customOrder);
+        if ($indexA !== false && $indexB !== false) {
+            return $indexA <=> $indexB;
+        }
+        if ($indexA !== false) {
+            return -1;
+        }
 
-    if ($indexB !== false) {
-        return 1;
-    }
-    return 0;
-});
+        if ($indexB !== false) {
+            return 1;
+        }
+        return 0;
+    });
 }
 
 /**
@@ -186,21 +187,22 @@ function customSort(array &$array, array $customOrder): void // custom sorting t
  * @param array<mixed> $customOrder
  */
 function customkSort(array &$array, array $customOrder): void // custom key sorting thingy
-{uksort($array, function ($a, $b) use ($customOrder) {
-    $indexA = array_search($a, $customOrder);
-    $indexB = array_search($b, $customOrder);
-    if ($indexA !== false && $indexB !== false) {
-        return $indexA <=> $indexB;
-    }
-    if ($indexA !== false) {
-        return -1;
-    }
+{
+    uksort($array, function ($a, $b) use ($customOrder) {
+        $indexA = array_search($a, $customOrder);
+        $indexB = array_search($b, $customOrder);
+        if ($indexA !== false && $indexB !== false) {
+            return $indexA <=> $indexB;
+        }
+        if ($indexA !== false) {
+            return -1;
+        }
 
-    if ($indexB !== false) {
-        return 1;
-    }
-    return 0;
-});
+        if ($indexB !== false) {
+            return 1;
+        }
+        return 0;
+    });
 }
 
 /**
@@ -208,7 +210,8 @@ function customkSort(array &$array, array $customOrder): void // custom key sort
  * @param array<mixed> $customOrder
  */
 function customkciSort(array &$array, array $customOrder): void // custom key case insensitive sorting thingy
-{$customOrderLower = array_map('strtolower', $customOrder);
+{
+    $customOrderLower = array_map('strtolower', $customOrder);
 
     uksort($array, function ($a, $b) use ($customOrderLower) {
         $indexA = array_search(strtolower($a), $customOrderLower);

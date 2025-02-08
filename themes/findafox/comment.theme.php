@@ -114,7 +114,9 @@ class CustomCommentListTheme extends CommentListTheme
         $h_posted = autodate($comment->posted);
 
         $h_userlink = "<a class='username' href='".make_link("user/$h_name")."'>$h_name</a>";
-        $h_avatar = cache_get_or_set("$comment->owner_name-avatar", fn (): string => $comment->get_owner()->get_avatar_html(), 60);
+        /** @var BuildAvatarEvent $avatar_e */
+        $avatar_e = send_event(new BuildAvatarEvent($user));
+        $h_avatar = $avatar_e->html;
         $h_del = "";
         if ($user->can(Permissions::DELETE_COMMENT) || $user->id === $comment->owner_id) {
             $h_del = " - " . $this->delete_link($i_comment_id, $i_image_id, $comment->owner_name, $tfe->stripped);
