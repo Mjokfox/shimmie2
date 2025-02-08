@@ -17,7 +17,7 @@ class CustomPostOwnerTheme extends PostOwnerTheme
         $date = rawHTML(autodate($image->posted));
         $ip = $user->can(Permissions::VIEW_IP) ? rawHTML(" (" . show_ip($image->owner_ip, "Post posted {$image->posted}") . ")") : "";
         /** @var BuildAvatarEvent $avatar_e */
-        $avatar_e = send_event(new BuildAvatarEvent($user));
+        $avatar_e = send_event(new BuildAvatarEvent($image->get_owner()));
         $avatar = $avatar_e->html;
         return SHM_POST_INFO(
             "Uploader",

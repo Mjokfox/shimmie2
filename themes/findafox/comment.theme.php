@@ -115,7 +115,7 @@ class CustomCommentListTheme extends CommentListTheme
 
         $h_userlink = "<a class='username' href='".make_link("user/$h_name")."'>$h_name</a>";
         /** @var BuildAvatarEvent $avatar_e */
-        $avatar_e = send_event(new BuildAvatarEvent($user));
+        $avatar_e = send_event(new BuildAvatarEvent($comment->get_owner()));
         $h_avatar = $avatar_e->html;
         $h_del = "";
         if ($user->can(Permissions::DELETE_COMMENT) || $user->id === $comment->owner_id) {
