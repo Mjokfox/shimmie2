@@ -325,6 +325,10 @@ class ReverseImage extends Extension
 
         $features = $this->get_image_features($file);
 
+        if (isset($_POST["url_input"]) && $_POST["url_input"]) {
+            unlink($file);
+        }
+
         if (!$features) {
             return [];
         }
@@ -416,7 +420,7 @@ class ReverseImage extends Extension
      * @param float[] $features
      * @return array<string, mixed>
      */
-    private function reverse_image_compare(array $features, int $limit, int $offset = null): array
+    private function reverse_image_compare(array $features, int|string $limit, int $offset = null): array
     {
         global $database;
         $feature_array = "[" . implode(",", $features) . "]";
