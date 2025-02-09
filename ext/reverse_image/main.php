@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\rawHTML;
+use function MicroHTML\{rawHTML, INPUT};
 
 require_once "config.php";
 
@@ -179,8 +179,8 @@ class ReverseImage extends Extension
         } elseif ($event->page_matches("reverse_image_search", method: "POST", authed: false)) {
             $ids = $this->reverse_image_search_post();
             if (count($ids) > 0) {
-                $this->theme->display_page($_POST["reverse_image_limit"], $_POST["url_input"]);
-                $this->theme->display_results($ids, $_FILES['file']['tmp_name'], $_POST["url_input"]);
+                $this->theme->display_page($_POST["reverse_image_limit"] ?? null);
+                $this->theme->display_results($ids);
             } else {
                 $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect("reverse_image_search");
@@ -214,6 +214,23 @@ class ReverseImage extends Extension
             $sb->add_bool_option(ReverseImageConfig::USER_SEARCH_ENABLE, '<br>Enable text based search: ');
         }
     }
+
+    public function onImageAdminBlockBuilding(ImageAdminBlockBuildingEvent $event): void
+    {
+        global $user, $config;
+        $event->add_part(
+            SHM_SIMPLE_FORM(
+                "reverse_image_search/",
+                INPUT(["type" => "hidden", "name" => "hash", "value" => $event->image->hash]),
+                INPUT([
+                    "type" => "submit",
+                    "value" => "Similar posts on this site",
+                ])
+            ),
+            50
+        );
+    }
+
 
     public function onAdminAction(AdminActionEvent $event): void
     {
@@ -311,11 +328,13 @@ class ReverseImage extends Extension
     public function reverse_image_search_post(): array
     {
         global $page, $config;
-        if (isset($_POST["url_input"]) && $_POST["url_input"]) {
-            $file = $this->transload($_POST["url_input"]);
+        if (isset($_POST["url"]) && $_POST["url"]) {
+            $file = $this->transload($_POST["url"]);
+        } elseif (isset($_POST["hash"]) && $_POST["hash"]) {
+            $file = warehouse_path(Image::IMAGE_DIR, $_POST["hash"], false);
         } elseif (isset($_FILES['file'])) {
             if ($_FILES['file']['error']) {
-                throw new UploadException("Upload went wrong in ext: reverse_image_serach, code ".$_FILES['file']['error']);
+                throw new UploadException("Upload failed: ".$_FILES['file']['error']);
             } else {
                 $file = $_FILES['file']['tmp_name'];
             }
@@ -325,7 +344,7 @@ class ReverseImage extends Extension
 
         $features = $this->get_image_features($file);
 
-        if (isset($_POST["url_input"]) && $_POST["url_input"]) {
+        if (isset($_POST["url"]) && $_POST["url"]) {
             unlink($file);
         }
 

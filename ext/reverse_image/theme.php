@@ -33,12 +33,12 @@ class ReverseImageTheme extends Themelet
         $nav = $this->build_navigation($search, "");
         $page->add_block(new Block("Text Search", $nav, "left", 2, "text-search-view"));
     }
-    public function display_page(string|null $r_i_l = null, string|null $url = null): void
+    public function display_page(string|null $r_i_l = null): void
     {
         global $page, $config;
         $max_reverse_result_limit = $config->get_int(ReverseImageConfig::CONF_MAX_LIMIT);
         $default_reverse_result_limit = $config->get_int(ReverseImageConfig::CONF_DEFAULT_AMOUNT);
-
+        $url = $_POST["url"] ?? "";
         $html = SHM_FORM("reverse_image_search", multipart: true, form_id: "reverse_image_search");
         $html->appendChild(
             DIV(
@@ -76,7 +76,7 @@ class ReverseImageTheme extends Themelet
                             INPUT([
                                 "type" => "text",
                                 "id" => "url_input",
-                                "name" => "url_input",
+                                "name" => "url",
                                 "value" => $url ?: "",
                                 "style" => "flex-grow:1; width:100%; padding:2px 10px;",
                                 "placeholder" => "Or paste image url"
@@ -106,14 +106,20 @@ class ReverseImageTheme extends Themelet
     /**
      * @param int[] $ids
      */
-    public function display_results(array $ids, string $original_image_path, string $image_url): void
+    public function display_results(array $ids): void
     {
         global $page;
-        if ($image_url) {
-            $src = $image_url;
-        } else {
-            $fileType = mime_content_type($original_image_path);
-            $imageData = file_get_contents($original_image_path);
+        $src = null;
+        if ((isset($_POST["url"]) && $_POST["url"])) {
+            $src = $_POST["url"];
+        } elseif (isset($_POST["hash"]) && $_POST["hash"]) {
+            $image = Image::by_hash($_POST["hash"]);
+            if ($image) {
+                $src = $image->get_image_link();
+            }
+        } elseif (isset($_FILES['file'])) {
+            $fileType = mime_content_type($_FILES['file']['tmp_name']);
+            $imageData = file_get_contents($_FILES['file']['tmp_name']);
             if (!$imageData) {
                 throw new ServerError("Your input image got lost somehow, please try again");
             }

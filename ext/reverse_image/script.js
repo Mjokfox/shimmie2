@@ -85,7 +85,7 @@ async function get_predictions(id) {
     const file_input = document.getElementById(`data${id}`);
     const data = new FormData()
     data.append('file', file_input.files[0])
-    data.append('url_input', url_input.value)
+    data.append('url', url_input.value)
 
     const tag_n = await fetch('/reverse_image_search_fromupload', 
         {
