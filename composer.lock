@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "65fece10a5cc9ac66cefa327a8a1aa88",
+    "content-hash": "b096365aec6dbb8dcd672d052a13a061",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -62,16 +62,16 @@
         },
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.339.5",
+            "version": "3.339.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "7ca04301a620c9400d00108fa338ad37acf19247"
+                "reference": "e443779facb8cd0bba30383753a7a451db83acd6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/7ca04301a620c9400d00108fa338ad37acf19247",
-                "reference": "7ca04301a620c9400d00108fa338ad37acf19247",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/e443779facb8cd0bba30383753a7a451db83acd6",
+                "reference": "e443779facb8cd0bba30383753a7a451db83acd6",
                 "shasum": ""
             },
             "require": {
@@ -97,7 +97,6 @@
                 "ext-openssl": "*",
                 "ext-pcntl": "*",
                 "ext-sockets": "*",
-                "paragonie/random_compat": ">= 2",
                 "phpunit/phpunit": "^5.6.3 || ^8.5 || ^9.5",
                 "psr/cache": "^2.0 || ^3.0",
                 "psr/simple-cache": "^2.0 || ^3.0",
@@ -154,9 +153,9 @@
             "support": {
                 "forum": "https://github.com/aws/aws-sdk-php/discussions",
                 "issues": "https://github.com/aws/aws-sdk-php/issues",
-                "source": "https://github.com/aws/aws-sdk-php/tree/3.339.5"
+                "source": "https://github.com/aws/aws-sdk-php/tree/3.339.9"
             },
-            "time": "2025-02-03T19:04:31+00:00"
+            "time": "2025-02-07T19:14:31+00:00"
         },
         {
             "name": "bower-asset/jquery",
@@ -2223,16 +2222,16 @@
         },
         {
             "name": "thecodingmachine/safe",
-            "version": "v3.0.0-alpha1",
+            "version": "v3.0.0-beta2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thecodingmachine/safe.git",
-                "reference": "c35e3654d7758a32ccd605b204368756940dd3b6"
+                "reference": "47a1689030ef07e70c58b102aeb969e4373a6afc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thecodingmachine/safe/zipball/c35e3654d7758a32ccd605b204368756940dd3b6",
-                "reference": "c35e3654d7758a32ccd605b204368756940dd3b6",
+                "url": "https://api.github.com/repos/thecodingmachine/safe/zipball/47a1689030ef07e70c58b102aeb969e4373a6afc",
+                "reference": "47a1689030ef07e70c58b102aeb969e4373a6afc",
                 "shasum": ""
             },
             "require": {
@@ -2343,7 +2342,7 @@
             "description": "PHP core functions that throw exceptions instead of returning FALSE on error",
             "support": {
                 "issues": "https://github.com/thecodingmachine/safe/issues",
-                "source": "https://github.com/thecodingmachine/safe/tree/v3.0.0-alpha1"
+                "source": "https://github.com/thecodingmachine/safe/tree/v3.0.0-beta2"
             },
             "funding": [
                 {
@@ -2359,7 +2358,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-02-03T12:35:17+00:00"
+            "time": "2025-02-09T12:26:15+00:00"
         },
         {
             "name": "webonyx/graphql-php",
@@ -3176,16 +3175,16 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "2.1.2",
+            "version": "2.1.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpstan.git",
-                "reference": "7d08f569e582ade182a375c366cbd896eccadd3a"
+                "reference": "8f99e18eb775dbaf6460c95fa0b65312da9c746a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/7d08f569e582ade182a375c366cbd896eccadd3a",
-                "reference": "7d08f569e582ade182a375c366cbd896eccadd3a",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/8f99e18eb775dbaf6460c95fa0b65312da9c746a",
+                "reference": "8f99e18eb775dbaf6460c95fa0b65312da9c746a",
                 "shasum": ""
             },
             "require": {
@@ -3230,7 +3229,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-01-21T14:54:06+00:00"
+            "time": "2025-02-10T08:25:21+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",
@@ -3557,16 +3556,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "11.5.6",
+            "version": "11.5.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "3c3ae14c90f244cdda95028c3e469028e8d1c02c"
+                "reference": "e1cb706f019e2547039ca2c839898cd5f557ee5d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/3c3ae14c90f244cdda95028c3e469028e8d1c02c",
-                "reference": "3c3ae14c90f244cdda95028c3e469028e8d1c02c",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/e1cb706f019e2547039ca2c839898cd5f557ee5d",
+                "reference": "e1cb706f019e2547039ca2c839898cd5f557ee5d",
                 "shasum": ""
             },
             "require": {
@@ -3638,7 +3637,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/11.5.6"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/11.5.7"
             },
             "funding": [
                 {
@@ -3654,7 +3653,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-01-31T07:03:30+00:00"
+            "time": "2025-02-06T16:10:05+00:00"
         },
         {
             "name": "psr/event-dispatcher",
@@ -5893,6 +5892,65 @@
             "time": "2024-12-18T14:28:33+00:00"
         },
         {
+            "name": "thecodingmachine/phpstan-safe-rule",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/thecodingmachine/phpstan-safe-rule.git",
+                "reference": "489a0407453de9457b40d314b61038b9b2fe9a86"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/thecodingmachine/phpstan-safe-rule/zipball/489a0407453de9457b40d314b61038b9b2fe9a86",
+                "reference": "489a0407453de9457b40d314b61038b9b2fe9a86",
+                "shasum": ""
+            },
+            "require": {
+                "nikic/php-parser": "^5",
+                "php": "^8.1",
+                "phpstan/phpstan": "^2.0",
+                "thecodingmachine/safe": "^1.0 || ^2.0 || ^3.0"
+            },
+            "require-dev": {
+                "php-coveralls/php-coveralls": "^2.1",
+                "phpunit/phpunit": "^9.6",
+                "squizlabs/php_codesniffer": "^3.4"
+            },
+            "default-branch": true,
+            "type": "phpstan-extension",
+            "extra": {
+                "phpstan": {
+                    "includes": [
+                        "phpstan-safe-rule.neon"
+                    ]
+                },
+                "branch-alias": {
+                    "dev-master": "2.0-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "TheCodingMachine\\Safe\\PHPStan\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "David Négrier",
+                    "email": "d.negrier@thecodingmachine.com"
+                }
+            ],
+            "description": "A PHPStan rule to detect safety issues. Must be used in conjunction with thecodingmachine/safe",
+            "support": {
+                "issues": "https://github.com/thecodingmachine/phpstan-safe-rule/issues",
+                "source": "https://github.com/thecodingmachine/phpstan-safe-rule/tree/master"
+            },
+            "time": "2025-02-10T01:12:34+00:00"
+        },
+        {
             "name": "theseer/tokenizer",
             "version": "1.2.3",
             "source": {
@@ -5945,7 +6003,9 @@
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": {},
+    "stability-flags": {
+        "thecodingmachine/phpstan-safe-rule": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

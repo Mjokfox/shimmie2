@@ -244,7 +244,7 @@ class OuroborosAPI extends Extension
     {
         global $page, $user;
 
-        if (preg_match("%(.*)\.(xml|json)$%", implode('/', $event->args), $matches) === 1) {
+        if (\Safe\preg_match("%(.*)\.(xml|json)$%", implode('/', $event->args), $matches)) {
             $event_args = $matches[1];
             $this->type = $matches[2];
 
@@ -252,7 +252,7 @@ class OuroborosAPI extends Extension
                 // Create
                 $this->tryAuth();
                 if ($user->can(Permissions::CREATE_IMAGE)) {
-                    $md5 = isset($_REQUEST['md5']) && preg_match("%^[0-9A-Fa-f]{32}$%", $_REQUEST['md5']) ? strtolower($_REQUEST['md5']) : null;
+                    $md5 = isset($_REQUEST['md5']) && \Safe\preg_match("%^[0-9A-Fa-f]{32}$%", $_REQUEST['md5']) ? strtolower($_REQUEST['md5']) : null;
                     $this->postCreate(new OuroborosPost($_REQUEST['post']), $md5);
                 } else {
                     $this->sendResponse(403, 'You cannot create new posts');
@@ -353,25 +353,23 @@ class OuroborosAPI extends Extension
             $this->sendResponse(420, self::ERROR_POST_CREATE_MD5);
             return;
         }
-        if (!empty($meta['hash'])) {
-            $img = Image::by_hash($meta['hash']);
-            if (!is_null($img)) {
-                $handler = $config->get_string(ImageConfig::UPLOAD_COLLISION_HANDLER);
-                if ($handler == ImageConfig::COLLISION_MERGE) {
-                    $postTags = Tag::explode($post->tags);
-                    $merged = array_merge($postTags, $img->get_tag_array());
-                    send_event(new TagSetEvent($img, $merged));
+        $img = Image::by_hash($meta['hash']);
+        if (!is_null($img)) {
+            $handler = $config->get_string(ImageConfig::UPLOAD_COLLISION_HANDLER);
+            if ($handler == ImageConfig::COLLISION_MERGE) {
+                $postTags = Tag::explode($post->tags);
+                $merged = array_merge($postTags, $img->get_tag_array());
+                send_event(new TagSetEvent($img, $merged));
 
-                    // This is really the only thing besides tags we should care
-                    if (!empty($meta['source'])) {
-                        send_event(new SourceSetEvent($img, $meta['source']));
-                    }
-                    $this->sendResponse(200, self::OK_POST_CREATE_UPDATE . ' ID: ' . $img->id);
-                    return;
-                } else {
-                    $this->sendResponse(420, self::ERROR_POST_CREATE_DUPE);
-                    return;
+                // This is really the only thing besides tags we should care
+                if (!empty($meta['source'])) {
+                    send_event(new SourceSetEvent($img, $meta['source']));
                 }
+                $this->sendResponse(200, self::OK_POST_CREATE_UPDATE . ' ID: ' . $img->id);
+                return;
+            } else {
+                $this->sendResponse(420, self::ERROR_POST_CREATE_DUPE);
+                return;
             }
         }
         try {

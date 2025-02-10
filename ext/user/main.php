@@ -347,7 +347,7 @@ class UserPage extends Extension
         $av = $avatar_e->html;
         if ($av) {
             $event->add_part((string)$av, 0);
-        } else {
+        } elseif ($duser->id == $user->id) {
             $part = "";
             if (Extension::is_enabled(AvatarPostInfo::KEY)) {
                 $part .= "No avatar?<br>You can set any post as avatar by clicking \"Set Image As Avatar\" in the Post Controls on any post." .
@@ -386,9 +386,7 @@ class UserPage extends Extension
 
         if (!$user->is_anonymous()) {
             if ($user->id == $event->display_user->id || $user->can("edit_user_info")) {
-                $user_config = UserConfig::get_for_user($event->display_user->id);
-
-                $uobe = send_event(new UserOperationsBuildingEvent($event->display_user, $user_config));
+                $uobe = send_event(new UserOperationsBuildingEvent($event->display_user, $event->display_user->get_config()));
                 $page->add_block(new Block("Operations", $this->theme->build_operations($event->display_user, $uobe), "main", 60));
             }
         }
@@ -417,7 +415,7 @@ class UserPage extends Extension
     {
         global $config;
 
-        $sb = $event->panel->create_new_block("User Options");
+        $sb = $event->panel->create_new_block("User");
         $sb->start_table();
         $sb->add_bool_option(UserConfig::ENABLE_API_KEYS, "Enable user API keys", true);
         $sb->add_bool_option(UserAccountsConfig::SIGNUP_ENABLED, "Allow new signups", true);

@@ -422,7 +422,7 @@ class CommentList extends Extension
 
     public function onSetupBuilding(SetupBuildingEvent $event): void
     {
-        $sb = $event->panel->create_new_block("Comment Options");
+        $sb = $event->panel->create_new_block("Comments");
         $sb->add_bool_option("comment_captcha", "Require CAPTCHA for anonymous comments: ");
         $sb->add_label("<br>Limit to ");
         $sb->add_int_option("comment_limit");
@@ -611,7 +611,6 @@ class CommentList extends Extension
 			WHERE image_id=:image_id AND comment=:comment
 		", ["image_id" => $image_id, "comment" => $comment]);
     }
-    // do some checks
 
     private function add_comment_wrapper(int $image_id, User $user, string $comment): void
     {
@@ -676,7 +675,7 @@ class CommentList extends Extension
         global $config, $page;
         // basic sanity checks
         if (!$user->can(Permissions::CREATE_COMMENT)) {
-            throw new CommentPostingException("Anonymous posting has been disabled");
+            throw new CommentPostingException("You do not have permission to add comments");
         } elseif (is_null(Image::by_id($image_id))) {
             throw new CommentPostingException("The image does not exist");
         } elseif (trim($comment) == "") {

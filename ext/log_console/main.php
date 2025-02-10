@@ -16,18 +16,10 @@ class LogConsole extends Extension
 
     public function onSetupBuilding(SetupBuildingEvent $event): void
     {
-        $fp = @fopen("/dev/tty", "w");
-        if ($fp) {
-            fclose($fp);
-        } else {
-            $sb = $event->panel->create_new_block("Logging (Console)");
-            $sb->add_label("This extension requires a terminal (<code>/dev/tty</code>) to work.<br>If you're using docker, add the <code>-t</code> flag to your <code>docker run</code> command.");
-            return;
-        }
         $sb = $event->panel->create_new_block("Logging (Console)");
         $sb->add_bool_option(LogConsoleConfig::LOG_ACCESS, "Log page requests: ");
         $sb->add_bool_option(LogConsoleConfig::COLOUR, "<br>Log with colour: ");
-        $sb->add_choice_option(LogConsoleConfig::LEVEL, LOGGING_LEVEL_NAMES_TO_LEVELS, "<br>Debug Level: ");
+        $sb->add_choice_option(LogConsoleConfig::LEVEL, LOGGING_LEVEL_NAMES_TO_LEVELS, "<br>Log Level: ");
     }
 
     public function onPageRequest(PageRequestEvent $event): void
@@ -66,40 +58,50 @@ class LogConsole extends Extension
 
     private function log(LogEvent $event): void
     {
+        if (defined("UNITTEST") || PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg') {
+            return;
+        }
+
         global $config, $user;
         $username = ($user && $user->name) ? $user->name : "Anonymous";
+
+        $levelName = "[unknown]";
+        $color = "\033[0;35m"; # purple for unknown levels
+        if ($event->priority >= SCORE_LOG_CRITICAL) {
+            $levelName = "[critical]";
+            $color = "\033[0;31m"; # red
+        } elseif ($event->priority >= SCORE_LOG_ERROR) {
+            $levelName = "[error]";
+            $color = "\033[0;91m"; # high intensity red
+        } elseif ($event->priority >= SCORE_LOG_WARNING) {
+            $levelName = "[warning]";
+            $color = "\033[0;33m"; # yellow
+        } elseif ($event->priority >= SCORE_LOG_INFO) {
+            $levelName = "[info]";
+            $color = ""; # none for info
+        } elseif ($event->priority >= SCORE_LOG_DEBUG) {
+            $levelName = "[debug]";
+            $color = "\033[0;94m"; # high intensity blue
+        }
+
         $str = join(" ", [
-            date(DATE_ISO8601),
-            get_real_ip(),
-            $event->section,
-            $username,
+            date("Y-m-d H:i:s"),
+            "[".$event->section."]",
+            $levelName,
+            "[".get_real_ip()." (".$username.")]",
             $event->message
         ]);
-        if ($config->get_bool(LogConsoleConfig::COLOUR)) {
-            if ($event->priority >= SCORE_LOG_WARNING) {
-                // red
-                $COL = "\033[0;31m";
-            } elseif ($event->priority >= SCORE_LOG_INFO) {
-                // default
-                $COL = "";
-            } elseif ($event->priority >= SCORE_LOG_NOTSET) {
-                // blue
-                $COL = "\033[0;34m";
-            } else {
-                // priority < 0 ???
-                // magenta
-                $COL = "\033[0;35m";
-            }
-            $str = "$COL$str\033[0m\n";
+
+        if (strlen($color) > 0 && $config->get_bool(LogConsoleConfig::COLOUR)) {
+            $str = "$color$str\033[0m\n";
         } else {
             $str = "$str\n";
         }
-        if (!defined("UNITTEST") && PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg') {
-            $fp = @fopen("/dev/stdout", "w");
-            if ($fp) {
-                fwrite($fp, $str);
-                fclose($fp);
-            }
+
+        $fp = @fopen("php://stdout", "w");
+        if ($fp) {
+            fwrite($fp, $str);
+            fclose($fp);
         }
     }
 }
