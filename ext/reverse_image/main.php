@@ -56,14 +56,14 @@ class ReverseImage extends Extension
     }
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $user, $page, $config, $user_config;
+        global $user, $page, $config, $user;
         if ($event->page_matches("post/list", paged: true)
             || $event->page_matches("post/list/{search}", paged: true)) {
-            if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user_config->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE)) {
+            if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE)) {
                 $this->theme->list_search($page);
             }
         } elseif ($event->page_matches("post/view/{id}")) {
-            if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user_config->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE)) {
+            if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE)) {
                 $this->theme->view_search($page, $event->get_GET('search') ?? "");
             }
         } elseif ($event->page_matches("post/search", paged: true)
@@ -71,7 +71,7 @@ class ReverseImage extends Extension
         ) {
             global $database;
             $get_search = $event->get_GET('search');
-            if ($get_search || !($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user_config->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE))) {
+            if ($get_search || !($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE))) {
                 $page->set_mode(PageMode::REDIRECT);
                 if (empty($get_search)) {
                     $page->set_redirect(make_link("/post/list"));
@@ -152,7 +152,8 @@ class ReverseImage extends Extension
                 $page->set_filename('failed.json', 'Content-Type: application/json');
             }
         } elseif ($event->page_matches("upload", method: "GET", permission: Permissions::CREATE_IMAGE)) {
-            global $config, $user_config;
+            global $config, $user;
+            $user_config = $user->get_config();
             $default_reverse_result_limit = $config->get_int(ReverseImageConfig::CONF_DEFAULT_AMOUNT);
             $enable_auto_pre = $user_config->get_bool(ReverseImageConfig::USER_ENABLE_AUTO);
             $enable_auto_tag = $user_config->get_bool(ReverseImageConfig::USER_ENABLE_AUTO_SELECT);

@@ -15,7 +15,7 @@ class CustomIndexTheme extends IndexTheme
      */
     public function display_page(Page $page, array $images): void
     {
-        global $config, $user_config;
+        global $config, $user;
         $this->display_shortwiki($page);
 
         $this->display_page_header($page, $images);
@@ -24,7 +24,7 @@ class CustomIndexTheme extends IndexTheme
             /** @var array{0: string, 1: string} $matches */
             $path = $matches[1];
         }
-        if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user_config->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE)) {
+        if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE)) {
             $pos = "main";
             $id = "search-bar-right";
             $class = "full-width";

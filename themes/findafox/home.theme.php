@@ -12,7 +12,7 @@ class CustomhomeTheme extends HomeTheme
 {
     public function build_body(string $sitename, string $main_links, string $main_text, string $contact_link, string $num_comma, string $counter_text): HTMLElement
     {
-        global $page, $config, $user_config;
+        global $page, $config, $user;
         $page->set_layout("front-page");
 
         $main_links_html = empty($main_links) ? "" : "<div class='space' id='links'>$main_links</div>";
@@ -28,7 +28,7 @@ class CustomhomeTheme extends HomeTheme
 				</form>
                 
 		";
-        if (Extension::is_enabled(ReverseImageInfo::KEY) && $config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user_config->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE)) {
+        if (Extension::is_enabled(ReverseImageInfo::KEY) && $config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE)) {
             $search_html .= "<a href='#' onclick='$(\".search-bar\").toggle();'>To text search</a>
 			</div>
 			<div class='space search-bar' id='text-search' style='display:none'>

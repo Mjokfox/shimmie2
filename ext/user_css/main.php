@@ -13,9 +13,9 @@ class UserCSS extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page,$user_config;
+        global $page,$user;
         $page->add_html_header(STYLE(
-            $user_config->get_string("user_css")
+            $user->get_config()->get_string("user_css")
         ));
     }
 

@@ -68,7 +68,7 @@ class UploadLimit extends DataHandlerExtension
             $uploads_left = "∞ (admin)";
             $formatted_time = "0";
         } elseif ($event->display_user->can(Permissions::CREATE_IMAGE)) {
-            $duser_config = UserConfig::get_for_user($event->display_user->id);
+            $duser_config = $event->display_user->get_config();
             $uploads_left = $duser_config->get_int("left_upload");
             $unixT = (int)date("U");
             $deltaT = $unixT - $duser_config->get_int("last_upload");
@@ -98,7 +98,8 @@ class UploadLimit extends DataHandlerExtension
     {
         global $user;
         if (!$this->supported_mime($event->mime)) {
-            global $config, $page, $user_config;
+            global $config, $page;
+            $user_config = $user->get_config();
             // code shamelessly stolen from extension.php, need to do this check to not decrement the counter on an otherwise failed upload
             $existing = Image::by_hash(\Safe\md5_file($event->tmpname));
             if (!is_null($existing)) {
