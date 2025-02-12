@@ -11,7 +11,6 @@ class RobotsBuildingEvent extends Event
         "User-agent: *",
         // Site is rate limited to 1 request / sec,
         // returns 503 for more than that
-        "Crawl-delay: 3",
     ];
 
     public function add_disallow(string $path): void
@@ -30,7 +29,7 @@ class StaticFiles extends Extension
             $rbe = send_event(new RobotsBuildingEvent());
             $page->set_mode(PageMode::DATA);
             $page->set_mime("text/plain");
-            $data = join("\n", [$config->get_string("robots_txt_bef"), join("\n", $rbe->parts),$config->get_string("robots_txt_aft")]);
+            $data = join("\n", [$config->get_string("robots_txt_bef"), join("\n", $rbe->parts),$config->get_string("robots_txt_aft"),"Crawl-delay: " . $config->get_int("robots_txt_delay", 3)]);
             $page->set_data($data);
         }
 
@@ -60,6 +59,7 @@ class StaticFiles extends Extension
         $sb = $event->panel->create_new_block("Robots");
         $sb->add_longtext_option("robots_txt_bef", "Text to add before the main user-agent *");
         $sb->add_longtext_option("robots_txt_aft", "Text to add after*");
+        $sb->add_int_option("robots_txt_delay", "* Crawl-delay: ");
     }
 
     /**
