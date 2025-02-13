@@ -57,7 +57,7 @@ class FlickrSource extends Extension
         switch ($event->action) {
             case "flickr_source":
                 $start_time = ftime();
-                $query = "SELECT id, filename
+                $query = "SELECT *
                 FROM images
                 WHERE (source IS NULL OR source LIKE '%live.staticflickr%')
                 AND mime LIKE 'image/%'
@@ -65,28 +65,26 @@ class FlickrSource extends Extension
                 LIMIT :limit;";
                 $files = $database->get_all($query, ["id_offset" => $event->params['id_offset'] | "0","limit" => $event->params['limit'] | "0"]);
                 $i = 0;
-                $j = 0;
+                $j = [];
                 $k = 0;
                 foreach ($files as $file) {
-                    if (preg_match("/\d{7,13}_[a-f0-9]{7,13}_[a-z0-9]+(?:_d)?(\.jpg|\.png)$/", $file["filename"])) {
-                        $source = $this->getFlickrUrl(explode("_", $file["filename"])[0]);
-                        if ($source !== "https://flickr.com/photos///") {
-                            $image = Image::by_id($file["id"]);
-                            if (!is_null($image)) {
-                                send_event(new SourceSetEvent($image, $source));
-                                $i++;
-                            } else {
-                                $j++;
-                            }
-                        } else {
-                            $j++;
+                    if (!\safe\preg_match("/(\d{7,13})_[a-f0-9]{7,13}_[a-z0-9]{1,2}(?:_d)?(?:\.jpg|\.png)$/", $file["filename"],$matches)) {
+                        if (!\safe\preg_match("/[a-zA-Z\-]+_(\d{7,13})_o(?:_d)?(?:\.jpg|\.png)$/", $file["filename"],$matches)) {
+                            $k++;
+                            continue;
                         }
+                    }
+                    $source = $this->getFlickrUrl($matches[1]);
+                    if ($source !== "https://flickr.com/photos///") {
+                        $image = new Image($file);
+                        send_event(new SourceSetEvent($image, $source));
+                        $i++;
                     } else {
-                        $k++;
+                        $j[] = $file["id"];
                     }
                 }
                 $exec_time = round(ftime() - $start_time, 2);
-                $message = "Found valid sources for {$i} images, invalid sources for {$j}, and skipped {$k} non flickr images, which took $exec_time seconds.";
+                $message = "Found valid sources for {$i} images, invalid sources for ".count($j).", and skipped {$k} non flickr images, which took $exec_time seconds." . (count($j) > 0 ? " Failed: " . implode(", ", $j):"" );
                 log_info("admin", $message, $message);
                 $event->redirect = true;
                 break;
