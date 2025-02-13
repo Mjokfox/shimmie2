@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+use MicroHTML\HTMLElement;
+
 use function MicroHTML\rawHTML;
 
 class CustomCommentListTheme extends CommentListTheme
@@ -95,7 +97,7 @@ class CustomCommentListTheme extends CommentListTheme
     }
 
 
-    protected function comment_to_html(Comment $comment, bool $trim = false): string
+    protected function comment_to_html(Comment $comment, bool $trim = false): HTMLElement
     {
         global $user, $cache;
 
@@ -128,26 +130,26 @@ class CustomCommentListTheme extends CommentListTheme
         $h_edited = $comment->edited ? "<br><em>(edited)</em>" : "";
         //$h_imagelink = $trim ? "<a href='".make_link("post/view/$i_image_id")."'>&gt;&gt;&gt;</a>\n" : "";
         if ($trim) {
-            return "<p class='comment'>$h_userlink $h_del<br/>$h_posted<br/>$h_comment</p>";
+            return rawHTML("<p class='comment'>$h_userlink $h_del<br/>$h_posted<br/>$h_comment</p>");
         } else {
             $h_reply = " > <a href='javascript: replyTo($i_image_id, $i_comment_id, \"$h_name\")'>Reply</a>";
-            return "
+            return rawHTML("
 				<table class='comment' id=\"c$i_comment_id\"><tr>
 					<td class='meta'>$h_userlink<br>$h_avatar<br/>$h_posted$h_del$h_edited</td>
 					<td class='c_body'>$h_comment<br><br>$h_reply $h_edit</td>
 				</tr></table>
-			";
+			");
         }
     }
 
-    protected function build_postbox(int $image_id): string
+    protected function build_postbox(int $image_id): HTMLElement
     {
         global $config;
 
         $hash = CommentList::get_hash();
         $h_captcha = $config->get_bool("comment_captcha") ? captcha_get_html() : "";
         //<a class="c-add" onclick=document.getElementById("cadd'.$image_id.'").style["display"]="unset">Add comment</a>
-        return '
+        return rawHTML('
 		<div class="comment comment_add" id="cadd'.$image_id.'">
 			'.make_form(make_link("comment/add")).'
 				<input type="hidden" name="image_id" value="'.$image_id.'" />
@@ -157,7 +159,7 @@ class CustomCommentListTheme extends CommentListTheme
 				<br><input type="submit" value="Post Comment" />
 			</form>
 		</div>
-		';
+		');
     }
     protected function edit_button(int $comment_id, int $image_id): string
     {
