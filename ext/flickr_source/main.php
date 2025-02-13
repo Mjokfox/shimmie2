@@ -68,8 +68,8 @@ class FlickrSource extends Extension
                 $j = [];
                 $k = 0;
                 foreach ($files as $file) {
-                    if (!\safe\preg_match("/(\d{7,13})_[a-f0-9]{7,13}_[a-z0-9]{1,2}(?:_d)?(?:\.jpg|\.png)$/", $file["filename"],$matches)) {
-                        if (!\safe\preg_match("/[a-zA-Z\-]+_(\d{7,13})_o(?:_d)?(?:\.jpg|\.png)$/", $file["filename"],$matches)) {
+                    if (!\safe\preg_match("/(\d{7,13})_[a-f0-9]{7,13}_[a-z0-9]{1,2}(?:_d)?(?:\.jpg|\.png)$/", $file["filename"], $matches)) {
+                        if (!\safe\preg_match("/[a-zA-Z\-]+_(\d{7,13})_o(?:_d)?(?:\.jpg|\.png)$/", $file["filename"], $matches)) {
                             $k++;
                             continue;
                         }
@@ -84,7 +84,7 @@ class FlickrSource extends Extension
                     }
                 }
                 $exec_time = round(ftime() - $start_time, 2);
-                $message = "Found valid sources for {$i} images, invalid sources for ".count($j).", and skipped {$k} non flickr images, which took $exec_time seconds." . (count($j) > 0 ? " Failed: " . implode(", ", $j):"" );
+                $message = "Found valid sources for {$i} images, invalid sources for ".count($j).", and skipped {$k} non flickr images, which took $exec_time seconds." . (count($j) > 0 ? " Failed: " . implode(", ", $j) : "");
                 log_info("admin", $message, $message);
                 $event->redirect = true;
                 break;

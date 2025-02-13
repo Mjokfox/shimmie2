@@ -904,11 +904,14 @@ DIV.grid-cell-content.dir-row LABEL {
 	margin-right:1px;
 }
 
-DIV.showInputButton, DIV.showPreviewButton {
-	padding: 2px;
+DIV.showInputButton, DIV.showPreviewButton, DIV.uploadCancelButton{
 	display:inline;
-	font-size:15px;
+	padding:2px;
 	visibility:hidden;
+}
+
+DIV.uploadCancelButton {
+	margin-right:5px;
 }
 
 .tag_list {

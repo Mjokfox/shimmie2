@@ -66,7 +66,7 @@ class CustomUploadTheme extends UploadTheme
                         SPAN("{$i} "),
                         DIV([
                             "id" => "canceldata{$i}",
-                            "style" => "display:inline;margin-right:5px;font-size:15px;visibility:hidden;",
+                            "class" => "uploadCancelButton",
                             "onclick" => "document.getElementById('data{$i}').value='';updateTracker();",
                         ], "✖"),
                         INPUT([
