@@ -36,9 +36,9 @@ class CustomIndexTheme extends IndexTheme
 
         $nav = $this->build_navigation($this->page_number, $this->total_pages, ($path === "list" ? $this->search_terms : []), $class);
 
-        $page->add_block(new Block("Tag Search", $nav, $pos, 2, $id));
+        $page->add_block(new Block("Search with tags", $nav, $pos, 2, $id));
 
-        $page->add_block(new Block("Tag Search", $nav, "main", 5, "mobile-search"));
+        $page->add_block(new Block("Search with tags", $nav, "main", 5, "mobile-search"));
 
         $next = $this->page_number + 1;
         $prev = $this->page_number - 1;

@@ -18,8 +18,8 @@ class CustomViewPostTheme extends ViewPostTheme
         global $page;
         $page->set_heading(html_escape($image->get_tag_list()));
         $nav = $this->build_navigation($image);
-        $page->add_block(new Block("Tag Search", $nav, "left", 0, "search-bar"));
-        $page->add_block(new Block("Tag Search", $nav, "main", 5, "mobile-search"));
+        $page->add_block(new Block("Search with tags", $nav, "left", 0, "search-bar"));
+        $page->add_block(new Block("Search with tags", $nav, "main", 5, "mobile-search"));
         $page->add_block(new Block("Information", $this->build_information($image), "left", 15));
         $page->add_block(new Block(null, $this->build_info($image, $editor_parts), "main", 15));
         $page->add_block(new Block(null, $this->build_pin($image), "main", 2, "post_controls"));

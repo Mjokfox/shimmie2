@@ -22,22 +22,22 @@ class CustomhomeTheme extends HomeTheme
         $search_html = "
             <div class='space search-bar' id='search'>
 				<form action='post/list' method='GET'>
-				<input name='search' size='30' type='search' value='' placeholder='tag search' class='autocomplete_tags' autofocus='autofocus' />
+				<input name='search' size='30' type='search' value='' placeholder='Search with tags' class='autocomplete_tags' autofocus='autofocus' />
 				<input type='hidden' name='q' value='post/list'>
 				<input type='submit' value='Search'/>
 				</form>
                 
 		";
         if (Extension::is_enabled(ReverseImageInfo::KEY) && $config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE)) {
-            $search_html .= "<a href='#' onclick='$(\".search-bar\").toggle();'>To text search</a>
+            $search_html .= "<a href='#' onclick='$(\".search-bar\").toggle();'>Or describe an image</a>
 			</div>
 			<div class='space search-bar' id='text-search' style='display:none'>
 				<form action='post/search' method='GET'>
-				<input name='search' size='30' type='search' value='' placeholder='text search'/>
+				<input name='search' size='30' type='search' value='' placeholder='Describe an image'/>
 				<input type='hidden' name='q' value='post/search'>
 				<input type='submit' value='Search'/>
 				</form>
-                <a href='#' onclick='$(\".search-bar\").toggle();'>To tag search</a>
+                <a href='#' onclick='$(\".search-bar\").toggle();'>Back to tag search</a>
 			</div>";
         } else {
             $search_html .= "</div>";
