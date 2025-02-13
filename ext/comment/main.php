@@ -112,7 +112,7 @@ class Comment
     public function get_owner(): User
     {
         if (empty($this->owner)) {
-            $this->owner = User::by_id($this->owner_id);
+            $this->owner = User::by_id_dangerously_cached($this->owner_id);
         }
         return $this->owner;
     }

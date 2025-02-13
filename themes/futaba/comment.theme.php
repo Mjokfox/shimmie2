@@ -73,7 +73,7 @@ class FutabaCommentListTheme extends CommentListTheme
     }
 
 
-    protected function comment_to_html(Comment $comment, bool $trim = false): string
+    protected function comment_to_html(Comment $comment, bool $trim = false): HTMLElement
     {
         // because custom themes can't add params, because PHP
         $post_page = $this->post_page;
@@ -90,7 +90,7 @@ class FutabaCommentListTheme extends CommentListTheme
         } else {
             $h_comment = $tfe->formatted;
         }
-        $h_comment = preg_replace_ex("/(^|>)(&gt;[^<\n]*)(<|\n|$)/", '${1}<span class=\'greentext\'>${2}</span>${3}', $h_comment);
+        $h_comment = \Safe\preg_replace("/(^|>)(&gt;[^<\n]*)(<|\n|$)/", '${1}<span class=\'greentext\'>${2}</span>${3}', $h_comment);
         // handles discrepency in comment page and homepage
         $h_comment = str_replace("<br>", "", $h_comment);
         $h_comment = str_replace("\n", "<br>", $h_comment);
@@ -114,11 +114,11 @@ class FutabaCommentListTheme extends CommentListTheme
         }
 
         if ($inner_id == 0) {
-            return "<div class='comment' style='margin-top: 8px;'>$h_userlink$h_del $h_date No.$i_comment_id $h_reply<p>$h_comment</p></div>";
+            return rawHTML("<div class='comment' style='margin-top: 8px;'>$h_userlink$h_del $h_date No.$i_comment_id $h_reply<p>$h_comment</p></div>");
         } else {
-            return "<table><tr><td nowrap class='doubledash'>&gt;&gt;</td><td>".
+            return rawHTML("<table><tr><td nowrap class='doubledash'>&gt;&gt;</td><td>".
                 "<div class='reply'>$h_userlink$h_del $h_date No.$i_comment_id<p>$h_comment</p></div>" .
-                "</td></tr></table>";
+                "</td></tr></table>");
         }
     }
 }

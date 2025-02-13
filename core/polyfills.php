@@ -79,7 +79,7 @@ function full_copy(string $source, string $target): void
     if (is_dir($source)) {
         @mkdir($target);
 
-        $d = dir_ex($source);
+        $d = \Safe\dir($source);
 
         while (true) {
             $entry = $d->read();
@@ -333,43 +333,23 @@ function url_escape(?string $input): string
 /**
  * Turn all manner of HTML / INI / JS / DB booleans into a PHP one
  */
-function bool_escape(mixed $input): bool
+function bool_escape(string|bool|int $input): bool
 {
-    /*
-     Sometimes, I don't like PHP -- this, is one of those times...
-      "a boolean FALSE is not considered a valid boolean value by this function."
-     Yay for Got'chas!
-     https://php.net/manual/en/filter.filters.validate.php
-    */
     if (is_bool($input)) {
         return $input;
     } elseif (is_int($input)) {
-        return ($input === 1);
+        return $input === 1;
     } else {
-        $value = filter_var($input, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-        if (!is_null($value)) {
-            return $value;
-        } else {
-            $input = strtolower(trim($input));
-            return (
-                $input === "y" ||
-                $input === "yes" ||
-                $input === "t" ||
-                $input === "true" ||
-                $input === "on" ||
-                $input === "1"
-            );
-        }
+        $input = strtolower(trim($input));
+        return (
+            $input === "y" ||
+            $input === "yes" ||
+            $input === "t" ||
+            $input === "true" ||
+            $input === "on" ||
+            $input === "1"
+        );
     }
-}
-
-/**
- * Some functions require a callback function for escaping,
- * but we might not want to alter the data
- */
-function no_escape(string $input): string
-{
-    return $input;
 }
 
 /**
@@ -709,7 +689,7 @@ function validate_input(array $inputs): array
  */
 function sanitize_path(string $path): string
 {
-    $r = preg_replace_ex('|[\\\\/]+|S', DIRECTORY_SEPARATOR, $path);
+    $r = \Safe\preg_replace('|[\\\\/]+|S', DIRECTORY_SEPARATOR, $path);
     return $r;
 }
 
@@ -816,4 +796,21 @@ function cache_get_or_set(string $key, callable $callback, ?int $ttl = null): mi
         $cache->set($key, $value, $ttl);
     }
     return $value;
+}
+
+/**
+ * @template T
+ * @param T|false $x
+ * @return T
+ */
+function false_throws(mixed $x, ?callable $errorgen = null): mixed
+{
+    if ($x === false) {
+        $msg = "Unexpected false";
+        if ($errorgen) {
+            $msg = $errorgen();
+        }
+        throw new \Exception($msg);
+    }
+    return $x;
 }

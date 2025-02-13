@@ -106,8 +106,7 @@ class Index extends Extension
 
     public function onSetupBuilding(SetupBuildingEvent $event): void
     {
-        $sb = $event->panel->create_new_block("Post List");
-        $sb->position = 20;
+        $sb = $event->panel->create_new_block("Post List", 20);
 
         $sb->add_label("Show ");
         $sb->add_int_option(IndexConfig::IMAGES);
@@ -182,7 +181,7 @@ class Index extends Extension
                 );
 
                 $sql_str = $q->sql;
-                $sql_str = preg_replace_ex("/\s+/", " ", $sql_str);
+                $sql_str = \Safe\preg_replace("/\s+/", " ", $sql_str);
                 foreach ($q->variables as $key => $val) {
                     if (is_string($val)) {
                         $sql_str = str_replace(":$key", "'$val'", $sql_str);

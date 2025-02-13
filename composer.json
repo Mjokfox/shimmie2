@@ -41,7 +41,7 @@
         "shish/microcrud": "^2.0",
         "shish/microhtml": "^2.2",
         "shish/gqla": "^1.0",
-        "thecodingmachine/safe": "^3.0.0-alpha1",
+        "thecodingmachine/safe": "^3.0",
         "enshrined/svg-sanitize": "^0.16",
         "bower-asset/jquery": "^1.12",
         "bower-asset/jquery-timeago": "^1.5",
@@ -56,7 +56,7 @@
         "phpunit/phpunit": "^11.0",
         "friendsofphp/php-cs-fixer": "^3.64",
         "phpstan/phpstan": "^2.0",
-        "thecodingmachine/phpstan-safe-rule": "dev-master"
+        "thecodingmachine/phpstan-safe-rule": "^1.4"
     },
     "suggest": {
         "ext-pdo_sqlite": "database - sqlite",

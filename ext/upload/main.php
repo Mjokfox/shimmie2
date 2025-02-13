@@ -148,8 +148,7 @@ class Upload extends Extension
         $tes["fopen"] = "fopen";
         $tes["WGet"] = "wget";
 
-        $sb = $event->panel->create_new_block("Upload");
-        $sb->position = 10;
+        $sb = $event->panel->create_new_block("Upload", 10);
         // Output the limits from PHP so the user has an idea of what they can set.
         $sb->add_int_option(UploadConfig::COUNT, "Max uploads: ");
         $sb->add_label("<i>PHP Limit = " . ini_get('max_file_uploads') . "</i>");
@@ -366,7 +365,7 @@ class Upload extends Extension
 
             // Parse metadata
             $s_filename = find_header($headers, 'Content-Disposition');
-            $h_filename = ($s_filename ? preg_replace_ex('/^.*filename\*?=(?:UTF-8\'\')?\"?([^\";]*)\"?$/i', '$1', $s_filename) : null);
+            $h_filename = ($s_filename ? \Safe\preg_replace('/^.*filename\*?=(?:UTF-8\'\')?\"?([^\";]*)\"?$/i', '$1', $s_filename) : null);
             $filename = $h_filename ?: basename($url);
 
             $new_images = $database->with_savepoint(function () use ($tmp_filename, $filename, $slot, $metadata) {

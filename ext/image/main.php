@@ -159,9 +159,8 @@ class ImageIO extends Extension
     {
         global $config;
 
-        $sb = $event->panel->create_new_block("Post Manager");
+        $sb = $event->panel->create_new_block("Post Manager", 30);
         $sb->start_table();
-        $sb->position = 30;
         // advanced only
         //$sb->add_text_option(ImageConfig::ILINK, "Image link: ");
         //$sb->add_text_option(ImageConfig::TLINK, "<br>Thumbnail link: ");
@@ -241,7 +240,7 @@ class ImageIO extends Extension
 
 
         if (isset($_SERVER["HTTP_IF_MODIFIED_SINCE"])) {
-            $if_modified_since = preg_replace_ex('/;.*$/', '', $_SERVER["HTTP_IF_MODIFIED_SINCE"]);
+            $if_modified_since = \Safe\preg_replace('/;.*$/', '', $_SERVER["HTTP_IF_MODIFIED_SINCE"]);
         } else {
             $if_modified_since = "";
         }
