@@ -330,8 +330,8 @@ function get_categories_html(string $suffix): HTMLElement
     if (array_key_exists("Body:Face", $category_tags)) { //face specific ordering
         $tags = $category_tags["Body:Face"];
         arsort($tags);
-        $tempHtmls = [emptyHTML(),emptyHTML(),emptyHTML(),emptyHTML(),emptyHTML()];
-        $lables = ["Facial features","Eye color","Nose color","Muzzle marking","Misc facial"];
+        $tempHtmls = [emptyHTML(),emptyHTML(),emptyHTML(),emptyHTML()];
+        $lables = ["Facial features","Eye color","Nose color","Misc facial"];
         $counts = [0,0,0,0,0];
         foreach ($tags as $tag) {
             $tagarray = explode("_", $tag);
@@ -343,9 +343,9 @@ function get_categories_html(string $suffix): HTMLElement
                     $tempHtmls[1]->appendChild(make_input_label($suffix, $tag, "Eyes", "checkbox"));
                     $counts[1]++;
                 }
-            } elseif (in_array("muzzle", $tagarray)) {
-                $tempHtmls[3]->appendChild(make_input_label($suffix, $tag, "Muzzle", "checkbox", "", ""));
-                $counts[3]++;
+            // } elseif (in_array("muzzle", $tagarray)) {
+            //     $tempHtmls[3]->appendChild(make_input_label($suffix, $tag, "Muzzle", "checkbox", "", ""));
+            //     $counts[3]++;
             } elseif (in_array("mouth", $tagarray)) {
                 $tempHtmls[0]->appendChild(make_input_label($suffix, $tag, "EyesMouth2", "checkbox", "", "", in_array($tag, $preselect_tags)));
                 $counts[0]++;
@@ -353,8 +353,8 @@ function get_categories_html(string $suffix): HTMLElement
                 $tempHtmls[2]->appendChild(make_input_label($suffix, $tag, "Nose", "checkbox"));
                 $counts[2]++;
             } else {
-                $tempHtmls[4]->appendChild(make_input_label($suffix, $tag, "FaceMisc", "checkbox"));
-                $counts[4]++;
+                $tempHtmls[3]->appendChild(make_input_label($suffix, $tag, "FaceMisc", "checkbox"));
+                $counts[3]++;
             }
 
 
@@ -380,8 +380,8 @@ function get_categories_html(string $suffix): HTMLElement
         arsort($tags);
         $fur_order = ['red_fur', 'white_fur', 'gray_fur','tan_fur','black_fur','brown_fur'];
         customSort($tags, $fur_order);
-        $tempHtmls = [null,emptyHTML(),emptyHTML(),emptyHTML()];
-        $lables = ["Age","Fur color","Tail tip","Coat"];
+        $tempHtmls = [null,emptyHTML(),emptyHTML()];
+        $lables = ["Age","Fur color","Coat"];
         $counts = [0,0,0,0];
         if (array_key_exists("Body:Age", $category_tags)) { //fur specific ordering
             $tempHtmls[0] = emptyHTML();
@@ -396,12 +396,12 @@ function get_categories_html(string $suffix): HTMLElement
             if (in_array("fur", $tagarray)) {
                 $tempHtmls[1]->appendChild(make_input_label($suffix, $tag, "FurColor", "checkbox"));
                 $counts[1]++;
-            } elseif (in_array("tail", $tagarray)) {
-                $tempHtmls[2]->appendChild(make_input_label($suffix, $tag, "TailTip", "checkbox"));
-                $counts[2]++;
+            // } elseif (in_array("tail", $tagarray)) {
+            //     $tempHtmls[2]->appendChild(make_input_label($suffix, $tag, "TailTip", "checkbox"));
+            //     $counts[2]++;
             } else {
-                $tempHtmls[3]->appendChild(make_input_label($suffix, $tag, "Furmisc", "checkbox"));
-                $counts[3]++;
+                $tempHtmls[2]->appendChild(make_input_label($suffix, $tag, "Furmisc", "checkbox"));
+                $counts[2]++;
             }
         }
         $i = 0;
@@ -440,7 +440,6 @@ function get_categories_html(string $suffix): HTMLElement
                 $category_upper_name = $category_tag;
                 $category_lower_name = "Meta";
             }
-
             if (!array_key_exists($category_upper_name, $input_array)) {
                 $input_array[$category_upper_name] = [];
                 $category_array[$category_upper_name] = true;
@@ -456,6 +455,7 @@ function get_categories_html(string $suffix): HTMLElement
             }
         }
         foreach (array_keys($category_array) as $category) {
+            error_log($category);
             foreach (array_keys($input_array[$category]) as $lower_category) {
                 $rows = max(4, ceil($count_array[$category][$lower_category] / (in_array($lower_category, $wide_categories) ? 4 : 2)));
                 $tworows = ceil($count_array[$category][$lower_category] / 2);
