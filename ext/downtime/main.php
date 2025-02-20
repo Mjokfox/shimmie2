@@ -14,20 +14,13 @@ class Downtime extends Extension
         return 10;
     }
 
-    public function onSetupBuilding(SetupBuildingEvent $event): void
-    {
-        $sb = $event->panel->create_new_block("Downtime");
-        $sb->add_bool_option("downtime", "Disable non-admin access: ");
-        $sb->add_longtext_option("downtime_message", "<br>");
-    }
-
     public function onPageRequest(PageRequestEvent $event): void
     {
         global $config, $page, $user;
 
-        if ($config->get_bool("downtime")) {
+        if ($config->get_bool(DowntimeConfig::DOWNTIME)) {
             if (!$user->can(Permissions::IGNORE_DOWNTIME) && !$this->is_safe_page($event)) {
-                $msg = $config->get_string("downtime_message");
+                $msg = $config->get_string(DowntimeConfig::MESSAGE);
                 $this->theme->display_message($msg);
                 if (!defined("UNITTEST")) {  // hax D:
                     header("HTTP/1.1 {$page->code} Downtime");

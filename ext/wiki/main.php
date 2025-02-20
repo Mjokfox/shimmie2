@@ -105,30 +105,6 @@ class Wiki extends Extension
     /** @var WikiTheme */
     protected Themelet $theme;
 
-    public function onInitExt(InitExtEvent $event): void
-    {
-        global $config;
-        $config->set_default_string(
-            WikiConfig::TAG_PAGE_TEMPLATE,
-            "{body}
-
-[b]Aliases: [/b][i]{aliases}[/i]
-[b]Auto tags: [/b][i]{autotags}[/i]"
-        );
-        $config->set_default_string(WikiConfig::EMPTY_TAGINFO, "none");
-        $config->set_default_bool(WikiConfig::TAG_SHORTWIKIS, false);
-        $config->set_default_bool(WikiConfig::ENABLE_REVISIONS, true);
-    }
-
-    // Add a block to the Board Config / Setup
-    public function onSetupBuilding(SetupBuildingEvent $event): void
-    {
-        $sb = $event->panel->create_new_block("Wiki");
-        $sb->add_longtext_option(WikiConfig::TAG_PAGE_TEMPLATE, "Tag page template: ");
-        $sb->add_text_option(WikiConfig::EMPTY_TAGINFO, "Empty list text: ");
-        $sb->add_bool_option(WikiConfig::TAG_SHORTWIKIS, "<br/>Show shortwiki entry when searching for a single tag: ");
-    }
-
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         global $database;
@@ -383,7 +359,7 @@ class Wiki extends Extension
             // correct the default
             global $config;
             $row["title"] = $title;
-            $row["owner_id"] = $config->get_int("anon_id", 0);
+            $row["owner_id"] = $config->get_int(UserAccountsConfig::ANON_ID, 0);
         }
 
         assert(!empty($row));

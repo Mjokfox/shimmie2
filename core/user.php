@@ -65,8 +65,13 @@ class User
     {
         global $database;
         if (is_null($this->config)) {
-            $this->config = new DatabaseConfig($database, "user_config", "user_id", "{$this->id}");
-            send_event(new InitUserConfigEvent($this, $this->config));
+            $this->config = new DatabaseConfig(
+                $database,
+                "user_config",
+                "user_id",
+                "{$this->id}",
+                defaults: UserConfigGroup::get_all_defaults()
+            );
         }
         return $this->config;
     }
@@ -204,7 +209,7 @@ class User
     public function is_anonymous(): bool
     {
         global $config;
-        return ($this->id === $config->get_int('anon_id'));
+        return ($this->id === $config->get_int(UserAccountsConfig::ANON_ID));
     }
 
     public function set_class(string $class): void
@@ -280,7 +285,7 @@ class User
         $page->add_cookie(
             "session",
             $this->get_session_id(),
-            time() + 60 * 60 * 24 * $config->get_int('login_memory'),
+            time() + 60 * 60 * 24 * $config->get_int(UserAccountsConfig::LOGIN_MEMORY),
             '/'
         );
     }

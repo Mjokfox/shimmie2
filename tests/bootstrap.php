@@ -37,15 +37,16 @@ $_tracer->begin("bootstrap");
 _load_core_files();
 $cache = loadCache(CACHE_DSN);
 $database = new Database(getenv("TEST_DSN") ?: "sqlite::memory:");
+_load_extension_files();
 create_dirs();
 create_tables($database);
-$config = new DatabaseConfig($database);
-_load_extension_files();
+$config = new DatabaseConfig($database, defaults: ConfigGroup::get_all_defaults());
 _load_theme_files();
 $page = new Page();
 _load_event_listeners();
 $config->set_string("thumb_engine", "static");
 $config->set_bool("nice_urls", true);
+$config->set_bool("approve_images", false);
 foreach (UserClass::$known_classes as $name => $value) {
     if ($name == "hellbanned" || !$value->can(Permissions::CREATE_IMAGE) || $value->can(Permissions::BULK_IMPORT)) {
         continue;
@@ -55,7 +56,7 @@ foreach (UserClass::$known_classes as $name => $value) {
 $config->set_int("upload_limit:anonymous", 100000);
 send_event(new DatabaseUpgradeEvent());
 send_event(new InitExtEvent());
-$user = User::by_id($config->get_int("anon_id", 0));
+$user = User::by_id($config->get_int(UserAccountsConfig::ANON_ID, 0));
 $userPage = new UserPage();
 $userPage->onUserCreation(new UserCreationEvent("demo", "demo", "demo", "demo@demo.com", false));
 $userPage->onUserCreation(new UserCreationEvent("test", "test", "test", "test@test.com", false));

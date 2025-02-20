@@ -9,14 +9,6 @@ class Blotter extends Extension
     /** @var BlotterTheme */
     protected Themelet $theme;
 
-    public function onInitExt(InitExtEvent $event): void
-    {
-        global $config;
-        $config->set_default_int(BlotterConfig::RECENT, 5);
-        $config->set_default_string(BlotterConfig::COLOR, "FF0000");
-        $config->set_default_string(BlotterConfig::POSITION, "subheading");
-    }
-
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         global $database;
@@ -40,14 +32,6 @@ class Blotter extends Extension
             $database->standardise_boolean("blotter", "important");
             $this->set_version(BlotterConfig::VERSION, 2);
         }
-    }
-
-    public function onSetupBuilding(SetupBuildingEvent $event): void
-    {
-        $sb = $event->panel->create_new_block("Blotter");
-        $sb->add_int_option("blotter_recent", "<br />Number of recent entries to display: ");
-        $sb->add_text_option("blotter_color", "<br />Color of important updates: (ABCDEF format) ");
-        $sb->add_choice_option("blotter_position", ["Top of page" => "subheading", "In navigation bar" => "left"], "<br>Position: ");
     }
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void

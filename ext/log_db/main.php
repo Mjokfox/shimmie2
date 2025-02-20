@@ -203,12 +203,6 @@ class LogTable extends Table
 
 class LogDatabase extends Extension
 {
-    public function onInitExt(InitExtEvent $event): void
-    {
-        global $config;
-        $config->set_default_int(LogDatabaseConfig::LEVEL, LogLevel::INFO->value);
-    }
-
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         global $database;
@@ -226,12 +220,6 @@ class LogDatabase extends Extension
             //INDEX(section)
             $this->set_version("ext_log_database_version", 1);
         }
-    }
-
-    public function onSetupBuilding(SetupBuildingEvent $event): void
-    {
-        $sb = $event->panel->create_new_block("Logging (Database)");
-        $sb->add_choice_option(LogDatabaseConfig::LEVEL, LogLevel::names_to_levels(), "Log Level: ");
     }
 
     public function onPageRequest(PageRequestEvent $event): void
@@ -275,7 +263,7 @@ class LogDatabase extends Extension
             return;
         }
 
-        if ($event->priority >= $config->get_int("log_db_priority")) {
+        if ($event->priority >= $config->get_int(LogDatabaseConfig::LEVEL)) {
             $database->execute("
 				INSERT INTO score_log(date_sent, section, priority, username, address, message)
 				VALUES(now(), :section, :priority, :username, :address, :message)

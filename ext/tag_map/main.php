@@ -9,13 +9,6 @@ class TagMap extends Extension
     /** @var TagMapTheme */
     protected Themelet $theme;
 
-    public function onInitExt(InitExtEvent $event): void
-    {
-        global $config;
-        $config->set_default_int(TagMapConfig::TAGS_MIN, 3);
-        $config->set_default_bool(TagMapConfig::PAGES, false);
-    }
-
     public function onPageRequest(PageRequestEvent $event): void
     {
         global $config, $page;
@@ -64,14 +57,6 @@ class TagMap extends Extension
             $event->add_nav_link("tags_alphabetic", new Link('tags/alphabetic'), "Alphabetic");
             $event->add_nav_link("tags_popularity", new Link('tags/popularity'), "Popularity");
         }
-    }
-
-    public function onSetupBuilding(SetupBuildingEvent $event): void
-    {
-        $sb = $event->panel->create_new_block("Tag Map");
-        $sb->add_int_option(TagMapConfig::TAGS_MIN, "Only show tags used at least ");
-        $sb->add_label(" times");
-        $sb->add_bool_option(TagMapConfig::PAGES, "<br>Paged tag lists: ");
     }
 
     /**

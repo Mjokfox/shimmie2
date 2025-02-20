@@ -90,13 +90,6 @@ class Ratings extends Extension
         $this->search_regexp = "/^rating[=|:](?:(\*|[" . $codes . "]+)|(" .
             implode("|", $search_terms) . "|".implode("|", self::UNRATED_KEYWORDS)."))$/iD";
 
-        foreach (array_keys(UserClass::$known_classes) as $key) {
-            if ($key == "base" || $key == "hellbanned") {
-                continue;
-            }
-            $config->set_default_array("ext_rating_" . $key . "_privs", array_keys(ImageRating::$known_ratings));
-        }
-
         Image::$prop_types["rating"] = ImagePropType::STRING;
     }
 
@@ -111,11 +104,6 @@ class Ratings extends Extension
         return true;
     }
 
-    public function onInitUserConfig(InitUserConfigEvent $event): void
-    {
-        $event->user_config->set_default_array(RatingsConfig::USER_DEFAULTS, self::get_user_class_privs($event->user));
-    }
-
     public function onImageDownloading(ImageDownloadingEvent $event): void
     {
         /**
@@ -124,43 +112,6 @@ class Ratings extends Extension
         if (!$this->check_permissions($event->image)) {
             throw new PermissionDenied("Access denied");
         }
-    }
-
-    public function onUserOptionsBuilding(UserOptionsBuildingEvent $event): void
-    {
-        global $user;
-
-        $levels = self::get_user_class_privs($user);
-        $options = [];
-        foreach ($levels as $level) {
-            $options[ImageRating::$known_ratings[$level]->name] = $level;
-        }
-
-        $sb = $event->panel->create_new_block("Default Rating Filter");
-        $sb->start_table();
-        $sb->add_multichoice_option(RatingsConfig::USER_DEFAULTS, $options, "Default Ratings: ", true);
-        $sb->end_table();
-        $sb->add_label("This controls the default rating search results will be filtered by, and nothing else. To override in your search results, add rating:* to your search.");
-    }
-
-    public function onSetupBuilding(SetupBuildingEvent $event): void
-    {
-        $ratings = self::get_sorted_ratings();
-
-        $options = [];
-        foreach ($ratings as $key => $rating) {
-            $options[$rating->name] = $rating->code;
-        }
-
-        $sb = $event->panel->create_new_block("Post Rating Visibility");
-        $sb->start_table();
-        foreach (array_keys(UserClass::$known_classes) as $key) {
-            if ($key == "base" || $key == "hellbanned") {
-                continue;
-            }
-            $sb->add_multichoice_option("ext_rating_" . $key . "_privs", $options, $key, true);
-        }
-        $sb->end_table();
     }
 
     public function onDisplayingImage(DisplayingImageEvent $event): void
@@ -452,8 +403,10 @@ class Ratings extends Extension
     public static function get_user_class_privs(User $user): array
     {
         global $config;
-
-        return $config->get_array("ext_rating_".$user->class->name."_privs");
+        return $config->get_array(
+            "ext_rating_".$user->class->name."_privs",
+            array_keys(ImageRating::$known_ratings)
+        );
     }
 
     /**
@@ -467,7 +420,7 @@ class Ratings extends Extension
         global $user;
 
         $available = self::get_user_class_privs($user);
-        $selected = $user->get_config()->get_array(RatingsConfig::USER_DEFAULTS);
+        $selected = $user->get_config()->get_array(RatingsUserConfig::DEFAULTS, $available);
 
         return array_intersect($available, $selected);
     }

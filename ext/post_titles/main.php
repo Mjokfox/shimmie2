@@ -18,10 +18,6 @@ class PostTitles extends Extension
 
     public function onInitExt(InitExtEvent $event): void
     {
-        global $config;
-
-        $config->set_default_bool(PostTitlesConfig::DEFAULT_TO_FILENAME, false);
-        $config->set_default_bool(PostTitlesConfig::SHOW_IN_WINDOW_TITLE, false);
         Image::$prop_types["title"] = ImagePropType::STRING;
     }
 
@@ -63,15 +59,6 @@ class PostTitles extends Extension
     public function onPostTitleSet(PostTitleSetEvent $event): void
     {
         $this->set_title($event->image->id, $event->title);
-    }
-
-    public function onSetupBuilding(SetupBuildingEvent $event): void
-    {
-        $sb = $event->panel->create_new_block("Post Titles");
-        $sb->start_table();
-        $sb->add_bool_option(PostTitlesConfig::DEFAULT_TO_FILENAME, "Default to filename", true);
-        $sb->add_bool_option(PostTitlesConfig::SHOW_IN_WINDOW_TITLE, "Show in window title", true);
-        $sb->end_table();
     }
 
     public function onUploadHeaderBuilding(UploadHeaderBuildingEvent $event): void

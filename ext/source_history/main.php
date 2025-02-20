@@ -15,12 +15,6 @@ class SourceHistory extends Extension
         return 40;
     }
 
-    public function onInitExt(InitExtEvent $event): void
-    {
-        global $config;
-        $config->set_default_int("history_limit", -1);
-    }
-
     public function onAdminBuilding(AdminBuildingEvent $event): void
     {
         $this->theme->display_admin_block();
@@ -54,19 +48,6 @@ class SourceHistory extends Extension
     {
         $event->add_button("View Source History", "source_history/{$event->image->id}", 20);
     }
-
-    /*
-    // disk space is cheaper than manually rebuilding history,
-    // so let's default to -1 and the user can go advanced if
-    // they /really/ want to
-    public function onSetupBuilding(SetupBuildingEvent $event) {
-        $sb = $event->panel->create_new_block("Source History");
-        $sb->add_label("Limit to ");
-        $sb->add_int_option("history_limit");
-        $sb->add_label(" entires per image");
-        $sb->add_label("<br>(-1 for unlimited)");
-    }
-    */
 
     public function onSourceSet(SourceSetEvent $event): void
     {
@@ -357,7 +338,7 @@ class SourceHistory extends Extension
             log_debug("source_history", "adding source history: [$old_source] -> [$new_source]");
         }
 
-        $allowed = $config->get_int("history_limit");
+        $allowed = $config->get_int("history_limit", -1);
         if ($allowed == 0) {
             return;
         }
@@ -369,7 +350,7 @@ class SourceHistory extends Extension
                 "
 				INSERT INTO source_histories(image_id, source, user_id, user_ip, date_set)
 				VALUES (:image_id, :source, :user_id, :user_ip, now())",
-                ["image_id" => $image->id, "source" => $old_source, "user_id" => $config->get_int('anon_id'), "user_ip" => '127.0.0.1']
+                ["image_id" => $image->id, "source" => $old_source, "user_id" => $config->get_int(UserAccountsConfig::ANON_ID), "user_ip" => '127.0.0.1']
             );
             $entries++;
         }

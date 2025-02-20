@@ -116,19 +116,7 @@ class Pools extends Extension
 
     public function onInitExt(InitExtEvent $event): void
     {
-        global $config;
-
         Image::$prop_types["image_order"] = ImagePropType::INT;
-
-        // Set the defaults for the pools extension
-        $config->set_default_int(PoolsConfig::MAX_IMPORT_RESULTS, 1000);
-        $config->set_default_int(PoolsConfig::IMAGES_PER_PAGE, 20);
-        $config->set_default_int(PoolsConfig::LISTS_PER_PAGE, 20);
-        $config->set_default_int(PoolsConfig::UPDATED_PER_PAGE, 20);
-        $config->set_default_bool(PoolsConfig::INFO_ON_VIEW_IMAGE, false);
-        $config->set_default_bool(PoolsConfig::ADDER_ON_VIEW_IMAGE, false);
-        $config->set_default_bool(PoolsConfig::SHOW_NAV_LINKS, false);
-        $config->set_default_bool(PoolsConfig::AUTO_INCREMENT_ORDER, false);
     }
 
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
@@ -186,20 +174,6 @@ class Pools extends Extension
             }
             $this->set_version("ext_pools_version", 5);
         }
-    }
-
-    // Add a block to the Board Config / Setup
-    public function onSetupBuilding(SetupBuildingEvent $event): void
-    {
-        $sb = $event->panel->create_new_block("Pools");
-        $sb->add_int_option(PoolsConfig::MAX_IMPORT_RESULTS, "Max results on import: ");
-        $sb->add_int_option(PoolsConfig::IMAGES_PER_PAGE, "<br>Posts per page: ");
-        $sb->add_int_option(PoolsConfig::LISTS_PER_PAGE, "<br>Index list items per page: ");
-        $sb->add_int_option(PoolsConfig::UPDATED_PER_PAGE, "<br>Updated list items per page: ");
-        $sb->add_bool_option(PoolsConfig::INFO_ON_VIEW_IMAGE, "<br>Show pool info on image: ");
-        $sb->add_bool_option(PoolsConfig::SHOW_NAV_LINKS, "<br>Show 'Prev' & 'Next' links when viewing pool images: ");
-        $sb->add_bool_option(PoolsConfig::AUTO_INCREMENT_ORDER, "<br>Autoincrement order when post is added to pool:");
-        //$sb->add_bool_option(PoolsConfig::ADDER_ON_VIEW_IMAGE, "<br>Show pool adder on image: ");
     }
 
     public function onPageNavBuilding(PageNavBuildingEvent $event): void
@@ -521,7 +495,7 @@ class Pools extends Extension
             $pool = null;
             if ($poolTag == 'lastcreated') {
                 $pool = $this->get_last_userpool($user->id);
-            } elseif (ctype_digit($poolTag)) { //If only digits, assume PoolID
+            } elseif (is_numeric($poolTag)) { //If only digits, assume PoolID
                 $pool = $this->get_single_pool((int) $poolTag);
             } else { //assume PoolTitle
                 $pool = $this->get_single_pool_from_title($poolTag);

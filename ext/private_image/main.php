@@ -14,24 +14,6 @@ class PrivateImage extends Extension
         Image::$prop_types["private"] = ImagePropType::BOOL;
     }
 
-    public function onInitUserConfig(InitUserConfigEvent $event): void
-    {
-        $event->user_config->set_default_bool(PrivateImageConfig::USER_SET_DEFAULT, false);
-        $event->user_config->set_default_bool(PrivateImageConfig::USER_VIEW_DEFAULT, true);
-    }
-
-    public function onUserOptionsBuilding(UserOptionsBuildingEvent $event): void
-    {
-        global $user;
-        $sb = $event->panel->create_new_block("Private Posts");
-        $sb->start_table();
-        if ($user->can(Permissions::SET_PRIVATE_IMAGE)) {
-            $sb->add_bool_option(PrivateImageConfig::USER_SET_DEFAULT, "Mark posts private by default", true);
-        }
-        $sb->add_bool_option(PrivateImageConfig::USER_VIEW_DEFAULT, "View private posts by default", true);
-        $sb->end_table();
-    }
-
     public function onPageRequest(PageRequestEvent $event): void
     {
         global $page, $user;
@@ -68,8 +50,8 @@ class PrivateImage extends Extension
             $set_default = array_key_exists("set_default", $event->POST);
             $view_default = array_key_exists("view_default", $event->POST);
 
-            $user->get_config()->set_bool(PrivateImageConfig::USER_SET_DEFAULT, $set_default);
-            $user->get_config()->set_bool(PrivateImageConfig::USER_VIEW_DEFAULT, $view_default);
+            $user->get_config()->set_bool(PrivateImageUserConfig::SET_DEFAULT, $set_default);
+            $user->get_config()->set_bool(PrivateImageUserConfig::VIEW_DEFAULT, $view_default);
 
             $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("user"));
@@ -90,7 +72,7 @@ class PrivateImage extends Extension
     public function onSearchTermParse(SearchTermParseEvent $event): void
     {
         global $user;
-        $show_private = $user->get_config()->get_bool(PrivateImageConfig::USER_VIEW_DEFAULT);
+        $show_private = $user->get_config()->get_bool(PrivateImageUserConfig::VIEW_DEFAULT);
 
         if (is_null($event->term) && $this->no_private_query($event->context)) {
             if ($show_private) {
@@ -191,7 +173,7 @@ class PrivateImage extends Extension
     public function onImageAddition(ImageAdditionEvent $event): void
     {
         global $user;
-        if ($user->get_config()->get_bool(PrivateImageConfig::USER_SET_DEFAULT) && $user->can(Permissions::SET_PRIVATE_IMAGE)) {
+        if ($user->get_config()->get_bool(PrivateImageUserConfig::SET_DEFAULT) && $user->can(Permissions::SET_PRIVATE_IMAGE)) {
             self::privatize_image($event->image->id);
         }
     }

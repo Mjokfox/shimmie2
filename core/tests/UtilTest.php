@@ -6,6 +6,8 @@ namespace Shimmie2;
 
 use PHPUnit\Framework\TestCase;
 
+use function MicroHTML\emptyHTML;
+
 require_once "core/util.php";
 
 class UtilTest extends TestCase
@@ -224,6 +226,77 @@ class UtilTest extends TestCase
         $this->assertEquals(
             "Anonymous",
             _get_user()->name
+        );
+    }
+
+    public function test_blockcmp(): void
+    {
+        // Equal position and heading
+        $this->assertEquals(
+            0,
+            blockcmp(
+                new Block("Alice", emptyHTML(), "main", 10),
+                new Block("Alice", emptyHTML(), "main", 10),
+            )
+        );
+
+        // Different positions
+        $this->assertEquals(
+            -1,
+            blockcmp(
+                new Block("Alice", emptyHTML(), "main", 10),
+                new Block("Alice", emptyHTML(), "main", 20),
+            )
+        );
+        $this->assertEquals(
+            1,
+            blockcmp(
+                new Block("Alice", emptyHTML(), "main", 20),
+                new Block("Alice", emptyHTML(), "main", 10),
+            )
+        );
+
+        // Different headings
+        $this->assertEquals(
+            -1,
+            blockcmp(
+                new Block("Alice", emptyHTML(), "main", 10),
+                new Block("Bob", emptyHTML(), "main", 10),
+            )
+        );
+        $this->assertEquals(
+            1,
+            blockcmp(
+                new Block("Bob", emptyHTML(), "main", 10),
+                new Block("Alice", emptyHTML(), "main", 10),
+            )
+        );
+
+        // Heading sort is case insensitive
+        $this->assertEquals(
+            0,
+            blockcmp(
+                new Block("Alice", emptyHTML(), "main", 10),
+                new Block("alice", emptyHTML(), "main", 10),
+            )
+        );
+    }
+
+    public function test_get_session_ipv4(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = "1.2.3.4";
+        $this->assertEquals(
+            "1.2.0.0",
+            get_session_ip(new TestConfig([UserAccountsConfig::SESSION_HASH_MASK => "255.255.0.0"]))
+        );
+    }
+
+    public function test_get_session_ipv6(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = "0102::1";
+        $this->assertEquals(
+            "1.2.0.0",
+            get_session_ip(new TestConfig([UserAccountsConfig::SESSION_HASH_MASK => "255.255.0.0"]))
         );
     }
 }

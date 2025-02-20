@@ -6,9 +6,13 @@ namespace Shimmie2;
 
 class IndexConfig extends ConfigGroup
 {
+    public const KEY = "index";
+    public ?string $title = "Post List";
+    public ?int $position = 20;
+
+    #[ConfigMeta("Posts per page", ConfigType::INT, default: 24)]
     public const IMAGES = "index_images";
-    public const SHOW_PAGE_SIZES = "index_show_page_sizes";
-    public const PAGE_SIZES = "index_page_sizes";
-    public const TIPS = "index_tips";
+
+    #[ConfigMeta("Post order", ConfigType::STRING, default: "id DESC", advanced: true)]
     public const ORDER = "index_order";
 }

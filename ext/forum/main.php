@@ -17,15 +17,6 @@ class Forum extends Extension
     /** @var ForumTheme */
     protected Themelet $theme;
 
-    public function onInitExt(InitExtEvent $event): void
-    {
-        global $config;
-        $config->set_default_int("forumTitleSubString", 25);
-        $config->set_default_int("forumThreadsPerPage", 15);
-        $config->set_default_int("forumPostsPerPage", 15);
-        $config->set_default_int("forumMaxCharsPerPost", 512);
-    }
-
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         global $config, $database;
@@ -66,16 +57,6 @@ class Forum extends Extension
             $database->standardise_boolean("forum_threads", "sticky");
             $this->set_version("forum_version", 3);
         }
-    }
-
-    public function onSetupBuilding(SetupBuildingEvent $event): void
-    {
-        $sb = $event->panel->create_new_block("Forum");
-        $sb->add_int_option("forumTitleSubString", "Title max long: ");
-        $sb->add_int_option("forumThreadsPerPage", "<br>Threads per page: ");
-        $sb->add_int_option("forumPostsPerPage", "<br>Posts per page: ");
-
-        $sb->add_int_option("forumMaxCharsPerPost", "<br>Max chars per post: ");
     }
 
     public function onUserPageBuilding(UserPageBuildingEvent $event): void
@@ -188,7 +169,7 @@ class Forum extends Extension
             WHERE thread_id = :thread_id
         ", ['thread_id' => $threadID]);
 
-        return (int) ceil($result["count"] / $config->get_int("forumPostsPerPage"));
+        return (int) ceil($result["count"] / $config->get_int(ForumConfig::POSTS_PER_PAGE));
     }
 
     /**
@@ -256,7 +237,7 @@ class Forum extends Extension
     private function show_last_threads(Page $page, int $pageNumber, bool $showAdminOptions = false): void
     {
         global $config, $database;
-        $threadsPerPage = $config->get_int('forumThreadsPerPage', 15);
+        $threadsPerPage = $config->get_int(ForumConfig::THREADS_PER_PAGE, 15);
         $totalPages = (int) ceil($database->get_one("SELECT COUNT(*) FROM forum_threads") / $threadsPerPage);
 
         $threads = $database->get_all(
@@ -277,7 +258,7 @@ class Forum extends Extension
     private function show_posts(int $threadID, int $pageNumber, bool $showAdminOptions = false): void
     {
         global $config, $database;
-        $postsPerPage = $config->get_int('forumPostsPerPage', 15);
+        $postsPerPage = $config->get_int(ForumConfig::POSTS_PER_PAGE, 15);
         $totalPages = (int) ceil($database->get_one("SELECT COUNT(*) FROM forum_posts WHERE thread_id = :id", ['id' => $threadID]) / $postsPerPage);
         $threadTitle = $this->get_thread_title($threadID);
 
@@ -322,7 +303,7 @@ class Forum extends Extension
         $userID = $user->id;
         $message = $_POST["message"];
 
-        $max_characters = $config->get_int('forumMaxCharsPerPost');
+        $max_characters = $config->get_int(ForumConfig::MAX_CHARS_PER_POST);
         $message = substr($message, 0, $max_characters);
 
         global $database;

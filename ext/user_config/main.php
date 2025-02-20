@@ -4,57 +4,16 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-// The user object doesn't exist until after database setup operations and the first wave of InitExtEvents,
-// so we can't reliably access this data until then. This event is triggered by the system after all of that is done.
-class InitUserConfigEvent extends Event
-{
-    public User $user;
-    public Config $user_config;
-
-    public function __construct(User $user, Config $user_config)
-    {
-        parent::__construct();
-        $this->user = $user;
-        $this->user_config = $user_config;
-    }
-}
-
-
-class UserOptionsBuildingEvent extends Event
-{
-    protected SetupTheme $theme;
-    public SetupPanel $panel;
-    public User $user;
-
-
-    public function __construct(User $user, SetupPanel $panel)
-    {
-        parent::__construct();
-        $this->user = $user;
-        $this->panel = $panel;
-    }
-}
-
 class UserConfig extends Extension
 {
     /** @var UserConfigTheme */
     protected Themelet $theme;
 
-    public const VERSION = "ext_user_config_version";
-    public const ENABLE_API_KEYS = "ext_user_config_enable_api_keys";
-    public const API_KEY = "api_key";
-
-    public function onInitExt(InitExtEvent $event): void
-    {
-        global $config;
-        $config->set_default_bool(self::ENABLE_API_KEYS, false);
-    }
-
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         global $database;
 
-        if ($this->get_version(self::VERSION) < 1) {
+        if ($this->get_version(UserConfigConfig::VERSION) < 1) {
             $database->create_table("user_config", "
                 user_id INTEGER NOT NULL,
                 name VARCHAR(128) NOT NULL,
@@ -64,7 +23,7 @@ class UserConfig extends Extension
 		    ");
             $database->execute("CREATE INDEX user_config_user_id_idx ON user_config(user_id)");
 
-            $this->set_version(self::VERSION, 1);
+            $this->set_version(UserConfigConfig::VERSION, 1);
         }
     }
 
@@ -88,11 +47,13 @@ class UserConfig extends Extension
     {
         global $user, $database, $config, $page;
 
-        if ($config->get_bool(self::ENABLE_API_KEYS)) {
+        // if API keys are enabled, then _any_ anonymous page request can
+        // be an authed page request if the api_key is set
+        if ($config->get_bool(UserAccountsConfig::ENABLE_API_KEYS)) {
             if ($event->get_GET("api_key") && $user->is_anonymous()) {
                 $user_id = $database->get_one(
                     "SELECT user_id FROM user_config WHERE value=:value AND name=:name",
-                    ["value" => $event->get_GET("api_key"), "name" => self::API_KEY]
+                    ["value" => $event->get_GET("api_key"), "name" => UserConfigUserConfig::API_KEY]
                 );
 
                 if (!empty($user_id)) {
@@ -102,7 +63,7 @@ class UserConfig extends Extension
             }
 
             if ($event->page_matches("user_admin/reset_api_key", method: "POST")) {
-                $user->get_config()->set_string(self::API_KEY, "");
+                $user->get_config()->set_string(UserConfigUserConfig::API_KEY, "");
 
                 $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(make_link("user"));
@@ -110,8 +71,18 @@ class UserConfig extends Extension
         }
 
         if ($event->page_matches("user_config", method: "GET", permission: Permissions::CHANGE_USER_SETTING)) {
-            $uobe = send_event(new UserOptionsBuildingEvent($user, new SetupPanel($user->get_config())));
-            $this->theme->display_user_config_page($page, $uobe->user, $uobe->panel);
+            $blocks = [];
+            foreach (get_subclasses_of(UserConfigGroup::class) as $class) {
+                $group = new $class();
+                assert(is_a($group, UserConfigGroup::class));
+                if (Extension::is_enabled($group::KEY)) {
+                    $block = $this->theme->config_group_to_block($user->get_config(), $group);
+                    if ($block) {
+                        $blocks[] = $block;
+                    }
+                }
+            }
+            $this->theme->display_user_config_page($page, $blocks, $user);
         }
         if ($event->page_matches("user_config/save", method: "POST", permission: Permissions::CHANGE_USER_SETTING)) {
             $input = validate_input([
@@ -134,11 +105,11 @@ class UserConfig extends Extension
     {
         global $config;
 
-        if ($config->get_bool(self::ENABLE_API_KEYS)) {
-            $key = $event->user_config->get_string(self::API_KEY, "");
+        if ($config->get_bool(UserAccountsConfig::ENABLE_API_KEYS)) {
+            $key = $event->user_config->get_string(UserConfigUserConfig::API_KEY, "");
             if (empty($key)) {
                 $key = generate_key();
-                $event->user_config->set_string(self::API_KEY, $key);
+                $event->user_config->set_string(UserConfigUserConfig::API_KEY, $key);
             }
             $event->add_part($this->theme->get_user_operations($key));
         }

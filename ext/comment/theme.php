@@ -204,7 +204,7 @@ class CommentListTheme extends Themelet
     {
         global $config, $user;
 
-        if ($comment->owner_id == $config->get_int("anon_id")) {
+        if ($comment->owner_id == $config->get_int(UserAccountsConfig::ANON_ID)) {
             $anoncode = "";
             $anoncode2 = "";
             if ($this->show_anon_id) {
@@ -234,7 +234,7 @@ class CommentListTheme extends Themelet
                 $userlink,
                 ": ",
                 truncate($tfe->stripped, 50),
-                A(["href" => make_link("post/view/{$comment->image_id}", null, "c{$comment->comment_id}")], ">>>")
+                A(["href" => make_link("post/view/{$comment->image_id}", null, "c{$comment->comment_id}")], " >>>")
             );
         } else {
             /** @var BuildAvatarEvent $bae */
@@ -279,7 +279,7 @@ class CommentListTheme extends Themelet
         global $config;
 
         $hash = CommentList::get_hash();
-        $h_captcha = $config->get_bool("comment_captcha") ? captcha_get_html() : "";
+        $h_captcha = $config->get_bool(CommentConfig::CAPTCHA) ? captcha_get_html() : "";
 
         return DIV(
             ["class" => "comment comment_add"],

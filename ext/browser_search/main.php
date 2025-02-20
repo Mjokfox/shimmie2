@@ -8,12 +8,6 @@ use function MicroHTML\LINK;
 
 class BrowserSearch extends Extension
 {
-    public function onInitExt(InitExtEvent $event): void
-    {
-        global $config;
-        $config->set_default_string("search_suggestions_results_order", 'a');
-    }
-
     public function onPageRequest(PageRequestEvent $event): void
     {
         global $config, $database, $page;
@@ -56,7 +50,7 @@ class BrowserSearch extends Extension
             $page->set_mime(MimeType::XML);
             $page->set_data($xml);
         } elseif ($event->page_matches("browser_search/{tag_search}")) {
-            $suggestions = $config->get_string("search_suggestions_results_order");
+            $suggestions = $config->get_string(BrowserSearchConfig::RESULTS_ORDER);
             if ($suggestions == "n") {
                 return;
             }
@@ -80,16 +74,5 @@ class BrowserSearch extends Extension
             $page->set_mode(PageMode::DATA);
             $page->set_data(\Safe\json_encode([$tag_search, $tags, [], []]));
         }
-    }
-
-    public function onSetupBuilding(SetupBuildingEvent $event): void
-    {
-        $sort_by = [];
-        $sort_by['Alphabetical'] = 'a';
-        $sort_by['Tag Count'] = 't';
-        $sort_by['Disabled'] = 'n';
-
-        $sb = $event->panel->create_new_block("Browser Search");
-        $sb->add_choice_option("search_suggestions_results_order", $sort_by, "Sort the suggestions by:");
     }
 }

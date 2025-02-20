@@ -8,20 +8,6 @@ class ArchiveFileHandler extends DataHandlerExtension
 {
     protected array $SUPPORTED_MIME = [MimeType::ZIP];
 
-    public function onInitExt(InitExtEvent $event): void
-    {
-        global $config;
-        $config->set_default_string('archive_extract_command', 'unzip -d "%d" "%f"');
-    }
-
-    public function onSetupBuilding(SetupBuildingEvent $event): void
-    {
-        $sb = $event->panel->create_new_block("Archive Handler");
-        $sb->add_text_option("archive_tmp_dir", "Temporary folder: ");
-        $sb->add_text_option("archive_extract_command", "<br>Extraction command: ");
-        $sb->add_label("<br>%f for archive, %d for temporary directory");
-    }
-
     public function onDataUpload(DataUploadEvent $event): void
     {
         if ($this->supported_mime($event->mime)) {
@@ -29,7 +15,7 @@ class ArchiveFileHandler extends DataHandlerExtension
             $tmpdir = shm_tempnam("archive");
             unlink($tmpdir);
             mkdir($tmpdir, 0755, true);
-            $cmd = $config->get_string('archive_extract_command');
+            $cmd = $config->get_string(ArchiveFileHandlerConfig::EXTRACT_COMMAND);
             $cmd = str_replace('%f', $event->tmpname, $cmd);
             $cmd = str_replace('%d', $tmpdir, $cmd);
             assert(is_string($cmd));

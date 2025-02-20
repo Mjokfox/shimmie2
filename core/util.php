@@ -40,7 +40,7 @@ function get_theme_class(string $class): ?object
 function contact_link(?string $contact = null): ?string
 {
     global $config;
-    $text = $contact ?? $config->get_string('contact_link');
+    $text = $contact ?? $config->get_string(SetupConfig::CONTACT_LINK);
     if (is_null($text)) {
         return null;
     }
@@ -82,6 +82,9 @@ function is_https_enabled(): bool
 function blockcmp(Block $a, Block $b): int
 {
     if ($a->position == $b->position) {
+        if ($a->header && $b->header) {
+            return strcasecmp($a->header, $b->header);
+        }
         return 0;
     } else {
         return ($a->position > $b->position) ? 1 : -1;
@@ -124,6 +127,42 @@ function get_memory_limit(): int
     // Whether we managed to raise the limit, or we're stuck with
     // what we've got, return the current setting
     return $php_limit;
+}
+
+/**
+ * Get the upload limits for Shimmie
+ *
+ * files / filesize / post are PHP system limits
+ * shm_files / shm_filesize / shm_post are Shimmie limits
+ *
+ * @return array{"files": int|null, "filesize": int|null, "post": int|null, "shm_files": int, "shm_filesize": int, "shm_post": int}
+ */
+function get_upload_limits(): array
+{
+    global $config;
+
+    $ini_files = ini_get('max_file_uploads');
+    $ini_filesize = ini_get('upload_max_filesize');
+    $ini_post = ini_get('post_max_size');
+
+    $sys_files = empty($ini_files) ? null : parse_shorthand_int($ini_files);
+    $sys_filesize = empty($ini_filesize) ? null : parse_shorthand_int($ini_filesize);
+    $sys_post = empty($ini_post) ? null : parse_shorthand_int($ini_post);
+
+    $conf_files = $config->get_int(UploadConfig::COUNT);
+    $conf_filesize = $config->get_int(UploadConfig::SIZE);
+    $conf_post = ($conf_files ?? 0) * ($conf_filesize ?? 0);
+
+    $limits = [
+        'files' => $sys_files,
+        'filesize' => $sys_filesize,
+        'post' => $sys_post,
+        'shm_files' => (int)min($conf_files ?? PHP_INT_MAX, $sys_files ?? PHP_INT_MAX),
+        'shm_filesize' => (int)min($conf_filesize ?? PHP_INT_MAX, $sys_filesize ?? PHP_INT_MAX),
+        'shm_post' => (int)min($conf_post, $sys_post ?? PHP_INT_MAX),
+    ];
+
+    return $limits;
 }
 
 /**
@@ -223,9 +262,15 @@ function get_real_ip(): string
  */
 function get_session_ip(Config $config): string
 {
-    $mask = $config->get_string("session_hash_mask", "255.255.0.0");
+    $mask = $config->get_string(UserAccountsConfig::SESSION_HASH_MASK);
+    // even if the database says "null", the default setting should take effect
+    assert($mask !== null);
     $addr = get_real_ip();
-    $addr = \Safe\inet_ntop(\Safe\inet_pton($addr) & \Safe\inet_pton($mask));
+    try {
+        $addr = \Safe\inet_ntop(\Safe\inet_pton($addr) & \Safe\inet_pton($mask));
+    } catch (\Safe\Exceptions\NetworkException $e) {
+        throw new ServerError("Failed to mask IP address ($addr/$mask)");
+    }
     return $addr;
 }
 
@@ -551,10 +596,9 @@ function get_debug_info_arr(): array
 {
     global $cache, $config, $_shm_event_count, $database, $_shm_load_start;
 
-    if ($config->get_string("commit_hash", "unknown") == "unknown") {
-        $commit = "";
-    } else {
-        $commit = " (".$config->get_string("commit_hash").")";
+    $version = VERSION;
+    if (defined("BUILD_HASH")) {
+        $version .= "-" . substr(constant("BUILD_HASH"), 0, 7);
     }
 
     return [
@@ -567,7 +611,7 @@ function get_debug_info_arr(): array
         "event_count" => $_shm_event_count,
         "cache_hits" => $cache->get("__etc_cache_hits"),
         "cache_misses" => $cache->get("__etc_cache_misses"),
-        "version" => VERSION . $commit,
+        "version" => $version,
     ];
 }
 
@@ -716,7 +760,7 @@ function _get_user(): User
         $my_user = User::by_session($page->get_cookie("user"), $page->get_cookie("session"));
     }
     if (is_null($my_user)) {
-        $my_user = User::by_id($config->get_int("anon_id", 0));
+        $my_user = User::by_id($config->get_int(UserAccountsConfig::ANON_ID, 0));
     }
 
     return $my_user;

@@ -9,18 +9,6 @@ class TagList extends Extension
     /** @var TagListTheme */
     protected Themelet $theme;
 
-    public function onInitExt(InitExtEvent $event): void
-    {
-        global $config;
-        $config->set_default_int(TagListConfig::LENGTH, 15);
-        $config->set_default_int(TagListConfig::POPULAR_TAG_LIST_LENGTH, 15);
-        $config->set_default_string(TagListConfig::INFO_LINK, 'https://en.wikipedia.org/wiki/$tag');
-        $config->set_default_string(TagListConfig::OMIT_TAGS, 'tagme*');
-        $config->set_default_string(TagListConfig::IMAGE_TYPE, TagListConfig::TYPE_RELATED);
-        $config->set_default_string(TagListConfig::RELATED_SORT, TagListConfig::SORT_ALPHABETICAL);
-        $config->set_default_string(TagListConfig::POPULAR_SORT, TagListConfig::SORT_TAG_COUNT);
-    }
-
     public function onPostListBuilding(PostListBuildingEvent $event): void
     {
         global $config, $page;
@@ -45,38 +33,6 @@ class TagList extends Extension
                 $this->add_related_block($page, $event->image);
             }
         }
-    }
-
-    public function onSetupBuilding(SetupBuildingEvent $event): void
-    {
-        $sb = $event->panel->create_new_block("Popular / Related Tag List");
-        $sb->add_int_option(TagListConfig::LENGTH, "Show top ");
-        $sb->add_label(" related tags");
-        $sb->add_int_option(TagListConfig::POPULAR_TAG_LIST_LENGTH, "<br>Show top ");
-        $sb->add_label(" popular tags");
-        $sb->start_table();
-        $sb->add_text_option(TagListConfig::INFO_LINK, "Tag info link", true);
-        $sb->add_text_option(TagListConfig::OMIT_TAGS, "Omit tags", true);
-        $sb->add_choice_option(
-            TagListConfig::IMAGE_TYPE,
-            TagListConfig::TYPE_CHOICES,
-            "Post tag list",
-            true
-        );
-        $sb->add_choice_option(
-            TagListConfig::RELATED_SORT,
-            TagListConfig::SORT_CHOICES,
-            "Sort related list by",
-            true
-        );
-        $sb->add_choice_option(
-            TagListConfig::POPULAR_SORT,
-            TagListConfig::SORT_CHOICES,
-            "Sort popular list by",
-            true
-        );
-        $sb->add_bool_option("tag_list_numbers", "Show tag counts", true);
-        $sb->end_table();
     }
 
     /**

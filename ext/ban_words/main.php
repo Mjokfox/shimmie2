@@ -6,39 +6,6 @@ namespace Shimmie2;
 
 class BanWords extends Extension
 {
-    public function onInitExt(InitExtEvent $event): void
-    {
-        global $config;
-        $config->set_default_string('banned_words', "
-a href=
-anal
-blowjob
-/buy-.*-online/
-casino
-cialis
-doors.txt
-fuck
-hot video
-kaboodle.com
-lesbian
-nexium
-penis
-/pokerst.*/
-pornhub
-porno
-purchase
-sex
-sex tape
-spinnenwerk.de
-thx for all
-TRAMADOL
-ultram
-very nice site
-viagra
-xanax
-");
-    }
-
     public function onCommentPosting(CommentPostingEvent $event): void
     {
         if (!$event->user->can(Permissions::BYPASS_COMMENT_CHECKS)) {
@@ -63,32 +30,12 @@ xanax
         $this->test_text(Tag::implode($event->new_tags), new UserError("Tags contain banned terms"));
     }
 
-    public function onSetupBuilding(SetupBuildingEvent $event): void
-    {
-        $sb = $event->panel->create_new_block("Banned Phrases");
-        $sb->add_label("One per line, lines that start with slashes are treated as regex<br/>");
-        $sb->add_longtext_option("banned_words");
-        $failed = [];
-        foreach ($this->get_words() as $word) {
-            if ($word[0] == '/') {
-                try {
-                    \Safe\preg_match($word, "");
-                } catch (\Exception $e) {
-                    $failed[] = $word;
-                }
-            }
-        }
-        if ($failed) {
-            $sb->add_label("Failed regexes: ".join(", ", $failed));
-        }
-    }
-
     /**
      * Throws if the comment contains banned words.
      */
     private function test_text(string $comment, SCoreException $ex): void
     {
-        $comment = strtolower($comment);
+        $comment = mb_strtolower($comment);
 
         foreach ($this->get_words() as $word) {
             if ($word[0] == '/') {
@@ -108,14 +55,14 @@ xanax
     /**
      * @return string[]
      */
-    private function get_words(): array
+    public static function get_words(): array
     {
         global $config;
         $words = [];
 
-        $banned = $config->get_string("banned_words");
+        $banned = $config->get_string(BanWordsConfig::BANNED_WORDS);
         foreach (explode("\n", $banned) as $word) {
-            $word = trim(strtolower($word));
+            $word = trim(mb_strtolower($word));
             if (strlen($word) == 0) {
                 // line is blank
                 continue;

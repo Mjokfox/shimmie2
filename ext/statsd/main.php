@@ -24,12 +24,6 @@ class StatsDInterface extends Extension
         StatsDInterface::$stats["shimmie.$type.cache-misses"] = $cache->get("__etc_cache_misses", -1)."|c";
     }
 
-    public function onInitExt(InitExtEvent $event): void
-    {
-        global $config;
-        $config->set_default_string("statsd_host", "telegraf:8125");
-    }
-
     public function onPageRequest(PageRequestEvent $event): void
     {
         global $config;
@@ -52,7 +46,7 @@ class StatsDInterface extends Extension
             $this->_stats("other");
         }
 
-        $host = $config->get_string("statsd_host", null);
+        $host = $config->get_string(StatsDInterfaceConfig::HOST, null);
         if (!is_null($host)) {
             $this->send($host, StatsDInterface::$stats, 1.0);
         }

@@ -132,19 +132,6 @@ class UserPage extends Extension
     /** @var UserPageTheme $theme */
     public Themelet $theme;
 
-    public function onInitExt(InitExtEvent $event): void
-    {
-        global $config;
-        $config->set_default_bool(UserAccountsConfig::SIGNUP_ENABLED, true);
-        $config->set_default_string(
-            UserAccountsConfig::SIGNUP_DISABLED_MESSAGE,
-            "The board admin has disabled the ability to sign up for new accounts"
-        );
-        $config->set_default_int(UserAccountsConfig::LOGIN_MEMORY, 30);
-        $config->set_default_bool(UserAccountsConfig::LOGIN_TAC_BBCODE, true);
-        $config->set_default_bool(UserAccountsConfig::USER_EMAIL_REQUIRED, false);
-    }
-
     public function onUserLogin(UserLoginEvent $event): void
     {
         global $user;
@@ -400,7 +387,7 @@ class UserPage extends Extension
                 $user->can(Permissions::VIEW_IP) ||  # user can view all IPS
                 ($user->id == $event->display_user->id)  # or user is viewing themselves
             ) &&
-            ($event->display_user->id != $config->get_int('anon_id')) # don't show anon's IP list, it is le huge
+            ($event->display_user->id != $config->get_int(UserAccountsConfig::ANON_ID)) # don't show anon's IP list, it is le huge
         ) {
             $this->theme->display_ip_list(
                 $page,
@@ -409,28 +396,6 @@ class UserPage extends Extension
                 $this->count_log_ips($event->display_user)
             );
         }
-    }
-
-    public function onSetupBuilding(SetupBuildingEvent $event): void
-    {
-        global $config;
-
-        $sb = $event->panel->create_new_block("User");
-        $sb->start_table();
-        $sb->add_bool_option(UserConfig::ENABLE_API_KEYS, "Enable user API keys", true);
-        $sb->add_bool_option(UserAccountsConfig::SIGNUP_ENABLED, "Allow new signups", true);
-        $sb->add_bool_option(UserAccountsConfig::USER_EMAIL_REQUIRED, "Require email address", true);
-        $sb->add_longtext_option("login_tac", "Terms &amp; Conditions", true);
-        $sb->add_choice_option(
-            "user_loginshowprofile",
-            [
-                "Return to previous page" => 0, // 0 is default
-                "Send to user profile" => 1,
-            ],
-            "On log in/out",
-            true
-        );
-        $sb->end_table();
     }
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
@@ -450,12 +415,12 @@ class UserPage extends Extension
     public function onUserBlockBuilding(UserBlockBuildingEvent $event): void
     {
         global $user;
-        $event->add_link("My Profile", make_link("user"));
+        $event->add_link("My Profile", make_link("user"), 0);
         if ($user->can(Permissions::EDIT_USER_PASSWORD)) {
-            $event->add_link("User List", make_link("user_admin/list"), 97);
+            $event->add_link("User List", make_link("user_admin/list"), 87);
         }
         if ($user->can(Permissions::EDIT_USER_CLASS)) {
-            $event->add_link("User Classes", make_link("user_admin/classes"), 98);
+            $event->add_link("User Classes", make_link("user_admin/classes"), 88);
         }
         $event->add_link("Log Out", make_link("user_admin/logout"), 99);
     }
@@ -596,8 +561,7 @@ class UserPage extends Extension
         $duser->set_login_cookie();
         $page->set_mode(PageMode::REDIRECT);
 
-        // Try returning to previous page
-        if ($config->get_int("user_loginshowprofile", 0)) {
+        if ($config->get_string(UserAccountsConfig::LOGIN_REDIRECT, "previous")) {
             $page->set_redirect(referer_or(make_link(), ["user/"]));
         } else {
             $page->set_redirect(make_link("user"));
@@ -615,13 +579,7 @@ class UserPage extends Extension
         }
         log_info("user", "Logged out");
         $page->set_mode(PageMode::REDIRECT);
-
-        // Try forwarding to same page on logout unless user comes from registration page
-        if ($config->get_int("user_loginshowprofile", 0)) {
-            $page->set_redirect(referer_or(make_link(), ["post/"]));
-        } else {
-            $page->set_redirect(make_link());
-        }
+        $page->set_redirect(make_link());
     }
 
     private function page_recover(string $username): void
@@ -747,7 +705,7 @@ class UserPage extends Extension
         } else {
             $database->execute(
                 "UPDATE comments SET owner_id = :new_owner_id WHERE owner_id = :old_owner_id",
-                ["new_owner_id" => $config->get_int('anon_id'), "old_owner_id" => $uid]
+                ["new_owner_id" => $config->get_int(UserAccountsConfig::ANON_ID), "old_owner_id" => $uid]
             );
         }
 

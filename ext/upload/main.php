@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+use function MicroHTML\emptyHTML;
+use function MicroHTML\I;
+
 /**
  * Occurs when some data is being uploaded.
  */
@@ -109,16 +112,8 @@ class Upload extends Extension
     public function onInitExt(InitExtEvent $event): void
     {
         global $config;
-        $config->set_default_int(UploadConfig::COUNT, 3);
-        $config->set_default_int(UploadConfig::SIZE, parse_shorthand_int('1MB'));
-        $config->set_default_int(UploadConfig::MIN_FREE_SPACE, parse_shorthand_int('100MB'));
-        $config->set_default_bool(UploadConfig::SPLITVIEW, false);
-        $config->set_default_bool(UploadConfig::PREVIEW, true);
-        $config->set_default_bool(UploadConfig::TLSOURCE, true);
-        $config->set_default_string("upload_order", "");
 
         $this->is_full = false;
-
         $min_free_space = $config->get_int(UploadConfig::MIN_FREE_SPACE);
         if ($min_free_space > 0) {
             // SHIT: fucking PHP "security" measures -_-;;;
@@ -130,53 +125,6 @@ class Upload extends Extension
                 }
             }
         }
-
-        $config->set_default_bool(UploadConfig::MIME_CHECK_ENABLED, false);
-        $config->set_default_array(
-            UploadConfig::ALLOWED_MIME_STRINGS,
-            DataHandlerExtension::get_all_supported_mimes()
-        );
-    }
-
-    public function onSetupBuilding(SetupBuildingEvent $event): void
-    {
-        $tes = [];
-        $tes["Disabled"] = "none";
-        if (function_exists("curl_init")) {
-            $tes["cURL"] = "curl";
-        }
-        $tes["fopen"] = "fopen";
-        $tes["WGet"] = "wget";
-
-        $sb = $event->panel->create_new_block("Upload", 10);
-        // Output the limits from PHP so the user has an idea of what they can set.
-        $sb->add_int_option(UploadConfig::COUNT, "Max uploads: ");
-        $sb->add_label("<i>PHP Limit = " . ini_get('max_file_uploads') . "</i>");
-        $sb->add_shorthand_int_option(UploadConfig::SIZE, "<br/>Max size per file: ");
-        $sb->add_label("<i>PHP Limit = " . ini_get('upload_max_filesize') . "</i>");
-        $sb->add_bool_option(UploadConfig::SPLITVIEW, "<br/>Upload page split input: ");
-        $sb->add_bool_option(UploadConfig::PREVIEW, "<br/>Show image preview: ");
-        $sb->add_choice_option(UploadConfig::TRANSLOAD_ENGINE, $tes, "<br/>Transload: ");
-        $sb->add_bool_option(UploadConfig::TLSOURCE, "<br/>Use transloaded URL as source if none is provided: ");
-
-        $sb->start_table();
-        $sb->add_bool_option(UploadConfig::MIME_CHECK_ENABLED, "Enable upload MIME checks", true);
-        $sb->add_multichoice_option(UploadConfig::ALLOWED_MIME_STRINGS, $this->get_mime_options(), "Allowed MIME uploads", true);
-        $sb->end_table();
-        $sb->add_label("Category order, comma separated, the same names you see on the upload page:<br/>");
-        $sb->add_longtext_option("upload_order");
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function get_mime_options(): array
-    {
-        $output = [];
-        foreach (DataHandlerExtension::get_all_supported_mimes() as $mime) {
-            $output[MimeMap::get_name_for_mime($mime)] = $mime;
-        }
-        return $output;
     }
 
     public function onPageNavBuilding(PageNavBuildingEvent $event): void

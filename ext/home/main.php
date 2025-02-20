@@ -26,24 +26,6 @@ class Home extends Extension
         }
     }
 
-    public function onSetupBuilding(SetupBuildingEvent $event): void
-    {
-        $counters = [];
-        $counters["None"] = "none";
-        $counters["Text-only"] = "text-only";
-        foreach (\Safe\glob("ext/home/counters/*") as $counter_dirname) {
-            $name = str_replace("ext/home/counters/", "", $counter_dirname);
-            $counters[ucfirst($name)] = $name;
-        }
-
-        $sb = $event->panel->create_new_block("Home Page");
-        $sb->add_text_option("home_title", "Home title ");
-        $sb->add_longtext_option("home_links", '<br>Page Links (Use BBCode, leave blank for defaults)');
-        $sb->add_longtext_option("home_text", "<br>Page Text:<br>");
-        $sb->add_choice_option("home_counter", $counters, "<br>Counter: ");
-    }
-
-
     private function get_body(): HTMLElement
     {
         // returns just the contents of the body
@@ -55,7 +37,7 @@ class Home extends Extension
         if (is_null($contact_link)) {
             $contact_link = "";
         }
-        $counter_dir = $config->get_string('home_counter', 'default');
+        $counter_dir = $config->get_string(HomeConfig::COUNTER, 'default');
 
         $total = Search::count_images();
         $num_comma = number_format($total);
@@ -72,8 +54,8 @@ class Home extends Extension
         }
 
         // get the homelinks and process them
-        if (strlen($config->get_string('home_links', '')) > 0) {
-            $main_links = $config->get_string('home_links');
+        if (strlen($config->get_string(HomeConfig::LINKS, '')) > 0) {
+            $main_links = $config->get_string(HomeConfig::LINKS);
         } else {
             $main_links = '[Posts](site://post/list)[Comments](site://comment/list)[Tags](site://tags)';
             if (Extension::is_enabled(PoolsInfo::KEY)) {
@@ -85,7 +67,7 @@ class Home extends Extension
             $main_links .= '[Documentation](site://ext_doc)';
         }
         $main_links = format_text($main_links);
-        $main_text = $config->get_string('home_text', '');
+        $main_text = $config->get_string(HomeConfig::TEXT, '');
 
         return $this->theme->build_body($sitename, $main_links, $main_text, $contact_link, $num_comma, $counter_text);
     }

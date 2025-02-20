@@ -4,20 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class BulkDownloadConfig
-{
-    public const SIZE_LIMIT = "bulk_download_size_limit";
-}
-
 class BulkDownload extends Extension
 {
     private const DOWNLOAD_ACTION_NAME = "bulk_download";
-
-    public function onInitExt(InitExtEvent $event): void
-    {
-        global $config;
-        $config->set_default_int(BulkDownloadConfig::SIZE_LIMIT, parse_shorthand_int('100MB'));
-    }
 
     public function onBulkActionBlockBuilding(BulkActionBlockBuildingEvent $event): void
     {
@@ -26,15 +15,6 @@ class BulkDownload extends Extension
         if ($user->can(Permissions::BULK_DOWNLOAD)) {
             $event->add_action(BulkDownload::DOWNLOAD_ACTION_NAME, "Download ZIP");
         }
-    }
-
-    public function onSetupBuilding(SetupBuildingEvent $event): void
-    {
-        $sb = $event->panel->create_new_block("Bulk Download");
-
-        $sb->start_table();
-        $sb->add_shorthand_int_option(BulkDownloadConfig::SIZE_LIMIT, "Size Limit", true);
-        $sb->end_table();
     }
 
     public function onBulkAction(BulkActionEvent $event): void
