@@ -12,15 +12,7 @@ class ReverseImage extends Extension
 {
     /** @var ReverseImageTheme */
     protected Themelet $theme;
-    public function onInitExt(InitExtEvent $event): void
-    {
-        global $config;
-        $config->set_default_int(ReverseImageConfig::CONF_MAX_LIMIT, 10);
-        $config->set_default_int(ReverseImageConfig::CONF_DEFAULT_AMOUNT, 5);
-        $config->set_default_int(ReverseImageConfig::SIMILARITY_DUPLICATE, 3);
-        $config->set_default_string(ReverseImageConfig::CONF_URL, "127.0.0.1:10017");
-        $config->set_default_bool(ReverseImageConfig::SEARCH_ENABLE, true);
-    }
+
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         global $database;
@@ -39,14 +31,6 @@ class ReverseImage extends Extension
             log_info("Reverse_image", "extension installed");
         }
     }
-    public function onInitUserConfig(InitUserConfigEvent $event): void
-    {
-
-        $event->user_config->set_default_bool(ReverseImageConfig::USER_ENABLE_AUTO, true);
-        $event->user_config->set_default_bool(ReverseImageConfig::USER_ENABLE_AUTO_SELECT, false);
-        $event->user_config->set_default_int(ReverseImageConfig::USER_TAG_THRESHOLD, 50);
-        $event->user_config->set_default_bool(ReverseImageConfig::USER_SEARCH_ENABLE, true);
-    }
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
@@ -59,11 +43,11 @@ class ReverseImage extends Extension
         global $user, $page, $config, $user;
         if ($event->page_matches("post/list", paged: true)
             || $event->page_matches("post/list/{search}", paged: true)) {
-            if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE)) {
+            if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
                 $this->theme->list_search($page);
             }
         } elseif ($event->page_matches("post/view/{id}")) {
-            if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE)) {
+            if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
                 $this->theme->view_search($page, $event->get_GET('search') ?? "");
             }
         } elseif ($event->page_matches("post/search", paged: true)
@@ -71,7 +55,7 @@ class ReverseImage extends Extension
         ) {
             global $database;
             $get_search = $event->get_GET('search');
-            if ($get_search || !($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE))) {
+            if ($get_search || !($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageUserConfig::USER_SEARCH_ENABLE))) {
                 $page->set_mode(PageMode::REDIRECT);
                 if (empty($get_search)) {
                     $page->set_redirect(make_link("/post/list"));
@@ -155,9 +139,9 @@ class ReverseImage extends Extension
             global $config, $user;
             $user_config = $user->get_config();
             $default_reverse_result_limit = $config->get_int(ReverseImageConfig::CONF_DEFAULT_AMOUNT);
-            $enable_auto_pre = $user_config->get_bool(ReverseImageConfig::USER_ENABLE_AUTO);
-            $enable_auto_tag = $user_config->get_bool(ReverseImageConfig::USER_ENABLE_AUTO_SELECT);
-            $predict_threshold = $user_config->get_int(ReverseImageConfig::USER_TAG_THRESHOLD);
+            $enable_auto_pre = $user_config->get_bool(ReverseImageUserConfig::USER_ENABLE_AUTO);
+            $enable_auto_tag = $user_config->get_bool(ReverseImageUserConfig::USER_ENABLE_AUTO_SELECT);
+            $predict_threshold = $user_config->get_int(ReverseImageUserConfig::USER_TAG_THRESHOLD);
             $html = "";
             if ($enable_auto_tag) {
                 $r = 127 * (1 - ($predict_threshold / 100));
@@ -190,30 +174,9 @@ class ReverseImage extends Extension
         }
     }
 
-    public function onSetupBuilding(SetupBuildingEvent $event): void
-    {
-        $sb = $event->panel->create_new_block("Reverse image search");
-        $sb->add_int_option(ReverseImageConfig::CONF_MAX_LIMIT, "Maximum reverse image search results: ");
-        $sb->add_int_option(ReverseImageConfig::CONF_DEFAULT_AMOUNT, "<br/>Default reverse image search results: ");
-        $sb->add_int_option(ReverseImageConfig::SIMILARITY_DUPLICATE, "<br/>The similarity in % when its a duplicate: ");
-        $sb->add_text_option(ReverseImageConfig::CONF_URL, "<br/>Python engine url: ");
-        $sb->add_bool_option(ReverseImageConfig::SEARCH_ENABLE, "<br/>Enable text based search: ");
-    }
-
     public function onAdminBuilding(AdminBuildingEvent $event): void
     {
         $this->theme->display_admin();
-    }
-    public function onUserOptionsBuilding(UserOptionsBuildingEvent $event): void
-    {
-        global $config;
-        $sb = $event->panel->create_new_block("Reverse image search");
-        $sb->add_bool_option(ReverseImageConfig::USER_ENABLE_AUTO, 'Enable automatic predicting: ');
-        $sb->add_bool_option(ReverseImageConfig::USER_ENABLE_AUTO_SELECT, '<br>Enable automatic tagging: ');
-        $sb->add_int_option(ReverseImageConfig::USER_TAG_THRESHOLD, '<br>The minimum percentage prediction to tag: ');
-        if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE)) {
-            $sb->add_bool_option(ReverseImageConfig::USER_SEARCH_ENABLE, '<br>Enable text based search: ');
-        }
     }
 
     public function onImageAdminBlockBuilding(ImageAdminBlockBuildingEvent $event): void

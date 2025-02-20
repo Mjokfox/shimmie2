@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{A, DIV, SPAN, LINK, rawHTML};
+use function MicroHTML\{emptyHTML, A, DIV, SPAN, LINK, rawHTML, TR, TD, INPUT, TABLE};
 
 class CustomViewPostTheme extends ViewPostTheme
 {
@@ -91,6 +91,37 @@ class CustomViewPostTheme extends ViewPostTheme
 		";
 
         return rawHTML($h_search);
+    }
+
+    protected function build_info(Image $image, array $editor_parts): HTMLElement
+    {
+        global $config, $user;
+
+        if (count($editor_parts) == 0) {
+            return emptyHTML($image->is_locked() ? "[Post Locked]" : "");
+        }
+
+        if (
+            (!$image->is_locked() || $user->can(Permissions::EDIT_IMAGE_LOCK)) &&
+            $user->can(Permissions::EDIT_IMAGE_TAG)
+        ) {
+            $editor_parts[] = TR(TD(
+                ["colspan" => 4],
+                INPUT(["class" => "view", "type" => "button", "value" => "Edit", "onclick" => "clearViewMode()"]),
+                INPUT(["class" => "edit", "type" => "submit", "value" => "Set"])
+            ));
+        }
+
+        return SHM_SIMPLE_FORM(
+            "post/set",
+            INPUT(["type" => "hidden", "name" => "image_id", "value" => $image->id]),
+            TABLE(
+                [
+                    "class" => "image_info form",
+                ],
+                ...$editor_parts,
+            ),
+        );
     }
 
     protected function build_pin(Image $image): HTMLElement

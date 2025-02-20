@@ -17,7 +17,7 @@ class Home extends Extension
         if ($event->page_matches("home")) {
             $base_href = get_base_href();
             // $sitename = $config->get_string(SetupConfig::TITLE);
-            $sitename = $config->get_string('home_title') ?: $config->get_string(SetupConfig::TITLE);
+            $sitename = $config->get_string(HomeConfig::TITLE) ?: $config->get_string(SetupConfig::TITLE);
             $theme_name = $config->get_string(SetupConfig::THEME);
 
             $body = $this->get_body();

@@ -14,5 +14,5 @@ class DmcaInfo extends ExtensionInfo
     public string $license = self::LICENSE_GPLV2;
     public ExtensionVisibility $visibility = ExtensionVisibility::ADMIN;
     public ExtensionCategory $category = ExtensionCategory::MODERATION;
-    public string $description = "Adds a page where DMCA takedown request can be made (HARDCODED BITS CURRENTLY)";
+    public string $description = "Adds a page where DMCA takedown request can be made";
 }

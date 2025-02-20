@@ -24,7 +24,7 @@ class CustomIndexTheme extends IndexTheme
             /** @var array{0: string, 1: string} $matches */
             $path = $matches[1];
         }
-        if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE)) {
+        if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
             $pos = "main";
             $id = "search-bar-right";
             $class = "full-width";
@@ -50,7 +50,7 @@ class CustomIndexTheme extends IndexTheme
         if ($prev > 0) {
             $page->add_html_header(LINK(["id" => "prevlink", "rel" => "previous", "href" => make_link("post/$path".($query ? "/$query" : "")."/$prev")]));
         }
-
+        error_log((string)count($images));
         if (count($images) > 0) {
             $this->display_page_images($page, $images);
         } else {

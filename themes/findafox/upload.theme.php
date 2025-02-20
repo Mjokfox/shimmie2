@@ -343,9 +343,9 @@ function get_categories_html(string $suffix): HTMLElement
                     $tempHtmls[1]->appendChild(make_input_label($suffix, $tag, "Eyes", "checkbox"));
                     $counts[1]++;
                 }
-            // } elseif (in_array("muzzle", $tagarray)) {
-            //     $tempHtmls[3]->appendChild(make_input_label($suffix, $tag, "Muzzle", "checkbox", "", ""));
-            //     $counts[3]++;
+                // } elseif (in_array("muzzle", $tagarray)) {
+                //     $tempHtmls[3]->appendChild(make_input_label($suffix, $tag, "Muzzle", "checkbox", "", ""));
+                //     $counts[3]++;
             } elseif (in_array("mouth", $tagarray)) {
                 $tempHtmls[0]->appendChild(make_input_label($suffix, $tag, "EyesMouth2", "checkbox", "", "", in_array($tag, $preselect_tags)));
                 $counts[0]++;
@@ -396,9 +396,9 @@ function get_categories_html(string $suffix): HTMLElement
             if (in_array("fur", $tagarray)) {
                 $tempHtmls[1]->appendChild(make_input_label($suffix, $tag, "FurColor", "checkbox"));
                 $counts[1]++;
-            // } elseif (in_array("tail", $tagarray)) {
-            //     $tempHtmls[2]->appendChild(make_input_label($suffix, $tag, "TailTip", "checkbox"));
-            //     $counts[2]++;
+                // } elseif (in_array("tail", $tagarray)) {
+                //     $tempHtmls[2]->appendChild(make_input_label($suffix, $tag, "TailTip", "checkbox"));
+                //     $counts[2]++;
             } else {
                 $tempHtmls[2]->appendChild(make_input_label($suffix, $tag, "Furmisc", "checkbox"));
                 $counts[2]++;

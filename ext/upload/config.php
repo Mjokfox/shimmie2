@@ -17,7 +17,11 @@ class UploadConfig extends ConfigGroup
 
     #[ConfigMeta("Minimum free space", ConfigType::INT, ui_type: "shorthand_int", default: 100 * 1024 * 1024, advanced: true)]
     public const MIN_FREE_SPACE = "upload_min_free_space";
+
+    #[ConfigMeta("Upload page split view", ConfigType::BOOL, default: false)]
     public const SPLITVIEW = "upload_split_view";
+
+    #[ConfigMeta("Upload preview", ConfigType::BOOL, default: true)]
     public const PREVIEW = "upload_preview";
 
     #[ConfigMeta("Upload collisions", ConfigType::STRING, default: 'error', options: [

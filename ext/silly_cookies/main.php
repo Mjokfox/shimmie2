@@ -35,13 +35,4 @@ class SillyCookies extends Extension
             $page->add_html_header(rawHTML("<script>window.silly_cookies_url = '$url';window.silly_cookies_title = '$title'; window.silly_cookies_text = '$text'; window.silly_cookies_gib = $gib;</script>"));
         }
     }
-
-    public function onSetupBuilding(SetupBuildingEvent $event): void
-    {
-        $sb = $event->panel->create_new_block("Silly Cookies");
-        $sb->add_text_option(SillyCookiesConfig::IMAGE_URL, "Image url: ");
-        $sb->add_longtext_option(SillyCookiesConfig::COOKIES_TITLE, '<br>The title displayed above the image');
-        $sb->add_longtext_option(SillyCookiesConfig::COOKIES_TEXT, '<br>The text to be displayed next to the image');
-        $sb->add_bool_option(SillyCookiesConfig::GIB, "Add cookie dispenser?: ");
-    }
 }

@@ -139,6 +139,7 @@ class Search
 
         $params = SearchParameters::from_terms($tags);
         $querylet = self::build_search_querylet($params, $limit, $start);
+        error_log($querylet->sql);
         return $database->get_all_iterable($querylet->sql, $querylet->variables);
     }
 

@@ -22,6 +22,9 @@ class SetupConfig extends ConfigGroup
     #[ConfigMeta("Contact URL", ConfigType::STRING)]
     public const CONTACT_LINK = "contact_link";
 
+    #[ConfigMeta("Footer html", ConfigType::STRING)]
+    public const FOOTER_HTML = 'footer_html';
+
     #[ConfigMeta("Theme", ConfigType::STRING, default: "default", options: "Shimmie2\SetupConfig::get_theme_options")]
     public const THEME = "theme";
 
@@ -46,5 +49,4 @@ class SetupConfig extends ConfigGroup
         }
         return $themes;
     }
-    public const FOOTER_HTML = "footer_html";
 }

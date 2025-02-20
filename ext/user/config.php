@@ -32,7 +32,7 @@ class UserAccountsConfig extends ConfigGroup
     #[ConfigMeta("Message when signups disabled", ConfigType::STRING, ui_type: "longtext", default: "The board admin has disabled the ability to sign up for new accounts", advanced: true)]
     public const SIGNUP_DISABLED_MESSAGE = "login_signup_disabled_message";
 
-    #[ConfigMeta("Login duration (days)", ConfigType::INT, default: 365, advanced: true)]
+    #[ConfigMeta("Login duration (days)", ConfigType::INT, default: 30, advanced: true)]
     public const LOGIN_MEMORY = "login_memory";
 
     #[ConfigMeta("Use BBCode for login T&C", ConfigType::BOOL, default: true, advanced: true)]

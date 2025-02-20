@@ -28,7 +28,7 @@ class CustomUserPageTheme extends UserPageTheme
 				</table>
 			</form>
 		";
-        if ($config->get_bool("login_signup_enabled")) {
+        if ($config->get_bool(UserAccountsConfig::SIGNUP_ENABLED)) {
             $html .= "<small><a href='".make_link("user_admin/create")."'>Create Account</a></small>";
         }
         $page->add_block(new Block("Login", rawHTML($html), "main", 90));
@@ -74,7 +74,7 @@ class CustomUserPageTheme extends UserPageTheme
         $reca = "<tr><td colspan='2'>".captcha_get_html()."</td></tr>";
 
         $email_required = (
-            $config->get_bool("user_email_required") &&
+            $config->get_bool(UserAccountsConfig::USER_EMAIL_REQUIRED) &&
             !$user->can(Permissions::CREATE_OTHER_USER)
         );
         $email_text = $email_required ? "Email" : "Email (Optional)";

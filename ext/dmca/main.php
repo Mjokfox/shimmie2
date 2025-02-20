@@ -29,12 +29,16 @@ class Dmca extends Extension
     }
     public function send_mail(): bool
     {
-        global $page;
+        global $page, $config;
         if (!isset($_POST['dmca_email']) and
             !isset($_POST['dmca_input'])) {
             return false;
         }
-        $to = 'mjokfox@findafox.net';
+        $to = $config->get_string(DmcaConfig::EMAIL);
+        if (empty($to)) {
+            $page->flash("The administrator of this site has not set an email to send to, please try to contact them in some way.");
+            return false;
+        }
         $subject = 'DMCA takedown request';
         $message = $_POST['dmca_input'];
         $headers = 'From: ' . $_POST['dmca_email'] . "\r\n" .

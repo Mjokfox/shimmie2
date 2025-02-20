@@ -28,7 +28,7 @@ class CustomhomeTheme extends HomeTheme
 				</form>
                 
 		";
-        if (Extension::is_enabled(ReverseImageInfo::KEY) && $config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageConfig::USER_SEARCH_ENABLE)) {
+        if (Extension::is_enabled(ReverseImageInfo::KEY) && $config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
             $search_html .= "<a href='#' onclick='$(\".search-bar\").toggle();'>Or describe an image</a>
 			</div>
 			<div class='space search-bar' id='text-search' style='display:none'>

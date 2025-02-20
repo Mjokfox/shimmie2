@@ -8,7 +8,8 @@ class HomeConfig extends ConfigGroup
 {
     public const KEY = "home";
     public ?string $title = "Home Page";
-
+    #[ConfigMeta("title", ConfigType::STRING)]
+    public const TITLE = 'home_title';
     #[ConfigMeta("Page links", ConfigType::STRING, ui_type: "longtext", help: "Use BBCode, leave blank for defaults")]
     public const LINKS = 'home_links';
 
@@ -17,6 +18,7 @@ class HomeConfig extends ConfigGroup
 
     #[ConfigMeta("Counter", ConfigType::STRING, options: "Shimmie2\HomeConfig::get_counter_options")]
     public const COUNTER = 'home_counter';
+
 
     /**
      * @return array<string, string>

@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{DIV,IMG};
+use function MicroHTML\{DIV,IMG,STYLE};
 
 class AvatarPost extends AvatarExtension
 {
@@ -20,7 +20,7 @@ class AvatarPost extends AvatarExtension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page, $user;
+        global $page, $user, $config;
         if ($event->page_matches("set_avatar/{image_id}", method: "POST", permission: Permissions::CHANGE_USER_SETTING)) {
             $image_id = int_escape($event->get_arg('image_id'));
             $page->set_mode(PageMode::REDIRECT);
@@ -38,6 +38,11 @@ class AvatarPost extends AvatarExtension
             } else {
                 $page->set_redirect(make_link("user_config"));
             }
+        } else {
+            $s = $config->get_int(SetupConfig::AVATAR_SIZE);
+            $page->add_html_header(STYLE(
+                ".avatar{max-height:{$s}px;max-width:{$s}px;}"
+            ));
         }
     }
 

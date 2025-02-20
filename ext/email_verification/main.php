@@ -100,13 +100,6 @@ class EmailVerification extends Extension
         }
     }
 
-    public function onSetupBuilding(SetupBuildingEvent $event): void
-    {
-        $sb = $event->panel->create_new_block("Email verification");
-        $sb->add_text_option(EmailVerificationConfig::EMAIL_SENDER, "The email from which verification mails are sent from: ");
-        $sb->add_text_option(EmailVerificationConfig::DEFAULT_MESSAGE, "<br>The message shown to users without email: ");
-    }
-
     public function onUserCreation(UserCreationEvent $event): void
     {
         global $page;

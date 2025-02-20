@@ -29,7 +29,7 @@ class StaticFiles extends Extension
             $rbe = send_event(new RobotsBuildingEvent());
             $page->set_mode(PageMode::DATA);
             $page->set_mime("text/plain");
-            $data = join("\n", [$config->get_string("robots_txt_bef"), join("\n", $rbe->parts),$config->get_string("robots_txt_aft"),"Crawl-delay: " . $config->get_int("robots_txt_delay", 3)]);
+            $data = join("\n", [$config->get_string(StaticFilesConfig::ROBOTS_BEFORE), join("\n", $rbe->parts),$config->get_string(StaticFilesConfig::ROBOTS_AFTER),"Crawl-delay: " . $config->get_int(StaticFilesConfig::ROBOTS_DELAY, 3)]);
             $page->set_data($data);
         }
 
@@ -52,14 +52,6 @@ class StaticFiles extends Extension
                 $page->set_mime(MimeType::get_for_file($filename));
             }
         }
-    }
-
-    public function onSetupBuilding(SetupBuildingEvent $event): void
-    {
-        $sb = $event->panel->create_new_block("Robots");
-        $sb->add_longtext_option("robots_txt_bef", "Text to add before the main user-agent *");
-        $sb->add_longtext_option("robots_txt_aft", "Text to add after*");
-        $sb->add_int_option("robots_txt_delay", "* Crawl-delay: ");
     }
 
     /**
