@@ -428,6 +428,7 @@ function get_categories_html(string $suffix): HTMLElement
         $radio_categories = ["Time"]; // still some hardcoded bits tho...
         $hidden_categories = ["Genus", "Name","Type"];
         $wide_categories = ["Meta","Activity"];
+        $sort_categories = ["SP:Red fox specific" => '/(muzzle|tip)/'];
         foreach (array_keys($category_tags) as $category_tag) {
             if (in_array($category_tag, $hidden_categories)) {
                 continue;
@@ -444,6 +445,18 @@ function get_categories_html(string $suffix): HTMLElement
                 $input_array[$category_upper_name] = [];
                 $category_array[$category_upper_name] = true;
             }
+            if (array_key_exists($category_tag, $sort_categories)) {
+                usort($category_tags[$category_tag], function ($a, $b) use ($sort_categories, $category_tag) {
+                    preg_match($sort_categories[$category_tag], $a, $matchA);
+                    preg_match($sort_categories[$category_tag], $b, $matchB);
+                    $groupA = $matchA[1] ?? $a;
+                    $groupB = $matchB[1] ?? $b;
+                    if ($groupA !== $groupB) {
+                        return strcmp($groupA, $groupB);
+                    }
+                    return strnatcmp($a, $b);
+                });
+            }
             $count_array[$category_upper_name][$category_lower_name] = count($category_tags[$category_tag]);
             $input_array[$category_upper_name][$category_lower_name] = emptyHTML();
             $type = in_array($category_lower_name, $radio_categories) ? "radio" : "checkbox";
@@ -455,7 +468,6 @@ function get_categories_html(string $suffix): HTMLElement
             }
         }
         foreach (array_keys($category_array) as $category) {
-            error_log($category);
             foreach (array_keys($input_array[$category]) as $lower_category) {
                 $rows = max(4, ceil($count_array[$category][$lower_category] / (in_array($lower_category, $wide_categories) ? 4 : 2)));
                 $tworows = ceil($count_array[$category][$lower_category] / 2);

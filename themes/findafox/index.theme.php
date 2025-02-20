@@ -50,7 +50,6 @@ class CustomIndexTheme extends IndexTheme
         if ($prev > 0) {
             $page->add_html_header(LINK(["id" => "prevlink", "rel" => "previous", "href" => make_link("post/$path".($query ? "/$query" : "")."/$prev")]));
         }
-        error_log((string)count($images));
         if (count($images) > 0) {
             $this->display_page_images($page, $images);
         } else {
