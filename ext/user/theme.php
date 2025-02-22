@@ -69,7 +69,7 @@ class UserPageTheme extends Themelet
 
         $email_required = (
             $config->get_bool(UserAccountsConfig::USER_EMAIL_REQUIRED) &&
-            !$user->can(Permissions::CREATE_OTHER_USER)
+            !$user->can(UserAccountsPermission::CREATE_OTHER_USER)
         );
 
         $form = SHM_SIMPLE_FORM(
@@ -191,7 +191,7 @@ class UserPageTheme extends Themelet
 
         $html = emptyHTML();
         $html->appendChild($form);
-        if ($config->get_bool(UserAccountsConfig::SIGNUP_ENABLED) && $user->can(Permissions::CREATE_USER)) {
+        if ($config->get_bool(UserAccountsConfig::SIGNUP_ENABLED) && $user->can(UserAccountsPermission::CREATE_USER)) {
             $html->appendChild(SMALL(A(["href" => make_link("user_admin/create")], "Create Account")));
         }
 
@@ -260,7 +260,7 @@ class UserPageTheme extends Themelet
 
         // just a fool-admin protection so they dont mess around with anon users.
         if ($duser->id != $config->get_int(UserAccountsConfig::ANON_ID)) {
-            if ($user->can(Permissions::EDIT_USER_NAME)) {
+            if ($user->can(UserAccountsPermission::EDIT_USER_NAME)) {
                 $html->appendChild(SHM_USER_FORM(
                     $duser,
                     "user_admin/change_name",
@@ -283,7 +283,7 @@ class UserPageTheme extends Themelet
                         TD(INPUT(["type" => 'password', "name" => 'pass1', "autocomplete" => 'new-password']))
                     ),
                     TR(
-                        TH("Repeat Password"),
+                        TH("Repeat password"),
                         TD(INPUT(["type" => 'password', "name" => 'pass2', "autocomplete" => 'new-password']))
                     ),
                 ),
@@ -301,7 +301,7 @@ class UserPageTheme extends Themelet
                 "Set"
             ));
 
-            if ($user->can(Permissions::EDIT_USER_CLASS)) {
+            if ($user->can(UserAccountsPermission::EDIT_USER_CLASS)) {
                 $select = SELECT(["name" => "class"]);
                 foreach (UserClass::$known_classes as $name => $values) {
                     $select->appendChild(
@@ -317,7 +317,7 @@ class UserPageTheme extends Themelet
                 ));
             }
 
-            if ($user->can(Permissions::DELETE_USER)) {
+            if ($user->can(UserAccountsPermission::DELETE_USER)) {
                 $html->appendChild(SHM_USER_FORM(
                     $duser,
                     "user_admin/delete_user",
@@ -353,63 +353,12 @@ class UserPageTheme extends Themelet
             'Returns posts posted by user 123.'
         ));
 
-        if ($user->can(Permissions::VIEW_IP)) {
+        if ($user->can(IPBanPermission::VIEW_IP)) {
             $output->appendChild(SHM_COMMAND_EXAMPLE(
                 "poster_ip=127.0.0.1",
                 "Returns posts posted from IP 127.0.0.1."
             ));
         }
         return $output;
-    }
-
-    /**
-     * @param Page $page
-     * @param UserClass[] $classes
-     * @param \ReflectionClassConstant[] $permissions
-     */
-    public function display_user_classes(Page $page, array $classes, array $permissions): void
-    {
-        $table = TABLE(["class" => "zebra"]);
-
-        $row = TR();
-        $row->appendChild(TH("Permission"));
-        foreach ($classes as $class) {
-            $n = $class->name;
-            if ($class->parent) {
-                $n .= " ({$class->parent->name})";
-            }
-            $row->appendChild(TH($n));
-        }
-        $row->appendChild(TH("Description"));
-        $table->appendChild($row);
-
-        foreach ($permissions as $perm) {
-            $row = TR();
-            $row->appendChild(TH($perm->getName()));
-
-            foreach ($classes as $class) {
-                $opacity = array_key_exists($perm->getValue(), $class->abilities) ? 1 : 0.2;
-                if ($class->can($perm->getValue())) {
-                    $cell = TD(["style" => "color: green; opacity: $opacity;"], "✔");
-                } else {
-                    $cell = TD(["style" => "color: red; opacity: $opacity;"], "✘");
-                }
-                $row->appendChild($cell);
-            }
-
-            $doc = $perm->getDocComment();
-            if ($doc) {
-                $doc = \Safe\preg_replace('/\/\*\*|\n\s*\*\s*|\*\//', '', $doc);
-                $row->appendChild(TD(["style" => "text-align: left;"], $doc));
-            } else {
-                $row->appendChild(TD(""));
-            }
-
-            $table->appendChild($row);
-        }
-
-        $page->set_title("User Classes");
-        $page->add_block(new NavBlock());
-        $page->add_block(new Block("Classes", $table, "main", 10));
     }
 }

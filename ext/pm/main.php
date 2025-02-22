@@ -181,10 +181,10 @@ class PM
     {
         global $database, $user;
 
-        if (!$user->can(Permissions::READ_PM)) {
+        if (!$user->can(PrivMsgPermission::READ_PM)) {
             return null;
         }
-        if (($duser->id != $user->id) && !$user->can(Permissions::VIEW_OTHER_PMS)) {
+        if (($duser->id != $user->id) && !$user->can(PrivMsgPermission::VIEW_OTHER_PMS)) {
             return null;
         }
 
@@ -198,7 +198,7 @@ class PM
     public static function send_pm(int $to_user_id, string $subject, string $message): bool
     {
         global $user;
-        if (!$user->can(Permissions::SEND_PM)) {
+        if (!$user->can(PrivMsgPermission::SEND_PM)) {
             return false;
         }
         send_event(new SendPMEvent(new PM($user->id, get_real_ip(), $to_user_id, $subject, $message)));
@@ -262,7 +262,7 @@ class PrivMsg extends Extension
     public function onPageNavBuilding(PageNavBuildingEvent $event): void
     {
         global $user;
-        if ($user->can(Permissions::READ_PM)) {
+        if ($user->can(PrivMsgPermission::READ_PM)) {
             $count = $this->count_pms($user);
             if ($count > 0) {
                 $event->add_nav_link("pm", new Link('user#private-messages'), "Messages ($count)", null, 11);
@@ -274,7 +274,7 @@ class PrivMsg extends Extension
     {
         global $user;
         if ($event->parent === "user") {
-            if ($user->can(Permissions::READ_PM)) {
+            if ($user->can(PrivMsgPermission::READ_PM)) {
                 $count = $this->count_pms($user);
                 $h_count = $count > 0 ? SPAN(["class" => 'unread'], "($count)") : "";
                 $event->add_nav_link("pm", new Link("/pm/list/{$user->id}"), emptyHTML("Private Messages", $h_count));
@@ -285,7 +285,7 @@ class PrivMsg extends Extension
     public function onUserBlockBuilding(UserBlockBuildingEvent $event): void
     {
         global $user;
-        if ($user->can(Permissions::READ_PM)) {
+        if ($user->can(PrivMsgPermission::READ_PM)) {
             $count = $this->count_pms($user);
             $h_count = $count > 0 ? SPAN(["class" => 'unread'], "($count)") : "";
             $event->add_link(emptyHTML("Private Messages", $h_count), make_link("user", null, "private-messages"), 10);
@@ -297,8 +297,8 @@ class PrivMsg extends Extension
         global $page, $user;
         $duser = $event->display_user;
         if (!$user->is_anonymous() && !$duser->is_anonymous()) {
-            if ($user->can(Permissions::READ_PM)) {
-                if (($duser->id == $user->id) || $user->can(Permissions::VIEW_OTHER_PMS)) {
+            if ($user->can(PrivMsgPermission::READ_PM)) {
+                if (($duser->id == $user->id) || $user->can(PrivMsgPermission::VIEW_OTHER_PMS)) {
                     $pms = PM::get_pms_to($duser, 5, );
                     if (!empty($pms)) {
                         $this->theme->display_pms($page, $pms, from:true, more:$duser->id, archived:$duser->id);
@@ -314,7 +314,7 @@ class PrivMsg extends Extension
                     }
                 }
             }
-            if ($user->can(Permissions::SEND_PM) && $user->id != $duser->id) {
+            if ($user->can(PrivMsgPermission::SEND_PM) && $user->id != $duser->id) {
                 $this->theme->display_composer($page, $user, $duser);
             }
         }
@@ -323,12 +323,12 @@ class PrivMsg extends Extension
     public function onPageRequest(PageRequestEvent $event): void
     {
         global $cache, $database, $page, $user;
-        if ($event->page_matches("pm/read/{pm_id}", permission: Permissions::READ_PM)) {
+        if ($event->page_matches("pm/read/{pm_id}", permission: PrivMsgPermission::READ_PM)) {
             $pm_id = $event->get_iarg('pm_id');
             $pm = $database->get_row("SELECT * FROM private_message WHERE id = :id", ["id" => $pm_id]);
             if (is_null($pm)) {
                 throw new ObjectNotFound("No such PM");
-            } elseif (($pm["to_id"] == $user->id) || ($pm["from_id"] == $user->id) || $user->can(Permissions::VIEW_OTHER_PMS)) {
+            } elseif (($pm["to_id"] == $user->id) || ($pm["from_id"] == $user->id) || $user->can(PrivMsgPermission::VIEW_OTHER_PMS)) {
                 $from_user = User::by_id((int)$pm["from_id"]);
                 if ($pm["to_id"] == $user->id) {
                     $database->execute("UPDATE private_message SET is_read=true WHERE id = :id", ["id" => $pm_id]);
@@ -336,7 +336,7 @@ class PrivMsg extends Extension
                 }
                 $pmo = PM::from_row($pm);
                 $this->theme->display_message($page, $from_user, $user, $pmo);
-                if ($user->can(Permissions::SEND_PM)) {
+                if ($user->can(PrivMsgPermission::SEND_PM)) {
                     if ($pm["from_id"] == $user->id) {
                         $this->theme->display_edit_button($page, $pmo->id);
                     } else {
@@ -346,7 +346,7 @@ class PrivMsg extends Extension
             } else {
                 throw new PermissionDenied("You do not have permission to view this PM");
             }
-        } elseif ($event->page_matches("pm/list", method: "GET", permission: Permissions::READ_PM, paged:true)) {
+        } elseif ($event->page_matches("pm/list", method: "GET", permission: PrivMsgPermission::READ_PM, paged:true)) {
             $duser_id = $event->get_iarg('page_num', 0);
             if (!$user->is_anonymous()) {
                 if ($duser_id == 0 || ($duser_id == $user->id)) {
@@ -360,7 +360,7 @@ class PrivMsg extends Extension
                     } elseif (empty($pms)) {
                         throw new ObjectNotFound("You have no messages to display!");
                     }
-                } elseif ($user->can(Permissions::VIEW_OTHER_PMS)) {
+                } elseif ($user->can(PrivMsgPermission::VIEW_OTHER_PMS)) {
                     $duser = User::by_id($duser_id);
                     $pms = PM::get_pms_to($duser);
                     if (!empty($pms)) {
@@ -384,7 +384,7 @@ class PrivMsg extends Extension
             } else {
                 throw new PermissionDenied("You are not allowed to see others' archives");
             }
-        } elseif ($event->page_matches("pm/archived", method: "GET", permission: Permissions::READ_PM, paged:true)) {
+        } elseif ($event->page_matches("pm/archived", method: "GET", permission: PrivMsgPermission::READ_PM, paged:true)) {
             $duser_id = $event->get_iarg('page_num', 0);
             if (!$user->is_anonymous()) {
                 if ($duser_id == 0 || ($duser_id == $user->id)) {
@@ -394,7 +394,7 @@ class PrivMsg extends Extension
                     } else {
                         throw new ObjectNotFound("Your archive is empty!");
                     }
-                } elseif ($user->can(Permissions::VIEW_OTHER_PMS)) {
+                } elseif ($user->can(PrivMsgPermission::VIEW_OTHER_PMS)) {
                     $duser = User::by_id($duser_id);
                     $pms = PM::get_pm_archive($duser);
                     if (!empty($pms)) {
@@ -408,7 +408,7 @@ class PrivMsg extends Extension
             } else {
                 throw new PermissionDenied("You are not allowed to see others' archives");
             }
-        } elseif ($event->page_matches("pm/archive", method: "POST", permission: Permissions::READ_PM)) {
+        } elseif ($event->page_matches("pm/archive", method: "POST", permission: PrivMsgPermission::READ_PM)) {
             $pm_id = int_escape($event->req_POST("pm_id"));
             $pm = $database->get_row("SELECT * FROM private_message WHERE id = :id", ["id" => $pm_id]);
             if (is_null($pm)) {
@@ -430,12 +430,12 @@ class PrivMsg extends Extension
                 $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(referer_or(make_link()));
             }
-        } elseif ($event->page_matches("pm/delete", method: "POST", permission: Permissions::READ_PM)) {
+        } elseif ($event->page_matches("pm/delete", method: "POST", permission: PrivMsgPermission::READ_PM)) {
             $pm_id = int_escape($event->req_POST("pm_id"));
             $pm = $database->get_row("SELECT * FROM private_message WHERE id = :id", ["id" => $pm_id]);
             if (is_null($pm)) {
                 throw new ObjectNotFound("No such PM");
-            } elseif (($pm["to_id"] == $user->id) || ($pm["from_id"] == $user->id) || $user->can(Permissions::VIEW_OTHER_PMS)) {
+            } elseif (($pm["to_id"] == $user->id) || ($pm["from_id"] == $user->id) || $user->can(PrivMsgPermission::VIEW_OTHER_PMS)) {
                 $database->execute("DELETE FROM private_message WHERE id = :id", ["id" => $pm_id]);
                 if (($pm["to_id"] == $user->id)) {
                     $cache->delete("pm-count-{$user->id}");
@@ -446,7 +446,7 @@ class PrivMsg extends Extension
                 $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(referer_or(make_link()));
             }
-        } elseif ($event->page_matches("pm/send", method: "POST", permission: Permissions::SEND_PM)) {
+        } elseif ($event->page_matches("pm/send", method: "POST", permission: PrivMsgPermission::SEND_PM)) {
             $to_id = int_escape($event->req_POST("to_id"));
             $from_id = $user->id;
             $subject = $event->req_POST("subject");
@@ -461,7 +461,7 @@ class PrivMsg extends Extension
             } else {
                 $page->set_redirect(referer_or(make_link()));
             }
-        } elseif ($event->page_matches("pm/edit/{pm_id}", permission: Permissions::SEND_PM)) {
+        } elseif ($event->page_matches("pm/edit/{pm_id}", permission: PrivMsgPermission::SEND_PM)) {
             $pm_id = $event->get_iarg('pm_id');
             $pm = $database->get_row("SELECT * FROM private_message WHERE id = :id", ["id" => $pm_id]);
             if (is_null($pm)) {
@@ -476,7 +476,7 @@ class PrivMsg extends Extension
             } else {
                 throw new PermissionDenied("You do not have permission to edit this PM");
             }
-        } elseif ($event->page_matches("pm/edit", method: "POST", permission: Permissions::SEND_PM)) {
+        } elseif ($event->page_matches("pm/edit", method: "POST", permission: PrivMsgPermission::SEND_PM)) {
             $pm_id = int_escape($event->req_POST("pm_id"));
             $pm = $database->get_row("SELECT * FROM private_message WHERE id = :id", ["id" => $pm_id]);
             if (is_null($pm)) {

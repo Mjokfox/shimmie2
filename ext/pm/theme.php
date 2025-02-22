@@ -41,7 +41,7 @@ class PrivMsgTheme extends Themelet
                 $user_url = make_link("user/".url_escape($user_name));
 
                 $user_html .= "<td><a href='$user_url'>$h_user</a></td>";
-                $html .= $f_user->can(Permissions::HELLBANNED) ? "<tr class='hb'>" : "<tr>";
+                $html .= $f_user->can(UserAccountsPermission::HELLBANNED) ? "<tr class='hb'>" : "<tr>";
             } else {
                 $html .= "<tr>";
             }

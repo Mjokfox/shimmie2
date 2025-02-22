@@ -12,10 +12,10 @@ class UploadConfig extends ConfigGroup
     #[ConfigMeta("Max uploads", ConfigType::INT, default: 3)]
     public const COUNT = "upload_count";
 
-    #[ConfigMeta("Max size per file", ConfigType::INT, ui_type: "shorthand_int", default: 1 * 1024 * 1024)]
+    #[ConfigMeta("Max size per file", ConfigType::INT, input: "shorthand_int", default: 1 * 1024 * 1024)]
     public const SIZE = "upload_size";
 
-    #[ConfigMeta("Minimum free space", ConfigType::INT, ui_type: "shorthand_int", default: 100 * 1024 * 1024, advanced: true)]
+    #[ConfigMeta("Minimum free space", ConfigType::INT, input: "shorthand_int", default: 100 * 1024 * 1024, advanced: true)]
     public const MIN_FREE_SPACE = "upload_min_free_space";
 
     #[ConfigMeta("Upload page split view", ConfigType::BOOL, default: false)]
@@ -36,12 +36,6 @@ class UploadConfig extends ConfigGroup
     #[ConfigMeta("Use transload URL as source", ConfigType::BOOL, default: true, advanced: true)]
     public const TLSOURCE = "upload_tlsource";
 
-    #[ConfigMeta("MIME checks", ConfigType::BOOL, default: false)]
-    public const MIME_CHECK_ENABLED = "mime_check_enabled";
-
-    #[ConfigMeta("Allowed MIMEs", ConfigType::ARRAY, default: [], options: "Shimmie2\UploadConfig::get_mime_options")]
-    public const ALLOWED_MIME_STRINGS = "allowed_mime_strings";
-
     /**
      * @return array<string, string>
      */
@@ -55,18 +49,6 @@ class UploadConfig extends ConfigGroup
         $tes["fopen"] = "fopen";
         $tes["WGet"] = "wget";
         return $tes;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function get_mime_options(): array
-    {
-        $output = [];
-        foreach (DataHandlerExtension::get_all_supported_mimes() as $mime) {
-            $output[MimeMap::get_name_for_mime($mime)] = $mime;
-        }
-        return $output;
     }
 
     public function tweak_html(\MicroHTML\HTMLElement $html): \MicroHTML\HTMLElement

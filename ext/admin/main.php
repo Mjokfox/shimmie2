@@ -49,10 +49,10 @@ class AdminPage extends Extension
     {
         global $database, $page, $user;
 
-        if ($event->page_matches("admin", method: "GET", permission: Permissions::MANAGE_ADMINTOOLS)) {
+        if ($event->page_matches("admin", method: "GET", permission: AdminPermission::MANAGE_ADMINTOOLS)) {
             send_event(new AdminBuildingEvent($page));
         }
-        if ($event->page_matches("admin/{action}", method: "POST", permission: Permissions::MANAGE_ADMINTOOLS)) {
+        if ($event->page_matches("admin/{action}", method: "POST", permission: AdminPermission::MANAGE_ADMINTOOLS)) {
             $action = $event->get_arg('action');
             $aae = new AdminActionEvent($action, $event->POST);
 
@@ -77,6 +77,7 @@ class AdminPage extends Extension
             ->setCode(function (InputInterface $input, OutputInterface $output): int {
                 global $page;
                 $query = $input->getArgument('query');
+                $query = ltrim($query, '/');
                 $args = $input->getArgument('args');
                 $_SERVER['REQUEST_METHOD'] = 'GET';
                 $_SERVER['REQUEST_URI'] = make_link($query);
@@ -95,6 +96,7 @@ class AdminPage extends Extension
             ->setCode(function (InputInterface $input, OutputInterface $output): int {
                 global $page;
                 $query = $input->getArgument('query');
+                $query = ltrim($query, '/');
                 $args = $input->getArgument('args');
                 if (!is_null($args)) {
                     parse_str($args, $_POST);
@@ -161,7 +163,7 @@ class AdminPage extends Extension
     {
         global $user;
         if ($event->parent === "system") {
-            if ($user->can(Permissions::MANAGE_ADMINTOOLS)) {
+            if ($user->can(AdminPermission::MANAGE_ADMINTOOLS)) {
                 $event->add_nav_link("admin", new Link('admin'), "Board Admin");
             }
         }
@@ -170,7 +172,7 @@ class AdminPage extends Extension
     public function onUserBlockBuilding(UserBlockBuildingEvent $event): void
     {
         global $user;
-        if ($user->can(Permissions::MANAGE_ADMINTOOLS)) {
+        if ($user->can(AdminPermission::MANAGE_ADMINTOOLS)) {
             $event->add_link("Board Admin", make_link("admin"));
         }
     }

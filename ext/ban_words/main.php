@@ -8,14 +8,14 @@ class BanWords extends Extension
 {
     public function onCommentPosting(CommentPostingEvent $event): void
     {
-        if (!$event->user->can(Permissions::BYPASS_COMMENT_CHECKS)) {
+        if (!$event->user->can(CommentPermission::BYPASS_COMMENT_CHECKS)) {
             $this->test_text($event->comment, new CommentPostingException("Comment contains banned terms"));
         }
     }
 
     public function onCommentEditing(CommentEditingEvent $event): void
     {
-        if (!$event->user->can(Permissions::BYPASS_COMMENT_CHECKS)) {
+        if (!$event->user->can(CommentPermission::BYPASS_COMMENT_CHECKS)) {
             $this->test_text($event->comment, new CommentPostingException("Comment contains banned terms"));
         }
     }
