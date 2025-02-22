@@ -7,41 +7,11 @@ namespace Shimmie2;
 use function MicroHTML\emptyHTML;
 use function MicroHTML\rawHTML;
 
-new UserClass("user", "base", [
-    SpeedHaxPermission::BIG_SEARCH => true,
-    ImagePermission::CREATE_IMAGE => true,
-    CommentPermission::CREATE_COMMENT => true,
-    PostTagsPermission::EDIT_IMAGE_TAG => true,
-    PostSourcePermission::EDIT_IMAGE_SOURCE => true,
-    PostTitlesPermission::EDIT_IMAGE_TITLE => true,
-    RelationshipsPermission::EDIT_IMAGE_RELATIONSHIPS => true,
-    ArtistsPermission::EDIT_IMAGE_ARTIST => true,
-    ReportImagePermission::CREATE_IMAGE_REPORT => true,
-    RatingsPermission::EDIT_IMAGE_RATING => true,
-    FavouritesPermission::EDIT_FAVOURITES => true,
-    NumericScorePermission::CREATE_VOTE => true,
-    PrivMsgPermission::SEND_PM => true,
-    PrivMsgPermission::READ_PM => true,
-    PrivateImagePermission::SET_PRIVATE_IMAGE => true,
-    UserAccountsPermission::CHANGE_USER_SETTING => true,
-    ForumPermission::FORUM_CREATE => true,
-    NotesPermission::CREATE => true,
-    NotesPermission::EDIT => true,
-    NotesPermission::REQUEST => true,
-    PoolsPermission::CREATE => true,
-    PoolsPermission::UPDATE => true,
-]);
-
-new UserClass("verified", "user", [
-    BulkActionsPermission::PERFORM_BULK_ACTIONS => true,
-    BulkDownloadPermission::BULK_DOWNLOAD => true,
-]);
-
 class EmailVerification extends Extension
 {
     public function get_priority(): int
     {
-        return 75;
+        return 51;
     }
 
     public function onInitExt(InitExtEvent $event): void
@@ -50,6 +20,36 @@ class EmailVerification extends Extension
 
         $config->set_default_string(EmailVerificationConfig::EMAIL_SENDER, "admin@domain.com");
         $config->set_default_string(EmailVerificationConfig::DEFAULT_MESSAGE, "Cannot send email verification mail, no email set.");
+
+        new UserClass("user", "base", [
+            SpeedHaxPermission::BIG_SEARCH => true,
+            ImagePermission::CREATE_IMAGE => true,
+            CommentPermission::CREATE_COMMENT => true,
+            PostTagsPermission::EDIT_IMAGE_TAG => true,
+            PostSourcePermission::EDIT_IMAGE_SOURCE => true,
+            PostTitlesPermission::EDIT_IMAGE_TITLE => true,
+            RelationshipsPermission::EDIT_IMAGE_RELATIONSHIPS => true,
+            ArtistsPermission::EDIT_IMAGE_ARTIST => true,
+            ReportImagePermission::CREATE_IMAGE_REPORT => true,
+            RatingsPermission::EDIT_IMAGE_RATING => true,
+            FavouritesPermission::EDIT_FAVOURITES => true,
+            NumericScorePermission::CREATE_VOTE => true,
+            PrivMsgPermission::SEND_PM => true,
+            PrivMsgPermission::READ_PM => true,
+            PrivateImagePermission::SET_PRIVATE_IMAGE => true,
+            UserAccountsPermission::CHANGE_USER_SETTING => true,
+            ForumPermission::FORUM_CREATE => true,
+            NotesPermission::CREATE => true,
+            NotesPermission::EDIT => true,
+            NotesPermission::REQUEST => true,
+            PoolsPermission::CREATE => true,
+            PoolsPermission::UPDATE => true,
+        ]);
+
+        new UserClass("verified", "user", [
+            BulkActionsPermission::PERFORM_BULK_ACTIONS => true,
+            BulkDownloadPermission::BULK_DOWNLOAD => true,
+        ]);
 
     }
     public function onPageRequest(PageRequestEvent $event): void
