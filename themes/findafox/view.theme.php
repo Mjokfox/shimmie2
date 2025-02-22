@@ -35,7 +35,7 @@ class CustomViewPostTheme extends ViewPostTheme
         $h_filesize = to_shorthand_int($image->filesize);
 
         global $user;
-        if ($user->can(Permissions::VIEW_IP)) {
+        if ($user->can(IPBanPermission::VIEW_IP)) {
             $h_ownerlink .= " ($h_ip)";
         }
 
@@ -102,8 +102,8 @@ class CustomViewPostTheme extends ViewPostTheme
         }
 
         if (
-            (!$image->is_locked() || $user->can(Permissions::EDIT_IMAGE_LOCK)) &&
-            $user->can(Permissions::EDIT_IMAGE_TAG)
+            (!$image->is_locked() || $user->can(PostLockPermission::EDIT_IMAGE_LOCK)) &&
+            $user->can(PostTagsPermission::EDIT_IMAGE_TAG)
         ) {
             $editor_parts[] = TR(TD(
                 ["colspan" => 4],

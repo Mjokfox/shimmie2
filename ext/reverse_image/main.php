@@ -135,7 +135,7 @@ class ReverseImage extends Extension
                 $page->set_data(json_encode(["No similar images found, either the file was not uploaded properly or no url given"]));
                 $page->set_filename('failed.json', 'Content-Type: application/json');
             }
-        } elseif ($event->page_matches("upload", method: "GET", permission: Permissions::CREATE_IMAGE)) {
+        } elseif ($event->page_matches("upload", method: "GET", permission: ImagePermission::CREATE_IMAGE)) {
             global $config, $user;
             $user_config = $user->get_config();
             $default_reverse_result_limit = $config->get_int(ReverseImageConfig::CONF_DEFAULT_AMOUNT);

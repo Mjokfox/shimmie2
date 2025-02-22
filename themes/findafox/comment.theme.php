@@ -120,11 +120,11 @@ class CustomCommentListTheme extends CommentListTheme
         $avatar_e = send_event(new BuildAvatarEvent($comment->get_owner()));
         $h_avatar = $avatar_e->html;
         $h_del = "";
-        if ($user->can(Permissions::DELETE_COMMENT) || $user->id === $comment->owner_id) {
+        if ($user->can(CommentPermission::DELETE_COMMENT) || $user->id === $comment->owner_id) {
             $h_del = " - " . $this->delete_link($i_comment_id, $i_image_id, $comment->owner_name, $tfe->stripped);
         }
         $h_edit = "";
-        if ($user->can(Permissions::DELETE_COMMENT) || ($user->can(Permissions::CREATE_COMMENT) && $user->id === $comment->owner_id)) {
+        if ($user->can(CommentPermission::DELETE_COMMENT) || ($user->can(CommentPermission::CREATE_COMMENT) && $user->id === $comment->owner_id)) {
             $h_edit = " - " . $this->edit_button($i_comment_id, $i_image_id);
         }
         $h_edited = $comment->edited ? "<br><em>(edited)</em>" : "";

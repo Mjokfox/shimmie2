@@ -22,7 +22,7 @@ class CustomWikiTheme extends WikiTheme
         $tfe = send_event(new TextFormattingEvent($nav_page->body));
 
         // only the admin can edit the sidebar
-        if ($user->can(Permissions::WIKI_ADMIN)) {
+        if ($user->can(WikiPermission::ADMIN)) {
             $tfe->formatted .= "<p>(<a href='".make_link("wiki/wiki:sidebar/edit")."'>Edit</a>)";
         }
 

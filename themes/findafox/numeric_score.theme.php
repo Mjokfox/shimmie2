@@ -64,7 +64,7 @@ class CustomNumericScoreTheme extends NumericScoreTheme
                     </form>
                 </div>";
         }
-        if ($user->can(Permissions::EDIT_OTHER_VOTE)) {
+        if ($user->can(NumericScorePermission::EDIT_OTHER_VOTE)) {
             $html .=
             "<div id='votes-content'>
                 <a

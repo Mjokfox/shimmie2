@@ -8,33 +8,33 @@ use function MicroHTML\emptyHTML;
 use function MicroHTML\rawHTML;
 
 new UserClass("user", "base", [
-    Permissions::BIG_SEARCH => true,
-    Permissions::CREATE_IMAGE => true,
-    Permissions::CREATE_COMMENT => true,
-    Permissions::EDIT_IMAGE_TAG => true,
-    Permissions::EDIT_IMAGE_SOURCE => true,
-    Permissions::EDIT_IMAGE_TITLE => true,
-    Permissions::EDIT_IMAGE_RELATIONSHIPS => true,
-    Permissions::EDIT_IMAGE_ARTIST => true,
-    Permissions::CREATE_IMAGE_REPORT => true,
-    Permissions::EDIT_IMAGE_RATING => true,
-    Permissions::EDIT_FAVOURITES => true,
-    Permissions::CREATE_VOTE => true,
-    Permissions::SEND_PM => true,
-    Permissions::READ_PM => true,
-    Permissions::SET_PRIVATE_IMAGE => true,
-    Permissions::CHANGE_USER_SETTING => true,
-    Permissions::FORUM_CREATE => true,
-    Permissions::NOTES_CREATE => true,
-    Permissions::NOTES_EDIT => true,
-    Permissions::NOTES_REQUEST => true,
-    Permissions::POOLS_CREATE => true,
-    Permissions::POOLS_UPDATE => true,
+    SpeedHaxPermission::BIG_SEARCH => true,
+    ImagePermission::CREATE_IMAGE => true,
+    CommentPermission::CREATE_COMMENT => true,
+    PostTagsPermission::EDIT_IMAGE_TAG => true,
+    PostSourcePermission::EDIT_IMAGE_SOURCE => true,
+    PostTitlesPermission::EDIT_IMAGE_TITLE => true,
+    RelationshipsPermission::EDIT_IMAGE_RELATIONSHIPS => true,
+    ArtistsPermission::EDIT_IMAGE_ARTIST => true,
+    ReportImagePermission::CREATE_IMAGE_REPORT => true,
+    RatingsPermission::EDIT_IMAGE_RATING => true,
+    FavouritesPermission::EDIT_FAVOURITES => true,
+    NumericScorePermission::CREATE_VOTE => true,
+    PrivMsgPermission::SEND_PM => true,
+    PrivMsgPermission::READ_PM => true,
+    PrivateImagePermission::SET_PRIVATE_IMAGE => true,
+    UserAccountsPermission::CHANGE_USER_SETTING => true,
+    ForumPermission::FORUM_CREATE => true,
+    NotesPermission::CREATE => true,
+    NotesPermission::EDIT => true,
+    NotesPermission::REQUEST => true,
+    PoolsPermission::CREATE => true,
+    PoolsPermission::UPDATE => true,
 ]);
 
 new UserClass("verified", "user", [
-    Permissions::PERFORM_BULK_ACTIONS => true,
-    Permissions::BULK_DOWNLOAD => true,
+    BulkActionsPermission::PERFORM_BULK_ACTIONS => true,
+    BulkDownloadPermission::BULK_DOWNLOAD => true,
 ]);
 
 class EmailVerification extends Extension
@@ -167,8 +167,8 @@ class EmailVerification extends Extension
 
         if (
             ($a->name == $b->name) ||
-            ($b->can(Permissions::PROTECTED) && $a->class->name == "admin") ||
-            (!$b->can(Permissions::PROTECTED) && $a->can(Permissions::EDIT_USER_INFO))
+            ($b->can(UserAccountsPermission::PROTECTED) && $a->class->name == "admin") ||
+            (!$b->can(UserAccountsPermission::PROTECTED) && $a->can(UserAccountsPermission::EDIT_USER_INFO))
         ) {
             return true;
         } else {
