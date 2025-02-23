@@ -71,58 +71,49 @@ class TagListTheme extends Themelet
             $tag_category_dict = [];
         }
         $tag_categories_html = [];
-        $tag_categories_count = [];
+        $priorities = [];
 
         foreach ($tag_infos as $row) {
             $category = TagCategories::get_tag_category($row["tag"]);
-            if (!isset($tag_categories_html[$category])) {
-                $tag_categories_html[$category] = $this->get_tag_list_preamble();
-            }
-            $tag_categories_html[$category]->appendChild(self::build_tag_row($row, $search));
-
-            if (!isset($tag_categories_count[$category])) {
-                $tag_categories_count[$category] = 0;
-            }
-            $tag_categories_count[$category] += 1;
-        }
-
-        ksort($tag_categories_html);
-        foreach (array_keys($tag_categories_html) as $category) {
-            $tag_categories_html[$category] .= '</tbody></table>';
-        }
-
-        asort($tag_categories_html);
-        if (isset($tag_categories_html[null])) {
-            $main_html = $tag_categories_html[null];
-        } else {
-            $main_html = null;
-        }
-        unset($tag_categories_html[null]);
-        $categories_display_names = [];
-        foreach (array_keys($tag_categories_html) as $category) {
-            if ($tag_categories_count[$category] < 2) {
-                $categories_display_names[$tag_category_dict[$category]['display_singular']] = $tag_categories_html[$category];
+            if (is_null($category)) {
+                $group = "NULL";
+            } elseif (array_key_exists($category, $tag_category_dict)) {
+                $group = $tag_category_dict[$category]["upper_group"];
+                if (!isset($priorities[$group])) {
+                    $priorities[$group] = $tag_category_dict[$category]["upload_page_priority"] ?? 0;
+                }
             } else {
-                $categories_display_names[$tag_category_dict[$category]['display_multiple']] = $tag_categories_html[$category];
+                $group = "NULL";
             }
+            if (!isset($tag_categories_html[$group])) {
+                $tag_categories_html[$group] = $this->get_tag_list_preamble();
+            }
+            $tag_categories_html[$group]->appendChild(self::build_tag_row($row, $search));
         }
-        ksort($categories_display_names);
-        if (array_key_exists("Meta", $categories_display_names)) {
-            $metaLeftValue = $categories_display_names["Meta"];
-            unset($categories_display_names["Meta"]);
-            $categories_display_names["Meta"] = $metaLeftValue;
+
+        foreach (array_keys($tag_categories_html) as $group) {
+            $tag_categories_html[$group] .= '</tbody></table>';
         }
+
+        if (isset($tag_categories_html["NULL"])) {
+            $other_html = $tag_categories_html["NULL"];
+            unset($tag_categories_html["NULL"]);
+        } else {
+            $other_html = null;
+        }
+
+        array_multisort($priorities, SORT_NUMERIC, SORT_DESC, $tag_categories_html);
+
         $tagshtml = emptyHTML();
-        foreach (array_keys($categories_display_names) as $categories_display_name) {
-            $tagshtml->appendChild(H3(html_escape($categories_display_name)));
-            $tagshtml->appendChild(rawHTML((string)$categories_display_names[$categories_display_name]));
+        foreach (array_keys($tag_categories_html) as $group) {
+            $tagshtml->appendChild(H3(html_escape($group)));
+            $tagshtml->appendChild(rawHTML((string)$tag_categories_html[$group]));
         }
 
-
-        if ($main_html !== null) {
+        if (!is_null($other_html)) {
             $tagshtml->appendChild(DIV(
                 H3("Other"),
-                DIV(["class" => "blockbody"], rawHTML((string)$main_html)),
+                DIV(["class" => "blockbody"], rawHTML((string)$other_html)),
             ));
         }
         $page->add_block(new Block(null, $tagshtml, "left", 10, "Tagsleft"));

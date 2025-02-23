@@ -136,6 +136,10 @@ class EmailVerification extends Extension
             return;
         }
         $sender = $config->get_string(EmailVerificationConfig::EMAIL_SENDER);
+        if (is_null($sender)) {
+            $page->flash("Email verification not setup by site owner");
+            return;
+        }
         $server_name = $_SERVER['SERVER_NAME'];
         $verification_url = "https://$server_name/email_verification?token=$token";
         $to = $email;

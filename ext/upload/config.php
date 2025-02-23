@@ -37,7 +37,7 @@ class UploadConfig extends ConfigGroup
     public const TLSOURCE = "upload_tlsource";
 
     #[ConfigMeta("Upload page order", ConfigType::STRING, default: "", input: "longtext", help:"comma separated, use the names as seen on the upload page")]
-    public const UPLOAD_ODER = "upload_order";
+    public const UPLOAD_ORDER = "upload_order";
 
     /**
      * @return array<string, string>

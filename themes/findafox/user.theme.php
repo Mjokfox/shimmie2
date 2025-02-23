@@ -116,20 +116,20 @@ class CustomUserPageTheme extends UserPageTheme
         foreach ($uploads as $ip => $count) {
             $html .= "<br>$ip ($count)";
             $i++;
-            if ($i > 3){
+            if ($i > 3) {
                 $html .= "<br>(truncated)";
                 break;
-            } 
+            }
         }
         $html .= "</td><td>Commented from:";
         $i = 0;
         foreach ($comments as $ip => $count) {
             $html .= "<br>$ip ($count)";
             $i++;
-            if ($i > 3){
+            if ($i > 3) {
                 $html .= "<br>(truncated)";
                 break;
-            } 
+            }
         }
         $html .= "</td></tr>";
         $html .= "<tr><td colspan='2'>(Most recent at top)</td></tr></table>";

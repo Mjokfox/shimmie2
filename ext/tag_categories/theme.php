@@ -11,7 +11,7 @@ use function MicroHTML\DIV;
 class TagCategoriesTheme extends Themelet
 {
     /**
-     * @param array<array{category: string, display_singular: string, display_multiple: string, color: string}> $tc_dict
+     * @param array<array{category: string, upper_group: string, lower_group: string, color: string, upload_page_type: ?int, upload_page_priority: ?int}> $tc_dict
      */
     public function show_tag_categories(Page $page, array $tc_dict): void
     {
@@ -25,19 +25,23 @@ class TagCategoriesTheme extends Themelet
             $tag_category = $row['category'];
             $query = "
             SELECT tags.tag
-            FROM image_tag_categories_tags tc, tags
-            WHERE tc.tag_id = tags.id
-            AND tc.category_id = (
+            FROM image_tag_categories_tags tct 
+            JOIN tags ON tct.tag_id = tags.id
+            WHERE tct.category_id = (
                 SELECT id FROM image_tag_categories WHERE category = :category_name
-            );";
+            )
+            ORDER BY tct.id;";
             $args = ["category_name" => $tag_category];
             $tags = $database->get_col($query, $args);
-            $tags = Tag::implode($tags);
+            $tags = implode(' ', $tags);
             $tags = str_replace(' ', " \n", $tags);
 
-            $tag_single_name = $row['display_singular'];
-            $tag_multiple_name = $row['display_multiple'];
+            $upper_group = $row['upper_group'];
+            $lower_group = $row['lower_group'];
             $tag_color = $row['color'];
+            $upload_page_type = $row['upload_page_type'] ?? 0;
+            $upload_page_priority = $row['upload_page_priority'] ?? 0;
+            $type_map = ["hidden", "half width", "full width", "single column", "single row"];
             $html .= '
             <div class="tagcategoryblock tagcategorycategories">
             '.make_form(make_link("tags/categories")).'
@@ -51,17 +55,17 @@ class TagCategoriesTheme extends Themelet
                     </td>
                 </tr>
                 <tr>
-                    <td>Name &ndash; Single</td>
+                    <td>List Group</td>
                     <td>
-                        <span>'.$tag_single_name.'</span>
-                        <input type="text" name="tc_display_singular" style="display:none" value="'.$tag_single_name.'">
+                        <span>'.$upper_group.'</span>
+                        <input type="text" name="tc_up_group" style="display:none" value="'.$upper_group.'">
                     </td>
                 </tr>
                 <tr>
-                    <td>Name &ndash; Multiple</td>
+                    <td>Upload &ndash; Group</td>
                     <td>
-                        <span>'.$tag_multiple_name.'</span>
-                        <input type="text" name="tc_display_multiple" style="display:none" value="'.$tag_multiple_name.'">
+                        <span>'.$lower_group.'</span>
+                        <input type="text" name="tc_lo_group" style="display:none" value="'.$lower_group.'">
                     </td>
                 </tr>
                 <tr>
@@ -72,13 +76,33 @@ class TagCategoriesTheme extends Themelet
                     </td>
                 </tr>
                 <tr>
+                    <td>Upload page</td>
+                    <td>
+                        <span>'.$type_map[$upload_page_type].'</span>
+                        <select name="tc_up_type" style="display:none;">
+                            <option value="0" '. ($upload_page_type == "0" ? "selected" : "") .'>hidden</option>
+                            <option value="1" '. ($upload_page_type == "1" ? "selected" : "") .'>half width</option>
+                            <option value="2" '. ($upload_page_type == "2" ? "selected" : "") .'>full width</option>
+                            <option value="3" '. ($upload_page_type == "3" ? "selected" : "") .'>single column</option>
+                            <option value="4" '. ($upload_page_type == "4" ? "selected" : "") .'>single row</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Priority</td>
+                    <td>
+                        <span>'.$upload_page_priority.'</span>
+                        <input type="number" name="tc_up_prio" style="display:none" value="'.$upload_page_priority.'">
+                    </td>
+                </tr>
+                <tr>
                     <td>tags</td>
                     <td>
                         <textarea type="text" name="tc_tag_list" class="autocomplete_tags" placeholder="tagme" rows="5.5" cols="15" readonly >'.$tags.'</textarea>
                     </td>
                     </tr>
                 </table>
-                <button class="tc_edit" type="button" onclick="$(\'.tagcategorycategories:nth-of-type('.$tc_block_index.') tr + tr td span\').hide(); $(\'.tagcategorycategories:nth-of-type('.$tc_block_index.') td input\').show(); $(\'.tagcategorycategories:nth-of-type('.$tc_block_index.') .tc_edit\').hide(); $(\'.tagcategorycategories:nth-of-type('.$tc_block_index.') .tc_colorswatch\').hide(); $(\'.tagcategorycategories:nth-of-type('.$tc_block_index.') .tc_submit\').show(); $(\'.tagcategorycategories:nth-of-type('.$tc_block_index.' ) textarea\').prop(\'readonly\', false);
+                <button class="tc_edit" type="button" onclick="$(\'.tagcategorycategories:nth-of-type('.$tc_block_index.') tr + tr td span\').hide(); $(\'.tagcategorycategories:nth-of-type('.$tc_block_index.') td input\').show(); $(\'.tagcategorycategories:nth-of-type('.$tc_block_index.') td select\').show(); $(\'.tagcategorycategories:nth-of-type('.$tc_block_index.') .tc_edit\').hide(); $(\'.tagcategorycategories:nth-of-type('.$tc_block_index.') .tc_colorswatch\').hide(); $(\'.tagcategorycategories:nth-of-type('.$tc_block_index.') .tc_submit\').show(); $(\'.tagcategorycategories:nth-of-type('.$tc_block_index.' ) textarea\').prop(\'readonly\', false);
                 ">Edit</button>
                 <button class="tc_submit" type="submit" style="display:none;" name="tc_status" value="edit">Submit</button>
                 <button class="tc_submit" type="button" style="display:none;" onclick="$(\'.tagcategorycategories:nth-of-type('.$tc_block_index.') .tc_delete\').show(); $(this).hide();">Delete</button>
@@ -90,8 +114,8 @@ class TagCategoriesTheme extends Themelet
 
         // new
         $tag_category = 'example';
-        $tag_single_name = 'Example';
-        $tag_multiple_name = 'Examples';
+        $upper_group = 'Example';
+        $lower_group = 'Examples';
         $tag_color = '#EE5542';
         $html .= '
         <div class="tagcategoryblock">
@@ -104,15 +128,15 @@ class TagCategoriesTheme extends Themelet
                 </td>
             </tr>
             <tr>
-                <td>Name &ndash; Single</td>
+                <td>List &ndash; Group</td>
                 <td>
-                    <input type="text" name="tc_display_singular" value="'.$tag_single_name.'">
+                    <input type="text" name="tc_up_group" value="'.$upper_group.'">
                 </td>
             </tr>
             <tr>
-                <td>Name &ndash; Multiple</td>
+                <td>Upload &ndash; Group</td>
                 <td>
-                    <input type="text" name="tc_display_multiple" value="'.$tag_multiple_name.'">
+                    <input type="text" name="tc_lo_group" value="'.$lower_group.'">
                 </td>
             </tr>
             <tr>
@@ -121,6 +145,18 @@ class TagCategoriesTheme extends Themelet
                     <input type="color" name="tc_color" value="'.$tag_color.'">
                 </td>
             </tr>
+            <tr>
+                <td>Upload page</td>
+                    <td>
+                        <select name="tc_up_type">
+                            <option value="0">hidden</option>
+                            <option value="1">half width</option>
+                            <option value="2">full width</option>
+                            <option value="3">single column</option>
+                            <option value="4">single row</option>
+                        </select>
+                    </td>
+                </tr>
             <tr>
                 <td>tags</td>
                 <td>
@@ -133,118 +169,6 @@ class TagCategoriesTheme extends Themelet
         </div>
         </div>
         ';
-
-        // category settings
-        /*
-        $html .= '
-        <div style="text-align:left;position:relative;">
-            <div style="height:5px; width:100%; background-color:white;"></div>
-            <h3 style="margin-top:5px;">Settings (not functioning yet)<h3>
-        </div>
-        <div>';
-        $tc_block_index = 0;
-        $settings = $database->get_all('SELECT * FROM image_tag_categories_settings');
-
-        foreach($settings as $row){
-            $tc_block_index += 1;
-            $query = "
-            SELECT tags.tag
-            FROM image_tag_categories_settings_tags tcs, tags
-            WHERE tcs.tag_id = tags.id
-            AND tcs.setting_id = :setting_id
-            ;";
-            $args = ["setting_id" => $row['id']];
-            $tags = $database->get_col($query, $args);
-            $tags = Tag::implode($tags);
-            $tags = str_replace(' ', " \n", $tags);
-
-            $tag_id = $row['tag_id'];
-            $tag = $database->get_one("SELECT tags.tag FROM tags WHERE tags.id = :id",['id' => $tag_id]);
-            $setting_type = $row['setting_type'];
-            $setting_types = ['set hide', 'set show', 'make checkbox', 'make radio'];
-            $html .= '
-            <div class="tagcategoryblock tagcategorysettings">
-            '.make_form(make_link("tags/categories")).'
-                <table>
-                <tr>
-                    <td>Controlling tag</td>
-                    <td>
-                        <span>'.$tag.'</span>
-                        <input type="text" name="tc_setting_tag" style="display:none" value="'.$tag.'">
-                    </td>
-                </tr>
-                <tr>
-                    <td>Type</td>
-                    <td>
-                        <span style="width:auto">'.$setting_types[$setting_type].'</span>
-                        <select name="tc_setting_type" id="setting_type" style="display:none">
-                            <option value="0" '.($setting_type == 0 ? 'selected' : '' ).'>set hide</option>
-                            <option value="1" '.($setting_type == 1 ? 'selected' : '' ).'>set show</option>
-                            <option value="2" '.($setting_type == 2 ? 'selected' : '' ).'>make checkbox</option>
-                            <option value="3" '.($setting_type == 3 ? 'selected' : '' ).'>make radio</option>
-                        </select>
-                    </td>
-                </tr>
-                <tr>
-                    <td>affected tags</td>
-                    <td>
-                        <textarea type="text" name="tc_setting_tag_list" class="autocomplete_tags" placeholder="tagme" rows="5" cols="15" readonly >'.$tags.'</textarea>
-                    </td>
-                </tr>
-                </table>
-                <button class="tc_edit" type="button" onclick="
-                $(\'.tagcategorysettings:nth-of-type('.$tc_block_index.') tr td span\').hide();
-                $(\'.tagcategorysettings:nth-of-type('.$tc_block_index.') td input\').show();
-                $(\'.tagcategorysettings:nth-of-type('.$tc_block_index.') td select\').show();
-                $(\'.tagcategorysettings:nth-of-type('.$tc_block_index.') .tc_edit\').hide();
-                $(\'.tagcategorysettings:nth-of-type('.$tc_block_index.') .tc_submit\').show();
-                $(\'.tagcategorysettings:nth-of-type('.$tc_block_index.' ) textarea\').prop(\'readonly\', false);
-                ">Edit</button>
-                <button class="tc_submit" type="submit" style="display:none;" name="tc_setting_status" value="edit">Submit</button>
-                <button class="tc_submit" type="button" style="display:none;" onclick="$(\'.tagcategorysettings:nth-of-type('.$tc_block_index.') .tc_delete\').show(); $(this).hide();">Delete</button>
-                <button class="tc_delete" type="submit" style="display:none;" name="tc_setting_status" value="delete">Really, really delete</button>
-                <input type="text" name="tc_setting_id" style="display:none" value="'.$row['id'].'">
-            </form>
-            </div>';
-        }
-
-        // new
-        $tag_id= 'tagme';
-        $setting_type = 1;
-        $html .= '
-        <div class="tagcategoryblock">
-        '.make_form(make_link("tags/categories")).'
-            <table>
-            <tr>
-                <td>Controlling tag</td>
-                <td>
-                    <input type="text" name="tc_setting_tag" value="'.$tag_id.'">
-                </td>
-            </tr>
-            <tr>
-                <td>Type</td>
-                <td>
-                    <select name="tc_setting_type" id="setting_type">
-                        <option value="0" '.($setting_type == 0 ? 'selected' : '' ).'>set hide</option>
-                        <option value="1" '.($setting_type == 1 ? 'selected' : '' ).'>set show</option>
-                        <option value="2" '.($setting_type == 2 ? 'selected' : '' ).'>make checkbox</option>
-                        <option value="3" '.($setting_type == 3 ? 'selected' : '' ).'>make radio</option>
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <td>affected tags</td>
-                <td>
-                    <textarea type="text" name="tc_setting_tag_list" class="autocomplete_tags" placeholder="tagme" rows="5" cols="15"  ></textarea>
-                </td>
-            </tr>
-            </table>
-            <button class="tc_submit" type="submit" name="tc_setting_status" value="new">Submit</button>
-        </form>
-        </div>
-
-        </div>';
-        */
 
         // add html to stuffs
         $page->set_title("Tag Categories");

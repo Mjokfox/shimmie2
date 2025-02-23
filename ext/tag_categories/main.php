@@ -17,42 +17,35 @@ class TagCategories extends Extension
             $database->create_table(
                 'image_tag_categories',
                 'id SCORE_AIPK,
-                category VARCHAR(60),
-				display_singular VARCHAR(60),
-				display_multiple VARCHAR(60),
-				color VARCHAR(7)'
+                category VARCHAR(60) UNIQUE,
+				upper_group VARCHAR(60),
+				lower_group VARCHAR(60),
+				color VARCHAR(7),
+                upload_page_type INTEGER,
+                upload_page_priority INTEGER',
             );
+            // upload_type: 0/NULL = hidden, 1 = half width, 2 = full width, 3 = single width, 4 = single full width row
 
             $database->create_table(
                 'image_tag_categories_tags',
                 'category_id INTEGER,
+                id SCORE_AIPK,
                 tag_id INTEGER,
                 FOREIGN KEY(category_id) REFERENCES image_tag_categories(id),
-                FOREIGN KEY(tag_id) REFERENCES tags(id),
-                PRIMARY KEY (category_id, tag_id)'
+                FOREIGN KEY(tag_id) REFERENCES tags(id)'
             );
-            /*
-            $database->create_table(
-                'image_tag_categories_settings',
-                'id INTEGER,
-                tag_id INTEGER,
-                setting_type INTEGER,
-                FOREIGN KEY(tag_id) REFERENCES tags(id),
-                PRIMARY KEY(id AUTOINCREMENT)'
-            );
-            $database->create_table(
-                'image_tag_categories_settings_tags',
-                'setting_id INTEGER,
-                tag_id INTEGER,
-                FOREIGN KEY(setting_id) REFERENCES image_tag_categories_settings(id),
-                FOREIGN KEY(tag_id) REFERENCES tags(id),
-                PRIMARY KEY (setting_id, tag_id)'
-            );
-            */
 
-            $this->set_version(TagCategoriesConfig::VERSION, 1);
+            $this->set_version(TagCategoriesConfig::VERSION, 2);
 
             log_info("tag_categories", "extension installed");
+        }
+        if ($this->get_version(TagCategoriesConfig::VERSION) < 2) {
+            $database->execute("ALTER TABLE image_tag_categories RENAME COLUMN display_singular to upper_group;");
+            $database->execute("ALTER TABLE image_tag_categories RENAME COLUMN display_multiple to lower_group;");
+            $database->execute("ALTER TABLE image_tag_categories ADD COLUMN upload_page_type INTEGER;");
+            $database->execute("ALTER TABLE image_tag_categories ADD COLUMN upload_page_priority INTEGER;");
+            $database->execute("ALTER TABLE image_tag_categories ADD CONSTRAINT image_tag_categories_category_key UNIQUE (category);");
+            $this->set_version(TagCategoriesConfig::VERSION, 2);
         }
 
         // if empty, add our default values
@@ -60,15 +53,15 @@ class TagCategories extends Extension
 
         if ($number_of_db_rows == 0) {
             $database->execute(
-                'INSERT INTO image_tag_categories (category, display_singular, display_multiple, color) VALUES (:category, :single, :multiple, :color)',
+                'INSERT INTO image_tag_categories (category, upper_group, lower_group, color) VALUES (:category, :single, :multiple, :color)',
                 ["category" => "artist", "single" => "Artist", "multiple" => "Artists", "color" => "#BB6666"]
             );
             $database->execute(
-                'INSERT INTO image_tag_categories (category, display_singular, display_multiple, color) VALUES (:category, :single, :multiple, :color)',
+                'INSERT INTO image_tag_categories (category, upper_group, lower_group, color) VALUES (:category, :single, :multiple, :color)',
                 ["category" => "series", "single" => "Series", "multiple" => "Series", "color" => "#AA00AA"]
             );
             $database->execute(
-                'INSERT INTO image_tag_categories (category, display_singular, display_multiple, color) VALUES (:category, :single, :multiple, :color)',
+                'INSERT INTO image_tag_categories (category, upper_group, lower_group, color) VALUES (:category, :single, :multiple, :color)',
                 ["category" => "character", "single" => "Character", "multiple" => "Characters", "color" => "#66BB66"]
             );
         }
@@ -151,7 +144,7 @@ class TagCategories extends Extension
     }
 
     /**
-     * @return array<string, array{category: string, display_singular: string, display_multiple: string, color: string}>
+     * @return array<string, array{category: string, upper_group: string, lower_group: string, color: string, upload_page_type: ?int, upload_page_priority: ?int}>
      */
     public static function getKeyedDict(): array
     {
@@ -178,17 +171,13 @@ class TagCategories extends Extension
         static $tc_category_dict = null;
         if ($tc_category_dict === null) {
             $query = "
-            SELECT c.category, t.tag
+            SELECT t.tag, c.category
             FROM image_tag_categories_tags ct
             JOIN image_tag_categories c ON ct.category_id = c.id
-            JOIN tags t ON ct.tag_id = t.id;
-            ";
+            JOIN tags t ON ct.tag_id = t.id
+            ORDER BY ct.id;";
 
-            $tc_dict = $database->get_all($query);
-
-            foreach ($tc_dict as $row) {
-                $tc_category_dict[$row['tag']] = $row["category"];
-            }
+            $tc_category_dict = $database->get_pairs($query);
         }
         return $tc_category_dict;
     }
@@ -238,7 +227,7 @@ class TagCategories extends Extension
     {
         global $database;
         $tags = str_replace("\n", ' ', $tags);
-        $tags = Tag::explode($tags, false);
+        $tags = Tag::explode($tags, false, sort:false);
         $tag_ids = [];
         foreach ($tags as $tag) {
             $tag_ids[] = Tag::get_or_create_id($tag);
@@ -276,70 +265,38 @@ class TagCategories extends Extension
         ]
         );
     }
-    /*
-    private function add_tags_to_setting($id,$tags) :void
-    {
-        global $database;
-        $tags = str_replace("\n",' ', $tags);
-        $tags = Tag::explode($tags, false);
-        $tag_ids = [];
-        foreach ($tags as $tag){$tag_ids[] = Tag::get_or_create_id($tag);}
-
-//         $query = "
-//         SELECT id
-//         FROM image_tag_categories_settings
-//         WHERE id = :id;";
-//         $args = ["id" => $id];
-//
-//         $category_id = $database->get_one($query, $args);
-
-        $query = "
-        INSERT INTO image_tag_categories_settings_tags (setting_id, tag_id)
-        VALUES (:setting_id, :tag_id);";
-        $args = ["setting_id" => $id];
-        foreach($tag_ids as $tag){
-            $args["tag_id"] = $tag;
-            $database->execute($query,$args);
-        }
-    }
-    private function delete_tags_from_setting($id) :void
-    {
-        global $database;
-        $database->execute(
-            'DELETE FROM image_tag_categories_settings_tags
-            WHERE setting_id = :id;',
-        [
-            'id' => $id
-        ]
-        );
-    }
-    */
 
     public function page_update(): void
     {
         global $user, $database;
         if (isset($_POST['tc_status'])) {
-            if (!isset($_POST['tc_status']) and
-            !isset($_POST['tc_category']) and
-            !isset($_POST['tc_display_singular']) and
-            !isset($_POST['tc_display_multiple']) and
-            !isset($_POST['tc_tag_list']) and
-            !isset($_POST['tc_color'])) {
+            if (!isset($_POST['tc_status']) ||
+            !isset($_POST['tc_category']) ||
+            !isset($_POST['tc_up_group']) ||
+            !isset($_POST['tc_lo_group']) ||
+            !isset($_POST['tc_tag_list']) ||
+            !isset($_POST['tc_color']) ||
+            !isset($_POST['tc_up_type']) ||
+            !isset($_POST['tc_up_prio'])) {
                 return;
             }
 
             if ($_POST['tc_status'] == 'edit') {
                 $database->execute(
                     'UPDATE image_tag_categories
-                    SET display_singular=:display_singular,
-                        display_multiple=:display_multiple,
-                        color=:color
+                    SET upper_group=:upper_group,
+                        lower_group=:lower_group,
+                        color=:color,
+                        upload_page_type=:upload_page_type,
+                        upload_page_priority=:upload_page_priority
                     WHERE category=:category',
                     [
                         'category' => $_POST['tc_category'],
-                        'display_singular' => $_POST['tc_display_singular'],
-                        'display_multiple' => $_POST['tc_display_multiple'],
+                        'upper_group' => $_POST['tc_up_group'],
+                        'lower_group' => $_POST['tc_lo_group'],
                         'color' => $_POST['tc_color'],
+                        'upload_page_type' => $_POST['tc_up_type'],
+                        'upload_page_priority' => $_POST["tc_up_prio"],
                     ]
                 );
                 $this->delete_tags_from_category($_POST['tc_category']);
@@ -347,13 +304,15 @@ class TagCategories extends Extension
 
             } elseif ($_POST['tc_status'] == 'new') {
                 $database->execute(
-                    'INSERT INTO image_tag_categories (category, display_singular, display_multiple, color)
-                    VALUES (:category, :display_singular, :display_multiple, :color)',
+                    'INSERT INTO image_tag_categories (category, upper_group, lower_group, color, upload_page_type, upload_page_priority)
+                    VALUES (:category, :upper_group, :lower_group, :color, :upload_page_type, :upload_page_priority)',
                     [
                         'category' => $_POST['tc_category'],
-                        'display_singular' => $_POST['tc_display_singular'],
-                        'display_multiple' => $_POST['tc_display_multiple'],
+                        'upper_group' => $_POST['tc_up_group'],
+                        'lower_group' => $_POST['tc_lo_group'],
                         'color' => $_POST['tc_color'],
+                        'upload_page_type' => $_POST['tc_up_type'],
+                        'upload_page_priority' => $_POST["tc_up_prio"],
                     ]
                 );
                 $this->add_tags_to_category($_POST['tc_category'], $_POST['tc_tag_list']);
@@ -367,50 +326,6 @@ class TagCategories extends Extension
                     ]
                 );
             }
-        } /*else {
-            if (!isset($_POST['tc_setting_status']) and
-                // !isset($_POST['tc_setting_id']) and
-                !isset($_POST['tc_setting_tag']) and
-                !isset($_POST['tc_setting_type']) and
-                !isset($_POST['tc_setting_tag_list'])) {
-                return;
-                }
-                if ($_POST['tc_setting_status'] == 'edit') {
-                    $database->execute(
-                        'UPDATE image_tag_categories_settings
-                        SET setting_type=:setting_type,
-                        tag_id=:tag_id
-                        WHERE id=:id',
-                        [
-                            'setting_type' => $_POST['tc_setting_type'],
-                            'tag_id' => Tag::get_or_create_id($_POST['tc_setting_tag']),
-                            'id' => $_POST['tc_setting_id'],
-                        ]
-                    );
-                    $this->delete_tags_from_setting($_POST['tc_setting_id']);
-                    $this->add_tags_to_setting($_POST['tc_setting_id'],$_POST['tc_setting_tag_list']);
-
-                } elseif ($_POST['tc_setting_status'] == 'new') {
-                    $database->execute(
-                        'INSERT INTO image_tag_categories_settings (tag_id, setting_type)
-                        VALUES (:tag_id, :setting_type)',
-                                       [
-                                           'tag_id' => Tag::get_or_create_id($_POST['tc_setting_tag']),
-                                       'setting_type' => $_POST['tc_setting_type'],
-                                       ]
-                    );
-                    $setting_id = $database->get_one("SELECT MAX(id) AS id FROM image_tag_categories_settings");
-                    $this->add_tags_to_setting($setting_id,$_POST['tc_setting_tag_list']);
-                } elseif ($_POST['tc_setting_status'] == 'delete') {
-                    $this->delete_tags_from_setting($_POST['tc_setting_id']);
-                    $database->execute(
-                        'DELETE FROM image_tag_categories_settings
-                        WHERE id=:id',
-                        [
-                            'id' => $_POST['tc_setting_id']
-                        ]
-                    );
-                }
-        }*/
+        }
     }
 }

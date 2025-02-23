@@ -131,7 +131,7 @@ class Tag
      *
      * @return list<string>
      */
-    public static function explode(string $tags, bool $tagme = true): array
+    public static function explode(string $tags, bool $tagme = true, bool $sort = true): array
     {
         global $database;
 
@@ -189,7 +189,9 @@ class Tag
         $tag_array = array_iunique($new);
 
         /* tidy up */
-        sort($tag_array);
+        if ($sort) {
+            sort($tag_array);
+        }
 
         return $tag_array;
     }
