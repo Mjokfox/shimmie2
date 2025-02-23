@@ -36,6 +36,9 @@ class UploadConfig extends ConfigGroup
     #[ConfigMeta("Use transload URL as source", ConfigType::BOOL, default: true, advanced: true)]
     public const TLSOURCE = "upload_tlsource";
 
+    #[ConfigMeta("Upload page order", ConfigType::STRING, default: "", input: "longtext", help:"comma separated, use the names as seen on the upload page")]
+    public const UPLOAD_ODER = "upload_order";
+
     /**
      * @return array<string, string>
      */

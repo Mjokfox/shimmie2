@@ -481,7 +481,7 @@ function get_categories_html(string $suffix): HTMLElement
             }
         }
     }
-    $upload_order = $config->get_string("upload_order");
+    $upload_order = $config->get_string(UploadConfig::UPLOAD_ODER, "");
     $category_sort = array_map('trim', explode(",", $upload_order));
     customkciSort($html_input_array, $category_sort);
     foreach ($html_input_array as $whatever) {
