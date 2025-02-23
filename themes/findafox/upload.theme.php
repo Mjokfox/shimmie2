@@ -200,7 +200,7 @@ function get_categories_html(string $suffix): HTMLElement
             FROM image_tag_categories_tags itct
             JOIN image_tag_categories itc ON itct.category_id = itc.id
             JOIN tags t ON itct.tag_id = t.id
-            ORDER BY itc.upload_page_priority asc, itct.id ASC;
+            ORDER BY itc.upload_page_priority DESC, itct.id ASC;
         "), 1);
     /** @var array{string:mixed} $tc_dict */
     $tc_dict = [];
