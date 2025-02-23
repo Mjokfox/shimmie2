@@ -388,6 +388,7 @@ function create_flash(text) {
     else if (section){
         flash = document.createElement("b");
         flash.id = "flash";
+        text = text + "<span style=\"float:right;\"onclick=document.getElementById(\"flash\").remove();>x<span>"
         flash.innerHTML = text
         section.parentNode.insertBefore(flash,section)
     }
