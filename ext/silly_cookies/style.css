@@ -47,7 +47,7 @@
     align-items: center;
 }
 
-.silly-cookie-subcontainer * {
+.silly-cookie-subcontainer > * {
     margin-left: 2em;
 }
 

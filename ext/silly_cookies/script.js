@@ -108,7 +108,8 @@ if ((window.location.pathname === "/home" || window.location.pathname === "/") &
         const container = document.createElement("div");
         const subcontainer = document.createElement("div");
         const image = document.createElement("img");
-        const text = document.createElement("H3");
+        const text = document.createElement("span");
+        text.classList = "markdown";
 
         container.className = "silly-cookie-container"
 
@@ -118,10 +119,17 @@ if ((window.location.pathname === "/home" || window.location.pathname === "/") &
         image.addEventListener("click",makeFallingCookie)
 
         text.innerHTML = htmlDecode(window.silly_cookies_text);
+        if (typeof(markdown_format) == "function") {
+            text.innerHTML = markdown_format(text.innerHTML);
+        }
 
         if (window.silly_cookies_title){
-            const header = document.createElement("H3");
-            header.textContent = window.silly_cookies_title;
+            const header = document.createElement("span");
+            header.classList = "markdown";
+            header.innerHTML = window.silly_cookies_title;
+            if (typeof(markdown_format) == "function") {
+                header.innerHTML = markdown_format(header.innerHTML);
+            }
             container.appendChild(header);
         }
         
