@@ -147,16 +147,22 @@ class TagCategoriesTheme extends Themelet
             </tr>
             <tr>
                 <td>Upload page</td>
-                    <td>
-                        <select name="tc_up_type">
-                            <option value="0">hidden</option>
-                            <option value="1">half width</option>
-                            <option value="2">full width</option>
-                            <option value="3">single column</option>
-                            <option value="4">single row</option>
-                        </select>
-                    </td>
-                </tr>
+                <td>
+                    <select name="tc_up_type">
+                        <option value="0">hidden</option>
+                        <option value="1">half width</option>
+                        <option value="2">full width</option>
+                        <option value="3">single column</option>
+                        <option value="4">single row</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>Priority</td>
+                <td>
+                    <input type="number" name="tc_up_prio" value="0">
+                </td>
+            </tr>
             <tr>
                 <td>tags</td>
                 <td>
