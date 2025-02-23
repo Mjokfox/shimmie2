@@ -249,12 +249,15 @@ function get_categories_html(string $suffix): HTMLElement
                     );
                 }
             }
-            $input_array[$group]->appendChild(
-                SELECT(
-                    ["id" => "tagsDropdown_{$suffix}", "style" => "width:auto","onclick" => "updateTags(this);"],
-                    $dropdownHtml
-                )
-            );
+            if ($i > 4){
+                $input_array[$group]->appendChild(
+                    SELECT(
+                        ["id" => "tagsDropdown_{$suffix}", "style" => "width:auto","onclick" => "updateTags(this);"],
+                        OPTION(["value" => ""], "More..."),
+                        $dropdownHtml
+                    )
+                );
+            }
         } else {
             $i = 0;
             foreach ($tc_dict[$group] as $tag) {
