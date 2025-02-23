@@ -16,10 +16,6 @@ class EmailVerification extends Extension
 
     public function onInitExt(InitExtEvent $event): void
     {
-        global $config;
-
-        $config->set_default_string(EmailVerificationConfig::EMAIL_SENDER, "admin@domain.com");
-        $config->set_default_string(EmailVerificationConfig::DEFAULT_MESSAGE, "Cannot send email verification mail, no email set.");
 
         new UserClass("user", "base", [
             SpeedHaxPermission::BIG_SEARCH => true,
@@ -102,8 +98,9 @@ class EmailVerification extends Extension
 
     public function onUserCreation(UserCreationEvent $event): void
     {
-        global $page;
-        $page->flash("Welcome to FindAfox, ". $event->username ."!");
+        global $page, $config;
+        $title = $config->get_string(SetupConfig::TITLE);
+        $page->flash("Welcome to $title, {$event->username}!");
         $this->send_verification_mail($this->get_email_token($event->get_user(), $event->email), $event->email);
     }
 
@@ -178,7 +175,7 @@ class EmailVerification extends Extension
 
     public function get_email_token(User $user, string $email): string
     {
-        return hash("sha3-256", $email. $user->get_session_id() . SECRET);
+        return hash("sha3-256", $email . $user->get_session_id() . SECRET);
     }
 
 }

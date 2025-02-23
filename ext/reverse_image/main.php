@@ -79,7 +79,7 @@ class ReverseImage extends Extension
                 return;
             }
             $page_number = $event->get_iarg('page_num', 1);
-            $page_size = $config->get_int("index_images");
+            $page_size = $config->get_int(IndexConfig::IMAGES);
 
             $image_ids = $this->reverse_image_compare($feat, $page_size, ($page_number - 1) * $page_size);
             $in = implode(",", array_keys($image_ids));

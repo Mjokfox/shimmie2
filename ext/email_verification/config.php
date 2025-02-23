@@ -6,6 +6,10 @@ namespace Shimmie2;
 
 class EmailVerificationConfig extends ConfigGroup
 {
-    public const EMAIL_SENDER = "email_Verification_source";
-    public const DEFAULT_MESSAGE = "email_Verification_def_mess";
+    public const KEY = "email_verification";
+    #[ConfigMeta("Sender email", ConfigType::STRING)]
+    public const EMAIL_SENDER = "email_verification_sender";
+
+    #[ConfigMeta("Message for users who did not set an email", ConfigType::STRING, input: "longtext")]
+    public const DEFAULT_MESSAGE = "email_verification_def_mess";
 }

@@ -67,7 +67,7 @@ class CustomUserPageTheme extends UserPageTheme
     public function display_signup_page(Page $page): void
     {
         global $config, $user;
-        $tac = $config->get_string("login_tac", "");
+        $tac = $config->get_string(UserAccountsConfig::LOGIN_TAC, "");
 
         $tac = send_event(new TextFormattingEvent($tac))->formatted;
 
