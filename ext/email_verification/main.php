@@ -128,7 +128,7 @@ class EmailVerification extends Extension
     {
         global $page, $config;
         if ($email === "") {
-            $page->flash($config->get_string(EmailVerificationConfig::DEFAULT_MESSAGE));
+            $page->flash($config->get_string(EmailVerificationConfig::DEFAULT_MESSAGE, ""));
             return;
         }
         if ($token === "") {

@@ -10,7 +10,7 @@ class StaticFilesConfig extends ConfigGroup
 
     #[ConfigMeta("Text to add before the main user-agent *", ConfigType::STRING, input: "longtext")]
     public const ROBOTS_BEFORE = "robots_txt_bef";
-    #[ConfigMeta("Text to add before the main user-agent *", ConfigType::STRING, input: "longtext")]
+    #[ConfigMeta("Text to add after the main user-agent *", ConfigType::STRING, input: "longtext")]
     public const ROBOTS_AFTER = "robots_txt_aft";
     #[ConfigMeta("* Crawl-delay: ", ConfigType::INT, default: 3)]
     public const ROBOTS_DELAY = "robots_txt_delay";
