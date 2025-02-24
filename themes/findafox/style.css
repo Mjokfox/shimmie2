@@ -854,7 +854,7 @@ DIV.grid-cell-label {
     white-space: normal;
     overflow-wrap: break-word;
 	text-align: right;
-	padding-right: 10px;
+	padding: 0 5px;
 }
 
 DIV.grid-cell-separator {
