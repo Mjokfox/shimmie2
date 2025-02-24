@@ -831,7 +831,6 @@ DIV.post-controls .post-controls-center {
 	display: grid;
     grid-template-columns: repeat(4, 1fr);
     grid-auto-rows: min-content;
-    row-gap: 10px;
 	--upload-c-width: 28ch;
 }
 
@@ -893,7 +892,9 @@ DIV.grid-cell-separator {
 		--num-rows: var(--rows);
 	}
 	DIV.grid-cell {
-		border-right-width: 1px dashed;
+		border-right: 1px var(--text) dashed;
+		border-bottom: 1px var(--text) dotted;
+		padding: 5px 0;
 		display: grid;
 		grid-template-columns: 10ch var(--upload-c-width) calc(var(--upload-c-width) - 10ch);;
 	}
