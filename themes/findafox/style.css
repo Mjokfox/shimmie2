@@ -676,12 +676,19 @@ form+form {
 		grid-template-columns: 20ch auto;
 	}
 	
-	.upload-tags-grid DIV.grid-cell-wide .grid-cell-content {
+	.upload-tags-grid DIV.grid-cell .grid-cell-content {
 		grid-template-columns: 20ch auto;
+		display: grid;
 	}
 	
-	.upload-tags-grid DIV.grid-cell, .upload-tags-grid DIV.grid-cell-wide {
+	.upload-tags-grid DIV.grid-cell, .upload-tags-grid DIV.grid-cell.cell-wide {
 		grid-column: span 1;
+	}
+
+	DIV.grid-cell {
+		border-right-width: 1px dashed;
+		display: grid;
+		grid-template-columns: 10ch var(--upload-c-width) calc(var(--upload-c-width) - 10ch);;
 	}
 
 	DIV.upload-tags-grid {
@@ -699,7 +706,7 @@ form+form {
 		width: 1.2em;
 	}
 
-	DIV.grid-cell:nth-child(even), DIV.grid-cell-wide:nth-child(even) {
+	DIV.grid-cell:nth-child(even), DIV.grid-cell.cell-wide:nth-child(even) {
 		background-color: #FFF1;
 	}
 
@@ -745,23 +752,15 @@ form+form {
 	}
 }
 
-@media only screen and (max-width:1500px) {
-	DIV.grid-cell-content {
-		grid-template-columns: 16ch auto
-	}
-	
-	DIV.grid-cell-wide .grid-cell-content {
-		grid-template-columns: repeat(3, 16ch) auto;
+@media only screen and (max-width:1700px) {
+	DIV.upload-tags-grid {
+		--upload-c-width: 20ch;
 	}
 }
 /* just get as compact as possible */
-@media only screen and (max-width:1200px) { 
-	DIV.grid-cell-content {
-		grid-template-columns: repeat(2, auto);
-	}
-	
-	DIV.grid-cell-wide .grid-cell-content {
-		grid-template-columns: repeat(4, auto);
+@media only screen and (max-width:1300px) {
+	DIV.upload-tags-grid {
+		--upload-c-width: 16ch;
 	}
 }
 
@@ -832,27 +831,20 @@ DIV.post-controls .post-controls-center {
 	display: grid;
     grid-template-columns: repeat(4, 1fr);
     grid-auto-rows: min-content;
-    gap: 10px;
+    row-gap: 10px;
+	--upload-c-width: 28ch;
 }
 
-DIV.grid-cell {
-    display: flex;
-    gap: 10px; 
+DIV.grid-cell, DIV.grid-cell.cell-wide, DIV.grid-cell.-cell-thin {
 	align-items: center;
 	grid-column: span 2;
 }
 
-DIV.grid-cell-thin {
-    display: flex;
-    gap: 10px; 
-	align-items: center;
+DIV.grid-cell.cell-thin {
 	grid-column: span 1;
 }
 
-DIV.grid-cell-wide {
-    display: flex;
-    gap: 10px; 
-	align-items: center;
+DIV.grid-cell.cell-wide {
 	grid-column: span 4;
 }
 
@@ -863,12 +855,17 @@ DIV.grid-cell-label {
     white-space: normal;
     overflow-wrap: break-word;
 	text-align: right;
+	padding-right: 10px;
 }
 
 DIV.grid-cell-separator {
-	border-left-width: 1px;
-	border-left-style: solid;
+	border-right-width: 1px;
+	border-right-style: solid;
 	height:100%;
+	display: flex;
+  	align-items: center;
+	justify-content: end;
+	margin-right: 10px;
 }
 
 .label-margin {
@@ -879,26 +876,53 @@ DIV.grid-cell-separator {
     display: grid;
 	justify-content: start;
 	grid-auto-flow: column;
-	grid-template-columns: 20ch auto;
+	grid-template-columns: repeat(2, var(--upload-c-width));
 	grid-template-rows: repeat(var(--num-rows), auto);
 }
 
-.grid-cell-wide .grid-cell-content {
-	grid-template-columns: repeat(4, 20ch);
+.cell-wide .grid-cell-content {
+	grid-template-columns: repeat(4, var(--upload-c-width));
+}
+
+.cell-thin .grid-cell-content {
+	grid-template-columns: var(--upload-c-width);
 }
 
 @media not all and (min-resolution: 2dppx) and (orientation: portrait) {
 	.grid-cell-content{
 		--num-rows: var(--rows);
 	}
-	DIV.grid-cell:nth-child(odd) {
-		border-right-width:1px;
-		border-right-style:dashed;
+	DIV.grid-cell {
+		border-right-width: 1px dashed;
+		display: grid;
+		grid-template-columns: 10ch var(--upload-c-width) calc(var(--upload-c-width) - 10ch);;
+	}
+
+	DIV.grid-cell.cell-wide {
+		grid-template-columns: 10ch repeat(3, var(--upload-c-width)) calc(var(--upload-c-width) - 10ch);;
+	}
+
+	DIV.grid-cell.cell-thin {
+		grid-template-columns: 10ch calc(var(--upload-c-width) - 10ch);
+	}
+
+	.grid-cell .grid-cell-content {
+		grid-column: span 2;
+	}
+
+	.cell-wide .grid-cell-content {
+		grid-column: span 4;
+	}
+
+	.cell-thin .grid-cell-content {
+		grid-column: span 1;
 	}
 
 	DIV.grid-cell-content.dir-row {
 		display: flex;
 		flex-direction: row;
+		width: fit-content;
+		column-gap: 1ch;
 	}
 
 	.upload-split-view {
@@ -913,6 +937,7 @@ DIV.grid-cell-separator {
 
 DIV.grid-cell-content LABEL {
 	padding-right:5px;
+	max-width: var(--upload-c-width);
 }
 
 DIV.grid-cell-content.dir-row LABEL {

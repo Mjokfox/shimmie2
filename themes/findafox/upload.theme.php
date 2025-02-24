@@ -220,9 +220,9 @@ function get_categories_html(string $suffix): HTMLElement
     $count_array = [];
 
     $type_table = [1 => ["cols" => 2, "class" => "grid-cell"],
-    2 => ["cols" => 4, "class" => "grid-cell-wide"],
-    3 => ["cols" => 1, "class" => "grid-cell-thin"],
-    4 => ["cols" => 4, "class" => "grid-cell-wide"]];
+    2 => ["cols" => 4, "class" => "grid-cell cell-wide"],
+    3 => ["cols" => 1, "class" => "grid-cell cell-thin"],
+    4 => ["cols" => 4, "class" => "grid-cell cell-wide"]];
     foreach (array_keys($tc_dict) as $group) {
         $type = $types[$group];
         if (!$type) {
@@ -266,24 +266,19 @@ function get_categories_html(string $suffix): HTMLElement
             }
         }
     }
-    $html_input_array = [];
+
     foreach (array_keys($input_array) as $group) {
         $type = $types[$group];
         $rows = max(4, ceil($count_array[$group] / $type_table[$type]["cols"]));
         $tworows = ceil($count_array[$group] / 2);
-        $html_input_array[$group] =
+        $tags_input->appendChild(
             DIV(
                 ["class" => $type_table[$type]["class"]],
-                DIV(["class" => "grid-cell-label"], $group),
-                DIV(["class" => "grid-cell-separator"]),
+               
+                DIV(["class" => "grid-cell-separator"], DIV(["class" => "grid-cell-label"], $group),),
                 DIV(["class" => "grid-cell-content" . ($type == 4 ? " dir-row" : ""), "style" => "--rows: $rows;--tworows: $tworows"], $input_array[$group], ),
-            );
-    }
-    $upload_order = $config->get_string(UploadConfig::UPLOAD_ORDER, "");
-    $category_sort = array_map('trim', explode(",", $upload_order));
-    customkciSort($html_input_array, $category_sort);
-    foreach ($html_input_array as $whatever) {
-        $tags_input->appendChild($whatever);
+            )
+        );
     }
     $upload_count = $config->get_int(UploadConfig::COUNT) - 1;
     $output = emptyHTML();
