@@ -938,7 +938,7 @@ DIV.grid-cell-separator {
 
 DIV.grid-cell-content LABEL {
 	padding-right:5px;
-	max-width: var(--upload-c-width);
+	width: fit-content;
 }
 
 DIV.grid-cell-content.dir-row LABEL {
