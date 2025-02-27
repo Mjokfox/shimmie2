@@ -249,7 +249,7 @@ function get_categories_html(string $suffix): HTMLElement
                     );
                 }
             }
-            if ($i > 4){
+            if ($i > 4) {
                 $input_array[$group]->appendChild(
                     SELECT(
                         ["id" => "tagsDropdown_{$suffix}", "style" => "width:auto","onclick" => "updateTags(this);"],
@@ -274,8 +274,7 @@ function get_categories_html(string $suffix): HTMLElement
         $tags_input->appendChild(
             DIV(
                 ["class" => $type_table[$type]["class"]],
-               
-                DIV(["class" => "grid-cell-separator"], DIV(["class" => "grid-cell-label"], $group),),
+                DIV(["class" => "grid-cell-separator"], DIV(["class" => "grid-cell-label"], $group), ),
                 DIV(["class" => "grid-cell-content" . ($type == 4 ? " dir-row" : ""), "style" => "--rows: $rows;--tworows: $tworows"], $input_array[$group], ),
             )
         );

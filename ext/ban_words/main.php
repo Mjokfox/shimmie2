@@ -30,6 +30,13 @@ class BanWords extends Extension
         $this->test_text(Tag::implode($event->new_tags), new UserError("Tags contain banned terms"));
     }
 
+    public function onDescriptionSet(DescriptionSetEvent $event): void
+    {
+        if (!$event->user->can(CommentPermission::BYPASS_COMMENT_CHECKS)) {
+            $this->test_text($event->description, new UserError("Description contains banned terms"));
+        }
+    }
+
     /**
      * Throws if the comment contains banned words.
      */
