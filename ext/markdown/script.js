@@ -34,7 +34,7 @@ function markdown_format(text)
 	text = text.replaceAll(/\!&gt;&gt;(\d+)/gs, '<widget type="thumb" post-id="$1"></widget>');
 	text = text.replaceAll(/&gt;&gt;(\d+)(#c?\d+)?/gs, '<a class="shm-clink" data-clink-sel="$2" href="/post/view/$1$2">&gt;&gt;$1$2</a>');
 	text = text.replaceAll(/\[anchor=(.*?)\](.*?)\[\/anchor\]/gs, '<span class="anchor">$2 <a class="alink" href="#bb-$1" name="bb-$1" title="link to this anchor"> ¶ </a></span>');  // add "bb-" to avoid clashing with eg #top
-	text = text.replaceAll(/search\((.+)\)/gs, '<a href="/post/list/$1">search: $1</a>');
+	text = text.replaceAll(/search\((.+?)\)/gs, '<a href="/post/list/$1">$1</a>');
 	text = text.replaceAll(/(^|[^\!])wiki:(\S+)/gs, '$1<a href="/wiki/$2">$2</a>');
 	text = text.replaceAll(/\!wiki:(\S+)/gs, '<a href="/wiki/$1">wiki:$1</a>');
 	text = text.replaceAll(/^(?:\*|-|\+)\s(.*)/gm, "<li>$1</li>");
