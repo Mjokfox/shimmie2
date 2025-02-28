@@ -30,8 +30,11 @@ function markdown_format(text)
 	});
 	text = text.replaceAll(/^&gt;\((\S+)\)\s+(.+)/gm, "<blockquote><i><b>$1</b> said:</i><br><small>$2</small></blockquote>");
 	text = text.replaceAll(/^&gt;\s+(.+)/gm, '<blockquote><small>$1</small></blockquote>');
+	text = text.replaceAll(/\$&gt;&gt;(\d+)/gs, '<widget type="widget" post-id="$1"></widget>');
+	text = text.replaceAll(/\!&gt;&gt;(\d+)/gs, '<widget type="thumb" post-id="$1"></widget>');
 	text = text.replaceAll(/&gt;&gt;(\d+)(#c?\d+)?/gs, '<a class="shm-clink" data-clink-sel="$2" href="/post/view/$1$2">&gt;&gt;$1$2</a>');
 	text = text.replaceAll(/\[anchor=(.*?)\](.*?)\[\/anchor\]/gs, '<span class="anchor">$2 <a class="alink" href="#bb-$1" name="bb-$1" title="link to this anchor"> ¶ </a></span>');  // add "bb-" to avoid clashing with eg #top
+	text = text.replaceAll(/search\((.+)\)/gs, '<a href="/post/list/$1">search: $1</a>');
 	text = text.replaceAll(/(^|[^\!])wiki:(\S+)/gs, '$1<a href="/wiki/$2">$2</a>');
 	text = text.replaceAll(/\!wiki:(\S+)/gs, '<a href="/wiki/$1">wiki:$1</a>');
 	text = text.replaceAll(/^(?:\*|-|\+)\s(.*)/gm, "<li>$1</li>");
@@ -70,6 +73,7 @@ function insert_links(text) {
 	text = text.replaceAll(/\[(.+?)\]\(\{url!\}(.+?)\{\/url!\}\)/gm,function(m, c,c1) {return "<a href='"+ window.atob(c1)+"'>"+c+"</a>";}); // []()
 	text = text.replaceAll(/!\{url!\}(.+?)\{\/url!\}/gm,function(m, c) {return "<img alt='user image' src='"+window.atob(c)+"'>";}); // image
 	text = text.replaceAll(/\{url!\}(.+?)\{\/url!\}/gm, function(m, c) {url =  window.atob(c);return `<a href='${url}'>${url}</a>`;});
+	text = text.replaceAll(/\{url!\}(.+?)\{\/url!\}/gm, function(m, c) {url =  window.atob(c);return `<a href='${url}'>${url}</a>`;});
 	text = text.replaceAll(/site:\/\/([^\s\)\[\]\'\"\>\<]+)/gm,"/$1");
 	return text;
 }
@@ -87,6 +91,19 @@ function extract_code(text)
 function insert_code(text)
 {
 	return text.replaceAll(/\[code!\](.*?)\[\/code!\]/gs, function(m, c) {return "<pre><code>"+window.atob(c)+"</code></pre>";});
+}
+
+async function get_widget(type, post_id)
+{
+	const url = `/post/${type}/${post_id}`
+	try {
+		const response = await fetch(url);
+		if (type == "widget") return await response.text();
+		return `<img alt='user image' src='${response.url}'>`
+	} catch (error) {
+		console.error(`Error fetching the HTML page for ${url}: ${error}`);
+		return null;
+	}
 }
 
 function to_innerHtml(value) {
@@ -160,5 +177,11 @@ document.addEventListener('DOMContentLoaded', () => {
 		e.parentNode.insertBefore(document.createElement("br"),e);
 		if (e.nextSibling && e.nextElementSibling.nodeName != "BR")
 			e.parentNode.insertBefore(document.createElement("br"),e.nextSibling);
+	})
+
+	document.querySelectorAll("widget").forEach(async function(el) {
+		if (el.hasAttribute("type") && el.hasAttribute("post-id")){
+			el.outerHTML = await get_widget(el.getAttribute("type"), el.getAttribute("post-id"));
+		}
 	})
 });

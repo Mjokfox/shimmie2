@@ -63,6 +63,31 @@ class ViewPost extends Extension
                 $page->set_title(str_replace("_", " ", implode(", ", $image->get_tag_array())));
             }
             send_event(new DisplayingImageEvent($image));
+        } elseif ($event->page_matches("post/download/{image_id}")) {
+            if (!is_numeric($event->get_arg('image_id'))) {
+                throw new PostNotFound("Invalid post ID");
+            }
+            $image_id = $event->get_iarg('image_id');
+            $image = Image::by_id_ex($image_id);
+            $page->set_mode(PageMode::REDIRECT);
+            $page->set_redirect(make_link($image->get_image_link()));
+        } elseif ($event->page_matches("post/thumb/{image_id}")) {
+            if (!is_numeric($event->get_arg('image_id'))) {
+                throw new PostNotFound("Invalid post ID");
+            }
+            $image_id = $event->get_iarg('image_id');
+            $image = Image::by_id_ex($image_id);
+            $page->set_mode(PageMode::REDIRECT);
+            $page->set_redirect(make_link($image->get_thumb_link()));
+        } elseif ($event->page_matches("post/widget/{image_id}")) {
+            if (!is_numeric($event->get_arg('image_id'))) {
+                throw new PostNotFound("Invalid post ID");
+            }
+            $image_id = $event->get_iarg('image_id');
+            $image = Image::by_id_ex($image_id);
+            $page->set_mode(PageMode::DATA);
+            $page->set_mime(MimeType::HTML);
+            $page->set_data((string)$this->theme->build_thumb($image));
         } elseif ($event->page_matches("post/set", method: "POST")) {
             $image_id = int_escape($event->req_POST('image_id'));
             $image = Image::by_id_ex($image_id);

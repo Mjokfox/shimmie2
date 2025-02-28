@@ -6,6 +6,7 @@ import numpy as np
 import io
 
 # gunicorn -w 1 -b 127.0.0.1:10017 engine:app
+# flask pillow numpy gunicorn git+https://github.com/openai/CLIP.git
 
 app = Flask(__name__)
 
