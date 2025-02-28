@@ -98,7 +98,8 @@ async function get_widget(type, post_id)
 	const url = `/post/${type}/${post_id}`
 	try {
 		const response = await fetch(url);
-		if (type == "widget") return await response.text();
+		if (!response.ok) return null;
+		else if (type == "widget") return await response.text();
 		return `<img alt='user image' src='${response.url}'>`
 	} catch (error) {
 		console.error(`Error fetching the HTML page for ${url}: ${error}`);
@@ -135,6 +136,11 @@ function preview_markdown(el) {
 			textarea.style["display"] = "none";
 			preview_div.style["display"] = "block";
 			preview_div.firstChild.innerHTML = markdown_format(to_innerHtml(textarea.value));
+			preview_div.querySelectorAll("widget").forEach(async function(el) {
+				if (el.hasAttribute("type") && el.hasAttribute("post-id")){
+					el.outerHTML = await get_widget(el.getAttribute("type"), el.getAttribute("post-id"));
+				}
+			})
 			el.value = "Edit";
 		}
 	}
