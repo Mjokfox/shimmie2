@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{STYLE};
+use function MicroHTML\{STYLE,rawHTML};
 
 class UserCSS extends Extension
 {
@@ -12,7 +12,7 @@ class UserCSS extends Extension
     {
         global $page,$user;
         $page->add_html_header(STYLE(
-            $user->get_config()->get_string(UserCSSUserConfig::CSS)
+            rawHTML(htmlentities($user->get_config()->get_string(UserCSSUserConfig::CSS), ENT_NOQUOTES, "UTF-8"))
         ));
     }
 }
