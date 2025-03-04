@@ -153,7 +153,7 @@ class Setup extends Extension
             } elseif (is_array($value)) {
                 $old = $config->get_array($key);
                 if ($old !== $value) {
-                    $changes[] = "$key changed from ([".implode(",", $old)."]) to ([".implode(",", $value)."])";
+                    $changes[] = "$key changed from ([".(is_array($old) ? implode(",", $old) : "")."]) to ([".implode(",", $value)."])";
                 }
                 $config->set_array($key, $value);
             }
