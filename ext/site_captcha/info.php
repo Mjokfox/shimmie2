@@ -15,6 +15,4 @@ class SiteCaptchaInfo extends ExtensionInfo
     public string $license = self::LICENSE_GPLV2;
     public ExtensionCategory $category = ExtensionCategory::ADMIN;
     public string $description = "sets up a site based captcha, which should have least user friction";
-    public ?string $documentation =
-        "add stuff here still";
 }

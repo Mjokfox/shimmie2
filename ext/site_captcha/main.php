@@ -9,44 +9,58 @@ class SiteCaptcha extends Extension
     /** @var SiteCaptchaTheme */
     protected Themelet $theme;
 
+    public function get_priority(): int
+    {
+        return 10;
+    }
+
     public function onPageRequest(PageRequestEvent $event): void
     {
         global $config, $page;
-        $cookie = $page->get_cookie("captcha_verified");
-        $token = $this->get_token();
+        $image_cookie = $page->get_cookie("captcha_image");
+        $css_cookie = $page->get_cookie("captcha_css");
+        $image_token = $this->get_token("img");
+        $css_token = $this->get_token("css");
 
-        if ($event->page_matches("captcha/token")) {
+        if ($event->page_matches("captcha/image", method:"GET")) {
+            $page->add_cookie(
+                "captcha_image",
+                $image_token,
+                time() + 60 * 60 * 24 * 30,
+                '/'
+            );
             $page->set_mode(PageMode::DATA);
-            $page->set_data($token);
-        } elseif ($event->page_matches("captcha/noscript", method:"POST", authed:false)) {
-            $form_token = $event->req_POST("token");
-            $test = trim($event->req_POST("test"));
-            if (\safe\preg_match('/^(fo\S|f\Sx|\Sox|fuchs|vos|zorro|rav|rev|kettu)$/i', $test) && $form_token == $token) {
-                $page->add_cookie(
-                    "captcha_verified",
-                    $token,
-                    time() + 60 * 60 * 24 * 30,
-                    '/'
-                );
-                $page->set_mode(PageMode::REDIRECT);
-                $page->set_redirect(referer_or(make_link("")));
-            } else {
-                throw new UserError("Incorrect, you are either a bot, or not sure what the answer is. Hint: its the main animal of this site");
+            $page->set_data("1");
+
+        } elseif ($event->page_matches("captcha/css", method:"GET")) {
+            $page->add_cookie(
+                "captcha_css",
+                $css_token,
+                time() + 60 * 60 * 24 * 30,
+                '/'
+            );
+            $page->set_mode(PageMode::DATA);
+            $page->set_data("2");
+
+        } elseif ($image_cookie !== $image_token || $css_cookie !== $css_token) {
+            if (!$this->is_ip_whitelisted()) {
+                $this->theme->display_page($page);
+                $event->stop_processing = true;
             }
-        } elseif (is_null($cookie) || $cookie !== $this->get_token()) {
-            if (!$this->is_ip_whitelisted()){
-                $this->theme->display_page($page, $token);
-            }
+        } else {
+            $this->theme->display_block($page);
         }
+
     }
 
-    private function get_token(): string
+    private function get_token(string $extra = ""): string
     {
         global $config;
-        return hash("sha3-256", get_session_ip($config) . SECRET);
+        return hash("sha3-256", get_session_ip($config) . $extra . SECRET);
     }
 
-    public function is_ip_whitelisted(): bool {
+    public function is_ip_whitelisted(): bool
+    {
         global $cache, $config;
         $ips = $cache->get("captcha_whitelist_ips");
         $networks = $cache->get("captcha_whitelist_networks");
