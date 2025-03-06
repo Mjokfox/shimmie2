@@ -6,13 +6,13 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{H2, A,B, LABEL, BR, DIV, TABLE, TR, TD, INPUT, rawHTML, emptyHTML, IMG};
+use function MicroHTML\{H2, B, LABEL, DIV, TABLE, TR, TD, INPUT, rawHTML, emptyHTML, IMG};
 
 class ReverseImageTheme extends Themelet
 {
     public function build_navigation(string $search_string = "", string $class = ""): HTMLElement
     {
-        $h_search_link = make_link("/post/search/1");
+        $h_search_link = make_link("post/search/1");
         return rawHTML("
 			<form action='$h_search_link' method='GET' class='search-bar $class'>
 				<input name='search' type='text' value='$search_string' class='text-search' placeholder='text'/>

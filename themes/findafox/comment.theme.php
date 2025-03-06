@@ -55,7 +55,7 @@ class CustomCommentListTheme extends CommentListTheme
             }
             $p = autodate($image->posted);
 
-            $r = Extension::is_enabled(RatingsInfo::KEY) ? "<b>Rating</b> ".Ratings::rating_to_human($image['rating']) : "";
+            $r = RatingsInfo::is_enabled() ? "<b>Rating</b> ".Ratings::rating_to_human($image['rating']) : "";
             $comment_html =   "<b>Date</b> $p $s <b>Uploader</b> $un $s $r<br><b>Tags</b> $t<p>&nbsp;";
 
             $comment_count = count($comments);
@@ -147,7 +147,7 @@ class CustomCommentListTheme extends CommentListTheme
         global $config;
 
         $hash = CommentList::get_hash();
-        $h_captcha = $config->get_bool(CommentConfig::CAPTCHA) ? captcha_get_html() : "";
+        $h_captcha = $config->get_bool(CommentConfig::CAPTCHA) ? Captcha::get_html() : "";
         //<a class="c-add" onclick=document.getElementById("cadd'.$image_id.'").style["display"]="unset">Add comment</a>
         return rawHTML('
 		<div class="comment comment_add" id="cadd'.$image_id.'">

@@ -35,7 +35,7 @@ class NavLink
                 } else {
                     $this->active = self::is_active([$link], $front_page);
                 }
-            } elseif ($query === $link) {
+            } elseif ($query === trim($link, " \n\r\t\v\x00/\\")) {
                 $this->active = true;
             } else {
                 $this->active = self::is_active([$link]);

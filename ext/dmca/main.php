@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{B,TABLE,TR,TD,INPUT, rawHTML};
-
 class Dmca extends Extension
 {
     /** @var DmcaTheme */

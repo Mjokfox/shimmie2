@@ -6,6 +6,7 @@ namespace Shimmie2;
 
 class IndexNow extends Extension
 {
+    public const KEY = "indexnow";
     public function onPageRequest(PageRequestEvent $event): void
     {
         global $config, $page;

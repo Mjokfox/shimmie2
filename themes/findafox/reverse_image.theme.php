@@ -26,7 +26,7 @@ class CustomReverseImageTheme extends ReverseImageTheme
 
     public function build_navigation(string $search_string = "", string $class = ""): HTMLElement
     {
-        $h_search_link = make_link("/post/search/1");
+        $h_search_link = make_link("post/search/1");
         return rawHTML("
 			<form action='$h_search_link' method='GET' class='search-bar $class'>
 				<input name='search' type='text' value='$search_string' class='text-search' placeholder='text description'/>

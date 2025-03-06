@@ -10,6 +10,7 @@ require_once "config.php";
 
 class ReverseImage extends Extension
 {
+    public const KEY = "reverse_image";
     /** @var ReverseImageTheme */
     protected Themelet $theme;
 
@@ -28,14 +29,14 @@ class ReverseImage extends Extension
 
             $this->set_version(ReverseImageConfig::VERSION, 1);
 
-            log_info("Reverse_image", "extension installed");
+            Log::info("Reverse_image", "extension installed");
         }
     }
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent === "posts") {
-            $event->add_nav_link("reverse image search", new Link('reverse_image_search'), "Reverse Image Search", order:51);
+            $event->add_nav_link("reverse image search", make_link('reverse_image_search'), "Reverse Image Search", order:51);
         }
     }
     public function onPageRequest(PageRequestEvent $event): void
@@ -58,7 +59,7 @@ class ReverseImage extends Extension
             if ($get_search || !($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageUserConfig::USER_SEARCH_ENABLE))) {
                 $page->set_mode(PageMode::REDIRECT);
                 if (empty($get_search)) {
-                    $page->set_redirect(make_link("/post/list"));
+                    $page->set_redirect(make_link("post/list"));
                 } else {
                     $page->set_redirect(make_link("post/search/$get_search/1"));
                 }
@@ -67,7 +68,7 @@ class ReverseImage extends Extension
             $search = $event->get_arg('search', "");
             if (empty($search)) {
                 $page->set_mode(PageMode::REDIRECT);
-                $page->set_redirect(make_link("/post/list"));
+                $page->set_redirect(make_link("post/list"));
                 return;
             }
 
@@ -75,7 +76,7 @@ class ReverseImage extends Extension
             if (!$feat) {
                 $page->set_mode(PageMode::REDIRECT);
                 $page->flash("something went wrong");
-                $page->set_redirect(make_link("/post/list"));
+                $page->set_redirect(make_link("post/list"));
                 return;
             }
             $page_number = $event->get_iarg('page_num', 1);
@@ -225,7 +226,7 @@ class ReverseImage extends Extension
                 $ids = implode(",", $j);
                 $exec_time = round(ftime() - $start_time, 2);
                 $message = "Added image features to the database for $i images in $exec_time seconds" . (count($j) > 0 ? ", but failed for image ids [$ids]" : ".");
-                log_info("admin", $message, $message);
+                Log::info("admin", $message, $message);
                 $event->redirect = true;
                 break;
         }
@@ -278,7 +279,7 @@ class ReverseImage extends Extension
     {
         $tmp_filename = shm_tempnam("transload");
         try {
-            fetch_url($url, $tmp_filename);
+            Network::fetch_url($url, $tmp_filename);
         } catch (FetchException $e) {
             throw new UploadException("Error reading from $url: $e");
         }
@@ -295,7 +296,7 @@ class ReverseImage extends Extension
         if (isset($_POST["url"]) && $_POST["url"]) {
             $file = $this->transload($_POST["url"]);
         } elseif (isset($_POST["hash"]) && $_POST["hash"]) {
-            $file = warehouse_path(Image::IMAGE_DIR, $_POST["hash"], false);
+            $file = Filesystem::warehouse_path(Image::IMAGE_DIR, $_POST["hash"], false);
         } elseif (isset($_FILES['file'])) {
             if ($_FILES['file']['error']) {
                 throw new UploadException("Upload failed: ".$_FILES['file']['error']);
@@ -328,7 +329,7 @@ class ReverseImage extends Extension
      */
     public function get_image_features_by_hash(string $hash): array|false
     {
-        return $this->get_image_features($_SERVER['DOCUMENT_ROOT'] ."/" . warehouse_path(Image::IMAGE_DIR, $hash));
+        return $this->get_image_features($_SERVER['DOCUMENT_ROOT'] ."/" . Filesystem::warehouse_path(Image::IMAGE_DIR, $hash));
     }
 
     // makes the post request to the engine.py, returns the features as array[512] or false if it failed

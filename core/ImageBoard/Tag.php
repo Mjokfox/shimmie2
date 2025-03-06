@@ -58,7 +58,7 @@ class Tag
      *
      * @return list<tag-string>
      */
-    public static function explode(string $tags, bool $tagme = true): array
+    public static function explode(string $tags, bool $tagme = true, bool $sort = true): array
     {
         global $database;
 
@@ -114,7 +114,9 @@ class Tag
 
         /* remove any duplicate tags */
         $processed_tags = array_iunique($processed_tags);
-        sort($processed_tags);
+        if ($sort) {
+            sort($processed_tags);
+        }
         $processed_tags = array_filter($processed_tags, fn ($t) => !empty($t));
         $processed_tags = array_values($processed_tags);
 

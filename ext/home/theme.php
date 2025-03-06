@@ -44,7 +44,7 @@ class HomeTheme extends Themelet
 				</form>
 			</div>
 		";
-        if (Extension::is_enabled(ReverseImageInfo::KEY) && $config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
+        if (ReverseImageInfo::is_enabled() && $config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
             $search_html .= "
             <div class='space' id='text-search'>
 				<form action='post/search' method='GET'>

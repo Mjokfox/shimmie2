@@ -8,6 +8,7 @@ use function MicroHTML\rawHTML;
 
 class SelfCanonical extends Extension
 {
+    public const KEY = "self_canonical";
     public function get_priority(): int
     {
         return 1;

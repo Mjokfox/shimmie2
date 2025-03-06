@@ -234,7 +234,7 @@ class TagCategoriesTheme extends Themelet
         $page->set_heading("Tag Categories counts");
 
         $page->add_block(new Block("Tag Categories counts", DIV(["style" => "display:flex;justify-content:space-evenly;"], $html), "main", 10));
-        $page->add_block(new NavBlock());
+        $page->add_block(Block::nav());
     }
 
     public function display_admin_form(): void

@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use MicroHTML\HTMLElement;
-
 use function MicroHTML\rawHTML;
 
 class GitPull extends Extension
 {
+    public const KEY = "git_pull";
     public function get_priority(): int
     {
         return 1;
@@ -29,7 +28,7 @@ class GitPull extends Extension
         switch ($event->action) {
             case "git_pull":
                 $output = $this->execGitPull();
-                log_warning("admin", $output, $output);
+                Log::warning("admin", $output, $output);
                 $event->redirect = true;
                 break;
         }

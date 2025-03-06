@@ -61,7 +61,7 @@ class CustomViewPostTheme extends ViewPostTheme
             $html .= "<br>Source: <a href='$source'>link</a>";
         }
 
-        if (Extension::is_enabled(RatingsInfo::KEY)) {
+        if (RatingsInfo::is_enabled()) {
             $rating = $image['rating'];
             if ($rating === null) {
                 $rating = "?";
@@ -70,7 +70,7 @@ class CustomViewPostTheme extends ViewPostTheme
             $html .= "<br>Rating: <a href='".search_link(["rating=$rating"])."'>$h_rating</a>";
         }
 
-        if (Extension::is_enabled(NumericScoreInfo::KEY)) {
+        if (NumericScoreInfo::is_enabled()) {
             $h_score = (int)$image['numeric_score'];
             $score_color = $h_score > 0 ? "lime" : ($h_score < 0 ? "red" : "gray");
             $html .= "<br>Score: <span style='color:$score_color'>$h_score</span>";

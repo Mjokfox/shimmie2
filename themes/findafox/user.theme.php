@@ -71,7 +71,7 @@ class CustomUserPageTheme extends UserPageTheme
 
         $tac = send_event(new TextFormattingEvent($tac))->formatted;
 
-        $reca = "<tr><td colspan='2'>".captcha_get_html()."</td></tr>";
+        $reca = "<tr><td colspan='2'>".Captcha::get_html()."</td></tr>";
 
         $email_required = (
             $config->get_bool(UserAccountsConfig::USER_EMAIL_REQUIRED) &&

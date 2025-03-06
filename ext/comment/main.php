@@ -628,7 +628,7 @@ class CommentList extends Extension
         ";
 
         $args = [
-            "ip" => get_real_ip(),
+            "ip" => Network::get_real_ip(),
             "comment" => $comment,
             "id" => $comment_id
         ];
@@ -637,7 +637,7 @@ class CommentList extends Extension
         $snippet = substr($comment, 0, 100);
         $snippet = str_replace("\n", " ", $snippet);
         $snippet = str_replace("\r", " ", $snippet);
-        log_info("comment", "Comment #$comment_id edited to >>$image_id: $snippet");
+        Log::info("comment", "Comment #$comment_id edited to >>$image_id: $snippet");
     }
 
     private function comment_checks(int $image_id, User $user, string $comment): void

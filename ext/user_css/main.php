@@ -8,6 +8,7 @@ use function MicroHTML\{STYLE,rawHTML};
 
 class UserCSS extends Extension
 {
+    public const KEY = "user_css";
     public function onPageRequest(PageRequestEvent $event): void
     {
         global $page,$user;

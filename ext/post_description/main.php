@@ -38,7 +38,7 @@ class PostDescription extends Extension
 
             $this->set_version(PostDescriptionConfig::VERSION, 1);
 
-            log_info("Post description", "extension installed");
+            Log::info("Post description", "extension installed");
         }
     }
 

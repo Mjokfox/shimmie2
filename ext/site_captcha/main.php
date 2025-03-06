@@ -6,6 +6,7 @@ namespace Shimmie2;
 
 class SiteCaptcha extends Extension
 {
+    public const KEY = "site_captcha";
     /** @var SiteCaptchaTheme */
     protected Themelet $theme;
 
@@ -56,7 +57,7 @@ class SiteCaptcha extends Extension
     private function get_token(string $extra = ""): string
     {
         global $config;
-        return hash("sha3-256", get_session_ip($config) . $extra . SECRET);
+        return hash("sha3-256", Network::get_session_ip($config) . $extra . SECRET);
     }
 
     public function is_ip_whitelisted(): bool
@@ -81,12 +82,12 @@ class SiteCaptcha extends Extension
             $cache->set("captcha_whitelist_ips", $ips, 60);
             $cache->set("captcha_whitelist_networks", $networks, 60);
         }
-        $ip = get_real_ip();
+        $ip = Network::get_real_ip();
         if (in_array($ip, $ips)) {
             return true;
         } else {
             foreach ($networks as $range) {
-                if (ip_in_range($ip, $range)) {
+                if (Network::ip_in_range($ip, $range)) {
                     return true;
                 }
             }

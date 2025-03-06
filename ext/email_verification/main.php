@@ -9,6 +9,7 @@ use function MicroHTML\rawHTML;
 
 class EmailVerification extends Extension
 {
+    public const KEY = "email_verification";
     public function get_priority(): int
     {
         return 51;
@@ -18,7 +19,7 @@ class EmailVerification extends Extension
     {
 
         new UserClass("user", "base", [
-            SpeedHaxPermission::BIG_SEARCH => true,
+            IndexPermission::BIG_SEARCH => true,
             ImagePermission::CREATE_IMAGE => true,
             CommentPermission::CREATE_COMMENT => true,
             PostTagsPermission::EDIT_IMAGE_TAG => true,

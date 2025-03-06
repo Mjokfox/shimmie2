@@ -45,7 +45,7 @@ class CustomNumericScoreTheme extends NumericScoreTheme
                     </form>
                 </div>
 		";
-        if (Extension::is_enabled(FavoritesInfo::KEY)) {
+        if (FavoritesInfo::is_enabled()) {
             $is_favorited = $database->get_one(
                 "SELECT COUNT(*) AS ct FROM user_favorites WHERE user_id = :user_id AND image_id = :image_id",
                 ["user_id" => $user_id, "image_id" => $i_image_id]

@@ -10,18 +10,10 @@ require_once "config.php";
 // https://openclipart.org/detail/314331/chocolate-chip-cookie
 class SillyCookies extends Extension
 {
+    public const KEY = "silly_cookies";
     public function get_priority(): int
     {
         return 49;
-    }
-    public function onInitExt(InitExtEvent $event): void
-    {
-        global $config;
-
-        $config->set_default_string(SillyCookiesConfig::IMAGE_URL, "");
-        $config->set_default_string(SillyCookiesConfig::COOKIES_TITLE, "");
-        $config->set_default_string(SillyCookiesConfig::COOKIES_TEXT, "");
-        $config->set_default_bool(SillyCookiesConfig::GIB, true);
     }
 
     public function onPageRequest(PageRequestEvent $event): void

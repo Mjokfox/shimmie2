@@ -11,7 +11,6 @@ class RobotsBuildingEvent extends Event
         "User-agent: *",
         // Site is rate limited to 1 request / sec,
         // returns 503 for more than that
-        "Crawl-delay: 3",
     ];
 
     public function add_disallow(string $path): void
@@ -32,7 +31,16 @@ class RobotsTxt extends Extension
             $rbe = send_event(new RobotsBuildingEvent());
             $page->set_mode(PageMode::DATA);
             $page->set_mime("text/plain");
-            $page->set_data(join("\n", $rbe->parts));
+            $data = [
+                $config->get_string(RobotsTxtConfig::ROBOTS_BEFORE),
+                join("\n", $rbe->parts)
+            ];
+            $after = $config->get_string(RobotsTxtConfig::ROBOTS_AFTER);
+            if ($after){
+                $data[] = $after;
+            }
+            $data[] = "Crawl-delay: " . $config->get_int(RobotsTxtConfig::ROBOTS_DELAY, 3);
+            $page->set_data(join("\n",$data));
         }
     }
 

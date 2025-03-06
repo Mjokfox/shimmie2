@@ -265,7 +265,7 @@ class PrivMsg extends Extension
         if ($user->can(PrivMsgPermission::READ_PM)) {
             $count = $this->count_pms($user);
             if ($count > 0) {
-                $event->add_nav_link("pm", new Link('user#private-messages'), "Messages ($count)", null, 11);
+                $event->add_nav_link("pm", make_link('user', fragment: 'private-messages'), "Messages ($count)", null, 11);
             }
         }
     }
@@ -485,7 +485,7 @@ class PrivMsg extends Extension
                 $pmo = PM::from_row($pm);
                 $pmo->subject = $event->req_POST("subject");
                 $pmo->message = $event->req_POST("message");
-                $pmo->from_ip = get_real_ip();
+                $pmo->from_ip = Network::get_real_ip();
                 send_event(new EditPMEvent($pmo));
                 $page->flash("PM edited");
                 $page->set_mode(PageMode::REDIRECT);

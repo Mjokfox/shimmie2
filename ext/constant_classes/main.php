@@ -6,6 +6,7 @@ namespace Shimmie2;
 
 class ConstantClasses extends Extension
 {
+    public const KEY = "constant_classes";
     public function get_priority(): int
     {
         return 51;

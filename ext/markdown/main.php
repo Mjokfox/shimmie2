@@ -6,6 +6,7 @@ namespace Shimmie2;
 
 class Markdown extends FormatterExtension
 {
+    public const KEY = "markdown";
     public function format(string $text): string
     {
         return "<span class='markdown'>$text</span>";

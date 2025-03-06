@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{BODY, DIV, LI, A, BR, IMG, joinHTML, rawHTML, emptyHTML, UL, ARTICLE, FOOTER, EM, HEADER, H1, NAV};
+use function MicroHTML\{BODY, DIV, LI, A, BR, IMG, joinHTML, rawHTML, emptyHTML, UL, ARTICLE, FOOTER, HEADER, H1, NAV};
 
 /**
  * Name: Danbooru 2 Theme
@@ -152,11 +152,12 @@ class customPage extends Page
         );
     }
 
-    private function navlinks(Link $link, HTMLElement|string $desc, bool $active): HTMLElement
+    /** @param url-string $link */
+    private function navlinks(string $link, HTMLElement|string $desc, bool $active): HTMLElement
     {
         return A([
             "class" => $active ? "current-page" : "tab",
-            "href" => $link->make_link(),
+            "href" => $link,
         ], $desc);
     }
 

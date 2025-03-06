@@ -8,6 +8,7 @@ use function MicroHTML\{B,TABLE,TR,TD,INPUT, rawHTML};
 
 class FlickrSource extends Extension
 {
+    public const KEY = "flickr_source";
     public function get_priority(): int
     {
         return 2;
@@ -85,7 +86,7 @@ class FlickrSource extends Extension
                 }
                 $exec_time = round(ftime() - $start_time, 2);
                 $message = "Found valid sources for {$i} images, invalid sources for ".count($j).", and skipped {$k} non flickr images, which took $exec_time seconds." . (count($j) > 0 ? " Failed: " . implode(", ", $j) : "");
-                log_info("admin", $message, $message);
+                Log::info("admin", $message, $message);
                 $event->redirect = true;
                 break;
         }

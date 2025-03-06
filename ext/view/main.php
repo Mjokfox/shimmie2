@@ -71,7 +71,7 @@ class ViewPost extends Extension
             $image_id = $event->get_iarg('image_id');
             $image = Image::by_id_ex($image_id);
             $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(make_link($image->get_image_link()));
+            $page->set_redirect($image->get_image_link());
         } elseif ($event->page_matches("post/thumb/{image_id}")) {
             if (!is_numeric($event->get_arg('image_id'))) {
                 throw new PostNotFound("Invalid post ID");
@@ -79,7 +79,7 @@ class ViewPost extends Extension
             $image_id = $event->get_iarg('image_id');
             $image = Image::by_id_ex($image_id);
             $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(make_link($image->get_thumb_link()));
+            $page->set_redirect($image->get_thumb_link());
         } elseif ($event->page_matches("post/widget/{image_id}")) {
             if (!is_numeric($event->get_arg('image_id'))) {
                 throw new PostNotFound("Invalid post ID");
