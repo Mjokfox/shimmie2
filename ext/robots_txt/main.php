@@ -36,11 +36,11 @@ class RobotsTxt extends Extension
                 join("\n", $rbe->parts)
             ];
             $after = $config->get_string(RobotsTxtConfig::ROBOTS_AFTER);
-            if ($after){
+            if ($after) {
                 $data[] = $after;
             }
             $data[] = "Crawl-delay: " . $config->get_int(RobotsTxtConfig::ROBOTS_DELAY, 3);
-            $page->set_data(join("\n",$data));
+            $page->set_data(join("\n", $data));
         }
     }
 

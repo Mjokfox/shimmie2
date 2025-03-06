@@ -44,4 +44,19 @@ class SiteCaptchaTheme extends Themelet
             id:"captcha"
         ));
     }
+
+    public function display_cookie_image(Page $page, string $cookie_name, string $token): void
+    {
+        $page->add_cookie(
+            $cookie_name,
+            $token,
+            time() + 60 * 60 * 24 * 30,
+            '/'
+        );
+        $page->set_mode(PageMode::MANUAL);
+        $page->set_mime("image/jpg");
+        $page->add_http_header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 86400) . ' GMT');
+        $page->send_headers();
+        print "1";
+    }
 }
