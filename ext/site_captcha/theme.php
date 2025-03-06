@@ -40,7 +40,7 @@ class SiteCaptchaTheme extends Themelet
                 ["style" => "background-image:url(\"/captcha/css\");"],
                 IMG(["style" => "display:none;", "src" => "/captcha/image"])
             ),
-            'main',
+            'subheading',
             id:"captcha"
         ));
     }
