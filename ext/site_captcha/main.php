@@ -42,7 +42,7 @@ class SiteCaptcha extends Extension
             $page->set_mode(PageMode::DATA);
             $page->set_data("2");
 
-        } elseif ($image_cookie !== $image_token || $css_cookie !== $css_token) {
+        } elseif (!$event->page_matches("robots.txt") && ($image_cookie !== $image_token || $css_cookie !== $css_token)) {
             if (!$this->is_ip_whitelisted()) {
                 $this->theme->display_page($page);
                 $event->stop_processing = true;
