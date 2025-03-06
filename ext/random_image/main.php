@@ -6,6 +6,7 @@ namespace Shimmie2;
 
 class RandomImage extends Extension
 {
+    public const KEY = "random_image";
     /** @var RandomImageTheme */
     protected Themelet $theme;
 
@@ -61,7 +62,7 @@ class RandomImage extends Extension
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent == "posts") {
-            $event->add_nav_link("posts_random", new Link('random_image/view'), "Random Post");
+            $event->add_nav_link("posts_random", make_link('random_image/view'), "Random Post");
         }
     }
 

@@ -6,6 +6,7 @@ namespace Shimmie2;
 
 class Featured extends Extension
 {
+    public const KEY = "featured";
     /** @var FeaturedTheme */
     protected Themelet $theme;
 
@@ -15,7 +16,7 @@ class Featured extends Extension
         if ($event->page_matches("featured_image/set/{image_id}", method: "POST", permission: FeaturedPermission::EDIT_FEATURE)) {
             $id = $event->get_iarg('image_id');
             $config->set_int(FeaturedConfig::ID, $id);
-            log_info("featured", "Featured post set to >>$id", "Featured post set");
+            Log::info("featured", "Featured post set to >>$id", "Featured post set");
             $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("post/view/$id"));
         }
@@ -52,7 +53,7 @@ class Featured extends Extension
                 600
             );
             if (!is_null($image)) {
-                if (Extension::is_enabled(RatingsInfo::KEY)) {
+                if (RatingsInfo::is_enabled()) {
                     if (!in_array($image['rating'], Ratings::get_user_class_privs($user))) {
                         return;
                     }

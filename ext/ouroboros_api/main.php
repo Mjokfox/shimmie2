@@ -73,13 +73,13 @@ class _SafeOuroborosImage
         $this->id = intval($img->id);
         $this->parent_id = null;
 
-        if (Extension::is_enabled(RatingsInfo::KEY) !== false) {
+        if (RatingsInfo::is_enabled() !== false) {
             // 'u' is not a "valid" rating
             if ($img['rating'] == 's' || $img['rating'] == 'q' || $img['rating'] == 'e') {
                 $this->rating = $img['rating'];
             }
         }
-        if (Extension::is_enabled(NumericScoreInfo::KEY) !== false) {
+        if (NumericScoreInfo::is_enabled() !== false) {
             $this->score = $img['numeric_score'];
         }
 
@@ -186,6 +186,7 @@ class _SafeOuroborosTag
 
 class OuroborosAPI extends Extension
 {
+    public const KEY = "ouroboros_api";
     private string $type;
 
     public const HEADER_HTTP_200 = 'OK';
@@ -311,7 +312,7 @@ class OuroborosAPI extends Extension
         $meta = [];
         $meta['tags'] = $post->tags;
         $meta['source'] = $post->source ?? '';
-        if (Extension::is_enabled(RatingsInfo::KEY) !== false) {
+        if (RatingsInfo::is_enabled() !== false) {
             $meta['rating'] = $post->rating;
         }
         // Check where we should try for the file
@@ -320,7 +321,7 @@ class OuroborosAPI extends Extension
             $meta['file'] = shm_tempnam('transload_' . $config->get_string(UploadConfig::TRANSLOAD_ENGINE));
             $meta['filename'] = basename($post->file_url);
             try {
-                fetch_url($post->file_url, $meta['file']);
+                Network::fetch_url($post->file_url, $meta['file']);
             } catch (FetchException $e) {
                 $this->sendResponse(500, "Transloading failed: $e");
                 return;
@@ -581,12 +582,12 @@ class OuroborosAPI extends Extension
                 $user = User::by_id($config->get_int(UserAccountsConfig::ANON_ID, 0));
             }
             send_event(new UserLoginEvent($user));
-        } elseif (isset($_COOKIE[COOKIE_PREFIX . '_' . 'session']) &&
-            isset($_COOKIE[COOKIE_PREFIX . '_' . 'user'])
+        } elseif (isset($_COOKIE[SysConfig::getCookiePrefix() . '_' . 'session']) &&
+            isset($_COOKIE[SysConfig::getCookiePrefix() . '_' . 'user'])
         ) {
             //Auth by session data from cookies
-            $session = $_COOKIE[COOKIE_PREFIX . '_' . 'session'];
-            $user = $_COOKIE[COOKIE_PREFIX . '_' . 'user'];
+            $session = $_COOKIE[SysConfig::getCookiePrefix() . '_' . 'session'];
+            $user = $_COOKIE[SysConfig::getCookiePrefix() . '_' . 'user'];
             $duser = User::by_session($user, $session);
             if (!is_null($duser)) {
                 $user = $duser;

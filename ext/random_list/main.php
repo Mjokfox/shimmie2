@@ -6,6 +6,7 @@ namespace Shimmie2;
 
 class RandomList extends Extension
 {
+    public const KEY = "random_list";
     /** @var RandomListTheme */
     protected Themelet $theme;
 
@@ -50,7 +51,7 @@ class RandomList extends Extension
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent == "posts") {
-            $event->add_nav_link("posts_random", new Link('random'), "Shuffle");
+            $event->add_nav_link("posts_random", make_link('random'), "Shuffle");
         }
     }
 }

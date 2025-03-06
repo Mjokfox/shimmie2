@@ -8,6 +8,7 @@ use MicroHTML\HTMLElement;
 
 class Home extends Extension
 {
+    public const KEY = "home";
     /** @var HomeTheme */
     protected Themelet $theme;
 
@@ -58,10 +59,10 @@ class Home extends Extension
             $main_links = $config->get_string(HomeConfig::LINKS);
         } else {
             $main_links = '[Posts](site://post/list)[Comments](site://comment/list)[Tags](site://tags)';
-            if (Extension::is_enabled(PoolsInfo::KEY)) {
+            if (PoolsInfo::is_enabled()) {
                 $main_links .= '[Pools](site://pool/list)';
             }
-            if (Extension::is_enabled(WikiInfo::KEY)) {
+            if (WikiInfo::is_enabled()) {
                 $main_links .= '[Wiki](site://wiki)';
             }
             $main_links .= '[Documentation](site://ext_doc)';

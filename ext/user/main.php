@@ -17,7 +17,7 @@ use MicroCRUD\TextColumn;
 use MicroCRUD\DateColumn;
 use MicroCRUD\Table;
 
-use function MicroHTML\{A, STYLE, emptyHTML};
+use function MicroHTML\{A, emptyHTML};
 
 class UserNameColumn extends TextColumn
 {
@@ -129,6 +129,7 @@ class LoginResult
 
 class UserPage extends Extension
 {
+    public const KEY = "user";
     /** @var UserPageTheme $theme */
     public Themelet $theme;
 
@@ -143,12 +144,6 @@ class UserPage extends Extension
         global $config, $database, $page, $user;
 
         $this->show_user_info();
-
-        if ($user->can(UserAccountsPermission::VIEW_HELLBANNED)) {
-            $page->add_html_header(STYLE("DIV.hb, TR.hb TD {border: 1px solid red !important;}"));
-        } elseif (!$user->can(UserAccountsPermission::HELLBANNED)) {
-            $page->add_html_header(STYLE(".hb {display: none !important;}"));
-        }
 
         if ($event->page_matches("user_admin/login", method: "GET")) {
             $this->theme->display_login_page($page);
@@ -214,7 +209,7 @@ class UserPage extends Extension
                 array_splice($t->columns, 2, 0, [$col]);
             }
             $page->set_title("Users");
-            $page->add_block(new NavBlock());
+            $page->add_block(Block::nav());
             $page->add_block(new Block(null, emptyHTML($t->table($t->query()), $t->paginator())));
         }
         if ($event->page_matches("user_admin/logout", method: "GET")) {
@@ -310,15 +305,11 @@ class UserPage extends Extension
         $duser = $event->display_user;
         $h_join_date = autodate($duser->join_date);
         $class = $duser->class;
-        if ($duser->can(UserAccountsPermission::HELLBANNED) && $class->parent) {
-            $h_class = $class->parent->name;
-        } else {
-            $h_class = $class->name;
-        }
+        $h_class = $class->name;
 
         $event->add_part("Joined: $h_join_date", 10);
         if ($user->name == $duser->name) {
-            $event->add_part("Current IP: " . get_real_ip(), 80);
+            $event->add_part("Current IP: " . Network::get_real_ip(), 80);
         }
         $event->add_part("Class: $h_class", 90);
 
@@ -329,11 +320,11 @@ class UserPage extends Extension
             $event->add_part((string)$av, 0);
         } elseif ($duser->id == $user->id) {
             $part = "";
-            if (Extension::is_enabled(AvatarPostInfo::KEY)) {
+            if (AvatarPostInfo::is_enabled()) {
                 $part .= "No avatar?<br>You can set any post as avatar by clicking \"Set Image As Avatar\" in the Post Controls on any post." .
                 "<br>Or by setting it manually in your <a href='".make_link("user_config")."'>user config</a>";
             }
-            if (Extension::is_enabled(AvatarGravatarInfo::KEY)) {
+            if (AvatarGravatarInfo::is_enabled()) {
                 if (empty($part)) {
                     $part .= "<br>No avatar? This gallery uses ";
                 } else {
@@ -352,9 +343,9 @@ class UserPage extends Extension
     {
         global $user;
         if ($user->is_anonymous()) {
-            $event->add_nav_link("user", new Link('user_admin/login'), "Account", null, 10);
+            $event->add_nav_link("user", make_link('user_admin/login'), "Account", null, 10);
         } else {
-            $event->add_nav_link("user", new Link('user'), "Account", null, 10);
+            $event->add_nav_link("user", make_link('user'), "Account", null, 10);
         }
     }
 
@@ -396,12 +387,12 @@ class UserPage extends Extension
         global $user;
         if ($event->parent === "system") {
             if ($user->can(UserAccountsPermission::EDIT_USER_PASSWORD)) {
-                $event->add_nav_link("user_admin", new Link('user_admin/list'), "User List", NavLink::is_active(["user_admin"]));
+                $event->add_nav_link("user_admin", make_link('user_admin/list'), "User List", NavLink::is_active(["user_admin"]));
             }
         }
 
         if ($event->parent === "user" && !$user->is_anonymous()) {
-            $event->add_nav_link("logout", new Link('user_admin/logout'), "Log Out", false, 90);
+            $event->add_nav_link("logout", make_link('user_admin/logout'), "Log Out", false, 90);
         }
     }
 
@@ -455,7 +446,7 @@ class UserPage extends Extension
         } catch (UserNotFound $ex) {
             // user not found is good
         }
-        if (!captcha_check()) {
+        if (!Captcha::check()) {
             throw new UserCreationException("Error in captcha");
         }
         if ($event->password != $event->password2) {
@@ -482,7 +473,7 @@ class UserPage extends Extension
         );
         $new_user = User::by_name($event->username);
         $new_user->set_password($event->password);
-        log_info("user", "Created User @{$event->username}");
+        Log::info("user", "Created User @{$event->username}");
 
         if ($event->login) {
             send_event(new UserLoginEvent($new_user));
@@ -565,12 +556,12 @@ class UserPage extends Extension
     {
         global $page, $config;
         $page->add_cookie("session", "", time() + 60 * 60 * 24 * $config->get_int(UserAccountsConfig::LOGIN_MEMORY), "/");
-        if (Extension::is_enabled(SpeedHaxInfo::KEY) && $config->get_bool(SpeedHaxConfig::PURGE_COOKIE)) {
+        if ($config->get_bool(UserAccountsConfig::PURGE_COOKIE)) {
             # to keep as few versions of content as possible,
             # make cookies all-or-nothing
             $page->add_cookie("user", "", time() + 60 * 60 * 24 * $config->get_int(UserAccountsConfig::LOGIN_MEMORY), "/");
         }
-        log_info("user", "Logged out");
+        Log::info("user", "Logged out");
         $page->set_mode(PageMode::REDIRECT);
         $page->set_redirect(make_link());
     }
@@ -652,7 +643,7 @@ class UserPage extends Extension
      */
     private function count_log_ips(User $duser): array
     {
-        if (!Extension::is_enabled(LogDatabaseInfo::KEY)) {
+        if (!LogDatabaseInfo::is_enabled()) {
             return [];
         }
         global $database;
@@ -671,13 +662,13 @@ class UserPage extends Extension
         global $user, $config, $database;
 
         $page->set_title("Error");
-        $page->add_block(new NavBlock());
+        $page->add_block(Block::nav());
 
         $duser = User::by_id($uid);
-        log_warning("user", "Deleting user #{$uid} (@{$duser->name})");
+        Log::warning("user", "Deleting user #{$uid} (@{$duser->name})");
 
         if ($with_images) {
-            log_warning("user", "Deleting user #{$uid} (@{$duser->name})'s uploads");
+            Log::warning("user", "Deleting user #{$uid} (@{$duser->name})'s uploads");
             $image_ids = $database->get_col("SELECT id FROM images WHERE owner_id = :owner_id", ["owner_id" => $uid]);
             foreach ($image_ids as $image_id) {
                 $image = Image::by_id((int) $image_id);
@@ -693,7 +684,7 @@ class UserPage extends Extension
         }
 
         if ($with_comments) {
-            log_warning("user", "Deleting user #{$uid} (@{$duser->name})'s comments");
+            Log::warning("user", "Deleting user #{$uid} (@{$duser->name})'s comments");
             $database->execute("DELETE FROM comments WHERE owner_id = :owner_id", ["owner_id" => $uid]);
         } else {
             $database->execute(

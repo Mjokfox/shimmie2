@@ -42,6 +42,7 @@ class AdminActionEvent extends Event
 
 class AdminPage extends Extension
 {
+    public const KEY = "admin";
     /** @var AdminPageTheme */
     protected Themelet $theme;
 
@@ -56,7 +57,7 @@ class AdminPage extends Extension
             $action = $event->get_arg('action');
             $aae = new AdminActionEvent($action, $event->POST);
 
-            log_info("admin", "Util: $action");
+            Log::info("admin", "Util: $action");
             shm_set_timeout(null);
             $database->set_timeout(null);
             send_event($aae);
@@ -164,7 +165,7 @@ class AdminPage extends Extension
         global $user;
         if ($event->parent === "system") {
             if ($user->can(AdminPermission::MANAGE_ADMINTOOLS)) {
-                $event->add_nav_link("admin", new Link('admin'), "Board Admin");
+                $event->add_nav_link("admin", make_link('admin'), "Board Admin");
             }
         }
     }

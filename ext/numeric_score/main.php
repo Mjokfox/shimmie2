@@ -8,8 +8,6 @@ use GQLA\Type;
 use GQLA\Field;
 use GQLA\Mutation;
 
-use function MicroHTML\rawHTML;
-
 #[Type(name: "NumericScoreVote")]
 class NumericScoreVote
 {
@@ -106,6 +104,7 @@ class NumericScoreSetEvent extends Event
 
 class NumericScore extends Extension
 {
+    public const KEY = "numeric_score";
     /** @var NumericScoreTheme */
     protected Themelet $theme;
 
@@ -260,7 +259,7 @@ class NumericScore extends Extension
     public function onNumericScoreSet(NumericScoreSetEvent $event): void
     {
         global $user;
-        log_debug("numeric_score", "Rated >>{$event->image_id} as {$event->score}", "Rated Post");
+        Log::debug("numeric_score", "Rated >>{$event->image_id} as {$event->score}", "Rated Post");
         $this->add_vote($event->image_id, $user->id, $event->score);
     }
 
@@ -379,9 +378,9 @@ class NumericScore extends Extension
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent == "posts") {
-            $event->add_nav_link("numeric_score_day", new Link('popular_by_day'), "Popular by Day");
-            $event->add_nav_link("numeric_score_month", new Link('popular_by_month'), "Popular by Month");
-            $event->add_nav_link("numeric_score_year", new Link('popular_by_year'), "Popular by Year");
+            $event->add_nav_link("numeric_score_day", make_link('popular_by_day'), "Popular by Day");
+            $event->add_nav_link("numeric_score_month", make_link('popular_by_month'), "Popular by Month");
+            $event->add_nav_link("numeric_score_year", make_link('popular_by_year'), "Popular by Year");
         }
     }
 

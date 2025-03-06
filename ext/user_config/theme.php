@@ -48,7 +48,7 @@ class UserConfigTheme extends Themelet
      */
     public function display_user_config_page(Page $page, array $config_blocks, User $user): void
     {
-        usort($config_blocks, "Shimmie2\blockcmp");
+        usort($config_blocks, Block::cmp(...));
 
         $blocks = DIV(["class" => "setupblocks"]);
         foreach ($config_blocks as $block) {
@@ -64,7 +64,7 @@ class UserConfigTheme extends Themelet
 
         $page->set_mode(PageMode::PAGE);
         $page->set_title("User Options");
-        $page->add_block(new NavBlock());
+        $page->add_block(Block::nav());
         $page->add_block(new Block(null, $table, id: "Setupmain"));
     }
 

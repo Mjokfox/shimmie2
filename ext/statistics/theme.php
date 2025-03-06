@@ -7,9 +7,7 @@ namespace Shimmie2;
 use MicroHTML\HTMLElement;
 
 use function MicroHTML\{TABLE,THEAD,TBODY,TR,TH,TD};
-use function MicroHTML\A;
 use function MicroHTML\B;
-use function MicroHTML\P;
 use function MicroHTML\DIV;
 use function MicroHTML\emptyHTML;
 use function MicroHTML\rawHTML;
@@ -26,7 +24,7 @@ class StatisticsTheme extends Themelet
         );
 
         $page->set_title("Stats - Top $limit");
-        $page->add_block(new NavBlock());
+        $page->add_block(Block::nav());
         $page->add_block(new Block("Stats", $html, "main", 20));
     }
 

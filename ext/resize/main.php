@@ -15,6 +15,7 @@ class ImageResizeException extends ServerError
  */
 class ResizeImage extends Extension
 {
+    public const KEY = "resize";
     /**
      * Needs to be after the data processing extensions
      */
@@ -63,7 +64,7 @@ class ResizeImage extends Extension
             $height = $config->get_int(ResizeConfig::DEFAULT_HEIGHT);
             $isanigif = 0;
             if ($image_obj->get_mime() == MimeType::GIF) {
-                $image_filename = warehouse_path(Image::IMAGE_DIR, $image_obj->hash);
+                $image_filename = Filesystem::warehouse_path(Image::IMAGE_DIR, $image_obj->hash);
                 $fh = \Safe\fopen($image_filename, 'rb');
                 //check if gif is animated (via https://www.php.net/manual/en/function.imagecreatefromgif.php#104473)
                 while (!feof($fh) && $isanigif < 2) {
@@ -79,7 +80,7 @@ class ResizeImage extends Extension
                 $image_obj = Image::by_id_ex($image_obj->id); //Must be a better way to grab the new hash than setting this again..
                 send_event(new ThumbnailGenerationEvent($image_obj, true));
 
-                log_info("resize", ">>{$image_obj->id} has been resized to: ".$width."x".$height);
+                Log::info("resize", ">>{$image_obj->id} has been resized to: ".$width."x".$height);
                 //TODO: Notify user that image has been resized.
             }
         }
@@ -110,22 +111,29 @@ class ResizeImage extends Extension
 
         if ($config->get_bool(ResizeConfig::GET_ENABLED) &&
             $user->can(ImagePermission::EDIT_FILES) &&
-            $this->can_resize_mime($event->image->get_mime())) {
+            $this->can_resize_mime($event->image->get_mime())
+        ) {
+            $image_width = $event->image->width;
+            $image_height = $event->image->height;
+
             if (isset($event->params['max_height'])) {
                 $max_height = int_escape($event->params['max_height']);
             } else {
-                $max_height = $event->image->height;
+                $max_height = $image_height;
             }
 
             if (isset($event->params['max_width'])) {
                 $max_width = int_escape($event->params['max_width']);
             } else {
-                $max_width = $event->image->width;
+                $max_width = $image_width;
             }
 
-            [$new_width, $new_height] = get_scaled_by_aspect_ratio($event->image->width, $event->image->height, $max_width, $max_height);
+            assert($image_width > 0 && $image_height > 0);
+            assert($max_width > 0 && $max_height > 0);
 
-            if ($new_width !== $event->image->width || $new_height !== $event->image->height) {
+            [$new_width, $new_height] = ThumbnailUtil::get_scaled_by_aspect_ratio($image_width, $image_height, $max_width, $max_height);
+
+            if ($new_width !== $image_width || $new_height !== $image_height) {
                 $tmp_filename = shm_tempnam('resize');
                 if (empty($tmp_filename)) {
                     throw new ImageResizeException("Unable to save temporary image file.");
@@ -178,7 +186,7 @@ class ResizeImage extends Extension
         }
 
         $hash = $image_obj->hash;
-        $image_filename  = warehouse_path(Image::IMAGE_DIR, $hash);
+        $image_filename  = Filesystem::warehouse_path(Image::IMAGE_DIR, $hash);
 
         $info = \Safe\getimagesize($image_filename);
         assert(!is_null($info));
@@ -206,11 +214,11 @@ class ResizeImage extends Extension
 
         send_event(new ImageReplaceEvent($image_obj, $tmp_filename));
 
-        log_info("resize", "Resized >>{$image_obj->id} - New hash: {$image_obj->hash}");
+        Log::info("resize", "Resized >>{$image_obj->id} - New hash: {$image_obj->hash}");
     }
 
     /**
-     * @return int[]
+     * @return array{0: positive-int, 1: positive-int}
      */
     private function calc_new_size(Image $image_obj, int $width, int $height): array
     {
@@ -220,17 +228,21 @@ class ResizeImage extends Extension
             $new_width = $width;
             return [$new_height, $new_width];
         } else {
-            // Scale the new image
+            $image_width = $image_obj->width;
+            $image_height = $image_obj->height;
+            assert($image_width > 0 && $image_height > 0);
+
             if ($width == 0) {
-                $factor = $height / $image_obj->height;
+                $factor = $height / $image_height;
             } elseif ($height == 0) {
-                $factor = $width / $image_obj->width;
+                $factor = $width / $image_width;
             } else {
-                $factor = min($width / $image_obj->width, $height / $image_obj->height);
+                $factor = min($width / $image_width, $height / $image_height);
             }
 
-            $new_width = (int)round($image_obj->width * $factor);
-            $new_height = (int)round($image_obj->height * $factor);
+            $new_width = (int)round($image_width * $factor);
+            $new_height = (int)round($image_height * $factor);
+            assert($new_width > 0 && $new_height > 0);
             return [$new_height, $new_width];
         }
     }

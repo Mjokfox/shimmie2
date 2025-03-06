@@ -33,7 +33,7 @@ class CommonElementsTheme extends Themelet
         ];
         $body = $tag;
 
-        if (Extension::is_enabled(TagCategoriesInfo::KEY)) {
+        if (TagCategoriesInfo::is_enabled()) {
             $category = TagCategories::get_tag_category($tag);
             if (!is_null($category)) {
                 $tag_category_dict = TagCategories::getKeyedDict();
@@ -64,14 +64,14 @@ class CommonElementsTheme extends Themelet
         // TODO: Set up a function for fetching what kind of files are currently thumbnailable
         $mimeArr = array_flip([MimeType::MP3]); //List of thumbless filetypes
         if (!isset($mimeArr[$image->get_mime()])) {
-            $tsize = get_thumbnail_size($image->width, $image->height);
+            $tsize = ThumbnailUtil::get_thumbnail_size($image->width, $image->height);
         } else {
             //Use max thumbnail size if using thumbless filetype
-            $tsize = get_thumbnail_size($config->get_int(ThumbnailConfig::WIDTH), $config->get_int(ThumbnailConfig::WIDTH));
+            $tsize = ThumbnailUtil::get_thumbnail_size($config->get_int(ThumbnailConfig::WIDTH), $config->get_int(ThumbnailConfig::WIDTH));
         }
 
         $custom_classes = "";
-        if (Extension::is_enabled(RelationshipsInfo::KEY)) {
+        if (RelationshipsInfo::is_enabled()) {
             if ($image['parent_id'] !== null) {
                 $custom_classes .= "shm-thumb-has_parent ";
             }
@@ -79,7 +79,7 @@ class CommonElementsTheme extends Themelet
                 $custom_classes .= "shm-thumb-has_child ";
             }
         }
-        if (Extension::is_enabled(RatingsInfo::KEY) && Extension::is_enabled(RatingsBlurInfo::KEY)) {
+        if (RatingsInfo::is_enabled() && RatingsBlurInfo::is_enabled()) {
             $rb = new RatingsBlur();
             if ($rb->blur($image['rating'])) {
                 $custom_classes .= "blur ";
@@ -95,7 +95,7 @@ class CommonElementsTheme extends Themelet
             "data-mime" => $image->get_mime(),
             "data-post-id" => $id,
         ];
-        if (Extension::is_enabled(RatingsInfo::KEY)) {
+        if (RatingsInfo::is_enabled()) {
             $attrs["data-rating"] = $image['rating'];
         }
 

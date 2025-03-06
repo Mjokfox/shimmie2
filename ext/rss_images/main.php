@@ -8,6 +8,7 @@ use function MicroHTML\{LINK};
 
 class RSSImages extends Extension
 {
+    public const KEY = "rss_images";
     public function onPostListBuilding(PostListBuildingEvent $event): void
     {
         global $config, $page;
@@ -41,7 +42,7 @@ class RSSImages extends Extension
             $search_terms = Tag::explode($event->get_arg('search', ""));
             $page_number = $event->get_iarg('page_num', 1);
             $page_size = $config->get_int(IndexConfig::IMAGES);
-            if (Extension::is_enabled(SpeedHaxInfo::KEY) && $config->get_bool(SpeedHaxConfig::RSS_LIMIT) && $page_number > 9) {
+            if ($config->get_bool(RSSImagesConfig::RSS_LIMIT) && $page_number > 9) {
                 return;
             }
             $images = Search::find_images(($page_number - 1) * $page_size, $page_size, $search_terms);
@@ -87,7 +88,7 @@ class RSSImages extends Extension
         $next_url = make_link("rss/images/$search".($page_number + 1));
         $next_link = "<atom:link rel=\"next\" href=\"$next_url\" />"; // no end...
 
-        $version = VERSION;
+        $version = SysConfig::getVersion();
         $xml = "<"."?xml version=\"1.0\" encoding=\"utf-8\" ?".">
 <rss version=\"2.0\" xmlns:media=\"http://search.yahoo.com/mrss\" xmlns:atom=\"http://www.w3.org/2005/Atom\">
     <channel>
@@ -144,7 +145,7 @@ class RSSImages extends Extension
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent == "posts") {
-            $event->add_nav_link("posts_rss", new Link('rss/images'), "Feed");
+            $event->add_nav_link("posts_rss", make_link('rss/images'), "Feed");
         }
     }
 

@@ -6,6 +6,7 @@ namespace Shimmie2;
 
 class UserConfig extends Extension
 {
+    public const KEY = "user_config";
     /** @var UserConfigTheme */
     protected Themelet $theme;
 
@@ -31,7 +32,7 @@ class UserConfig extends Extension
     {
         global $user;
         if ($event->parent === "user" && !$user->is_anonymous()) {
-            $event->add_nav_link("user_config", new Link('user_config'), "User Options", false, 40);
+            $event->add_nav_link("user_config", make_link('user_config'), "User Options", false, 40);
         }
     }
 
@@ -72,10 +73,9 @@ class UserConfig extends Extension
 
         if ($event->page_matches("user_config", method: "GET", permission: UserAccountsPermission::CHANGE_USER_SETTING)) {
             $blocks = [];
-            foreach (get_subclasses_of(UserConfigGroup::class) as $class) {
-                $group = new $class();
-                assert(is_a($group, UserConfigGroup::class));
-                if (Extension::is_enabled($group::KEY)) {
+            foreach (UserConfigGroup::get_subclasses() as $class) {
+                $group = $class->newInstance();
+                if ($group::is_enabled()) {
                     $block = $this->theme->config_group_to_block($user->get_config(), $group);
                     if ($block) {
                         $blocks[] = $block;

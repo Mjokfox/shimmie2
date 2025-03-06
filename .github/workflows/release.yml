@@ -3,7 +3,7 @@ name: Create Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   build:
@@ -20,12 +20,12 @@ jobs:
       - name: Check and set sys_config
         run: |
           grep ${{ steps.get_version.outputs.VERSION }} core/sys_config.php
-          echo "_d('BUILD_TIME', '$(date +'%Y-%m-%dT%H:%M:%S')');" >> core/sys_config.php
-          echo "_d('BUILD_HASH', '$GITHUB_SHA');" >> core/sys_config.php
+          echo "define('BUILD_TIME', '$(date +'%Y-%m-%dT%H:%M:%S')');" >> core/Config/SysConfig.php
+          echo "define('BUILD_HASH', '$GITHUB_SHA');" >> core/Config/SysConfig.php
 
       - name: Build
         run: |
-          composer install --no-dev --no-progress
+          composer install --no-dev --no-progress --optimize-autoloader
           cd ..
           tar cvzf shimmie2-${{ steps.get_version.outputs.VERSION }}.tgz shimmie2
           zip -r shimmie2-${{ steps.get_version.outputs.VERSION }}.zip shimmie2

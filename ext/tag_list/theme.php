@@ -65,7 +65,7 @@ class TagListTheme extends Themelet
             usort($tag_infos, fn ($a, $b) => strcasecmp($a['tag'], $b['tag']));
         }
 
-        if (Extension::is_enabled(TagCategoriesInfo::KEY)) {
+        if (TagCategoriesInfo::is_enabled()) {
             $tag_category_dict = TagCategories::getKeyedDict();
         } else {
             $tag_category_dict = [];
@@ -185,7 +185,7 @@ class TagListTheme extends Themelet
         $tag = $row['tag'];
         $count = $row['count'];
         $props = [];
-        if (Extension::is_enabled(TagCategoriesInfo::KEY)) {
+        if (TagCategoriesInfo::is_enabled()) {
             $category = TagCategories::get_tag_category($tag);
             if (!is_null($category)) {
                 $tag_category_dict = TagCategories::getKeyedDict();
@@ -234,7 +234,7 @@ class TagListTheme extends Themelet
     {
         // FIXME: a better fix would be to make sure the inputs are correct
         $tag = strtolower($tag);
-        $tags = array_map("strtolower", $tags);
+        $tags = array_map(strtolower(...), $tags);
         return SPAN(
             ["class" => "ars"],
             joinHTML(

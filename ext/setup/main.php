@@ -82,6 +82,7 @@ class ConfigSaveEvent extends Event
 
 class Setup extends Extension
 {
+    public const KEY = "setup";
     /** @var SetupTheme */
     protected Themelet $theme;
 
@@ -103,10 +104,9 @@ class Setup extends Extension
 
         if ($event->page_matches("setup", method: "GET", permission: SetupPermission::CHANGE_SETTING)) {
             $blocks = [];
-            foreach (get_subclasses_of(ConfigGroup::class) as $class) {
-                $group = new $class();
-                assert(is_a($group, ConfigGroup::class));
-                if (Extension::is_enabled($group::KEY)) {
+            foreach (ConfigGroup::get_subclasses() as $class) {
+                $group = $class->newInstance();
+                if ($group::is_enabled()) {
                     $block = $this->theme->config_group_to_block($config, $group);
                     if ($block) {
                         $blocks[] = $block;
@@ -159,7 +159,7 @@ class Setup extends Extension
             }
         }
         $message = count($changes) > 0 ? implode(",\r\n", $changes) : "nothing changed";
-        log_critical("setup", "Configuration updated: $message");
+        Log::critical("setup", "Configuration updated: $message");
     }
 
     public function onCliGen(CliGenEvent $event): void
@@ -197,7 +197,7 @@ class Setup extends Extension
         global $user;
         if ($event->parent === "system") {
             if ($user->can(SetupPermission::CHANGE_SETTING)) {
-                $event->add_nav_link("setup", new Link('setup'), "Board Config", null, 0);
+                $event->add_nav_link("setup", make_link('setup'), "Board Config", null, 0);
             }
         }
     }

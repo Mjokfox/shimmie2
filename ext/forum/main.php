@@ -14,6 +14,7 @@ Todo:
 */
 class Forum extends Extension
 {
+    public const KEY = "forum";
     /** @var ForumTheme */
     protected Themelet $theme;
 
@@ -77,7 +78,7 @@ class Forum extends Extension
 
     public function onPageNavBuilding(PageNavBuildingEvent $event): void
     {
-        $event->add_nav_link("forum", new Link('forum/index'), "Forum");
+        $event->add_nav_link("forum", make_link('forum/index'), "Forum");
     }
 
     public function onPageRequest(PageRequestEvent $event): void
@@ -292,7 +293,7 @@ class Forum extends Extension
 
         $threadID = $database->get_last_insert_id("forum_threads_id_seq");
 
-        log_info("forum", "Thread {$threadID} created by {$user->name}");
+        Log::info("forum", "Thread {$threadID} created by {$user->name}");
 
         return $threadID;
     }
@@ -314,7 +315,7 @@ class Forum extends Extension
 
         $postID = $database->get_last_insert_id("forum_posts_id_seq");
 
-        log_info("forum", "Post {$postID} created by {$user->name}");
+        Log::info("forum", "Post {$postID} created by {$user->name}");
 
         $database->execute("UPDATE forum_threads SET uptodate=now() WHERE id=:id", ['id' => $threadID]);
     }

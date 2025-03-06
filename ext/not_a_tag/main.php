@@ -34,6 +34,8 @@ class NotATagTable extends Table
 
 class NotATag extends Extension
 {
+    public const KEY = "not_a_tag";
+
     public function get_priority(): int
     {
         return 30;
@@ -84,8 +86,8 @@ class NotATag extends Extension
     }
 
     /**
-     * @param string[] $tags
-     * @return string[]
+     * @param list<tag-string> $tags
+     * @return list<tag-string>
      */
     private function strip(array $tags): array
     {
@@ -111,7 +113,7 @@ class NotATag extends Extension
         global $user;
         if ($event->parent === "tags") {
             if ($user->can(ImageHashBanPermission::BAN_IMAGE)) {
-                $event->add_nav_link("untags", new Link('untag/list'), "UnTags");
+                $event->add_nav_link("untags", make_link('untag/list'), "UnTags");
             }
         }
     }
@@ -152,7 +154,7 @@ class NotATag extends Extension
             $t->token = $user->get_auth_token();
             $t->inputs = $event->GET;
             $page->set_title("UnTags");
-            $page->add_block(new NavBlock());
+            $page->add_block(Block::nav());
             $page->add_block(new Block(null, emptyHTML($t->table($t->query()), $t->paginator())));
         }
     }

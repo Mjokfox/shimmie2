@@ -6,6 +6,8 @@ namespace Shimmie2;
 
 class LogLogstash extends Extension
 {
+    public const KEY = "log_logstash";
+
     public function onLog(LogEvent $event): void
     {
         global $user;
@@ -22,8 +24,8 @@ class LogLogstash extends Extension
                 ],
                 #"@request" => $_SERVER,
                 "@request" => [
-                    "UID" => get_request_id(),
-                    "REMOTE_ADDR" => get_real_ip(),
+                    "UID" => Log::get_request_id(),
+                    "REMOTE_ADDR" => Network::get_real_ip(),
                 ],
             ];
 

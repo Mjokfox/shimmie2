@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Shimmie2;
 
 use MicroCRUD\ActionColumn;
-use MicroCRUD\TextColumn;
 use MicroCRUD\Table;
 
 class AliasTable extends Table
@@ -58,6 +57,7 @@ class AddAliasException extends UserError
 
 class AliasEditor extends Extension
 {
+    public const KEY = "alias_editor";
     /** @var AliasEditorTheme */
     protected Themelet $theme;
 
@@ -99,7 +99,7 @@ class AliasEditor extends Extension
                 $tmp = $_FILES['alias_file']['tmp_name'];
                 $contents = \Safe\file_get_contents($tmp);
                 $this->add_alias_csv($contents);
-                log_info("alias_editor", "Imported aliases from file", "Imported aliases"); # FIXME: how many?
+                Log::info("alias_editor", "Imported aliases from file", "Imported aliases"); # FIXME: how many?
                 $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(make_link("alias/list"));
             } else {
@@ -132,20 +132,20 @@ class AliasEditor extends Extension
             "INSERT INTO aliases(oldtag, newtag) VALUES(:oldtag, :newtag)",
             ["oldtag" => $event->oldtag, "newtag" => $event->newtag]
         );
-        log_info("alias_editor", "Added alias for {$event->oldtag} -> {$event->newtag}", "Added alias");
+        Log::info("alias_editor", "Added alias for {$event->oldtag} -> {$event->newtag}", "Added alias");
     }
 
     public function onDeleteAlias(DeleteAliasEvent $event): void
     {
         global $database;
         $database->execute("DELETE FROM aliases WHERE oldtag=:oldtag", ["oldtag" => $event->oldtag]);
-        log_info("alias_editor", "Deleted alias for {$event->oldtag}", "Deleted alias");
+        Log::info("alias_editor", "Deleted alias for {$event->oldtag}", "Deleted alias");
     }
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent == "tags") {
-            $event->add_nav_link("aliases", new Link('alias/list'), "Aliases", NavLink::is_active(["alias"]));
+            $event->add_nav_link("aliases", make_link('alias/list'), "Aliases", NavLink::is_active(["alias"]));
         }
     }
 

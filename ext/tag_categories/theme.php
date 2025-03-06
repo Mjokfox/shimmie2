@@ -178,7 +178,7 @@ class TagCategoriesTheme extends Themelet
 
         // add html to stuffs
         $page->set_title("Tag Categories");
-        $page->add_block(new NavBlock());
+        $page->add_block(Block::nav());
         $page->add_block(new Block("Editing", rawHTML($html), "main", 10));
     }
 

@@ -6,6 +6,8 @@ namespace Shimmie2;
 
 class LogConsole extends Extension
 {
+    public const KEY = "log_console";
+
     public function onPageRequest(PageRequestEvent $event): void
     {
         global $config, $page;
@@ -23,9 +25,9 @@ class LogConsole extends Extension
 
         /*
         if ($event->page_matches("log_test")) {
-            log_debug("log_console", "Hello debug!");
-            log_info("log_console", "Hello info!");
-            log_warning("log_console", "Hello warning!");
+            Log::debug("log_console", "Hello debug!");
+            Log::info("log_console", "Hello info!");
+            Log::warning("log_console", "Hello warning!");
             $page->set_mode(PageMode::DATA);
             $page->set_data("You should see something in the log\n");
         }
@@ -72,7 +74,7 @@ class LogConsole extends Extension
             date("Y-m-d H:i:s"),
             "[".$event->section."]",
             $levelName,
-            "[".get_real_ip()." (".$username.")]",
+            "[".Network::get_real_ip()." (".$username.")]",
             $event->message
         ]);
 

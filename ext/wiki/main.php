@@ -102,6 +102,7 @@ class WikiPage
 
 class Wiki extends Extension
 {
+    public const KEY = "wiki";
     /** @var WikiTheme */
     protected Themelet $theme;
 
@@ -218,14 +219,14 @@ class Wiki extends Extension
 
     public function onPageNavBuilding(PageNavBuildingEvent $event): void
     {
-        $event->add_nav_link("wiki", new Link('wiki'), "Wiki");
+        $event->add_nav_link("wiki", make_link('wiki'), "Wiki");
     }
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent == "wiki") {
-            $event->add_nav_link("wiki_rules", new Link('wiki/rules'), "Rules");
-            $event->add_nav_link("wiki_help", new Link('ext_doc/wiki'), "Help");
+            $event->add_nav_link("wiki_rules", make_link('wiki/rules'), "Rules");
+            $event->add_nav_link("wiki_help", make_link('ext_doc/wiki'), "Help");
         }
     }
 
@@ -242,7 +243,7 @@ class Wiki extends Extension
                     "
                         INSERT INTO wiki_pages(owner_id, owner_ip, date, title, revision, locked, body)
                         VALUES (:owner_id, :owner_ip, now(), :title, :revision, :locked, :body)",
-                    ["owner_id" => $event->user->id, "owner_ip" => get_real_ip(),
+                    ["owner_id" => $event->user->id, "owner_ip" => Network::get_real_ip(),
                     "title" => $wpage->title, "revision" => $wpage->revision, "locked" => $wpage->locked, "body" => $wpage->body]
                 );
             } else {
@@ -250,7 +251,7 @@ class Wiki extends Extension
                     "
                         UPDATE wiki_pages SET owner_id=:owner_id, owner_ip=:owner_ip, date=now(), locked=:locked, body=:body
                         WHERE title = :title ORDER BY revision DESC LIMIT 1",
-                    ["owner_id" => $event->user->id, "owner_ip" => get_real_ip(),
+                    ["owner_id" => $event->user->id, "owner_ip" => Network::get_real_ip(),
                     "title" => $wpage->title, "locked" => $wpage->locked, "body" => $wpage->body]
                 );
             }

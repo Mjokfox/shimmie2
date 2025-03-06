@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{BODY, emptyHTML, HEADER, FOOTER, DIV, SCRIPT, A, B, IMG, NAV, ARTICLE, rawHTML, SECTION};
+use function MicroHTML\{BODY, HEADER, FOOTER, DIV, SCRIPT, A, B, IMG, NAV, ARTICLE, SECTION};
 
 /**
  * Name: Lite Theme
@@ -116,11 +116,12 @@ class LitePage extends Page
         return $html;
     }
 
-    private function navlinks(Link $link, HTMLElement|string $desc, bool $active): HTMLElement
+    /** @param url-string $link */
+    private function navlinks(string $link, HTMLElement|string $desc, bool $active): HTMLElement
     {
         return A([
             "class" => $active ? "tab-selected" : "tab",
-            "href" => $link->make_link(),
+            "href" => $link,
         ], $desc);
     }
 }

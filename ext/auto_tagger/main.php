@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Shimmie2;
 
 use MicroCRUD\ActionColumn;
-use MicroCRUD\TextColumn;
 use MicroCRUD\Table;
 
 class AutoTaggerTable extends Table
@@ -62,6 +61,7 @@ class AddAutoTagException extends SCoreException
 
 class AutoTagger extends Extension
 {
+    public const KEY = "auto_tagger";
     /** @var AutoTaggerTheme */
     protected Themelet $theme;
 
@@ -103,7 +103,7 @@ class AutoTagger extends Extension
                 $tmp = $_FILES['auto_tag_file']['tmp_name'];
                 $contents = \Safe\file_get_contents($tmp);
                 $count = $this->add_auto_tag_csv($contents);
-                log_info(AutoTaggerInfo::KEY, "Imported $count auto-tag definitions from file from file", "Imported $count auto-tag definitions");
+                Log::info(AutoTaggerInfo::KEY, "Imported $count auto-tag definitions from file from file", "Imported $count auto-tag definitions");
                 $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(make_link("auto_tag/list"));
             } else {
@@ -115,7 +115,7 @@ class AutoTagger extends Extension
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent == "tags") {
-            $event->add_nav_link("auto_tag", new Link('auto_tag/list'), "Auto-Tag", NavLink::is_active(["auto_tag"]));
+            $event->add_nav_link("auto_tag", make_link('auto_tag/list'), "Auto-Tag", NavLink::is_active(["auto_tag"]));
         }
     }
 
@@ -135,7 +135,7 @@ class AutoTagger extends Extension
             }
             $this->set_version(AutoTaggerConfig::VERSION, 1);
 
-            log_info(AutoTaggerInfo::KEY, "extension installed");
+            Log::info(AutoTaggerInfo::KEY, "extension installed");
         }
     }
 
@@ -213,7 +213,7 @@ class AutoTagger extends Extension
                 "UPDATE auto_tag set additional_tags=:existing_tags where tag=:tag",
                 ["tag" => $tag, "existing_tags" => Tag::implode($existing_tags)]
             );
-            log_info(
+            Log::info(
                 AutoTaggerInfo::KEY,
                 "Updated auto-tag for {$tag} -> {".implode(" ", $additional_tags)."}"
             );
@@ -226,7 +226,7 @@ class AutoTagger extends Extension
                 ["tag" => $tag, "additional_tags" => Tag::implode($additional_tags)]
             );
 
-            log_info(
+            Log::info(
                 AutoTaggerInfo::KEY,
                 "Added auto-tag for {$tag} -> {".implode(" ", $additional_tags)."}"
             );
@@ -257,8 +257,8 @@ class AutoTagger extends Extension
     }
 
     /**
-     * @param string[] $tags_mixed
-     * @return string[]
+     * @param list<tag-string> $tags_mixed
+     * @return list<tag-string>
      */
     private function apply_auto_tags(array $tags_mixed): array
     {
@@ -273,10 +273,10 @@ class AutoTagger extends Extension
                 );
 
                 if (!empty($additional_tags)) {
-                    $additional_tags = explode(" ", $additional_tags);
+                    $additional_tags = Tag::explode($additional_tags);
                     $new_tags = array_merge(
                         $new_tags,
-                        array_udiff($additional_tags, $tags_mixed, 'strcasecmp')
+                        array_udiff($additional_tags, $tags_mixed, strcasecmp(...))
                     );
                 }
             }
@@ -286,16 +286,12 @@ class AutoTagger extends Extension
             $tags_mixed = array_merge($tags_mixed, $new_tags);
         }
 
-        return array_intersect_key(
+        return array_values(array_intersect_key(
             $tags_mixed,
-            array_unique(array_map('strtolower', $tags_mixed))
-        );
+            array_unique(array_map(strtolower(...), $tags_mixed))
+        ));
     }
 
-    /**
-     * Get the priority for this extension.
-     *
-     */
     public function get_priority(): int
     {
         return 30;

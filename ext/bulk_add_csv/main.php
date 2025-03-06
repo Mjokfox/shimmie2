@@ -10,6 +10,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class BulkAddCSV extends Extension
 {
+    public const KEY = "bulk_add_csv";
     /** @var BulkAddCSVTheme */
     protected Themelet $theme;
 
@@ -66,7 +67,7 @@ class BulkAddCSV extends Extension
                 throw new UploadException("File type not recognised");
             } else {
                 if (file_exists($thumbfile)) {
-                    copy($thumbfile, warehouse_path(Image::THUMBNAIL_DIR, $event->hash));
+                    copy($thumbfile, Filesystem::warehouse_path(Image::THUMBNAIL_DIR, $event->hash));
                 }
             }
         });

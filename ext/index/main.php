@@ -13,6 +13,7 @@ require_once "events.php";
 
 class Index extends Extension
 {
+    public const KEY = "index";
     /** @var IndexTheme */
     protected Themelet $theme;
 
@@ -34,35 +35,37 @@ class Index extends Extension
             $page_number = $event->get_iarg('page_num', 1);
             $page_size = $config->get_int(IndexConfig::IMAGES);
 
-            $speed_hax = (Extension::is_enabled(SpeedHaxInfo::KEY) && $config->get_bool(SpeedHaxConfig::FAST_PAGE_LIMIT));
-            $fast_page_limit = 500;
+            $search_results_limit = $config->get_int(IndexConfig::SEARCH_RESULTS_LIMIT);
 
-            if (
-                $speed_hax
-                && is_bot()
-                && (
-                    $count_search_terms > 1
-                    || ($count_search_terms == 1 && $search_terms[0][0] == "-")
-                )
-            ) {
-                // bots love searching for weird combinations of tags...
-                $fast_page_limit = 10;
+            if ($config->get_bool(IndexConfig::SIMPLE_BOTS_ONLY) && Network::is_bot()) {
+                // Bots aren't allowed to use negative tags or wildcards at all
+                foreach ($search_terms as $term) {
+                    if ($term[0] == "-" || str_contains($term[0], "*")) {
+                        throw new PermissionDenied("Bots are not allowed to use negative tags or wildcards");
+                    }
+                }
+
+                // Bots love searching for weird combinations of tags - let's
+                // limit them to only a few results for multi-tag searches
+                if ($count_search_terms > 1) {
+                    $search_results_limit = 100;
+                }
             }
 
-            if ($speed_hax && $page_number > $fast_page_limit && !$user->can("big_search")) {
+            if ($search_results_limit && $page_number > $search_results_limit / $page_size && !$user->can(IndexPermission::BIG_SEARCH)) {
                 throw new PermissionDenied(
-                    "Only $fast_page_limit pages of results are searchable - " .
-                    "if you want to find older results, use more specific search terms"
+                    "Only $search_results_limit search results can be shown at once - " .
+                    "if you want to find older posts, use more specific search terms"
                 );
             }
 
             $total_pages = (int)ceil(Search::count_images($search_terms) / $config->get_int(IndexConfig::IMAGES));
-            if ($speed_hax && $total_pages > $fast_page_limit && !$user->can("big_search")) {
-                $total_pages = $fast_page_limit;
+            if ($search_results_limit && $total_pages > $search_results_limit / $page_size && !$user->can(IndexPermission::BIG_SEARCH)) {
+                $total_pages = (int)ceil($search_results_limit / $page_size);
             }
 
             $images = null;
-            if (Extension::is_enabled(SpeedHaxInfo::KEY) && $config->get_bool(SpeedHaxConfig::CACHE_FIRST_FEW)) {
+            if ($config->get_bool(IndexConfig::CACHE_FIRST_FEW)) {
                 if ($count_search_terms === 0 && ($page_number < 10)) {
                     // extra caching for the first few post/list pages
                     $images = cache_get_or_set(
@@ -98,13 +101,13 @@ class Index extends Extension
 
     public function onPageNavBuilding(PageNavBuildingEvent $event): void
     {
-        $event->add_nav_link("posts", new Link('post/list'), "Posts", NavLink::is_active(["post","view"]), 20);
+        $event->add_nav_link("posts", make_link('post/list'), "Posts", NavLink::is_active(["post","view"]), 20);
     }
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent == "posts") {
-            $event->add_nav_link("posts_all", new Link('post/list'), "All");
+            $event->add_nav_link("posts_all", make_link('post/list'), "All");
         }
     }
 

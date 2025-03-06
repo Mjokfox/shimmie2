@@ -6,6 +6,7 @@ namespace Shimmie2;
 
 class LogNet extends Extension
 {
+    public const KEY = "log_net";
     private int $count = 0;
 
     public function onLog(LogEvent $event): void
@@ -16,7 +17,7 @@ class LogNet extends Extension
             $this->count++;
             if ($this->count < 10) {
                 $username = ($user && $user->name) ? $user->name : "Anonymous";
-                $str = sprintf("%-15s %-10s: %s", get_real_ip(), $username, $event->message);
+                $str = sprintf("%-15s %-10s: %s", Network::get_real_ip(), $username, $event->message);
                 $this->msg($str);
             } elseif ($this->count == 10) {
                 $this->msg('suppressing flood, check the web log');

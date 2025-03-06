@@ -203,6 +203,8 @@ class LogTable extends Table
 
 class LogDatabase extends Extension
 {
+    public const KEY = "log_db";
+
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         global $database;
@@ -229,7 +231,7 @@ class LogDatabase extends Extension
             $t = new LogTable($database->raw_db());
             $t->inputs = $event->GET;
             $page->set_title("Event Log");
-            $page->add_block(new NavBlock());
+            $page->add_block(Block::nav());
             $page->add_block(new Block(null, emptyHTML($t->table($t->query()), $t->paginator())));
         }
     }
@@ -239,7 +241,7 @@ class LogDatabase extends Extension
         global $user;
         if ($event->parent === "system") {
             if ($user->can(LogDatabasePermission::VIEW_EVENTLOG)) {
-                $event->add_nav_link("event_log", new Link('log/view'), "Event Log");
+                $event->add_nav_link("event_log", make_link('log/view'), "Event Log");
             }
         }
     }
@@ -269,7 +271,7 @@ class LogDatabase extends Extension
 				VALUES(now(), :section, :priority, :username, :address, :message)
 			", [
                 "section" => $event->section, "priority" => $event->priority, "username" => $username,
-                "address" => get_real_ip(), "message" => $event->message
+                "address" => Network::get_real_ip(), "message" => $event->message
             ]);
         }
     }

@@ -71,6 +71,7 @@ class RatingSetEvent extends Event
 
 class Ratings extends Extension
 {
+    public const KEY = "rating";
     /** @var RatingsTheme */
     protected Themelet $theme;
 
@@ -531,7 +532,7 @@ class Ratings extends Extension
         global $database;
         if ($old_rating != $rating) {
             $database->execute("UPDATE images SET rating=:rating WHERE id=:id", ['rating' => $rating, 'id' => $image_id]);
-            log_info("rating", "Rating for >>{$image_id} set to: ".$this->rating_to_human($rating));
+            Log::info("rating", "Rating for >>{$image_id} set to: ".$this->rating_to_human($rating));
         }
     }
 }

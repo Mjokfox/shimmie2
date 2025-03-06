@@ -6,7 +6,6 @@ namespace Shimmie2;
 
 use GQLA\Type;
 use GQLA\Field;
-use GQLA\Query;
 use GQLA\Mutation;
 
 use function MicroHTML\{emptyHTML, SPAN};
@@ -201,13 +200,14 @@ class PM
         if (!$user->can(PrivMsgPermission::SEND_PM)) {
             return false;
         }
-        send_event(new SendPMEvent(new PM($user->id, get_real_ip(), $to_user_id, $subject, $message)));
+        send_event(new SendPMEvent(new PM($user->id, Network::get_real_ip(), $to_user_id, $subject, $message)));
         return true;
     }
 }
 
 class PrivMsg extends Extension
 {
+    public const KEY = "pm";
     /** @var PrivMsgTheme */
     protected Themelet $theme;
 
@@ -235,7 +235,7 @@ class PrivMsg extends Extension
         }
 
         if ($this->get_version("pm_version") < 2) {
-            log_info("pm", "Adding foreign keys to private messages");
+            Log::info("pm", "Adding foreign keys to private messages");
             $database->execute("delete from private_message where to_id not in (select id from users);");
             $database->execute("delete from private_message where from_id not in (select id from users);");
             $database->execute("ALTER TABLE private_message
@@ -277,7 +277,7 @@ class PrivMsg extends Extension
             if ($user->can(PrivMsgPermission::READ_PM)) {
                 $count = $this->count_pms($user);
                 $h_count = $count > 0 ? SPAN(["class" => 'unread'], "($count)") : "";
-                $event->add_nav_link("pm", new Link("/pm/list/{$user->id}"), emptyHTML("Private Messages", $h_count));
+                $event->add_nav_link("pm", make_link("pm/list/{$user->id}", fragment: 'private-messages'), emptyHTML("Private Messages", $h_count));
             }
         }
     }
@@ -288,7 +288,7 @@ class PrivMsg extends Extension
         if ($user->can(PrivMsgPermission::READ_PM)) {
             $count = $this->count_pms($user);
             $h_count = $count > 0 ? SPAN(["class" => 'unread'], "($count)") : "";
-            $event->add_link(emptyHTML("Private Messages", $h_count), make_link("user", null, "private-messages"), 10);
+            $event->add_link(emptyHTML("Private Messages", $h_count), make_link("user", fragment: "private-messages"), 10);
         }
     }
 
@@ -426,7 +426,7 @@ class PrivMsg extends Extension
                 } else {
                     $cache->delete("pm-count-".$pm["from_id"]);
                 }
-                log_info("pm", "Archived PM #$pm_id", "PM archived");
+                Log::info("pm", "Archived PM #$pm_id", "PM archived");
                 $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(referer_or(make_link()));
             }
@@ -442,7 +442,7 @@ class PrivMsg extends Extension
                 } else {
                     $cache->delete("pm-count-".$pm["from_id"]);
                 }
-                log_info("pm", "Deleted PM #$pm_id", "PM deleted");
+                Log::info("pm", "Deleted PM #$pm_id", "PM deleted");
                 $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(referer_or(make_link()));
             }
@@ -452,7 +452,7 @@ class PrivMsg extends Extension
             $subject = $event->req_POST("subject");
             $message = $event->req_POST("message");
             /** @var SendPMEvent $PMe */
-            $PMe = send_event(new SendPMEvent(new PM($from_id, get_real_ip(), $to_id, $subject, $message)));
+            $PMe = send_event(new SendPMEvent(new PM($from_id, Network::get_real_ip(), $to_id, $subject, $message)));
 
             $page->set_mode(PageMode::REDIRECT);
             $page->flash("PM sent");
@@ -508,7 +508,7 @@ class PrivMsg extends Extension
         );
         $event->id = $database->get_last_insert_id("private_message_id_seq");
         $cache->delete("pm-count-{$event->pm->to_id}");
-        log_info("pm", "Sent PM to User #{$event->pm->to_id}");
+        Log::info("pm", "Sent PM to User #{$event->pm->to_id}");
     }
 
     public function onEditPM(EditPMEvent $event): void
@@ -521,7 +521,7 @@ class PrivMsg extends Extension
             WHERE id = :id;",
             ["fromip" => $event->pm->from_ip,"subject" => $event->pm->subject. " (edited)", "message" => $event->pm->message, "id" => $event->pm->id]
         );
-        log_info("pm", "Edited PM #{$event->pm->id}");
+        Log::info("pm", "Edited PM #{$event->pm->id}");
     }
 
     private function count_pms(User $user): int

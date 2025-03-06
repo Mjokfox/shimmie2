@@ -10,6 +10,7 @@ use function MicroHTML\rawHTML;
 
 class TagEditCloud extends Extension
 {
+    public const KEY = "tag_editcloud";
     public function onImageInfoBoxBuilding(ImageInfoBoxBuildingEvent $event): void
     {
         global $config;
@@ -39,7 +40,7 @@ class TagEditCloud extends Extension
         $ignore_tags = Tag::explode($config->get_string(TagEditCloudConfig::IGNORE_TAGS));
 
         $cat_color = [];
-        if (Extension::is_enabled(TagCategoriesInfo::KEY)) {
+        if (TagCategoriesInfo::is_enabled()) {
             $categories = $database->get_all("SELECT category, color FROM image_tag_categories");
             foreach ($categories as $row) {
                 $cat_color[$row['category']] = $row['color'];
@@ -70,7 +71,7 @@ class TagEditCloud extends Extension
                 break;
                 /** @noinspection PhpMissingBreakStatementInspection */
             case 'c':
-                if (Extension::is_enabled(TagCategoriesInfo::KEY)) {
+                if (TagCategoriesInfo::is_enabled()) {
                     $tag_data = $database->get_all(
                         "
                         SELECT tag, FLOOR(LN(LN(count - :tag_min1 + 1)+1)*150)/200 AS scaled, count
@@ -111,7 +112,7 @@ class TagEditCloud extends Extension
             $full_tag = $row['tag'];
 
             $current_cat = "";
-            if (Extension::is_enabled(TagCategoriesInfo::KEY)) {
+            if (TagCategoriesInfo::is_enabled()) {
                 $tc = explode(':', $row['tag']);
                 if (isset($tc[1]) && isset($cat_color[$tc[0]])) {
                     $current_cat = $tc[0];

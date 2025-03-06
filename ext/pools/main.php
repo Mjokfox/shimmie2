@@ -111,6 +111,7 @@ function _image_to_id(Image $image): int
 
 class Pools extends Extension
 {
+    public const KEY = "pools";
     /** @var PoolsTheme */
     protected Themelet $theme;
 
@@ -156,7 +157,7 @@ class Pools extends Extension
 					");
             $this->set_version("ext_pools_version", 4);
 
-            log_info("pools", "extension installed");
+            Log::info("pools", "extension installed");
         }
 
         if ($this->get_version("ext_pools_version") < 4) {
@@ -178,16 +179,16 @@ class Pools extends Extension
 
     public function onPageNavBuilding(PageNavBuildingEvent $event): void
     {
-        $event->add_nav_link("pool", new Link('pool/list'), "Pools");
+        $event->add_nav_link("pool", make_link('pool/list'), "Pools");
     }
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent == "pool") {
-            $event->add_nav_link("pool_list", new Link('pool/list'), "List");
-            $event->add_nav_link("pool_new", new Link('pool/new'), "Create");
-            $event->add_nav_link("pool_updated", new Link('pool/updated'), "Changes");
-            $event->add_nav_link("pool_help", new Link('ext_doc/pools'), "Help");
+            $event->add_nav_link("pool_list", make_link('pool/list'), "List");
+            $event->add_nav_link("pool_new", make_link('pool/new'), "Create");
+            $event->add_nav_link("pool_updated", make_link('pool/updated'), "Changes");
+            $event->add_nav_link("pool_help", make_link('ext_doc/pools'), "Help");
         }
     }
 
@@ -335,7 +336,7 @@ class Pools extends Extension
             $pool = $this->get_single_pool($pool_id);
             $this->assert_permission($user, $pool);
 
-            $image_ids = array_map('intval', $event->req_POST_array('check'));
+            $image_ids = array_map(intval(...), $event->req_POST_array('check'));
             send_event(new PoolAddPostsEvent($pool_id, $image_ids));
             $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("pool/view/" . $pool_id));
@@ -631,7 +632,7 @@ class Pools extends Extension
         );
 
         $poolID = $database->get_last_insert_id('pools_id_seq');
-        log_info("pools", "Pool {$poolID} created by {$user->name}");
+        Log::info("pools", "Pool {$poolID} created by {$user->name}");
 
         $event->new_id = $poolID;
     }
@@ -663,7 +664,7 @@ class Pools extends Extension
     {
         global $database;
         $col = $database->get_col("SELECT pool_id FROM pool_images WHERE image_id=:iid", ["iid" => $imageID]);
-        $col = array_map('intval', $col);
+        $col = array_map(intval(...), $col);
         return $col;
     }
 
@@ -764,10 +765,10 @@ class Pools extends Extension
 
         // WE CHECK IF THE EXTENSION RATING IS INSTALLED, WHICH VERSION AND IF IT
         // WORKS TO SHOW/HIDE SAFE, QUESTIONABLE, EXPLICIT AND UNRATED IMAGES FROM USER
-        if (Extension::is_enabled(RatingsInfo::KEY)) {
+        if (RatingsInfo::is_enabled()) {
             $query .= "AND i.rating IN (" . Ratings::privs_to_sql(Ratings::get_user_class_privs($user)) . ")";
         }
-        if (Extension::is_enabled(TrashInfo::KEY)) {
+        if (TrashInfo::is_enabled()) {
             $query .= " AND trash != :true";
             $params["true"] = true;
         }
@@ -890,7 +891,7 @@ class Pools extends Extension
                 $this->update_count($poolID);
             } else {
                 // FIXME: should this throw an exception instead?
-                log_error("pools", "Invalid history action.");
+                Log::error("pools", "Invalid history action.");
                 continue; // go on to the next one.
             }
 

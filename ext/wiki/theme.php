@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{FORM, INPUT, TABLE, TR, TD, emptyHTML, rawHTML, BR, TEXTAREA, DIV, HR, P, A};
+use function MicroHTML\{INPUT, TABLE, TR, TD, emptyHTML, rawHTML, BR, TEXTAREA, DIV, HR, P, A};
 
 class WikiTheme extends Themelet
 {
@@ -37,7 +37,7 @@ class WikiTheme extends Themelet
         }
 
         $page->set_title($wiki_page->title);
-        $page->add_block(new NavBlock());
+        $page->add_block(Block::nav());
         $page->add_block(new Block("Wiki Index", rawHTML($body_html), "left", 20));
         $page->add_block(new Block($wiki_page->title, $this->create_display_html($wiki_page)));
     }
@@ -55,14 +55,14 @@ class WikiTheme extends Themelet
         }
         $html .= "</table>";
         $page->set_title($title);
-        $page->add_block(new NavBlock());
+        $page->add_block(Block::nav());
         $page->add_block(new Block($title, rawHTML($html)));
     }
 
     public function display_page_editor(Page $page, WikiPage $wiki_page): void
     {
         $page->set_title($wiki_page->title);
-        $page->add_block(new NavBlock());
+        $page->add_block(Block::nav());
         $page->add_block(new Block("Editor", $this->create_edit_html($wiki_page)));
     }
 
@@ -100,7 +100,7 @@ class WikiTheme extends Themelet
         if (!is_null($tag)) {
             $text = $config->get_string(WikiConfig::TAG_PAGE_TEMPLATE);
 
-            if (Extension::is_enabled(AliasEditorInfo::KEY)) {
+            if (AliasEditorInfo::is_enabled()) {
                 $aliases = $database->get_col("
                     SELECT oldtag
                     FROM aliases
@@ -115,7 +115,7 @@ class WikiTheme extends Themelet
                 }
             }
 
-            if (Extension::is_enabled(AutoTaggerInfo::KEY)) {
+            if (AutoTaggerInfo::is_enabled()) {
                 $auto_tags = $database->get_one("
                     SELECT additional_tags
                     FROM auto_tag

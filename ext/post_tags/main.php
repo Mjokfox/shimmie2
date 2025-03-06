@@ -22,15 +22,15 @@ class TagSetException extends UserError
 class TagSetEvent extends Event
 {
     public Image $image;
-    /** @var string[] */
+    /** @var list<tag-string> */
     public array $old_tags;
-    /** @var string[] */
+    /** @var list<tag-string> */
     public array $new_tags;
-    /** @var string[] */
+    /** @var list<tag-string> */
     public array $metatags;
 
     /**
-     * @param string[] $tags
+     * @param tag-string[] $tags
      */
     public function __construct(Image $image, array $tags)
     {
@@ -71,7 +71,7 @@ class TagTermCheckEvent extends Event
     public function __construct(string $term)
     {
         parent::__construct();
-        $this->term  = $term;
+        $this->term = $term;
     }
 
     /**
@@ -119,6 +119,7 @@ class TagTermParseEvent extends Event
 
 class PostTags extends Extension
 {
+    public const KEY = "post_tags";
     /** @var PostTagsTheme */
     protected Themelet $theme;
 
@@ -215,7 +216,7 @@ class PostTags extends Extension
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent == "tags") {
-            $event->add_nav_link("tags_help", new Link('ext_doc/tag_edit'), "Help");
+            $event->add_nav_link("tags_help", make_link('ext_doc/tag_edit'), "Help");
         }
     }
 
@@ -262,17 +263,17 @@ class PostTags extends Extension
 
     private function mass_tag_edit(string $search, string $replace, bool $commit): void
     {
-        global $database, $tracer_enabled, $_tracer;
+        global $database, $_tracer;
 
         $search_set = Tag::explode(strtolower($search), false);
         $replace_set = Tag::explode(strtolower($replace), false);
 
-        log_info("tag_edit", "Mass editing tags: '$search' -> '$replace'");
+        Log::info("tag_edit", "Mass editing tags: '$search' -> '$replace'");
 
         if (count($search_set) == 1 && count($replace_set) == 1) {
             $images = Search::find_images(limit: 10, tags: $replace_set);
             if (count($images) == 0) {
-                log_info("tag_edit", "No images found with target tag, doing in-place rename");
+                Log::info("tag_edit", "No images found with target tag, doing in-place rename");
                 $database->execute(
                     "DELETE FROM tags WHERE tag=:replace",
                     ["replace" => $replace_set[0]]
@@ -287,9 +288,7 @@ class PostTags extends Extension
 
         $last_id = -1;
         while (true) {
-            if ($tracer_enabled) {
-                $_tracer->begin("Batch starting with $last_id");
-            }
+            $_tracer->begin("Batch starting with $last_id");
             // make sure we don't look at the same images twice.
             // search returns high-ids first, so we want to look
             // at images with lower IDs than the previous.
@@ -305,7 +304,7 @@ class PostTags extends Extension
             }
 
             foreach ($images as $image) {
-                $before = array_map('strtolower', $image->get_tag_array());
+                $before = array_filter(array_map(strtolower(...), $image->get_tag_array()), fn ($tag) => !empty($tag));
                 $after = array_merge(array_diff($before, $search_set), $replace_set);
                 send_event(new TagSetEvent($image, $after));
                 $last_id = $image->id;
@@ -317,9 +316,7 @@ class PostTags extends Extension
                 $database->commit();
                 $database->begin_transaction();
             }
-            if ($tracer_enabled) {
-                $_tracer->end();
-            }
+            $_tracer->end();
         }
     }
 }

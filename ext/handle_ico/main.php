@@ -6,6 +6,7 @@ namespace Shimmie2;
 
 class IcoFileHandler extends DataHandlerExtension
 {
+    public const KEY = "handle_ico";
     protected array $SUPPORTED_MIME = [MimeType::ICO, MimeType::ANI, MimeType::WIN_BITMAP, MimeType::ICO_OSX];
 
     protected function media_check_properties(MediaCheckPropertiesEvent $event): void
@@ -31,10 +32,10 @@ class IcoFileHandler extends DataHandlerExtension
     protected function create_thumb(Image $image): bool
     {
         try {
-            create_image_thumb($image, MediaEngine::IMAGICK);
+            ThumbnailUtil::create_image_thumb($image, MediaEngine::IMAGICK);
             return true;
         } catch (MediaException $e) {
-            log_warning("handle_ico", "Could not generate thumbnail. " . $e->getMessage());
+            Log::warning("handle_ico", "Could not generate thumbnail. " . $e->getMessage());
             return false;
         }
     }

@@ -60,6 +60,8 @@ class AddImageHashBanEvent extends Event
 
 class ImageBan extends Extension
 {
+    public const KEY = "image_hash_ban";
+
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         global $database;
@@ -79,7 +81,7 @@ class ImageBan extends Extension
         global $database;
         $row = $database->get_row("SELECT * FROM image_bans WHERE hash = :hash", ["hash" => $event->hash]);
         if ($row) {
-            log_info("image_hash_ban", "Attempted to upload a blocked image ({$event->hash} - {$row['reason']})");
+            Log::info("image_hash_ban", "Attempted to upload a blocked image ({$event->hash} - {$row['reason']})");
             throw new UploadException("Post {$row["hash"]} has been banned, reason: {$row["reason"]}");
         }
     }
@@ -119,7 +121,7 @@ class ImageBan extends Extension
             $t->token = $user->get_auth_token();
             $t->inputs = $event->GET;
             $page->set_title("Post Bans");
-            $page->add_block(new NavBlock());
+            $page->add_block(Block::nav());
             $page->add_block(new Block(null, emptyHTML($t->table($t->query()), $t->paginator())));
         }
     }
@@ -129,7 +131,7 @@ class ImageBan extends Extension
         global $user;
         if ($event->parent === "system") {
             if ($user->can(ImageHashBanPermission::BAN_IMAGE)) {
-                $event->add_nav_link("image_bans", new Link('image_hash_ban/list'), "Post Bans", NavLink::is_active(["image_hash_ban"]));
+                $event->add_nav_link("image_bans", make_link('image_hash_ban/list'), "Post Bans", NavLink::is_active(["image_hash_ban"]));
             }
         }
     }
@@ -149,7 +151,7 @@ class ImageBan extends Extension
             "INSERT INTO image_bans (hash, reason, date) VALUES (:hash, :reason, now())",
             ["hash" => $event->hash, "reason" => $event->reason]
         );
-        log_info("image_hash_ban", "Banned hash {$event->hash} because '{$event->reason}'");
+        Log::info("image_hash_ban", "Banned hash {$event->hash} because '{$event->reason}'");
     }
 
     public function onRemoveImageHashBan(RemoveImageHashBanEvent $event): void

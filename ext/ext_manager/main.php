@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Shimmie2;
 
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\{InputInterface,InputArgument};
+use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class ExtensionAuthor
@@ -22,6 +22,7 @@ class ExtensionAuthor
 
 class ExtManager extends Extension
 {
+    public const KEY = "ext_manager";
     /** @var ExtManagerTheme */
     protected Themelet $theme;
 
@@ -31,7 +32,7 @@ class ExtManager extends Extension
         if ($event->page_matches("ext_manager/set", method: "POST", permission: ExtManagerPermission::MANAGE_EXTENSION_LIST)) {
             if (is_writable("data/config")) {
                 $this->set_things($event->POST);
-                log_warning("ext_manager", "Active extensions changed", "Active extensions changed");
+                Log::warning("ext_manager", "Active extensions changed", "Active extensions changed");
                 $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(make_link("ext_manager"));
             } else {
@@ -44,10 +45,8 @@ class ExtManager extends Extension
 
         if ($event->page_matches("ext_doc/{ext}")) {
             $ext = $event->get_arg('ext');
-            $info = ExtensionInfo::get_by_key($ext);
-            if ($info) {
-                $this->theme->display_doc($page, $info);
-            }
+            $info = ExtensionInfo::get_all()[$ext];
+            $this->theme->display_doc($page, $info);
         } elseif ($event->page_matches("ext_doc")) {
             $this->theme->display_table($page, $this->get_extensions(false), false);
         }
@@ -68,9 +67,9 @@ class ExtManager extends Extension
         global $user;
         if ($event->parent === "system") {
             if ($user->can(ExtManagerPermission::MANAGE_EXTENSION_LIST)) {
-                $event->add_nav_link("ext_manager", new Link('ext_manager'), "Extension Manager");
+                $event->add_nav_link("ext_manager", make_link('ext_manager'), "Extension Manager");
             } else {
-                $event->add_nav_link("ext_doc", new Link('ext_doc'), "Board Help");
+                $event->add_nav_link("ext_doc", make_link('ext_doc'), "Board Help");
             }
         }
     }
@@ -88,9 +87,9 @@ class ExtManager extends Extension
      */
     private function get_extensions(bool $all): array
     {
-        $extensions = ExtensionInfo::get_all();
+        $extensions = array_values(ExtensionInfo::get_all());
         if (!$all) {
-            $extensions = array_filter($extensions, fn ($x) => Extension::is_enabled($x->key));
+            $extensions = array_filter($extensions, fn ($x) => $x::is_enabled());
         }
         usort($extensions, function ($a, $b) {
             if ($a->category->name !== $b->category->name) {
@@ -109,11 +108,10 @@ class ExtManager extends Extension
      */
     private function set_things(array $settings): void
     {
-        $core = ExtensionInfo::get_core_extensions();
         $extras = [];
 
-        foreach (ExtensionInfo::get_all_keys() as $key) {
-            if (in_array($key, $core)) {
+        foreach (ExtensionInfo::get_all() as $key => $info) {
+            if ($info->core) {
                 continue;  // core extensions are always enabled
             }
             if (isset($settings["ext_$key"]) && $settings["ext_$key"] === "on") {
@@ -129,10 +127,11 @@ class ExtManager extends Extension
      */
     private function write_config(array $extras): void
     {
+        $contents = implode(", ", array_map(fn ($x) => "'$x'", $extras));
         file_put_contents(
             "data/config/extensions.conf.php",
             '<' . '?php' . "\n" .
-            'define("EXTRA_EXTS", "' . implode(",", $extras) . '");' . "\n"
+            'define("EXTRA_EXTS", [' . $contents . ']);' . "\n"
         );
     }
 }

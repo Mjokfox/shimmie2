@@ -8,6 +8,7 @@ use enshrined\svgSanitize\Sanitizer;
 
 class SVGFileHandler extends DataHandlerExtension
 {
+    public const KEY = "handle_svg";
     protected array $SUPPORTED_MIME = [MimeType::SVG];
 
     /** @var SVGFileHandlerTheme */
@@ -26,7 +27,7 @@ class SVGFileHandler extends DataHandlerExtension
 
             $sanitizer = new Sanitizer();
             $sanitizer->removeRemoteReferences(true);
-            $dirtySVG = \Safe\file_get_contents(warehouse_path(Image::IMAGE_DIR, $hash));
+            $dirtySVG = \Safe\file_get_contents(Filesystem::warehouse_path(Image::IMAGE_DIR, $hash));
             $cleanSVG = $sanitizer->sanitize($dirtySVG);
             $page->set_data($cleanSVG);
         }
@@ -69,13 +70,13 @@ class SVGFileHandler extends DataHandlerExtension
         try {
             // Normally we require imagemagick, but for unit tests we can use a no-op engine
             if (defined('UNITTEST')) {
-                create_image_thumb($image);
+                ThumbnailUtil::create_image_thumb($image);
             } else {
-                create_image_thumb($image, MediaEngine::IMAGICK);
+                ThumbnailUtil::create_image_thumb($image, MediaEngine::IMAGICK);
             }
             return true;
         } catch (MediaException $e) {
-            log_warning("handle_svg", "Could not generate thumbnail. " . $e->getMessage());
+            Log::warning("handle_svg", "Could not generate thumbnail. " . $e->getMessage());
             copy("ext/handle_svg/thumb.jpg", $image->get_thumb_filename());
             return false;
         }
@@ -95,8 +96,10 @@ class SVGFileHandler extends DataHandlerExtension
 class MiniSVGParser
 {
     public bool $valid = false;
-    public int $width = 0;
-    public int $height = 0;
+    /** @var positive-int */
+    public int $width;
+    /** @var positive-int */
+    public int $height;
     private int $xml_depth = 0;
 
     public function __construct(string $file)
@@ -113,8 +116,12 @@ class MiniSVGParser
     public function startElement(mixed $parser, string $name, array $attrs): void
     {
         if ($name == "SVG" && $this->xml_depth == 0) {
-            $this->width = int_escape($attrs["WIDTH"]);
-            $this->height = int_escape($attrs["HEIGHT"]);
+            $w = int_escape($attrs["WIDTH"]);
+            $h = int_escape($attrs["HEIGHT"]);
+            assert($w > 0);
+            assert($h > 0);
+            $this->width = $w;
+            $this->height = $h;
         }
         $this->xml_depth++;
     }

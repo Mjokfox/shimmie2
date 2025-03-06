@@ -8,6 +8,8 @@ use function MicroHTML\LINK;
 
 class RSSComments extends Extension
 {
+    public const KEY = "rss_comments";
+
     public function onPostListBuilding(PostListBuildingEvent $event): void
     {
         global $config, $page;
@@ -63,7 +65,7 @@ class RSSComments extends Extension
 
             $title = $config->get_string(SetupConfig::TITLE);
             $base_href = make_http(get_base_href());
-            $version = VERSION;
+            $version = SysConfig::getVersion();
             $xml = <<<EOD
 <?xml version="1.0" encoding="utf-8" ?>
 <rss version="2.0">
@@ -84,7 +86,7 @@ EOD;
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent == "comment") {
-            $event->add_nav_link("comment_rss", new Link('rss/comments'), "Feed");
+            $event->add_nav_link("comment_rss", make_link('rss/comments'), "Feed");
         }
     }
 }

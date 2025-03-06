@@ -81,6 +81,7 @@ class AddIPBanEvent extends Event
 
 class IPBan extends Extension
 {
+    public const KEY = "ipban";
     /** @var IPBanTheme */
     protected Themelet $theme;
 
@@ -119,7 +120,7 @@ class IPBan extends Extension
 
         // Check if our current IP is in either of the ban lists
         $active_ban_id = (
-            $this->find_active_ban(get_real_ip(), $ips, $networks)
+            $this->find_active_ban(Network::get_real_ip(), $ips, $networks)
         );
 
         // If an active ban is found, act on it
@@ -199,7 +200,7 @@ class IPBan extends Extension
         global $user;
         if ($event->parent === "system") {
             if ($user->can(IPBanPermission::BAN_IP)) {
-                $event->add_nav_link("ip_bans", new Link('ip_ban/list'), "IP Bans", NavLink::is_active(["ip_ban"]));
+                $event->add_nav_link("ip_bans", make_link('ip_ban/list'), "IP Bans", NavLink::is_active(["ip_ban"]));
             }
         }
     }
@@ -219,7 +220,7 @@ class IPBan extends Extension
         $database->execute($sql, ["ip" => $event->ip, "mode" => $event->mode, "reason" => $event->reason, "expires" => $event->expires, "admin_id" => $user->id]);
         $cache->delete("ip_bans");
         $cache->delete("network_bans");
-        log_info("ipban", "Banned ({$event->mode}) {$event->ip} because '{$event->reason}' until {$event->expires}");
+        Log::info("ipban", "Banned ({$event->mode}) {$event->ip} because '{$event->reason}' until {$event->expires}");
     }
 
     public function onRemoveIPBan(RemoveIPBanEvent $event): void
@@ -230,7 +231,7 @@ class IPBan extends Extension
             $database->execute("DELETE FROM bans WHERE id = :id", ["id" => $event->id]);
             $cache->delete("ip_bans");
             $cache->delete("network_bans");
-            log_info("ipban", "Removed {$ban['ip']}'s ban");
+            Log::info("ipban", "Removed {$ban['ip']}'s ban");
         }
     }
 
@@ -284,7 +285,13 @@ class IPBan extends Extension
         if ($this->get_version("ext_ipban_version") == 3) {
             $database->execute("ALTER TABLE bans CHANGE end old_end DATE NOT NULL");
             $database->execute("ALTER TABLE bans ADD COLUMN end INTEGER");
-            $database->execute("UPDATE bans SET end = UNIX_TIMESTAMP(old_end)");
+            if ($database->get_driver_id() == DatabaseDriverID::MYSQL) {
+                $database->execute("UPDATE bans SET end = UNIX_TIMESTAMP(old_end)");
+            } elseif ($database->get_driver_id() == DatabaseDriverID::PGSQL) {
+                $database->execute("UPDATE bans SET end = EXTRACT(EPOCH FROM old_end)");
+            } elseif ($database->get_driver_id() == DatabaseDriverID::SQLITE) {
+                $database->execute("UPDATE bans SET end = unixepoch(old_end)");
+            }
             $database->execute("ALTER TABLE bans DROP COLUMN old_end");
             $database->execute("CREATE INDEX bans__end ON bans(end)");
             $this->set_version("ext_ipban_version", 4);
@@ -336,7 +343,7 @@ class IPBan extends Extension
             $active_ban_id = $ips[$remote];
         } else {
             foreach ($networks as $range => $ban_id) {
-                if (ip_in_range($remote, $range)) {
+                if (Network::ip_in_range($remote, $range)) {
                     $active_ban_id = $ban_id;
                 }
             }

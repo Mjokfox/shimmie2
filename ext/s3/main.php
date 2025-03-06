@@ -14,6 +14,7 @@ require_once "S3.php";
 
 class S3 extends Extension
 {
+    public const KEY = "s3";
     public int $synced = 0;
 
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
@@ -122,7 +123,7 @@ class S3 extends Extension
         if ($event->page_matches("s3/sync/{image_id}", method: "POST", permission: ImagePermission::DELETE_IMAGE)) {
             $id = $event->get_iarg('image_id');
             $this->sync_post(Image::by_id_ex($id));
-            log_info("s3", "Manual resync for >>$id", "File re-sync'ed");
+            Log::info("s3", "Manual resync for >>$id", "File re-sync'ed");
             $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("post/view/$id"));
         }
@@ -195,7 +196,7 @@ class S3 extends Extension
 
     // underlying s3 interaction functions
     /**
-     * @param string[]|null $new_tags
+     * @param list<tag-string>|null $new_tags
      */
     private function sync_post(Image $image, ?array $new_tags = null, bool $overwrite = true): bool
     {

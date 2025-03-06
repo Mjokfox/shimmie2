@@ -10,6 +10,7 @@ use function MicroHTML\{DIV,IMG,STYLE};
 
 class AvatarPost extends AvatarExtension
 {
+    public const KEY = "avatar_post";
     /** @var AvatarPostTheme */
     protected Themelet $theme;
 

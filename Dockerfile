@@ -56,7 +56,7 @@ ENV XDEBUG_MODE=coverage
 FROM dev-tools AS build
 COPY composer.json composer.lock /app/
 WORKDIR /app
-RUN composer install --no-dev --no-progress
+RUN composer install --no-dev --no-progress --optimize-autoloader
 COPY . /app/
 
 # Devcontainer target
@@ -73,7 +73,7 @@ ARG BUILD_TIME=unknown BUILD_HASH=unknown
 ENV UID=1000 GID=1000
 COPY --from=build /app /app
 WORKDIR /app
-RUN echo "_d('BUILD_TIME', '$BUILD_TIME');" >> core/sys_config.php && \
-    echo "_d('BUILD_HASH', '$BUILD_HASH');" >> core/sys_config.php
+RUN echo "define('BUILD_TIME', '$BUILD_TIME');" >> core/Config/SysConfig.php && \
+    echo "define('BUILD_HASH', '$BUILD_HASH');" >> core/Config/SysConfig.php
 ENTRYPOINT ["/app/.docker/entrypoint.sh"]
 CMD ["php", "/app/.docker/run.php"]

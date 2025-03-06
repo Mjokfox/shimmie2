@@ -24,8 +24,8 @@ class PermManagerTheme extends Themelet
         $row->appendChild(TH("Permission"));
         foreach ($classes as $class) {
             $n = $class->name;
-            if ($class->parent) {
-                $n .= " ({$class->parent->name})";
+            if ($class->get_parent()) {
+                $n .= " ({$class->get_parent()->name})";
             }
             $row->appendChild(TH($n));
         }
@@ -37,7 +37,7 @@ class PermManagerTheme extends Themelet
             $row->appendChild(TH($meta->label));
 
             foreach ($classes as $class) {
-                $opacity = $class->hasOwnPermission($name) ? 1 : 0.2;
+                $opacity = $class->has_own_permission($name) ? 1 : 0.2;
                 if ($class->can($name)) {
                     $cell = TD(["style" => "color: green; opacity: $opacity;"], "✔");
                 } else {
@@ -51,7 +51,7 @@ class PermManagerTheme extends Themelet
         }
 
         $page->set_title("User Classes");
-        $page->add_block(new NavBlock());
+        $page->add_block(Block::nav());
         $page->add_block(new Block("Classes", $table, "main", 10));
     }
 }

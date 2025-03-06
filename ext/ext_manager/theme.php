@@ -10,10 +10,8 @@ use function MicroHTML\B;
 use function MicroHTML\BR;
 use function MicroHTML\IMG;
 use function MicroHTML\TABLE;
-use function MicroHTML\THEAD;
 use function MicroHTML\TFOOT;
 use function MicroHTML\TBODY;
-use function MicroHTML\TH;
 use function MicroHTML\TR;
 use function MicroHTML\TD;
 use function MicroHTML\INPUT;
@@ -66,23 +64,23 @@ class ExtManagerTheme extends Themelet
                 ["data-ext" => $extension->name],
                 $editable ? TD(INPUT([
                     "type" => 'checkbox',
-                    "name" => "ext_{$extension->key}",
-                    "id" => "ext_{$extension->key}",
+                    "name" => "ext_" . $extension::KEY,
+                    "id" => "ext_" . $extension::KEY,
                     "checked" => ($extension->is_enabled() === true),
                     "disabled" => ($extension->is_supported() === false || $extension->core === true)
                 ])) : null,
                 TD(LABEL(
-                    ["for" => "ext_{$extension->key}"],
+                    ["for" => "ext_" . $extension::KEY],
                     (
                         ($extension->beta === true ? "[BETA] " : "").
-                        (empty($extension->name) ? $extension->key : $extension->name)
+                        (empty($extension->name) ? $extension::KEY : $extension->name)
                     )
                 )),
                 TD(
                     // TODO: A proper "docs" symbol would be preferred here.
                     $extension->documentation ?
                         A(
-                            ["href" => make_link("ext_doc/" . url_escape($extension->key))],
+                            ["href" => make_link("ext_doc/" . url_escape($extension::KEY))],
                             IMG(["src" => 'ext/ext_manager/baseline_open_in_new_black_18dp.png'])
                         ) :
                         null
@@ -101,7 +99,7 @@ class ExtManagerTheme extends Themelet
                 if ($extension->visibility === ExtensionVisibility::HIDDEN && !$extension->core) {
                     $form->appendChild(INPUT([
                         "type" => 'hidden',
-                        "name" => "ext_{$extension->key}",
+                        "name" => "ext_" . $extension::KEY,
                         "value" => ($extension->is_enabled() === true) ? "on" : "off"
                     ]));
                 }
@@ -148,7 +146,7 @@ class ExtManagerTheme extends Themelet
 
         $page->set_title("Documentation for {$info->name}");
         $page->set_heading($info->name);
-        $page->add_block(new NavBlock());
+        $page->add_block(Block::nav());
         $page->add_block(new Block(null, $html));
     }
 }

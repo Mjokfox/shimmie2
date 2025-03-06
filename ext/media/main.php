@@ -25,6 +25,7 @@ class InsufficientMemoryException extends ServerError
 
 class Media extends Extension
 {
+    public const KEY = "media";
     /** @var MediaTheme */
     protected Themelet $theme;
 
@@ -106,7 +107,7 @@ class Media extends Extension
                     $failed = 0;
                     foreach ($event->items as $image) {
                         try {
-                            log_debug("media", "Rescanning media for {$image->hash} ({$image->id})");
+                            Log::debug("media", "Rescanning media for {$image->hash} ({$image->id})");
                             send_event(new MediaCheckPropertiesEvent($image));
                             $image->save_to_db();
                             $total++;
@@ -305,7 +306,7 @@ class Media extends Extension
             $outname = $image->get_thumb_filename();
 
             $orig_size = self::video_size($inname);
-            $scaled_size = get_thumbnail_size($orig_size[0], $orig_size[1], true);
+            $scaled_size = ThumbnailUtil::get_thumbnail_size($orig_size[0], $orig_size[1], true);
 
             $args = [
                 escapeshellarg($ffmpeg),
@@ -319,16 +320,16 @@ class Media extends Extension
 
             $cmd = escapeshellcmd(implode(" ", $args));
 
-            log_debug('media', "Generating thumbnail with command `$cmd`...");
+            Log::debug('media', "Generating thumbnail with command `$cmd`...");
 
             exec($cmd, $output, $ret);
 
             if ((int)$ret === (int)0) {
-                log_debug('media', "Generating thumbnail with command `$cmd`, returns $ret");
-                create_scaled_image($tmpname, $outname, $scaled_size, MimeType::PNG);
+                Log::debug('media', "Generating thumbnail with command `$cmd`, returns $ret");
+                ThumbnailUtil::create_scaled_image($tmpname, $outname, $scaled_size, MimeType::PNG);
                 $ok = true;
             } else {
-                log_error('media', "Generating thumbnail with command `$cmd`, returns $ret");
+                Log::error('media', "Generating thumbnail with command `$cmd`, returns $ret");
             }
         } finally {
             @unlink($tmpname);
@@ -362,11 +363,11 @@ class Media extends Extension
         exec($cmd, $output, $ret);
 
         if ((int)$ret == (int)0) {
-            log_debug('media', "Getting media data `$cmd`, returns $ret");
+            Log::debug('media', "Getting media data `$cmd`, returns $ret");
             $output = implode($output);
             return json_decode($output, true);
         } else {
-            log_error('media', "Getting media data `$cmd`, returns $ret");
+            Log::error('media', "Getting media data `$cmd`, returns $ret");
             return [];
         }
     }
@@ -600,7 +601,7 @@ class Media extends Extension
         if ($ret != 0) {
             throw new MediaException("Resizing image with command `$cmd`, returns $ret, outputting " . implode("\r\n", $output));
         } else {
-            log_debug('media', "Generating thumbnail with command `$cmd`, returns $ret");
+            Log::debug('media', "Generating thumbnail with command `$cmd`, returns $ret");
         }
     }
 
@@ -609,8 +610,8 @@ class Media extends Extension
      *
      * @param string $image_filename The source file to be resized.
      * @param array{0:int,1:int,2:int} $info The output of getimagesize() for the source file.
-     * @param int $new_width
-     * @param int $new_height
+     * @param positive-int $new_width
+     * @param positive-int $new_height
      * @param string $output_filename
      * @param ?string $output_mime If set to null, the output file type will be automatically determined via the $info parameter. Otherwise an exception will be thrown.
      * @param int $output_quality Defaults to 80.
@@ -629,6 +630,7 @@ class Media extends Extension
     ): void {
         $width = $info[0];
         $height = $info[1];
+        assert($width > 0 && $height > 0);
 
         if ($output_mime === null) {
             /* If not specified, output to the same format as the original image */
@@ -660,7 +662,7 @@ class Media extends Extension
         }
 
         if ($resize_type == Media::RESIZE_TYPE_FIT) {
-            list($new_width, $new_height) = get_scaled_by_aspect_ratio($width, $height, $new_width, $new_height);
+            list($new_width, $new_height) = ThumbnailUtil::get_scaled_by_aspect_ratio($width, $height, $new_width, $new_height);
         }
         if (!$allow_upscale &&
             ($new_width > $width || $new_height > $height)) {
@@ -673,7 +675,6 @@ class Media extends Extension
             throw new MediaException("Could not load image: " . $image_filename);
         }
 
-        assert($new_width > 0 && $new_height > 0);
         $image_resized = imagecreatetruecolor($new_width, $new_height);
         if ($image_resized === false) {
             throw new MediaException("Could not create output image with dimensions $new_width x $new_height ");
@@ -806,7 +807,7 @@ class Media extends Extension
      * Determines the dimensions of a video file using ffmpeg.
      *
      * @param string $filename
-     * @return array{0: int, 1: int}
+     * @return array{0: positive-int, 1: positive-int}
      */
     public static function video_size(string $filename): array
     {
@@ -826,15 +827,18 @@ class Media extends Extension
         // error_log("Getting size with `$cmd`");
 
         if (\Safe\preg_match("/Video: .* ([0-9]{1,4})x([0-9]{1,4})/", $output, $regs)) {
+            $x = (int)$regs[1];
+            $y = (int)$regs[2];
+            assert($x > 0 && $y > 0);
             if (\Safe\preg_match("/displaymatrix: rotation of (90|270).00 degrees/", $output)) {
-                $size = [(int)$regs[2], (int)$regs[1]];
+                $size = [$y, $x];
             } else {
-                $size = [(int)$regs[1], (int)$regs[2]];
+                $size = [$x, $y];
             }
         } else {
             $size = [1, 1];
         }
-        log_debug('media', "Getting video size with `$cmd`, returns $output -- $size[0], $size[1]");
+        Log::debug('media', "Getting video size with `$cmd`, returns $output -- $size[0], $size[1]");
         return $size;
     }
 

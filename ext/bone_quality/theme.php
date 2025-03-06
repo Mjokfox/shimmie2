@@ -7,7 +7,6 @@ namespace Shimmie2;
 use MicroHTML\HTMLElement;
 
 use function MicroHTML\A;
-use function MicroHTML\B;
 use function MicroHTML\BR;
 use function MicroHTML\DIV;
 use function MicroHTML\SPAN;
@@ -40,7 +39,7 @@ class BoneQualityTheme extends Themelet
         );
 
         $page->set_title("review your fate");
-        $page->add_block(new NavBlock());
+        $page->add_block(Block::nav());
         $page->add_block(new Block($heading, $html, "main", 20));
     }
 

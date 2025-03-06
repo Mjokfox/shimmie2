@@ -6,6 +6,8 @@ namespace Shimmie2;
 
 class BanWords extends Extension
 {
+    public const KEY = "ban_words";
+
     public function onCommentPosting(CommentPostingEvent $event): void
     {
         if (!$event->user->can(CommentPermission::BYPASS_COMMENT_CHECKS)) {

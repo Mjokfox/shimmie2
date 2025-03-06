@@ -227,10 +227,9 @@ class CommentListTheme extends Themelet
         }
 
         $tfe = send_event(new TextFormattingEvent($comment->comment));
-        $hb = ($comment->owner_class == "hellbanned" ? "hb" : "");
         if ($trim) {
             $html = DIV(
-                ["class" => "comment $hb"],
+                ["class" => "comment"],
                 $userlink,
                 ": ",
                 truncate($tfe->stripped, 50),
@@ -240,7 +239,7 @@ class CommentListTheme extends Themelet
             /** @var BuildAvatarEvent $bae */
             $bae = send_event(new BuildAvatarEvent($comment->get_owner()));
             $html = DIV(
-                ["class" => "comment $hb", "id" => "c{$comment->comment_id}"],
+                ["class" => "comment", "id" => "c{$comment->comment_id}"],
                 DIV(
                     ["class" => "info"],
                     emptyHTML(
@@ -279,7 +278,7 @@ class CommentListTheme extends Themelet
         global $config;
 
         $hash = CommentList::get_hash();
-        $h_captcha = $config->get_bool(CommentConfig::CAPTCHA) ? captcha_get_html() : "";
+        $h_captcha = $config->get_bool(CommentConfig::CAPTCHA) ? Captcha::get_html() : "";
 
         return DIV(
             ["class" => "comment comment_add"],

@@ -6,6 +6,7 @@ namespace Shimmie2;
 
 class ImageViewCounter extends Extension
 {
+    public const KEY = "image_view_counter";
     /** @var ImageViewCounterTheme */
     protected Themelet $theme;
     private int $view_interval = 3600; # allows views to be added each hour
@@ -25,7 +26,7 @@ class ImageViewCounter extends Extension
 				WHERE ipaddress=:ipaddress AND timestamp >:lasthour AND image_id =:image_id
 			",
             [
-                "ipaddress" => get_real_ip(),
+                "ipaddress" => Network::get_real_ip(),
                 "lasthour" => time() - $this->view_interval,
                 "image_id" => $imgid
             ]
@@ -46,7 +47,7 @@ class ImageViewCounter extends Extension
                 "image_id" => $imgid,
                 "user_id" => $user->id,
                 "timestamp" => time(),
-                "ipaddress" => get_real_ip(),
+                "ipaddress" => Network::get_real_ip(),
             ]
         );
     }
@@ -106,7 +107,7 @@ class ImageViewCounter extends Extension
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent == "posts") {
-            $event->add_nav_link("sort_by_visits", new Link('popular_images'), "Popular Posts");
+            $event->add_nav_link("sort_by_visits", make_link('popular_images'), "Popular Posts");
         }
     }
 }

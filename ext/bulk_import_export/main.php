@@ -6,6 +6,7 @@ namespace Shimmie2;
 
 class BulkImportExport extends DataHandlerExtension
 {
+    public const KEY = "bulk_import_export";
     public const EXPORT_ACTION_NAME = "bulk_export";
     public const EXPORT_INFO_FILE_NAME = "export.json";
     protected array $SUPPORTED_MIME = [MimeType::ZIP];
@@ -35,7 +36,7 @@ class BulkImportExport extends DataHandlerExtension
                         $image = Image::by_hash($item->hash);
                         if ($image != null) {
                             $skipped++;
-                            log_info(BulkImportExportInfo::KEY, "Post $item->hash already present, skipping");
+                            Log::info(BulkImportExportInfo::KEY, "Post $item->hash already present, skipping");
                             continue;
                         }
 
@@ -67,7 +68,7 @@ class BulkImportExport extends DataHandlerExtension
                         $total++;
                     } catch (\Exception $ex) {
                         $failed++;
-                        log_error(BulkImportExportInfo::KEY, "Could not import " . $item->hash . ": " . $ex->getMessage(), "Could not import " . $item->hash . ": " . $ex->getMessage());
+                        Log::error(BulkImportExportInfo::KEY, "Could not import " . $item->hash . ": " . $ex->getMessage(), "Could not import " . $item->hash . ": " . $ex->getMessage());
                     } finally {
                         if (!empty($tmpfile) && is_file($tmpfile)) {
                             unlink($tmpfile);
@@ -75,7 +76,7 @@ class BulkImportExport extends DataHandlerExtension
                     }
                 }
 
-                log_info(
+                Log::info(
                     BulkImportExportInfo::KEY,
                     "Imported $total items, skipped $skipped, $failed failed",
                     "Imported $total items, skipped $skipped, $failed failed"
@@ -109,7 +110,7 @@ class BulkImportExport extends DataHandlerExtension
 
             if ($zip->open($zip_filename, \ZIPARCHIVE::CREATE | \ZIPARCHIVE::OVERWRITE) === true) {
                 foreach ($event->items as $image) {
-                    $img_loc = warehouse_path(Image::IMAGE_DIR, $image->hash, false);
+                    $img_loc = Filesystem::warehouse_path(Image::IMAGE_DIR, $image->hash, false);
 
                     $export_event = send_event(new BulkExportEvent($image));
                     $data = $export_event->fields;

@@ -22,6 +22,7 @@ class FavoriteSetEvent extends Event
 
 class Favorites extends Extension
 {
+    public const KEY = "favorites";
     /** @var FavoritesTheme */
     protected Themelet $theme;
 
@@ -158,7 +159,7 @@ class Favorites extends Extension
     {
         global $user;
         if ($event->parent == "posts") {
-            $event->add_nav_link("posts_favorites", new Link("post/list/favorited_by={$user->name}/1"), "My Favorites");
+            $event->add_nav_link("posts_favorites", make_link("post/list/favorited_by={$user->name}/1"), "My Favorites");
         }
     }
 
@@ -220,11 +221,11 @@ class Favorites extends Extension
         }
 
         if ($this->get_version("ext_favorites_version") < 2) {
-            log_info("favorites", "Cleaning user favourites");
+            Log::info("favorites", "Cleaning user favourites");
             $database->execute("DELETE FROM user_favorites WHERE user_id NOT IN (SELECT id FROM users)");
             $database->execute("DELETE FROM user_favorites WHERE image_id NOT IN (SELECT id FROM images)");
 
-            log_info("favorites", "Adding foreign keys to user favourites");
+            Log::info("favorites", "Adding foreign keys to user favourites");
             $database->execute("ALTER TABLE user_favorites ADD FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;");
             $database->execute("ALTER TABLE user_favorites ADD FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE;");
             $this->set_version("ext_favorites_version", 2);

@@ -6,6 +6,7 @@ namespace Shimmie2;
 
 class PixelFileHandler extends DataHandlerExtension
 {
+    public const KEY = "handle_pixel";
     protected array $SUPPORTED_MIME = [
         MimeType::JPEG,
         MimeType::GIF,
@@ -51,7 +52,7 @@ class PixelFileHandler extends DataHandlerExtension
     protected function create_thumb(Image $image): bool
     {
         try {
-            create_image_thumb($image);
+            ThumbnailUtil::create_image_thumb($image);
             return true;
         } catch (\Exception $e) {
             throw new UploadException("Error while creating thumbnail: ".$e->getMessage());

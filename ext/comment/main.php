@@ -155,6 +155,7 @@ class Comment
 
 class CommentList extends Extension
 {
+    public const KEY = "comment";
     /** @var CommentListTheme $theme */
     public Themelet $theme;
 
@@ -222,14 +223,14 @@ class CommentList extends Extension
 
     public function onPageNavBuilding(PageNavBuildingEvent $event): void
     {
-        $event->add_nav_link("comment", new Link('comment/list'), "Comments");
+        $event->add_nav_link("comment", make_link('comment/list'), "Comments");
     }
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent == "comment") {
-            $event->add_nav_link("comment_list", new Link('comment/list'), "All");
-            $event->add_nav_link("comment_help", new Link('ext_doc/comment'), "Help");
+            $event->add_nav_link("comment_list", make_link('comment/list'), "All");
+            $event->add_nav_link("comment_help", make_link('ext_doc/comment'), "Help");
         }
     }
 
@@ -261,7 +262,7 @@ class CommentList extends Extension
                 WHERE owner_ip=:ip
             ", ["ip" => $ip]);
             $num = count($comment_ids);
-            log_warning("comment", "Deleting $num comments from $ip");
+            Log::warning("comment", "Deleting $num comments from $ip");
             foreach ($comment_ids as $cid) {
                 send_event(new CommentDeletionEvent($cid));
             }
@@ -272,8 +273,9 @@ class CommentList extends Extension
         } elseif ($event->page_matches("comment/list", paged: true)) {
             $threads_per_page = 10;
 
-            $speed_hax = (Extension::is_enabled(SpeedHaxInfo::KEY) && $config->get_bool(SpeedHaxConfig::RECENT_COMMENTS));
-            $where = $speed_hax ? "WHERE posted > now() - interval '24 hours'" : "";
+            $where = $config->get_bool(CommentConfig::RECENT_COMMENTS)
+                ? "WHERE posted > now() - interval '24 hours'"
+                : "";
 
             $total_pages = cache_get_or_set("comment_pages", fn () => (int)ceil($database->get_one("
                 SELECT COUNT(c1)
@@ -293,19 +295,19 @@ class CommentList extends Extension
                 LIMIT :limit OFFSET :offset
             ", ["limit" => $threads_per_page, "offset" => $start]);
 
-            $user_ratings = Extension::is_enabled(RatingsInfo::KEY) ? Ratings::get_user_class_privs($user) : [];
+            $user_ratings = RatingsInfo::is_enabled() ? Ratings::get_user_class_privs($user) : [];
 
             $images = [];
             while ($row = $result->fetch()) {
                 $image = Image::by_id((int)$row["image_id"]);
                 if (
-                    Extension::is_enabled(RatingsInfo::KEY) && !is_null($image) &&
+                    RatingsInfo::is_enabled() && !is_null($image) &&
                     !in_array($image['rating'], $user_ratings)
                 ) {
                     $image = null; // this is "clever", I may live to regret it
                 }
                 if (
-                    Extension::is_enabled(ApprovalInfo::KEY) && !is_null($image) &&
+                    ApprovalInfo::is_enabled() && !is_null($image) &&
                     $image['approved'] !== true
                 ) {
                     $image = null;
@@ -404,7 +406,7 @@ class CommentList extends Extension
 			DELETE FROM comments
 			WHERE id=:comment_id
 		", ["comment_id" => $event->comment_id]);
-        log_info("comment", "Deleting Comment #{$event->comment_id}");
+        Log::info("comment", "Deleting Comment #{$event->comment_id}");
     }
 
     public function onSearchTermParse(SearchTermParseEvent $event): void
@@ -523,7 +525,7 @@ class CommentList extends Extension
 			SELECT *
 			FROM comments
 			WHERE owner_ip = :remote_ip AND posted > now() - $window_sql
-		", ["remote_ip" => get_real_ip()]);
+		", ["remote_ip" => Network::get_real_ip()]);
 
         return (count($result) >= $max);
     }
@@ -537,7 +539,7 @@ class CommentList extends Extension
      */
     public static function get_hash(): string
     {
-        return md5(get_real_ip() . date("%Y%m%d"));
+        return md5(Network::get_real_ip() . date("%Y%m%d"));
     }
 
     private function is_spam_akismet(string $text): bool
@@ -596,13 +598,13 @@ class CommentList extends Extension
         $database->execute(
             "INSERT INTO comments(image_id, owner_id, owner_ip, posted, comment) ".
                 "VALUES(:image_id, :user_id, :remote_addr, now(), :comment)",
-            ["image_id" => $image_id, "user_id" => $user->id, "remote_addr" => get_real_ip(), "comment" => $comment]
+            ["image_id" => $image_id, "user_id" => $user->id, "remote_addr" => Network::get_real_ip(), "comment" => $comment]
         );
         $cid = $database->get_last_insert_id('comments_id_seq');
         $snippet = substr($comment, 0, 100);
         $snippet = str_replace("\n", " ", $snippet);
         $snippet = str_replace("\r", " ", $snippet);
-        log_info("comment", "Comment #$cid added to >>$image_id: $snippet");
+        Log::info("comment", "Comment #$cid added to >>$image_id: $snippet");
     }
 
     private function edit_comment(int $image_id, int $comment_id, User $user, string $comment): void
@@ -671,7 +673,7 @@ class CommentList extends Extension
         }
 
         // rate-limited external service checks last
-        elseif ($config->get_bool(CommentConfig::CAPTCHA) && !captcha_check()) {
+        elseif ($config->get_bool(CommentConfig::CAPTCHA) && !Captcha::check()) {
             throw new CommentPostingException("Error in captcha");
         } elseif ($user->is_anonymous() && $this->is_spam_akismet($comment)) {
             throw new CommentPostingException("Akismet thinks that your comment is spam. Try rewriting the comment, or logging in.");

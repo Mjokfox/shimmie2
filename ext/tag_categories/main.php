@@ -6,6 +6,7 @@ namespace Shimmie2;
 
 class TagCategories extends Extension
 {
+    public const KEY = "tag_categories";
     /** @var TagCategoriesTheme */
     protected Themelet $theme;
 
@@ -37,7 +38,7 @@ class TagCategories extends Extension
 
             $this->set_version(TagCategoriesConfig::VERSION, 2);
 
-            log_info("tag_categories", "extension installed");
+            Log::info("tag_categories", "extension installed");
         }
         if ($this->get_version(TagCategoriesConfig::VERSION) < 2) {
             $database->execute("ALTER TABLE image_tag_categories RENAME COLUMN display_singular to upper_group;");
@@ -70,7 +71,7 @@ class TagCategories extends Extension
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent == "tags") {
-            $event->add_nav_link("tag_categories", new Link('tags/categories'), "Tag Categories", NavLink::is_active(["tag_categories"]));
+            $event->add_nav_link("tag_categories", make_link('tags/categories'), "Tag Categories", NavLink::is_active(["tag_categories"]));
         }
     }
 

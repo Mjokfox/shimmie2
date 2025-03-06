@@ -6,6 +6,7 @@ namespace Shimmie2;
 
 class PermManager extends Extension
 {
+    public const KEY = "perm_manager";
     /** @var PermManagerTheme */
     protected Themelet $theme;
 
@@ -13,16 +14,13 @@ class PermManager extends Extension
     {
         $_all_false = [];
         $_all_true = [];
-        foreach (get_subclasses_of(PermissionGroup::class) as $class) {
-            foreach ((new \ReflectionClass($class))->getConstants() as $k => $v) {
+        foreach (PermissionGroup::get_subclasses(all: true) as $class) {
+            foreach ($class->getConstants() as $k => $v) {
                 assert(is_string($v));
                 $_all_false[$v] = false;
                 $_all_true[$v] = true;
             }
         }
-        // hellbanned is a snowflake, it isn't really a "permission" so much as
-        // "a special behaviour which applies to one particular user class"
-        $_all_true[UserAccountsPermission::HELLBANNED] = false;
         new UserClass("base", null, $_all_false);
         new UserClass("admin", null, $_all_true);
 
@@ -42,7 +40,7 @@ class PermManager extends Extension
         // and do basic edits (tags, source, title) on other
         // people's content
         new UserClass("user", "base", [
-            SpeedHaxPermission::BIG_SEARCH => true,
+            IndexPermission::BIG_SEARCH => true,
             ImagePermission::CREATE_IMAGE => true,
             CommentPermission::CREATE_COMMENT => true,
             PostTagsPermission::EDIT_IMAGE_TAG => true,
@@ -68,14 +66,6 @@ class PermManager extends Extension
             PoolsPermission::UPDATE => true,
         ]);
 
-        // Hellbanning is a special case where a user can do all
-        // of the normal user actions, but their posts are hidden
-        // from everyone else
-        new UserClass("hellbanned", "user", [
-            UserAccountsPermission::HELLBANNED => true,
-        ]);
-
-        // @phpstan-ignore-next-line
         @include_once "data/config/user-classes.conf.php";
     }
 
@@ -85,15 +75,13 @@ class PermManager extends Extension
 
         if ($event->page_matches("perm_manager", method: "GET")) {
             $permissions = [];
-            foreach (get_subclasses_of(PermissionGroup::class) as $class) {
-                $refl_group = new \ReflectionClass($class);
-                $group = $refl_group->newInstance();
-                assert(is_a($group, PermissionGroup::class));
-                if (!Extension::is_enabled($group::KEY)) {
+            foreach (PermissionGroup::get_subclasses() as $class) {
+                $group = $class->newInstance();
+                if (!$group::is_enabled()) {
                     continue;
                 }
-                foreach ($refl_group->getConstants() as $const => $key) {
-                    $refl_const = $refl_group->getReflectionConstant($const);
+                foreach ($class->getConstants() as $const => $key) {
+                    $refl_const = $class->getReflectionConstant($const);
                     if (!$refl_const) {
                         continue;
                     }
@@ -118,7 +106,7 @@ class PermManager extends Extension
         global $user;
         if ($event->parent === "system") {
             if ($user->can(PermManagerPermission::MANAGE_USER_PERMISSIONS)) {
-                $event->add_nav_link("perm_manager", new Link('perm_manager'), "Permission Manager");
+                $event->add_nav_link("perm_manager", make_link('perm_manager'), "Permission Manager");
             }
         }
     }
