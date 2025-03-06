@@ -257,7 +257,7 @@ class User
     public function get_auth_token(): string
     {
         global $config;
-        return hash("sha3-256", $this->passhash . Network::get_session_ip($config) . SysConfig::getSecret());
+        return hash("sha3-256", $this->passhash . SysConfig::getSecret());
     }
 
 
