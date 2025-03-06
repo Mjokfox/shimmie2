@@ -13,6 +13,7 @@ class SiteCaptchaTheme extends Themelet
         $page->set_mode(PageMode::DATA);
         $page->add_http_header("Refresh: 3");
         $data_href = get_base_href();
+        $time = time(); // add a 'random' string behind the image urls to avoid caching
 
         $page->set_data((string)$page->html_html(
             emptyHTML(
@@ -22,8 +23,8 @@ class SiteCaptchaTheme extends Themelet
                 SCRIPT(["type" => "text/javascript", "src" => "{$data_href}/ext/site_captcha/captcha.js"])
             ),
             BODY(
-                ["style" => "background-color:#888;background-image:url(\"/captcha/css\");"],
-                IMG(["id" => "img", "style" => "display:none;", "src" => "/captcha/image"]),
+                ["style" => "background-color:#888;background-image:url(\"/captcha/css?$time\");"],
+                IMG(["id" => "img", "style" => "display:none;", "src" => "/captcha/image?$time"]),
                 H1("Automatically verifying you are not a bot, please wait..."),
                 NOSCRIPT(
                     H1("Javascript disabled: Page will reload in 3 seconds.."),
