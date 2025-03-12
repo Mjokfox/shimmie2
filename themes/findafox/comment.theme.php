@@ -103,9 +103,7 @@ class CustomCommentListTheme extends CommentListTheme
 
         $tfe = send_event(new TextFormattingEvent($comment->comment));
 
-        //$i_uid = $comment->owner_id;
         $h_name = html_escape($comment->owner_name);
-        //$h_poster_ip = html_escape($comment->poster_ip);
         if ($trim) {
             $h_comment = truncate($tfe->stripped, 50);
         } else {
@@ -163,6 +161,6 @@ class CustomCommentListTheme extends CommentListTheme
     }
     protected function edit_button(int $comment_id, int $image_id): string
     {
-        return "<a class=\"c-edit\" onclick='create_edit_box(this,$image_id,$comment_id)'>Edit</a>";
+        return "<a class=\"c-edit\" onclick='comment_edit_box(this,$image_id,$comment_id)'>Edit</a>";
     }
 }

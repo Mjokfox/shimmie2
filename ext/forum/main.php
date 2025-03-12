@@ -100,13 +100,8 @@ class Forum extends Extension
                 throw new InvalidInput(implode("<br>", $errors));
             }
 
-            $this->show_posts($threadID, $pageNumber, $user->can(ForumPermission::FORUM_ADMIN));
-            if ($user->can(ForumPermission::FORUM_ADMIN)) {
-                $this->theme->add_actions_block($page, $threadID);
-            }
-            if ($user->can(ForumPermission::FORUM_CREATE)) {
-                $this->theme->display_new_post_composer($page, $threadID);
-            }
+            $this->show_posts($threadID, $pageNumber);
+
         }
         if ($event->page_matches("forum/new", permission: ForumPermission::FORUM_CREATE)) {
             $this->theme->display_new_thread_composer($page);
@@ -152,7 +147,21 @@ class Forum extends Extension
             $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("forum/view/" . $threadID . "/" . $total_pages));
         }
+        if ($event->page_matches("forum/edit", permission: ForumPermission::FORUM_CREATE, method:"POST")) {
+            $threadID = int_escape($event->req_POST("threadID"));
+            $postID = int_escape($event->req_POST("postID"));
+            $total_pages = $this->get_total_pages_for_thread($threadID);
 
+            $errors = $this->sanity_check_new_post();
+
+            if (count($errors) > 0) {
+                throw new InvalidInput(implode("<br>", $errors));
+            }
+            $this->edit_post($threadID, $postID, $user);
+
+            $page->set_mode(PageMode::REDIRECT);
+            $page->set_redirect(make_link("forum/view/" . $threadID . "/" . $total_pages));
+        }
     }
 
     public function onRobotsBuilding(RobotsBuildingEvent $event): void
@@ -256,7 +265,7 @@ class Forum extends Extension
         $this->theme->display_thread_list($page, $threads, $showAdminOptions, $pageNumber + 1, $totalPages);
     }
 
-    private function show_posts(int $threadID, int $pageNumber, bool $showAdminOptions = false): void
+    private function show_posts(int $threadID, int $pageNumber): void
     {
         global $config, $database;
         $postsPerPage = $config->get_int(ForumConfig::POSTS_PER_PAGE, 15);
@@ -273,7 +282,7 @@ class Forum extends Extension
             "LIMIT :limit OFFSET :offset",
             ["thread_id" => $threadID, "offset" => $pageNumber * $postsPerPage, "limit" => $postsPerPage]
         );
-        $this->theme->display_thread($posts, $showAdminOptions, $threadTitle, $threadID, $pageNumber + 1, $totalPages);
+        $this->theme->display_thread($posts, $threadTitle, $threadID, $pageNumber + 1, $totalPages);
     }
 
     private function save_new_thread(User $user): int
@@ -318,6 +327,31 @@ class Forum extends Extension
         Log::info("forum", "Post {$postID} created by {$user->name}");
 
         $database->execute("UPDATE forum_threads SET uptodate=now() WHERE id=:id", ['id' => $threadID]);
+    }
+
+    private function edit_post(int $threadID, int $postID, User $user): void
+    {
+        global $config, $database;
+        $message = $_POST["message"];
+
+        $max_characters = $config->get_int(ForumConfig::MAX_CHARS_PER_POST);
+        $message = substr($message, 0, $max_characters);
+        $query = "UPDATE forum_posts
+            SET message = :message
+            WHERE id = :id;
+        ";
+
+        $args = [
+            "message" => "$message \n___(edited)___",
+            "id" => $postID
+        ];
+        $database->execute($query, $args);
+        $database->execute("UPDATE forum_threads SET uptodate=now() WHERE id=:id", ['id' => $threadID]);
+
+        $snippet = substr($message, 0, 100);
+        $snippet = str_replace("\n", " ", $snippet);
+        $snippet = str_replace("\r", " ", $snippet);
+        Log::info("forum", "Post {$postID} edited by {$user->name}: $snippet");
     }
 
     private function delete_thread(int $threadID): void

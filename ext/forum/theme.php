@@ -114,9 +114,9 @@ class ForumTheme extends Themelet
     /**
      * @param array<Post> $posts
      */
-    public function display_thread(array $posts, bool $showAdminOptions, string $threadTitle, int $threadID, int $pageNumber, int $totalPages): void
+    public function display_thread(array $posts, string $threadTitle, int $threadID, int $pageNumber, int $totalPages): void
     {
-        global $config, $page/*, $user*/;
+        global $config, $page, $user;
 
         $posts_per_page = $config->get_int(ForumConfig::POSTS_PER_PAGE);
 
@@ -140,7 +140,7 @@ class ForumTheme extends Themelet
                             ["class" => "forumSupmessage"],
                             DIV(
                                 ["class" => "deleteLink"],
-                                $showAdminOptions ? A(["href" => make_link("forum/delete/".$threadID."/".$post['id'])], "Delete") : null
+                                $user->can(ForumPermission::FORUM_ADMIN) ? A(["href" => make_link("forum/delete/".$threadID."/".$post['id'])], "Delete") : null
                             )
                         )
                     ),
@@ -195,6 +195,13 @@ class ForumTheme extends Themelet
 
         $page->set_title($threadTitle);
         $page->add_block(new Block($threadTitle, $html, "main", 20));
+
+        if ($user->can(ForumPermission::FORUM_ADMIN)) {
+            $this->add_actions_block($page, $threadID);
+        }
+        if ($user->can(ForumPermission::FORUM_CREATE)) {
+            $this->display_new_post_composer($page, $threadID);
+        }
     }
 
     public function add_actions_block(Page $page, int $threadID): void
