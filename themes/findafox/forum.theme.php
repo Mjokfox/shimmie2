@@ -96,7 +96,7 @@ class CustomForumTheme extends ForumTheme
         return rawHTML("
             <table class='comment' id=\"$i_post_id\"><tr>
                 <td class='meta'>$h_userlink<br>$h_avatar<br/>$h_posted $h_del</td>
-                <td class='c_body'>$h_comment<br><br><div class='c-actions'>$h_edit</div></td>
+                <td class='c_body'>$h_comment<br><br>$h_edit</td>
             </tr></table>
         ");
 
