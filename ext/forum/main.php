@@ -342,7 +342,7 @@ class Forum extends Extension
         ";
 
         $args = [
-            "message" => "$message \n___(edited)___",
+            "message" => $message,
             "id" => $postID
         ];
         $database->execute($query, $args);

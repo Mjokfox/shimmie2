@@ -979,6 +979,12 @@ TD.tag_info_link_cell{
 	color: var(--link-default)
 }
 
+
+.c-actions {
+	bottom: 0.1em;
+	position: absolute;
+}
+
 .c-edit {
 	color: var(--link-default);
 }

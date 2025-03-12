@@ -14,7 +14,7 @@ function comment_edit_box(e, imageId, commentId) {
             textarea.id = `edit_${commentId}`;
             const span = e.parentNode.querySelector("SPAN.markdown");
             if (span) {
-                textarea.value = span.original_innerHTML;
+                textarea.innerHTML = span.original_innerHTML;
             }
         }
         const submit = form.querySelector("input[type=submit]");
@@ -47,7 +47,7 @@ function forum_edit_box(e, threadID, postID) {
             textarea.id = `edit_${postID}`;
             const span = e.parentNode.querySelector("SPAN.markdown");
             if (span) {
-                textarea.value = span.original_innerHTML;
+                textarea.innerHTML = span.original_innerHTML;
             }
         }
         const submit = form.querySelector("input[type=submit]");
