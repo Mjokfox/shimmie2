@@ -113,9 +113,10 @@ class CustomCommentListTheme extends CommentListTheme
         $i_image_id = $comment->image_id;
         $h_posted = autodate($comment->posted);
 
-        $h_userlink = "<a class='username' href='".make_link("user/$h_name")."'>$h_name</a>";
+        $duser = $comment->get_owner();
+        $h_userlink = "<a class='username' href='".make_link("user/$h_name")."'>$h_name</a><br>{$duser->class->name}";
         /** @var BuildAvatarEvent $avatar_e */
-        $avatar_e = send_event(new BuildAvatarEvent($comment->get_owner()));
+        $avatar_e = send_event(new BuildAvatarEvent($duser));
         $h_avatar = $avatar_e->html;
         $h_del = "";
         if ($user->can(CommentPermission::DELETE_COMMENT) || $user->id === $comment->owner_id) {

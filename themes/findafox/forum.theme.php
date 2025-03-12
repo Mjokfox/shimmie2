@@ -81,7 +81,7 @@ class CustomForumTheme extends ForumTheme
         $h_posted = autodate($post["date"]);
 
         $duser = User::by_name($post["user_name"]);
-        $h_userlink = "<a class='username' href='".make_link("user/$h_name")."'>$h_name</a>";
+        $h_userlink = "<a class='username' href='".make_link("user/$h_name")."'>$h_name</a><br>{$duser->class->name}";
         /** @var BuildAvatarEvent $avatar_e */
         $avatar_e = send_event(new BuildAvatarEvent($duser));
         $h_avatar = $avatar_e->html;
