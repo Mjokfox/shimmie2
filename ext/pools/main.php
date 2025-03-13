@@ -179,16 +179,16 @@ class Pools extends Extension
 
     public function onPageNavBuilding(PageNavBuildingEvent $event): void
     {
-        $event->add_nav_link("pool", make_link('pool/list'), "Pools");
+        $event->add_nav_link(make_link('pool/list'), "Pools", category: "pool");
     }
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent == "pool") {
-            $event->add_nav_link("pool_list", make_link('pool/list'), "List");
-            $event->add_nav_link("pool_new", make_link('pool/new'), "Create");
-            $event->add_nav_link("pool_updated", make_link('pool/updated'), "Changes");
-            $event->add_nav_link("pool_help", make_link('ext_doc/pools'), "Help");
+            $event->add_nav_link(make_link('pool/list'), "List");
+            $event->add_nav_link(make_link('pool/new'), "Create");
+            $event->add_nav_link(make_link('pool/updated'), "Changes");
+            $event->add_nav_link(make_link('ext_doc/pools'), "Help");
         }
     }
 

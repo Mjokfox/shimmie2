@@ -36,7 +36,7 @@ class ReverseImage extends Extension
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent === "posts") {
-            $event->add_nav_link("reverse image search", make_link('reverse_image_search'), "Reverse Image Search", order:51);
+            $event->add_nav_link(make_link('reverse_image_search'), "Reverse Image Search", order:51);
         }
     }
     public function onPageRequest(PageRequestEvent $event): void

@@ -265,7 +265,7 @@ class PrivMsg extends Extension
         if ($user->can(PrivMsgPermission::READ_PM)) {
             $count = $this->count_pms($user);
             if ($count > 0) {
-                $event->add_nav_link("pm", make_link('user', fragment: 'private-messages'), "Messages ($count)", null, 11);
+                $event->add_nav_link(make_link('user', fragment: 'private-messages'), "Messages ($count)", order:11);
             }
         }
     }
@@ -277,7 +277,7 @@ class PrivMsg extends Extension
             if ($user->can(PrivMsgPermission::READ_PM)) {
                 $count = $this->count_pms($user);
                 $h_count = $count > 0 ? SPAN(["class" => 'unread'], "($count)") : "";
-                $event->add_nav_link("pm", make_link("pm/list/{$user->id}", fragment: 'private-messages'), emptyHTML("Private Messages", $h_count));
+                $event->add_nav_link(make_link("pm/list/{$user->id}", fragment: 'private-messages'), emptyHTML("Private Messages", $h_count));
             }
         }
     }

@@ -145,7 +145,7 @@ class Upload extends Extension
     {
         global $user;
         if ($user->can(ImagePermission::CREATE_IMAGE)) {
-            $event->add_nav_link("upload", make_link('upload'), "Upload");
+            $event->add_nav_link(make_link('upload'), "Upload", category: "upload");
         }
     }
 
@@ -153,7 +153,7 @@ class Upload extends Extension
     {
         if ($event->parent == "upload") {
             if (WikiInfo::is_enabled()) {
-                $event->add_nav_link("upload_guidelines", make_link('wiki/upload_guidelines'), "Guidelines");
+                $event->add_nav_link(make_link('wiki/upload_guidelines'), "Guidelines");
             }
         }
     }
