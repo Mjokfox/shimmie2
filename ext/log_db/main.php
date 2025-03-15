@@ -19,7 +19,7 @@ use function MicroHTML\SELECT;
 use function MicroHTML\OPTION;
 use function MicroHTML\rawHTML;
 
-class ActorColumn extends Column
+final class ActorColumn extends Column
 {
     public function __construct(string $name, string $title)
     {
@@ -79,7 +79,7 @@ class ActorColumn extends Column
     public function display(array $row): HTMLElement
     {
         $ret = emptyHTML();
-        if ($row['username'] != "Anonymous") {
+        if ($row['username'] !== "Anonymous") {
             $ret->appendChild(A(["href" => make_link("user/{$row['username']}"), "title" => $row['address']], $row['username']));
             $ret->appendChild(BR());
         }
@@ -88,7 +88,7 @@ class ActorColumn extends Column
     }
 }
 
-class MessageColumn extends Column
+final class MessageColumn extends Column
 {
     public function __construct(string $name, string $title)
     {
@@ -122,7 +122,7 @@ class MessageColumn extends Column
         $s->appendChild(OPTION(["value" => ""], '-'));
         foreach (LogLevel::names_to_levels() as $k => $v) {
             $attrs = ["value" => $v];
-            if ($v == @$inputs["r_{$this->name}"][1]) {
+            if ((string)$v === @$inputs["r_{$this->name}"][1]) {
                 $attrs["selected"] = true;
             }
             $s->appendChild(OPTION($attrs, $k));
@@ -180,7 +180,7 @@ class MessageColumn extends Column
     }
 }
 
-class LogTable extends Table
+final class LogTable extends Table
 {
     public function __construct(\FFSPHP\PDO $db)
     {
@@ -201,15 +201,16 @@ class LogTable extends Table
     }
 }
 
-class LogDatabase extends Extension
+final class LogDatabase extends Extension
 {
     public const KEY = "log_db";
+    public const VERSION_KEY = "ext_log_database_version";
 
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         global $database;
 
-        if ($this->get_version("ext_log_database_version") < 1) {
+        if ($this->get_version() < 1) {
             $database->create_table("score_log", "
 				id SCORE_AIPK,
 				date_sent TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -220,7 +221,7 @@ class LogDatabase extends Extension
 				message TEXT NOT NULL
 			");
             //INDEX(section)
-            $this->set_version("ext_log_database_version", 1);
+            $this->set_version(1);
         }
     }
 
@@ -231,7 +232,7 @@ class LogDatabase extends Extension
             $t = new LogTable($database->raw_db());
             $t->inputs = $event->GET;
             $page->set_title("Event Log");
-            $page->add_block(Block::nav());
+            $this->theme->display_navigation();
             $page->add_block(new Block(null, emptyHTML($t->table($t->query()), $t->paginator())));
         }
     }
@@ -261,7 +262,7 @@ class LogDatabase extends Extension
         $username = ($user && $user->name) ? $user->name : "null";
 
         // not installed yet...
-        if ($this->get_version("ext_log_database_version") < 1) {
+        if ($this->get_version() < 1) {
             return;
         }
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class IcoFileHandler extends DataHandlerExtension
+final class IcoFileHandler extends DataHandlerExtension
 {
     public const KEY = "handle_ico";
     public const SUPPORTED_MIME = [MimeType::ICO, MimeType::ANI, MimeType::WIN_BITMAP, MimeType::ICO_OSX];
@@ -14,16 +14,16 @@ class IcoFileHandler extends DataHandlerExtension
         $event->image->lossless = true;
         $event->image->video = false;
         $event->image->audio = false;
-        $event->image->image = ($event->image->get_mime() != MimeType::ANI);
+        $event->image->image = ($event->image->get_mime() !== MimeType::ANI);
 
-        $fp = \Safe\fopen($event->image->get_image_filename(), "r");
+        $fp = \Safe\fopen($event->image->get_image_filename()->str(), "r");
         try {
             fseek($fp, 6); // skip header
             $subheader = \Safe\unpack("Cwidth/Cheight/Ccolours/Cnull/Splanes/Sbpp/Lsize/loffset", \Safe\fread($fp, 16));
             $width = $subheader['width'];
             $height = $subheader['height'];
-            $event->image->width = $width == 0 ? 256 : $width;
-            $event->image->height = $height == 0 ? 256 : $height;
+            $event->image->width = $width === 0 ? 256 : $width;
+            $event->image->height = $height === 0 ? 256 : $height;
         } finally {
             fclose($fp);
         }
@@ -40,11 +40,11 @@ class IcoFileHandler extends DataHandlerExtension
         }
     }
 
-    protected function check_contents(string $tmpname): bool
+    protected function check_contents(Path $tmpname): bool
     {
-        $fp = \Safe\fopen($tmpname, "r");
+        $fp = \Safe\fopen($tmpname->str(), "r");
         $header = \Safe\unpack("Snull/Stype/Scount", \Safe\fread($fp, 6));
         fclose($fp);
-        return ($header['null'] == 0 && ($header['type'] == 0 || $header['type'] == 1));
+        return ($header['null'] === 0 && ($header['type'] === 0 || $header['type'] === 1));
     }
 }

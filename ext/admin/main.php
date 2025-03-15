@@ -11,7 +11,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Sent when the admin page is ready to be added to
  */
-class AdminBuildingEvent extends Event
+final class AdminBuildingEvent extends Event
 {
     public Page $page;
 
@@ -22,7 +22,7 @@ class AdminBuildingEvent extends Event
     }
 }
 
-class AdminActionEvent extends Event
+final class AdminActionEvent extends Event
 {
     public string $action;
     public bool $redirect = true;
@@ -40,7 +40,7 @@ class AdminActionEvent extends Event
     }
 }
 
-class AdminPage extends Extension
+final class AdminPage extends Extension
 {
     public const KEY = "admin";
     /** @var AdminPageTheme */
@@ -81,7 +81,7 @@ class AdminPage extends Extension
                 $query = ltrim($query, '/');
                 $args = $input->getArgument('args');
                 $_SERVER['REQUEST_METHOD'] = 'GET';
-                $_SERVER['REQUEST_URI'] = make_link($query);
+                $_SERVER['REQUEST_URI'] = (string)make_link($query);
                 if (!is_null($args)) {
                     parse_str($args, $_GET);
                     $_SERVER['REQUEST_URI'] .= "?" . $args;
@@ -103,7 +103,7 @@ class AdminPage extends Extension
                     parse_str($args, $_POST);
                 }
                 $_SERVER['REQUEST_METHOD'] = 'GET';
-                $_SERVER['REQUEST_URI'] = make_link($query);
+                $_SERVER['REQUEST_URI'] = (string)make_link($query);
                 send_event(new PageRequestEvent("POST", $query, [], $_POST));
                 $page->display();
                 return Command::SUCCESS;

@@ -55,7 +55,7 @@ class ReportImageTheme extends Themelet
 		";
 
         $page->set_title("Reported Posts");
-        $page->add_block(Block::nav());
+        $this->display_navigation();
         $page->add_block(new Block("Reported Posts", rawHTML($html)));
     }
 
@@ -69,7 +69,7 @@ class ReportImageTheme extends Themelet
         $i_image = $image->id;
         $html = "";
         $public = $config->get_string(ReportImageConfig::SHOW_INFO);
-        if ($public != "none" && count($reports) > 0) {
+        if ($public !== "none" && count($reports) > 0) {
             $html .= "<b>Current reports:</b>";
             foreach ($reports as $report) {
                 $html .= "<br>";
@@ -99,7 +99,7 @@ class ReportImageTheme extends Themelet
     {
         global $page;
         $html = (string)SHM_SIMPLE_FORM(
-            "image_report/remove_reports_by",
+            make_link("image_report/remove_reports_by"),
             INPUT(["type" => 'hidden', "name" => 'user_id', "value" => $duser->id]),
             SHM_SUBMIT('Delete all reports by this user')
         );

@@ -14,7 +14,7 @@ class DmcaTheme extends Themelet
 
         $page->set_title("DMCA form");
         $html = SHM_SIMPLE_FORM(
-            "dmca_submit",
+            make_link("dmca_submit"),
             DIV(
                 ["style" => "width:50%"],
                 "Your contact email",

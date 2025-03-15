@@ -32,20 +32,12 @@ class CommentListTheme extends Themelet
     {
         global $config, $page, $user;
 
-        // parts for the whole page
-        $prev = $page_number - 1;
-        $next = $page_number + 1;
-
-        $h_prev = ($page_number <= 1) ? "Prev" :
-            '<a href="'.make_link('comment/list/'.$prev).'">Prev</a>';
-        $h_index = "<a href='".make_link()."'>Index</a>";
-        $h_next = ($page_number >= $total_pages) ? "Next" :
-            '<a href="'.make_link('comment/list/'.$next).'">Next</a>';
-
-        $nav = $h_prev.' | '.$h_index.' | '.$h_next;
-
         $page->set_title("Comments");
-        $page->add_block(new Block("Navigation", rawHTML($nav), "left", 0));
+        $this->display_navigation([
+            make_link('comment/list/'.($page_number - 1)),
+            make_link(),
+            make_link('comment/list/'.($page_number + 1))
+        ]);
         $this->display_paginator($page, "comment/list", null, $page_number, $total_pages);
 
         // parts for each image
@@ -188,15 +180,12 @@ class CommentListTheme extends Themelet
         }
         $page->add_block(new Block("Comments", rawHTML($html), "main", 70, "comment-list-user"));
 
-        $prev = $page_number - 1;
-        $next = $page_number + 1;
-
-        $h_prev = ($page_number <= 1) ? "Prev" : "<a href='$prev'>Prev</a>";
-        $h_index = "<a href='".make_link()."'>Index</a>";
-        $h_next = ($page_number >= $total_pages) ? "Next" : "<a href='$next'>Next</a>";
-
         $page->set_title("{$user->name}'s comments");
-        $page->add_block(new Block("Navigation", rawHTML($h_prev.' | '.$h_index.' | '.$h_next), "left", 0));
+        $this->display_navigation([
+            ($page_number <= 1) ? null : make_link("comment/beta-search/{$user->name}/" . ($page_number - 1)),
+            make_link(),
+            ($page_number >= $total_pages) ? null : make_link("comment/beta-search/{$user->name}/" . ($page_number + 1)),
+        ]);
         $this->display_paginator($page, "comment/beta-search/{$user->name}", null, $page_number, $total_pages);
     }
 
@@ -204,7 +193,7 @@ class CommentListTheme extends Themelet
     {
         global $config, $user;
 
-        if ($comment->owner_id == $config->get_int(UserAccountsConfig::ANON_ID)) {
+        if ($comment->owner_id === $config->get_int(UserAccountsConfig::ANON_ID)) {
             $anoncode = "";
             $anoncode2 = "";
             if ($this->show_anon_id) {
@@ -215,7 +204,7 @@ class CommentListTheme extends Themelet
                 #if($user->can(UserAbilities::VIEW_IP)) {
                 #$style = " style='color: ".$this->get_anon_colour($comment->poster_ip).";'";
                 if ($user->can(IPBanPermission::VIEW_IP) || $config->get_bool(CommentConfig::SHOW_REPEAT_ANONS, false)) {
-                    if ($this->anon_map[$comment->poster_ip] != $this->anon_id) {
+                    if ($this->anon_map[$comment->poster_ip] !== $this->anon_id) {
                         $anoncode2 = SUP("(" . $this->anon_map[$comment->poster_ip] . ")");
                     }
                 }
@@ -283,7 +272,7 @@ class CommentListTheme extends Themelet
         return DIV(
             ["class" => "comment comment_add"],
             SHM_SIMPLE_FORM(
-                "comment/add",
+                make_link("comment/add"),
                 INPUT(["type" => "hidden", "name" => "image_id", "value" => $image_id]),
                 INPUT(["type" => "hidden", "name" => "hash", "value" => $hash]),
                 TEXTAREA(["id" => "comment_on_$image_id", "name" => "comment", "rows" => 5, "cols" => 50]),

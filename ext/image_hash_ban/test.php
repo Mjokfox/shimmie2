@@ -4,37 +4,37 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class ImageBanTest extends ShimmiePHPUnitTestCase
+final class ImageBanTest extends ShimmiePHPUnitTestCase
 {
     private string $hash = "feb01bab5698a11dd87416724c7a89e3";
 
     public function testPages(): void
     {
-        $this->log_in_as_admin();
-        $page = $this->get_page("image_hash_ban/list");
-        $this->assertEquals(200, $page->code);
+        self::log_in_as_admin();
+        $page = self::get_page("image_hash_ban/list");
+        self::assertEquals(200, $page->code);
     }
 
     public function testBan(): void
     {
-        $this->log_in_as_admin();
+        self::log_in_as_admin();
 
         // Post image
         $image_id = $this->post_image("tests/pbx_screenshot.jpg", "pbx");
-        $page = $this->get_page("post/view/$image_id");
-        $this->assertEquals(200, $page->code);
+        $page = self::get_page("post/view/$image_id");
+        self::assertEquals(200, $page->code);
 
         // Ban & delete
         send_event(new AddImageHashBanEvent($this->hash, "test hash ban"));
         send_event(new ImageDeletionEvent(Image::by_id_ex($image_id), true));
 
         // Check deleted
-        $this->assertException(PostNotFound::class, function () use ($image_id) {
-            $this->get_page("post/view/$image_id");
+        self::assertException(PostNotFound::class, function () use ($image_id) {
+            self::get_page("post/view/$image_id");
         });
 
         // Can't repost
-        $this->assertException(UploadException::class, function () {
+        self::assertException(UploadException::class, function () {
             $this->post_image("tests/pbx_screenshot.jpg", "pbx");
         });
 
@@ -43,8 +43,8 @@ class ImageBanTest extends ShimmiePHPUnitTestCase
 
         // Can repost
         $image_id = $this->post_image("tests/pbx_screenshot.jpg", "pbx");
-        $page = $this->get_page("post/view/$image_id");
-        $this->assertEquals(200, $page->code);
+        $page = self::get_page("post/view/$image_id");
+        self::assertEquals(200, $page->code);
     }
 
     public function onNotSuccessfulTest(\Throwable $t): never

@@ -6,13 +6,14 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-class BuildAvatarEvent extends Event
+final class BuildAvatarEvent extends Event
 {
     public User $user;
     public HTMLElement|null $html;
 
     public function __construct(User $user)
     {
+        parent::__construct();
         $this->user = $user;
         $this->html = null;
     }

@@ -23,7 +23,7 @@ class TagMapTheme extends Themelet
         }
         foreach ($tag_data as $row) {
             $tag = $row['tag'];
-            $scale = (float)$row['scaled'];
+            $scale = $row['scaled'];
             $size = sprintf("%.2f", $scale < 0.5 ? 0.5 : $scale);
             $html->appendChild(rawHTML("&nbsp;"));
             $html->appendChild($this->build_tag($tag, show_underscores: false, style: "font-size: {$size}em;"));
@@ -71,7 +71,7 @@ class TagMapTheme extends Themelet
         foreach ($tag_data as $tag => $count) {
             // In PHP, $array["10"] sets the array key as int(10), not string("10")...
             $tag = (string)$tag;
-            if ($lastLetter != mb_strtolower(substr($tag, 0, strlen($starts_with) + 1))) {
+            if ($lastLetter !== mb_strtolower(substr($tag, 0, strlen($starts_with) + 1))) {
                 $lastLetter = mb_strtolower(substr($tag, 0, strlen($starts_with) + 1));
                 if ($n++ > 0) {
                     $html->appendChild(BR());
@@ -102,7 +102,7 @@ class TagMapTheme extends Themelet
             $tag = $row['tag'];
             $count = $row['count'];
             $scaled = $row['scaled'];
-            if ($lastLog != $scaled) {
+            if ($lastLog !== $scaled) {
                 $lastLog = $scaled;
                 $html->appendChild(BR());
                 $html->appendChild(BR());
@@ -122,18 +122,17 @@ class TagMapTheme extends Themelet
     protected function display_nav(): void
     {
         global $page;
-        $page->add_block(new Block("Navigation", joinHTML(
+        $this->display_navigation(extra: joinHTML(
             BR(),
             [
-                A(["href" => make_link()], "Index"),
                 rawHTML("&nbsp;"),
                 A(["href" => make_link("tags/map")], "Map"),
                 A(["href" => make_link("tags/alphabetic")], "Alphabetic"),
                 A(["href" => make_link("tags/popularity")], "Popularity"),
                 rawHTML("&nbsp;"),
-                A(["href" => modify_current_url(["mincount" => 1])], "Show All"),
+                A(["href" => Url::current()->withModifiedQuery(["mincount" => "1"])], "Show All"),
             ]
-        ), "left", 0));
+        ));
     }
 
     protected function build_az(int $tags_min): HTMLElement
@@ -150,7 +149,7 @@ class TagMapTheme extends Themelet
 
         $html = SPAN(["class" => "atoz"]);
         foreach ($tag_data as $a) {
-            $html->appendChild(A(["href" => modify_current_url(["starts_with" => $a])], "$a "));
+            $html->appendChild(A(["href" => Url::current()->withModifiedQuery(["starts_with" => $a])], "$a "));
         }
         return emptyHTML($html, P(), HR());
     }

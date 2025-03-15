@@ -28,6 +28,16 @@ class Themelet
         return self::$common;
     }
 
+    /**
+     * @param array<Url|null> $links
+     */
+    public function display_navigation(array $links = [], ?HTMLElement $extra = null): void
+    {
+        $c = self::get_common();
+        assert(is_a($c, CommonElementsTheme::class));
+        $c->display_navigation($links, $extra);
+    }
+
     public function build_tag(
         string $tag,
         bool $show_underscores = true,
@@ -46,7 +56,10 @@ class Themelet
         return $c->build_thumb($image);
     }
 
-    public function display_paginator(Page $page, string $base, ?string $query, int $page_number, int $total_pages, bool $show_random = false): void
+    /**
+     * @param ?query-array $query
+     */
+    public function display_paginator(Page $page, string $base, ?array $query, int $page_number, int $total_pages, bool $show_random = false): void
     {
         $c = self::get_common();
         assert(is_a($c, CommonElementsTheme::class));

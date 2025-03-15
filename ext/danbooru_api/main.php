@@ -36,7 +36,7 @@ function POST(...$args): HTMLElement
 }
 
 
-class DanbooruApi extends Extension
+final class DanbooruApi extends Extension
 {
     public const KEY = "danbooru_api";
 
@@ -334,7 +334,7 @@ class DanbooruApi extends Extension
 
         // Was an md5 supplied? Does it match the file hash?
         $hash = \Safe\md5_file($file);
-        if (isset($_REQUEST['md5']) && strtolower($_REQUEST['md5']) != $hash) {
+        if (isset($_REQUEST['md5']) && strtolower($_REQUEST['md5']) !== $hash) {
             $page->set_code(409);
             $page->add_http_header("X-Danbooru-Errors: md5 mismatch");
             return;
@@ -347,8 +347,7 @@ class DanbooruApi extends Extension
         if (!is_null($existing)) {
             $page->set_code(409);
             $page->add_http_header("X-Danbooru-Errors: duplicate");
-            $existinglink = make_link("post/view/" . $existing->id);
-            $existinglink = make_http($existinglink);
+            $existinglink = make_link("post/view/" . $existing->id)->asAbsolute();
             $page->add_http_header("X-Danbooru-Location: $existinglink");
             return;
         }
@@ -369,11 +368,10 @@ class DanbooruApi extends Extension
                 return $dae->images[0];
             });
 
-            $newid = make_link("post/view/" . $newimg->id);
-            $newid = make_http($newid);
+            $newid = make_link("post/view/" . $newimg->id)->asAbsolute();
 
             // Did we POST or GET this call?
-            if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $page->add_http_header("X-Danbooru-Location: $newid");
             } else {
                 $page->add_http_header("Location: $newid");

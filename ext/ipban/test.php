@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class IPBanTest extends ShimmiePHPUnitTestCase
+final class IPBanTest extends ShimmiePHPUnitTestCase
 {
     # FIXME: test that the IP is actually banned
 
     public function testAccess(): void
     {
-        $this->assertException(PermissionDenied::class, function () {
-            $this->get_page('ip_ban/list');
+        self::assertException(PermissionDenied::class, function () {
+            self::get_page('ip_ban/list');
         });
     }
 
@@ -19,11 +19,11 @@ class IPBanTest extends ShimmiePHPUnitTestCase
     {
         global $database;
 
-        $this->log_in_as_admin();
+        self::log_in_as_admin();
 
         // Check initial state
-        $this->get_page('ip_ban/list');
-        $this->assert_no_text("42.42.42.42");
+        self::get_page('ip_ban/list');
+        self::assert_no_text("42.42.42.42");
 
         // Add ban
         send_event(new AddIPBanEvent(
@@ -34,8 +34,8 @@ class IPBanTest extends ShimmiePHPUnitTestCase
         ));
 
         // Check added
-        $page = $this->get_page('ip_ban/list');
-        $this->assertStringContainsString(
+        $page = self::get_page('ip_ban/list');
+        self::assertStringContainsString(
             "42.42.42.42",
             (string)$page->find_block(null)->body
         );
@@ -45,8 +45,8 @@ class IPBanTest extends ShimmiePHPUnitTestCase
         send_event(new RemoveIPBanEvent($ban_id));
 
         // Check delete
-        $page = $this->get_page('ip_ban/list');
-        $this->assertStringNotContainsString(
+        $page = self::get_page('ip_ban/list');
+        self::assertStringNotContainsString(
             "42.42.42.42",
             (string)$page->find_block(null)->body
         );
@@ -55,8 +55,8 @@ class IPBanTest extends ShimmiePHPUnitTestCase
     public function test_all(): void
     {
         // just test it doesn't crash for now
-        $this->log_in_as_admin();
-        $page = $this->get_page('ip_ban/list', ['r_all' => 'on']);
-        $this->assertEquals(200, $page->code);
+        self::log_in_as_admin();
+        $page = self::get_page('ip_ban/list', ['r_all' => 'on']);
+        self::assertEquals(200, $page->code);
     }
 }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class VideoFileHandler extends DataHandlerExtension
+final class VideoFileHandler extends DataHandlerExtension
 {
     public const KEY = "handle_video";
     public const SUPPORTED_MIME = [
@@ -23,7 +23,7 @@ class VideoFileHandler extends DataHandlerExtension
         $event->image->video = true;
         $event->image->image = false;
         try {
-            $data = Media::get_ffprobe_data($event->image->get_image_filename());
+            $data = Media::get_ffprobe_data($event->image->get_image_filename()->str());
 
             if (array_key_exists("streams", $data)) {
                 $video = false;
@@ -52,8 +52,8 @@ class VideoFileHandler extends DataHandlerExtension
                     $event->image->video = $video;
                     $event->image->video_codec = $video_codec;
                     $event->image->audio = $audio;
-                    if ($event->image->get_mime() == MimeType::MKV &&
-                        $event->image->video_codec != null &&
+                    if ($event->image->get_mime() === MimeType::MKV &&
+                        $event->image->video_codec !== null &&
                         VideoContainers::is_video_codec_supported(VideoContainers::WEBM, $event->image->video_codec)) {
                         // WEBMs are MKVs with the VP9 or VP8 codec
                         // For browser-friendliness, we'll just change the mime type
@@ -86,12 +86,12 @@ class VideoFileHandler extends DataHandlerExtension
         return Media::create_thumbnail_ffmpeg($image);
     }
 
-    protected function check_contents(string $tmpname): bool
+    protected function check_contents(Path $tmpname): bool
     {
         global $config;
 
-        if (file_exists($tmpname)) {
-            $mime = MimeType::get_for_file($tmpname);
+        if ($tmpname->exists()) {
+            $mime = MimeType::get_for_file($tmpname->str());
 
             $enabled_formats = $config->get_array(VideoFileHandlerConfig::ENABLED_FORMATS);
             if (MimeType::matches_array($mime, $enabled_formats)) {

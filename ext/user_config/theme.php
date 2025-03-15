@@ -56,7 +56,7 @@ class UserConfigTheme extends Themelet
         }
 
         $table = SHM_SIMPLE_FORM(
-            "user_config/save",
+            make_link("user_config/save"),
             INPUT(['type' => 'hidden', 'name' => 'id', 'value' => $user->id]),
             $blocks,
             INPUT(['class' => 'setupsubmit', 'type' => 'submit', 'value' => 'Save Settings'])
@@ -64,7 +64,7 @@ class UserConfigTheme extends Themelet
 
         $page->set_mode(PageMode::PAGE);
         $page->set_title("User Options");
-        $page->add_block(Block::nav());
+        $this->display_navigation();
         $page->add_block(new Block(null, $table, id: "Setupmain"));
     }
 

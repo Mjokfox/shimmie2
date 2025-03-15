@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class LinkScanTest extends ShimmiePHPUnitTestCase
+final class LinkScanTest extends ShimmiePHPUnitTestCase
 {
     public function testScanPostView(): void
     {
@@ -19,10 +19,10 @@ class LinkScanTest extends ShimmiePHPUnitTestCase
 
         But there is no http://example.com/post/view/65432
         ";
-        $page = $this->get_page("post/list", ["search" => $text]);
+        $page = self::get_page("post/list", ["search" => $text]);
 
-        $this->assertEquals(PageMode::REDIRECT, $page->mode);
-        $this->assertEquals("/test/post/list/id%3D{$image_id_1}%2C{$image_id_2}/1", $page->redirect);
+        self::assertEquals(PageMode::REDIRECT, $page->mode);
+        self::assertEquals("/test/post/list/id%3D{$image_id_1}%2C{$image_id_2}/1", $page->redirect);
     }
 
     public function testScanPostHash(): void
@@ -35,10 +35,10 @@ class LinkScanTest extends ShimmiePHPUnitTestCase
         Look at http://example.com/_images/feb01bab5698a11dd87416724c7a89e3/foobar.jpg
         there is an image or search for e106ea2983e1b77f11e00c0c54e53805 but one that
         doesn't exist is e106ea2983e1b77f11e00c0c54e50000 o.o";
-        $page = $this->get_page("post/list", ["search" => $text]);
+        $page = self::get_page("post/list", ["search" => $text]);
 
-        $this->assertEquals(PageMode::REDIRECT, $page->mode);
-        $this->assertEquals("/test/post/list/id%3D{$image_id_1}%2C{$image_id_2}/1", $page->redirect);
+        self::assertEquals(PageMode::REDIRECT, $page->mode);
+        self::assertEquals("/test/post/list/id%3D{$image_id_1}%2C{$image_id_2}/1", $page->redirect);
     }
 
     public function testNotTriggered(): void
@@ -48,9 +48,9 @@ class LinkScanTest extends ShimmiePHPUnitTestCase
         $this->post_image("tests/favicon.png", "TeStCase");
 
         $text = "Look at feb01bab5698a11dd87416724c7a89e3/foobar.jpg";
-        $page = $this->get_page("post/list", ["search" => $text]);
+        $page = self::get_page("post/list", ["search" => $text]);
 
-        $this->assertEquals(PageMode::REDIRECT, $page->mode);
-        $this->assertEquals("/test/post/list/at%20feb01bab5698a11dd87416724c7a89e3%2Ffoobar.jpg%20Look/1", $page->redirect);
+        self::assertEquals(PageMode::REDIRECT, $page->mode);
+        self::assertEquals("/test/post/list/at%20feb01bab5698a11dd87416724c7a89e3%2Ffoobar.jpg%20Look/1", $page->redirect);
     }
 }

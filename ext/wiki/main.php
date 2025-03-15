@@ -8,7 +8,7 @@ use GQLA\Type;
 use GQLA\Field;
 use GQLA\Query;
 
-class WikiUpdateEvent extends Event
+final class WikiUpdateEvent extends Event
 {
     public User $user;
     public WikiPage $wikipage;
@@ -21,7 +21,7 @@ class WikiUpdateEvent extends Event
     }
 }
 
-class WikiDeleteRevisionEvent extends Event
+final class WikiDeleteRevisionEvent extends Event
 {
     public string $title;
     public int $revision;
@@ -34,7 +34,7 @@ class WikiDeleteRevisionEvent extends Event
     }
 }
 
-class WikiDeletePageEvent extends Event
+final class WikiDeletePageEvent extends Event
 {
     public string $title;
 
@@ -46,7 +46,7 @@ class WikiDeletePageEvent extends Event
 }
 
 #[Type(name: "WikiPage")]
-class WikiPage
+final class WikiPage
 {
     public int $id;
     public int $owner_id;
@@ -100,7 +100,7 @@ class WikiPage
     }
 }
 
-class Wiki extends Extension
+final class Wiki extends Extension
 {
     public const KEY = "wiki";
     /** @var WikiTheme */
@@ -110,7 +110,7 @@ class Wiki extends Extension
     {
         global $database;
 
-        if ($this->get_version("ext_wiki_version") < 1) {
+        if ($this->get_version() < 1) {
             $database->create_table("wiki_pages", "
 				id SCORE_AIPK,
 				owner_id INTEGER NOT NULL,
@@ -123,16 +123,16 @@ class Wiki extends Extension
 				UNIQUE (title, revision),
 				FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE RESTRICT
 			");
-            $this->set_version("ext_wiki_version", 3);
+            $this->set_version(3);
         }
-        if ($this->get_version("ext_wiki_version") < 2) {
+        if ($this->get_version() < 2) {
             $database->execute("ALTER TABLE wiki_pages ADD COLUMN
 				locked ENUM('Y', 'N') DEFAULT 'N' NOT NULL AFTER REVISION");
-            $this->set_version("ext_wiki_version", 2);
+            $this->set_version(2);
         }
-        if ($this->get_version("ext_wiki_version") < 3) {
+        if ($this->get_version() < 3) {
             $database->standardise_boolean("wiki_pages", "locked", true);
-            $this->set_version("ext_wiki_version", 3);
+            $this->set_version(3);
         }
     }
 
@@ -143,12 +143,12 @@ class Wiki extends Extension
             $title = $event->get_arg('title');
             $action = $event->get_arg('action');
 
-            if ($action == "history") {
-                $history = $this->get_history($title);
+            if ($action === "history") {
+                $history = self::get_history($title);
                 $this->theme->display_page_history($page, $title, $history);
-            } elseif ($action == "edit") {
-                $content = $this->get_page($title);
-                if ($this->can_edit($user, $content)) {
+            } elseif ($action === "edit") {
+                $content = self::get_page($title);
+                if (self::can_edit($user, $content)) {
                     $this->theme->display_page_editor($page, $content);
                 } else {
                     throw new PermissionDenied("You are not allowed to edit this page");
@@ -159,18 +159,18 @@ class Wiki extends Extension
             $title = $event->get_arg('title');
             $action = $event->get_arg('action');
 
-            if ($action == "edit") {
+            if ($action === "edit") {
                 // we're only here because making a form do a GET request is a
                 // pain, so we accept the POST and do a GET redirect
                 $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(make_link("wiki/$title/edit"));
-            } elseif ($action == "save") {
+            } elseif ($action === "save") {
                 $rev = int_escape($event->req_POST('revision'));
                 $body = $event->req_POST('body');
                 $lock = $user->can(WikiPermission::ADMIN) && ($event->get_POST('lock') == "on");
 
-                if ($this->can_edit($user, $this->get_page($title))) {
-                    $wikipage = $this->get_page($title);
+                if (self::can_edit($user, self::get_page($title))) {
+                    $wikipage = self::get_page($title);
                     $wikipage->revision = $rev;
                     $wikipage->body = $body;
                     $wikipage->locked = $lock;
@@ -181,8 +181,8 @@ class Wiki extends Extension
                 } else {
                     throw new PermissionDenied("You are not allowed to edit this page");
                 }
-            } elseif ($action == "delete_revision") {
-                $content = $this->get_page($title);
+            } elseif ($action === "delete_revision") {
+                $content = self::get_page($title);
                 if ($user->can(WikiPermission::ADMIN)) {
                     $revision = int_escape($event->req_POST('revision'));
                     send_event(new WikiDeleteRevisionEvent($title, $revision));
@@ -192,7 +192,7 @@ class Wiki extends Extension
                 } else {
                     throw new PermissionDenied("You are not allowed to edit this page");
                 }
-            } elseif ($action == "delete_all") {
+            } elseif ($action === "delete_all") {
                 if ($user->can(WikiPermission::ADMIN)) {
                     send_event(new WikiDeletePageEvent($title));
                     $u_title = url_escape($title);
@@ -203,11 +203,11 @@ class Wiki extends Extension
         } elseif ($event->page_matches("wiki/{title}")) {
             $title = $event->get_arg('title');
             if ($title === "wiki:list") {
-                $this->theme->display_list_page($page, $this->get_page("wiki:sidebar"));
+                $this->theme->display_list_page($page, self::get_page("wiki:sidebar"));
             } else {
                 $revision = int_escape($event->get_GET('revision') ?? "-1");
-                $content = $this->get_page($title, $revision);
-                $this->theme->display_page($page, $content, $this->get_page("wiki:sidebar"));
+                $content = self::get_page($title, $revision);
+                $this->theme->display_page($page, $content, self::get_page("wiki:sidebar"));
             }
         } elseif ($event->page_matches("wiki")) {
             $page->set_mode(PageMode::REDIRECT);
@@ -223,7 +223,7 @@ class Wiki extends Extension
 
     public function onPageNavBuilding(PageNavBuildingEvent $event): void
     {
-        $event->add_nav_link(make_link('wiki'), "Wiki", category: "wiki");
+        $event->add_nav_link(make_link('wiki'), "Wiki", ["wiki"], "wiki");
     }
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void

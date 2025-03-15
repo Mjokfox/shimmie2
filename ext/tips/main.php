@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class CreateTipEvent extends Event
+final class CreateTipEvent extends Event
 {
     public bool $enable;
     public string $image;
@@ -19,7 +19,7 @@ class CreateTipEvent extends Event
     }
 }
 
-class DeleteTipEvent extends Event
+final class DeleteTipEvent extends Event
 {
     public int $tip_id;
     public function __construct(int $tip_id)
@@ -29,7 +29,7 @@ class DeleteTipEvent extends Event
     }
 }
 
-class Tips extends Extension
+final class Tips extends Extension
 {
     public const KEY = "tips";
     /** @var TipsTheme */
@@ -39,7 +39,7 @@ class Tips extends Extension
     {
         global $database;
 
-        if ($this->get_version("ext_tips_version") < 1) {
+        if ($this->get_version() < 1) {
             $database->create_table("tips", "
                 id SCORE_AIPK,
                 enable BOOLEAN NOT NULL DEFAULT FALSE,
@@ -47,11 +47,11 @@ class Tips extends Extension
                 text TEXT NOT NULL,
             ");
 
-            $this->set_version("ext_tips_version", 2);
+            $this->set_version(2);
         }
-        if ($this->get_version("ext_tips_version") < 2) {
+        if ($this->get_version() < 2) {
             $database->standardise_boolean("tips", "enable");
-            $this->set_version("ext_tips_version", 2);
+            $this->set_version(2);
         }
     }
 
@@ -110,13 +110,13 @@ class Tips extends Extension
 
     private function manageTips(): void
     {
-        $data_href = get_base_href();
+        $data_href = Url::base();
         $url = $data_href."/ext/tips/images/";
 
         $dirPath = \Safe\dir('./ext/tips/images');
         $images = [];
         while (($file = $dirPath->read()) !== false) {
-            if ($file[0] != ".") {
+            if ($file[0] !== ".") {
                 $images[] = trim($file);
             }
         }
@@ -141,7 +141,7 @@ class Tips extends Extension
     {
         global $database;
 
-        $data_href = get_base_href();
+        $data_href = Url::base();
         $url = $data_href."/ext/tips/images/";
 
         $tip = $database->get_row("
@@ -161,7 +161,7 @@ class Tips extends Extension
     {
         global $database;
 
-        $data_href = get_base_href();
+        $data_href = Url::base();
         $url = $data_href."/ext/tips/images/";
 
         $tips = $database->get_all("SELECT * FROM tips ORDER BY id ASC");

@@ -10,7 +10,7 @@ use GQLA\Mutation;
 
 require_once "vendor/ifixit/php-akismet/akismet.class.php";
 
-class CommentPostingEvent extends Event
+final class CommentPostingEvent extends Event
 {
     public int $image_id;
     public User $user;
@@ -47,7 +47,7 @@ class CommentEditingEvent extends Event
  * detectors to get a feel for what should be deleted
  * and what should be kept?
  */
-class CommentDeletionEvent extends Event
+final class CommentDeletionEvent extends Event
 {
     public int $comment_id;
 
@@ -58,12 +58,12 @@ class CommentDeletionEvent extends Event
     }
 }
 
-class CommentPostingException extends InvalidInput
+final class CommentPostingException extends InvalidInput
 {
 }
 
 #[Type(name: "Comment")]
-class Comment
+final class Comment
 {
     public ?User $owner;
     public int $owner_id;
@@ -153,18 +153,20 @@ class Comment
     }
 }
 
-class CommentList extends Extension
+final class CommentList extends Extension
 {
     public const KEY = "comment";
+    public const VERSION_KEY = "ext_comments_version";
+
     /** @var CommentListTheme $theme */
     public Themelet $theme;
 
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         global $database;
-        if ($this->get_version(CommentConfig::VERSION) < 3) {
+        if ($this->get_version() < 3) {
             // shortcut to latest
-            if ($this->get_version(CommentConfig::VERSION) < 1) {
+            if ($this->get_version() < 1) {
                 $database->create_table("comments", "
 					id SCORE_AIPK,
 					image_id INTEGER NOT NULL,
@@ -179,11 +181,11 @@ class CommentList extends Extension
                 $database->execute("CREATE INDEX comments_image_id_idx ON comments(image_id)", []);
                 $database->execute("CREATE INDEX comments_owner_id_idx ON comments(owner_id)", []);
                 $database->execute("CREATE INDEX comments_posted_idx ON comments(posted)", []);
-                $this->set_version(CommentConfig::VERSION, 4);
+                $this->set_version(4);
             }
 
             // the whole history
-            if ($this->get_version(CommentConfig::VERSION) < 1) {
+            if ($this->get_version() < 1) {
                 $database->create_table("comments", "
 					id SCORE_AIPK,
 					image_id INTEGER NOT NULL,
@@ -193,31 +195,29 @@ class CommentList extends Extension
 					comment TEXT NOT NULL
 				");
                 $database->execute("CREATE INDEX comments_image_id_idx ON comments(image_id)", []);
-                $this->set_version(CommentConfig::VERSION, 1);
+                $this->set_version(1);
             }
 
-            if ($this->get_version(CommentConfig::VERSION) == 1) {
+            if ($this->get_version() === 1) {
                 $database->execute("CREATE INDEX comments_owner_ip ON comments(owner_ip)");
                 $database->execute("CREATE INDEX comments_posted ON comments(posted)");
-                $this->set_version(CommentConfig::VERSION, 2);
+                $this->set_version(2);
             }
 
-            if ($this->get_version(CommentConfig::VERSION) == 2) {
-                $this->set_version(CommentConfig::VERSION, 3);
+            if ($this->get_version() === 2) {
                 $database->execute("ALTER TABLE comments ADD FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE");
                 $database->execute("ALTER TABLE comments ADD FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE RESTRICT");
+                $this->set_version(3);
             }
-
-            // FIXME: add foreign keys, bump to v3
         }
 
-        if ($this->get_version(CommentConfig::VERSION) < 4) {
+        if ($this->get_version() === 3) {
             $database->execute("ALTER TABLE comments ADD COLUMN edited BOOLEAN DEFAULT FALSE NOT NULL;", []);
             $database->execute("UPDATE comments
                 SET comment = RTRIM(comment, '*(edited)*'),
                 edited = TRUE
                 WHERE comment LIKE '%*(edited)*';", []);
-            $this->set_version(CommentConfig::VERSION, 4);
+            $this->set_version(4);
         }
     }
 
@@ -228,7 +228,7 @@ class CommentList extends Extension
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
-        if ($event->parent == "comment") {
+        if ($event->parent === "comment") {
             $event->add_nav_link(make_link('comment/list'), "All");
             $event->add_nav_link(make_link('ext_doc/comment'), "Help");
         }
@@ -249,7 +249,7 @@ class CommentList extends Extension
                 send_event(new CommentDeletionEvent($event->get_iarg('comment_id')));
                 $page->flash("Deleted comment");
                 $page->set_mode(PageMode::REDIRECT);
-                $page->set_redirect(referer_or(make_link("post/view/" . $event->get_iarg('image_id'))));
+                $page->set_redirect(Url::referer_or(make_link("post/view/" . $event->get_iarg('image_id'))));
             } else {
                 throw new PermissionDenied("Permission Denied: You cant just go around and delete others' comments.");
             }
@@ -313,7 +313,7 @@ class CommentList extends Extension
                     $image = null;
                 }
                 if (!is_null($image)) {
-                    $comments = $this->get_comments($image->id);
+                    $comments = self::get_comments($image->id);
                     $images[] = [$image, $comments];
                 }
             }
@@ -338,7 +338,7 @@ class CommentList extends Extension
             $i_comment_count = Comment::count_comments_by_user($duser);
             $com_per_page = 50;
             $total_pages = (int)ceil($i_comment_count / $com_per_page);
-            $comments = $this->get_user_comments($duser->id, $com_per_page, $page_num * $com_per_page);
+            $comments = self::get_user_comments($duser->id, $com_per_page, $page_num * $com_per_page);
             $this->theme->display_all_user_comments($comments, $page_num + 1, $total_pages, $duser);
         }
     }
@@ -360,7 +360,7 @@ class CommentList extends Extension
         global $cache, $config;
         $cc = $config->get_int(CommentConfig::COUNT);
         if ($cc > 0) {
-            $recent = cache_get_or_set("recent_comments", fn () => $this->get_recent_comments($cc), 60);
+            $recent = cache_get_or_set("recent_comments", fn () => self::get_recent_comments($cc), 60);
             if (count($recent) > 0) {
                 $this->theme->display_recent_comments($recent);
             }
@@ -374,7 +374,7 @@ class CommentList extends Extension
         $h_comment_rate = sprintf("%.1f", ($i_comment_count / $i_days_old));
         $event->add_part("Comments made: $i_comment_count, $h_comment_rate per day");
 
-        $recent = $this->get_user_comments($event->display_user->id, 10);
+        $recent = self::get_user_comments($event->display_user->id, 10);
         $this->theme->display_recent_user_comments($recent, $event->display_user);
     }
 
@@ -383,7 +383,7 @@ class CommentList extends Extension
         global $user;
         $this->theme->display_image_comments(
             $event->image,
-            $this->get_comments($event->image->id),
+            self::get_comments($event->image->id),
             $user->can(CommentPermission::CREATE_COMMENT)
         );
     }
@@ -514,7 +514,7 @@ class CommentList extends Extension
         $window = $config->get_int(CommentConfig::WINDOW);
         $max = $config->get_int(CommentConfig::LIMIT);
 
-        if ($database->get_driver_id() == DatabaseDriverID::MYSQL) {
+        if ($database->get_driver_id() === DatabaseDriverID::MYSQL) {
             $window_sql = "interval $window minute";
         } else {
             $window_sql = "interval '$window minute'";
@@ -648,7 +648,7 @@ class CommentList extends Extension
             throw new CommentPostingException("You do not have permission to add comments");
         } elseif (is_null(Image::by_id($image_id))) {
             throw new CommentPostingException("The image does not exist");
-        } elseif (trim($comment) == "") {
+        } elseif (trim($comment) === "") {
             throw new CommentPostingException("Comments need text...");
         } elseif (strlen($comment) > 9000) {
             throw new CommentPostingException("Comment too long");
@@ -657,7 +657,7 @@ class CommentList extends Extension
         // advanced sanity checks
         elseif (strlen($comment) / strlen(\Safe\gzcompress($comment)) > 10) {
             throw new CommentPostingException("Comment too repetitive");
-        } elseif ($user->is_anonymous() && ($_POST['hash'] != $this->get_hash())) {
+        } elseif ($user->is_anonymous() && ($_POST['hash'] !== self::get_hash())) {
             $page->add_cookie("nocache", "Anonymous Commenter", time() + 60 * 60 * 24, "/");
             throw new CommentPostingException(
                 "Comment submission form is out of date; refresh the ".

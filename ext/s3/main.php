@@ -12,7 +12,7 @@ use function MicroHTML\INPUT;
 
 require_once __DIR__ . "/S3.php";
 
-class S3 extends Extension
+final class S3 extends Extension
 {
     public const KEY = "s3";
     public int $synced = 0;
@@ -21,13 +21,13 @@ class S3 extends Extension
     {
         global $database;
 
-        if ($this->get_version("ext_s3_version") < 1) {
+        if ($this->get_version() < 1) {
             $database->create_table("s3_sync_queue", "
                 hash CHAR(32) NOT NULL PRIMARY KEY,
                 time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 action CHAR(1) NOT NULL DEFAULT 'S'
             ");
-            $this->set_version("ext_s3_version", 1);
+            $this->set_version(1);
         }
     }
 
@@ -36,7 +36,7 @@ class S3 extends Extension
         global $database, $page;
         $count = $database->get_one("SELECT COUNT(*) FROM s3_sync_queue");
         $html = SHM_SIMPLE_FORM(
-            "admin/s3_process",
+            make_link("admin/s3_process"),
             INPUT(["type" => 'number', "name" => 'count', 'value' => '10']),
             SHM_SUBMIT("Sync N/$count posts"),
         );
@@ -215,7 +215,7 @@ class S3 extends Extension
             $client->putObject(
                 $config->get_string(S3Config::IMAGE_BUCKET),
                 $this->hash_to_path($image->hash),
-                \Safe\file_get_contents($image->get_image_filename()),
+                $image->get_image_filename()->get_contents(),
                 [
                     'ACL' => 'public-read',
                     'ContentType' => $image->get_mime(),

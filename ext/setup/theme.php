@@ -7,12 +7,10 @@ namespace Shimmie2;
 use MicroHTML\HTMLElement;
 
 use function MicroHTML\A;
-use function MicroHTML\BR;
 use function MicroHTML\DIV;
 use function MicroHTML\H3;
 use function MicroHTML\INPUT;
 use function MicroHTML\SECTION;
-use function MicroHTML\emptyHTML;
 
 class SetupTheme extends Themelet
 {
@@ -36,21 +34,17 @@ class SetupTheme extends Themelet
         }
 
         $table = SHM_SIMPLE_FORM(
-            "setup/save",
+            make_link("setup/save"),
             $blocks,
             INPUT(['class' => 'setupsubmit', 'type' => 'submit', 'value' => 'Save Settings'])
         );
 
-        $nav = emptyHTML(
-            A(["href" => make_link()], "Index"),
-            BR(),
-            @$_GET["advanced"] == "on" ?
-                A(["href" => make_link("setup")], "Simple") :
-                A(["href" => make_link("setup", "advanced=on")], "Advanced")
-        );
+        $nav = @$_GET["advanced"] == "on" ?
+            A(["href" => make_link("setup")], "Simple") :
+            A(["href" => make_link("setup", ["advanced" => "on"])], "Advanced");
 
         $page->set_title("Shimmie Setup");
-        $page->add_block(new Block("Navigation", $nav, "left", 0));
+        $this->display_navigation(extra: $nav);
         $page->add_block(new Block(null, $table, id: "Setupmain"));
     }
 

@@ -36,7 +36,7 @@ class FlickrSource extends Extension
         global $page, $database;
         $start_id = $database->get_one("SELECT max(id)-100 from images;");
         $html = (string)SHM_SIMPLE_FORM(
-            "admin/flickr_source",
+            make_link("admin/flickr_source"),
             TABLE(
                 TR(
                     TD(["style" => "padding-right:5px"], B("Start id")),
@@ -69,8 +69,8 @@ class FlickrSource extends Extension
                 $j = [];
                 $k = 0;
                 foreach ($files as $file) {
-                    if (!\safe\preg_match("/(\d{7,13})_[a-f0-9]{7,13}_[a-z0-9]{1,2}(?:_d)?(?:\.jpg|\.png)$/", $file["filename"], $matches)) {
-                        if (!\safe\preg_match("/[a-zA-Z\-]+_(\d{7,13})_o(?:_d)?(?:\.jpg|\.png)$/", $file["filename"], $matches)) {
+                    if (!\Safe\preg_match("/(\d{7,13})_[a-f0-9]{7,13}_[a-z0-9]{1,2}(?:_d)?(?:\.jpg|\.png)$/", $file["filename"], $matches)) {
+                        if (!\Safe\preg_match("/[a-zA-Z\-]+_(\d{7,13})_o(?:_d)?(?:\.jpg|\.png)$/", $file["filename"], $matches)) {
                             $k++;
                             continue;
                         }

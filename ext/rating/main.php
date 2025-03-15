@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class ImageRating
+final class ImageRating
 {
     /** @var array<string, ImageRating> */
     public static array $known_ratings = [];
@@ -29,7 +29,7 @@ function add_rating(ImageRating $rating): void
     if ($rating->code == "?" && array_key_exists("?", ImageRating::$known_ratings)) {
         throw new \RuntimeException("? is a reserved rating code that cannot be overridden");
     }
-    if ($rating->code != "?" && in_array(strtolower($rating->search_term), Ratings::UNRATED_KEYWORDS)) {
+    if ($rating->code !== "?" && in_array(strtolower($rating->search_term), Ratings::UNRATED_KEYWORDS)) {
         throw new \RuntimeException("$rating->search_term is a reserved search term");
     }
     ImageRating::$known_ratings[$rating->code] = $rating;
@@ -42,7 +42,7 @@ add_rating(new ImageRating("e", "Explicit", "explicit", 1000));
 // @phpstan-ignore-next-line
 @include_once "data/config/ratings.conf.php";
 
-class RatingSetException extends UserError
+final class RatingSetException extends UserError
 {
     public ?string $redirect;
 
@@ -53,7 +53,7 @@ class RatingSetException extends UserError
     }
 }
 
-class RatingSetEvent extends Event
+final class RatingSetEvent extends Event
 {
     public Image $image;
     public string $rating;
@@ -69,9 +69,11 @@ class RatingSetEvent extends Event
     }
 }
 
-class Ratings extends Extension
+final class Ratings extends Extension
 {
     public const KEY = "rating";
+    public const VERSION_KEY = "ext_ratings2_version";
+
     /** @var RatingsTheme */
     protected Themelet $theme;
 
@@ -193,7 +195,7 @@ class Ratings extends Extension
     public function onParseLinkTemplate(ParseLinkTemplateEvent $event): void
     {
         if (!is_null($event->image['rating'])) {
-            $event->replace('$rating', $this->rating_to_human($event->image['rating']));
+            $event->replace('$rating', self::rating_to_human($event->image['rating']));
         }
     }
 
@@ -471,18 +473,18 @@ class Ratings extends Extension
     {
         global $database, $config;
 
-        if ($this->get_version(RatingsConfig::VERSION) < 1) {
+        if ($this->get_version() < 1) {
             $database->execute("ALTER TABLE images ADD COLUMN rating CHAR(1) NOT NULL DEFAULT '?'");
             $database->execute("CREATE INDEX images__rating ON images(rating)");
-            $this->set_version(RatingsConfig::VERSION, 3);
+            $this->set_version(3);
         }
 
-        if ($this->get_version(RatingsConfig::VERSION) < 2) {
+        if ($this->get_version() < 2) {
             $database->execute("CREATE INDEX images__rating ON images(rating)");
-            $this->set_version(RatingsConfig::VERSION, 2);
+            $this->set_version(2);
         }
 
-        if ($this->get_version(RatingsConfig::VERSION) < 3) {
+        if ($this->get_version() < 3) {
             $database->execute("UPDATE images SET rating = 'u' WHERE rating is null");
             switch ($database->get_driver_id()) {
                 case DatabaseDriverID::MYSQL:
@@ -493,10 +495,10 @@ class Ratings extends Extension
                     $database->execute("ALTER TABLE images ALTER COLUMN rating SET NOT NULL");
                     break;
             }
-            $this->set_version(RatingsConfig::VERSION, 3);
+            $this->set_version(3);
         }
 
-        if ($this->get_version(RatingsConfig::VERSION) < 4) {
+        if ($this->get_version() < 4) {
             $value = $config->get_string("ext_rating_anon_privs");
             if (!empty($value)) {
                 $config->set_array("ext_rating_anonymous_privs", str_split($value));
@@ -523,16 +525,16 @@ class Ratings extends Extension
 
             $database->execute("UPDATE images SET rating = :new WHERE rating = :old", ["new" => '?', "old" => 'u' ]);
 
-            $this->set_version(RatingsConfig::VERSION, 4);
+            $this->set_version(4);
         }
     }
 
     private function set_rating(int $image_id, string $rating, string $old_rating): void
     {
         global $database;
-        if ($old_rating != $rating) {
+        if ($old_rating !== $rating) {
             $database->execute("UPDATE images SET rating=:rating WHERE id=:id", ['rating' => $rating, 'id' => $image_id]);
-            Log::info("rating", "Rating for >>{$image_id} set to: ".$this->rating_to_human($rating));
+            Log::info("rating", "Rating for >>{$image_id} set to: ".self::rating_to_human($rating));
         }
     }
 }

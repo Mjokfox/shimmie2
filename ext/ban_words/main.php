@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class BanWords extends Extension
+final class BanWords extends Extension
 {
     public const KEY = "ban_words";
 
@@ -46,7 +46,7 @@ class BanWords extends Extension
     {
         $comment = mb_strtolower($comment);
 
-        foreach ($this->get_words() as $word) {
+        foreach (self::get_words() as $word) {
             if ($word[0] == '/') {
                 // lines that start with slash are regex
                 if (\Safe\preg_match($word, $comment)) {

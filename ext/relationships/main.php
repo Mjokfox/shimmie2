@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class ImageRelationshipSetEvent extends Event
+final class ImageRelationshipSetEvent extends Event
 {
     public int $child_id;
     public int $parent_id;
@@ -18,7 +18,7 @@ class ImageRelationshipSetEvent extends Event
 }
 
 
-class Relationships extends Extension
+final class Relationships extends Extension
 {
     public const KEY = "relationships";
     /** @var RelationshipsTheme */
@@ -36,20 +36,20 @@ class Relationships extends Extension
     {
         global $database;
 
-        if ($this->get_version("ext_relationships_version") < 1) {
+        if ($this->get_version() < 1) {
             $database->execute("ALTER TABLE images ADD parent_id INT");
             $database->execute("ALTER TABLE images ADD has_children BOOLEAN DEFAULT FALSE NOT NULL");
             $database->execute("CREATE INDEX images__parent_id ON images(parent_id)");
             $database->execute("CREATE INDEX images__has_children ON images(has_children)");
-            $this->set_version("ext_relationships_version", 3);
+            $this->set_version(3);
         }
-        if ($this->get_version("ext_relationships_version") < 2) {
+        if ($this->get_version() < 2) {
             $database->execute("CREATE INDEX images__has_children ON images(has_children)");
-            $this->set_version("ext_relationships_version", 2);
+            $this->set_version(2);
         }
-        if ($this->get_version("ext_relationships_version") < 3) {
+        if ($this->get_version() < 3) {
             $database->standardise_boolean("images", "has_children");
-            $this->set_version("ext_relationships_version", 3);
+            $this->set_version(3);
         }
     }
 
@@ -155,7 +155,7 @@ class Relationships extends Extension
         $database->execute("UPDATE images SET parent_id = :pid WHERE id = :cid", ["pid" => $event->parent_id, "cid" => $event->child_id]);
         $database->execute("UPDATE images SET has_children = :true WHERE id = :pid", ["pid" => $event->parent_id, "true" => true]);
 
-        if ($old_parent != null) {
+        if ($old_parent !== null) {
             $this->set_has_children($old_parent);
         }
     }

@@ -26,7 +26,7 @@ class LitePage extends Page
         list($nav_links, $sub_links) = $this->get_nav_links();
         $theme_name = $config->get_string(SetupConfig::THEME, 'lite');
         $site_name = $config->get_string(SetupConfig::TITLE);
-        $data_href = get_base_href();
+        $data_href = Url::base();
 
         $menu = DIV(
             ["class" => "menu"],
@@ -105,7 +105,7 @@ class LitePage extends Page
     {
         $h = $block->header;
         $i = $block->id;
-        if ($h == "Paginator") {
+        if ($h === "Paginator") {
             return $block->body;
         }
         $html = SECTION(["id" => $i]);
@@ -116,8 +116,7 @@ class LitePage extends Page
         return $html;
     }
 
-    /** @param url-string $link */
-    private function navlinks(string $link, HTMLElement|string $desc, bool $active): HTMLElement
+    private function navlinks(Url $link, HTMLElement|string $desc, bool $active): HTMLElement
     {
         return A([
             "class" => $active ? "tab-selected" : "tab",

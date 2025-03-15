@@ -23,7 +23,7 @@ function shm_set_timeout(?int $timeout): void
     $_shm_event_bus->set_timeout($timeout);
 }
 
-class EventBus
+final class EventBus
 {
     /** @var array<string, list<Extension>> $event_listeners */
     private array $event_listeners = [];
@@ -41,13 +41,13 @@ class EventBus
 
         $speed_hax = ($config->get_bool(SetupConfig::CACHE_EVENT_LISTENERS));
         $cache_path = Filesystem::data_path("cache/event_listeners/el.$ver.$key.php");
-        if ($speed_hax && file_exists($cache_path)) {
+        if ($speed_hax && $cache_path->exists()) {
             $this->event_listeners = require_once($cache_path);
         } else {
             $this->event_listeners = $this->calc_event_listeners();
 
             if ($speed_hax) {
-                file_put_contents($cache_path, $this->dump_event_listeners());
+                $cache_path->put_contents($this->dump_event_listeners());
             }
         }
 
@@ -77,7 +77,7 @@ class EventBus
             }
 
             foreach (get_class_methods($extension) as $method) {
-                if (substr($method, 0, 2) == "on") {
+                if (substr($method, 0, 2) === "on") {
                     $event = substr($method, 2) . "Event";
                     $pos = $extension->get_priority() * 100;
                     while (isset($event_listeners_with_ids[$event][$pos])) {

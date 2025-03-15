@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class PermManagerTest extends ShimmiePHPUnitTestCase
+final class PermManagerTest extends ShimmiePHPUnitTestCase
 {
     public function testAuth(): void
     {
-        $this->log_in_as_admin();
-        $this->get_page('perm_manager');
-        $this->assert_title("User Classes");
+        self::log_in_as_admin();
+        self::get_page('perm_manager');
+        self::assert_title("User Classes");
     }
 }

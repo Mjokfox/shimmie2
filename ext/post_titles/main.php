@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 require_once "events/post_title_set_event.php";
 
-class PostTitles extends Extension
+final class PostTitles extends Extension
 {
     public const KEY = "post_titles";
     /** @var PostTitlesTheme */
@@ -26,9 +26,9 @@ class PostTitles extends Extension
     {
         global $database;
 
-        if ($this->get_version(PostTitlesConfig::VERSION) < 1) {
+        if ($this->get_version() < 1) {
             $database->execute("ALTER TABLE images ADD COLUMN title varchar(255) NULL");
-            $this->set_version(PostTitlesConfig::VERSION, 1);
+            $this->set_version(1);
         }
     }
 
@@ -79,7 +79,7 @@ class PostTitles extends Extension
 
     public function onBulkImport(BulkImportEvent $event): void
     {
-        if (array_key_exists("title", $event->fields) && $event->fields['title'] != null) {
+        if (array_key_exists("title", $event->fields) && $event->fields['title'] !== null) {
             $this->set_title($event->image->id, $event->fields['title']);
         }
     }

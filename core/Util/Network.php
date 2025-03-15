@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class Network
+final class Network
 {
     public static function is_trusted_proxy(): bool
     {
@@ -39,7 +39,7 @@ class Network
     {
         $ip = $_SERVER['REMOTE_ADDR'];
 
-        if ($ip == "unix:") {
+        if ($ip === "unix:") {
             $ip = "0.0.0.0";
         }
 
@@ -84,14 +84,14 @@ class Network
      * @param non-empty-string $url
      * @return array<string, string|string[]>
      */
-    public static function fetch_url(string $url, string $mfile): array
+    public static function fetch_url(string $url, Path $mfile): array
     {
         global $config;
 
         if ($config->get_string(UploadConfig::TRANSLOAD_ENGINE) === "curl" && function_exists("curl_init")) {
             $ch = curl_init($url);
             assert($ch !== false);
-            $fp = \Safe\fopen($mfile, "w");
+            $fp = \Safe\fopen($mfile->str(), "w");
 
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             # curl_setopt($ch, CURLOPT_VERBOSE, true);
@@ -118,15 +118,15 @@ class Network
             fclose($fp);
         } elseif ($config->get_string(UploadConfig::TRANSLOAD_ENGINE) === "wget") {
             $s_url = escapeshellarg($url);
-            $s_mfile = escapeshellarg($mfile);
+            $s_mfile = escapeshellarg($mfile->str());
             system("wget --no-check-certificate $s_url --output-document=$s_mfile");
-            if (!file_exists($mfile)) {
+            if (!$mfile->exists()) {
                 throw new FetchException("wget failed");
             }
             $headers = [];
         } elseif ($config->get_string(UploadConfig::TRANSLOAD_ENGINE) === "fopen") {
             $fp_in = @fopen($url, "r");
-            $fp_out = fopen($mfile, "w");
+            $fp_out = fopen($mfile->str(), "w");
             if (!$fp_in || !$fp_out) {
                 throw new FetchException("fopen failed");
             }
@@ -144,8 +144,8 @@ class Network
             throw new FetchException("No transload engine configured");
         }
 
-        if (filesize($mfile) == 0) {
-            @unlink($mfile);
+        if ($mfile->filesize() === 0) {
+            @$mfile->unlink();
             throw new FetchException("No data found in $url -- perhaps the site has hotlink protection?");
         }
 
@@ -160,7 +160,7 @@ class Network
     public static function ip_in_range(string $IP, string $CIDR): bool
     {
         $parts = explode("/", $CIDR);
-        if (count($parts) == 1) {
+        if (count($parts) === 1) {
             $parts[1] = "32";
         }
         list($net, $mask) = $parts;
@@ -172,7 +172,7 @@ class Network
 
         $ip_ip_net = $ip_ip & $ip_mask;
 
-        return ($ip_ip_net == $ip_net);
+        return ($ip_ip_net === $ip_net);
     }
 
     /**

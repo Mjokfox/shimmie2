@@ -6,15 +6,15 @@ namespace Shimmie2;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 
-class PixelFileHandlerTest extends ShimmiePHPUnitTestCase
+final class PixelFileHandlerTest extends ShimmiePHPUnitTestCase
 {
     public function testPixelHander(): void
     {
-        $this->log_in_as_user();
+        self::log_in_as_user();
         $image_id = $this->post_image("tests/pbx_screenshot.jpg", "pbx computer screenshot");
-        $page = $this->get_page("post/view/$image_id");
-        $this->assertEquals(200, $page->code);
-        //$this->assert_response(302);
+        $page = self::get_page("post/view/$image_id");
+        self::assertEquals(200, $page->code);
+        //self::assert_response(302);
 
         # FIXME: test that the thumb works
         # FIXME: test that it gets displayed properly
@@ -38,15 +38,15 @@ class PixelFileHandlerTest extends ShimmiePHPUnitTestCase
     public function testFormats(string $format): void
     {
         $tmp = shm_tempnam("test-format");
-        unlink($tmp);
+        $tmp->unlink();
         $img = \Safe\imagecreatefromstring(\Safe\file_get_contents("tests/pbx_screenshot.jpg"));
         $encodefunc = "image$format";
-        $this->assertTrue(is_callable($encodefunc));
-        $encodefunc($img, "$tmp.$format");
+        self::assertTrue(is_callable($encodefunc));
+        $encodefunc($img, "{$tmp->str()}.$format");
 
-        $image_id = $this->post_image("$tmp.$format", "pbx computer screenshot $format");
-        $page = $this->get_page("post/view/$image_id");
-        $this->assertEquals(200, $page->code);
+        $image_id = $this->post_image("{$tmp->str()}.$format", "pbx computer screenshot $format");
+        $page = self::get_page("post/view/$image_id");
+        self::assertEquals(200, $page->code);
     }
 
     public function tearDown(): void

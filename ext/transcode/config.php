@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class TranscodeImageConfig extends ConfigGroup
+final class TranscodeImageConfig extends ConfigGroup
 {
     public const KEY = "transcode";
     public ?string $title = "Transcode Images";
-
-    #[ConfigMeta("Version", ConfigType::INT, advanced: true)]
-    public const VERSION = "ext_transcode_version";
 
     #[ConfigMeta("Enable GET args", ConfigType::BOOL, default: false)]
     public const GET_ENABLED = "transcode_get_enabled";

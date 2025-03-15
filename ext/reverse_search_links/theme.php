@@ -12,13 +12,14 @@ class ReverseSearchLinksTheme extends Themelet
     {
         global $config;
 
+        $url = (string)$image->get_thumb_link()->asAbsolute();
         $links = [
-            'Google' => 'https://lens.google.com/uploadbyurl?url='. url_escape(make_http($image->get_image_link())),
-            'SauceNAO' => 'https://saucenao.com/search.php?url=' . url_escape(make_http($image->get_thumb_link())),
-            'TinEye' => 'https://www.tineye.com/search/?url=' . url_escape(make_http($image->get_thumb_link())),
-            'trace.moe' => 'https://trace.moe/?auto&url=' . url_escape(make_http($image->get_thumb_link())),
-            'ascii2d' => 'https://ascii2d.net/search/url/' . url_escape(make_http($image->get_thumb_link())),
-            'Yandex' => 'https://yandex.com/images/search?rpt=imageview&url=' . url_escape(make_http($image->get_thumb_link()))
+            'Google' => Url::parse('https://lens.google.com/uploadbyurl')->withModifiedQuery(["url" => $url]),
+            'SauceNAO' => Url::parse('https://saucenao.com/search.php')->withModifiedQuery(["url" => $url]),
+            'TinEye' => Url::parse('https://www.tineye.com/search/')->withModifiedQuery(["url" => $url]),
+            'trace.moe' => Url::parse('https://trace.moe/')->withModifiedQuery(["auto" => "", "url" => $url]),
+            'ascii2d' => Url::parse('https://ascii2d.net/search/url/' . url_escape($url)),
+            'Yandex' => Url::parse('https://yandex.com/images/search')->withModifiedQuery(["rpt" => "imageview", "url" => $url]),
         ];
 
         // only generate links for enabled reverse search services
@@ -27,7 +28,7 @@ class ReverseSearchLinksTheme extends Themelet
         $html = "";
         foreach ($links as $name => $link) {
             if (in_array($name, $enabled_services)) {
-                $icon_link = get_base_href() . "/ext/reverse_search_links/icons/" . strtolower($name) . ".ico";
+                $icon_link = Url::base() . "/ext/reverse_search_links/icons/" . strtolower($name) . ".ico";
                 $html .= "<a href='$link' class='reverse_image_link' rel='nofollow'><img title='Search with $name' src='$icon_link' alt='$name icon'></a>";
             }
         }

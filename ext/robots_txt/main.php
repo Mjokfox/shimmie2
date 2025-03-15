@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class RobotsBuildingEvent extends Event
+final class RobotsBuildingEvent extends Event
 {
     /** @var string[] */
     public array $parts = [
@@ -19,7 +19,7 @@ class RobotsBuildingEvent extends Event
     }
 }
 
-class RobotsTxt extends Extension
+final class RobotsTxt extends Extension
 {
     public const KEY = "robots_txt";
 
@@ -49,7 +49,7 @@ class RobotsTxt extends Extension
     {
         global $config;
         $domain = $config->get_string(RobotsTxtConfig::CANONICAL_DOMAIN);
-        if (!empty($domain) && $_SERVER['HTTP_HOST'] != $domain) {
+        if (!empty($domain) && $_SERVER['HTTP_HOST'] !== $domain) {
             $event->add_disallow("");
         }
     }

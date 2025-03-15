@@ -6,11 +6,11 @@ namespace Shimmie2;
 
 use PHPUnit\Framework\TestCase;
 
-class DatabaseExceptionTest extends TestCase
+final class DatabaseExceptionTest extends TestCase
 {
     public function testCreate(): void
     {
         $exception = new DatabaseException('Bad Query', 'SCELEECT * FROM foo', []);
-        $this->assertInstanceOf(DatabaseException::class, $exception);
+        self::assertInstanceOf(DatabaseException::class, $exception);
     }
 }

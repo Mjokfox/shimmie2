@@ -16,13 +16,24 @@ parameters:
   typeAliases:
     tag-string: non-empty-string
     hash-string: non-empty-string&internal-hash-string
+    query-array: "array<string,string|string[]>"
   ignoreErrors:
     -
       message: '#Function .* is unsafe to use.*$#'
     -
       message: '#Path in include_once\(\) "data/.*" is not a file or it does not exist.#'
+  reportMaybesInMethodSignatures: false
+  reportMaybesInPropertyPhpDocTypes: false
+  strictRules:
+    disallowedLooseComparison: false
+    booleansInConditions: false
+    disallowedEmpty: false
+    disallowedShortTernary: false
+    strictFunctionCalls: false
+    noVariableVariables: false
 includes:
   - vendor/thecodingmachine/phpstan-safe-rule/phpstan-safe-rule.neon
+  - vendor/phpstan/phpstan-strict-rules/rules.neon
 services:
   -
     class: Shimmie2\GenericStringTypeNodeResolverExtension

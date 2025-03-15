@@ -9,7 +9,7 @@ use GQLA\Field;
 use GQLA\Query;
 
 #[Type(name: "TagUsage")]
-class TagUsage
+final class TagUsage
 {
     #[Field]
     public string $tag;
@@ -32,9 +32,9 @@ class TagUsage
 
         $search = strtolower($search);
         if (
-            $search == '' ||
-            $search[0] == '_' ||
-            $search[0] == '%' ||
+            $search === '' ||
+            $search[0] === '_' ||
+            $search[0] === '%' ||
             strlen($search) > 32
         ) {
             return [];

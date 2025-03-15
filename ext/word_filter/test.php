@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class WordFilterTest extends ShimmiePHPUnitTestCase
+final class WordFilterTest extends ShimmiePHPUnitTestCase
 {
     public function setUp(): void
     {
@@ -16,11 +16,11 @@ class WordFilterTest extends ShimmiePHPUnitTestCase
     public function _doThings(string $in, string $out): void
     {
         global $user;
-        $this->log_in_as_user();
+        self::log_in_as_user();
         $image_id = $this->post_image("tests/pbx_screenshot.jpg", "pbx computer screenshot");
         send_event(new CommentPostingEvent($image_id, $user, $in));
-        $this->get_page("post/view/$image_id");
-        $this->assert_text($out);
+        self::get_page("post/view/$image_id");
+        self::assert_text($out);
     }
 
     public function testRegular(): void

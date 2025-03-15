@@ -14,7 +14,7 @@ use GraphQL\Type\Schema;
 use GraphQL\Utils\SchemaPrinter;
 
 #[\GQLA\InputObjectType]
-class MetadataInput
+final class MetadataInput
 {
     public function __construct(
         #[\GQLA\Field]
@@ -71,7 +71,7 @@ function shmFieldResolver(
         : $property;
 }
 
-class GraphQL extends Extension
+final class GraphQL extends Extension
 {
     public const KEY = "graphql";
 
@@ -115,7 +115,7 @@ class GraphQL extends Extension
             $this->cors();
             $t1 = ftime();
             $server = new StandardServer([
-                'schema' => $this->get_schema(),
+                'schema' => self::get_schema(),
                 'fieldResolver' => "\Shimmie2\shmFieldResolver",
             ]);
             $t2 = ftime();
@@ -188,7 +188,7 @@ class GraphQL extends Extension
             $ec = $_FILES["data$n"]["error"];
             switch ($ec) {
                 case UPLOAD_ERR_OK:
-                    $tmpname = $_FILES["data$n"]["tmp_name"];
+                    $tmpname = new Path($_FILES["data$n"]["tmp_name"]);
                     $filename = $_FILES["data$n"]["name"];
                     break;
                 case UPLOAD_ERR_INI_SIZE:
@@ -213,7 +213,7 @@ class GraphQL extends Extension
             ->setCode(function (InputInterface $input, OutputInterface $output): int {
                 $query = $input->getArgument('query');
                 $t1 = ftime();
-                $schema = $this->get_schema();
+                $schema = self::get_schema();
                 $t2 = ftime();
                 $debug = DebugFlag::INCLUDE_DEBUG_MESSAGE | DebugFlag::RETHROW_INTERNAL_EXCEPTIONS;
                 $body = GQL::executeQuery($schema, $query, fieldResolver: "\Shimmie2\shmFieldResolver")->toArray($debug);
@@ -227,7 +227,7 @@ class GraphQL extends Extension
         $event->app->register('graphql:schema')
             ->setDescription('Print out the GraphQL schema')
             ->setCode(function (InputInterface $input, OutputInterface $output): int {
-                $schema = $this->get_schema();
+                $schema = self::get_schema();
                 echo(SchemaPrinter::doPrint($schema));
                 return Command::SUCCESS;
             });

@@ -19,7 +19,7 @@ class ReplaceFileTheme extends Themelet
     public function display_replace_page(Page $page, int $image_id): void
     {
         global $config, $page;
-        $tl_enabled = ($config->get_string(UploadConfig::TRANSLOAD_ENGINE, "none") != "none");
+        $tl_enabled = ($config->get_string(UploadConfig::TRANSLOAD_ENGINE, "none") !== "none");
         $accept = $this->get_accept();
 
         $max_size = $config->get_int(UploadConfig::SIZE);
@@ -28,7 +28,7 @@ class ReplaceFileTheme extends Themelet
         $image = Image::by_id_ex($image_id);
         $thumbnail = $this->build_thumb($image);
 
-        $form = SHM_FORM("replace/".$image_id, multipart: true);
+        $form = SHM_FORM(make_link("replace/".$image_id), multipart: true);
         $form->appendChild(emptyHTML(
             TABLE(
                 ["id" => "large_upload_form", "class" => "form"],
@@ -58,7 +58,7 @@ class ReplaceFileTheme extends Themelet
         );
 
         $page->set_title("Replace File");
-        $page->add_block(Block::nav());
+        $this->display_navigation();
         $page->add_block(new Block("Upload Replacement File", $html, "main", 20));
     }
 

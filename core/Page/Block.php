@@ -65,17 +65,12 @@ class Block
         $this->hidable = $hidable;
     }
 
-    public static function nav(): self
-    {
-        return new self("Navigation", A(["href" => make_link()], "Index"), "left", 0);
-    }
-
     /**
      * Compare two Block objects, used to sort them before being displayed
      */
     public static function cmp(Block $a, Block $b): int
     {
-        if ($a->position == $b->position) {
+        if ($a->position === $b->position) {
             if ($a->header && $b->header) {
                 return strcasecmp($a->header, $b->header);
             }

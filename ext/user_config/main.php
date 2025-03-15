@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class UserConfig extends Extension
+final class UserConfig extends Extension
 {
     public const KEY = "user_config";
     /** @var UserConfigTheme */
@@ -14,7 +14,7 @@ class UserConfig extends Extension
     {
         global $database;
 
-        if ($this->get_version(UserConfigConfig::VERSION) < 1) {
+        if ($this->get_version() < 1) {
             $database->create_table("user_config", "
                 user_id INTEGER NOT NULL,
                 name VARCHAR(128) NOT NULL,
@@ -23,8 +23,7 @@ class UserConfig extends Extension
 			    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 		    ");
             $database->execute("CREATE INDEX user_config_user_id_idx ON user_config(user_id)");
-
-            $this->set_version(UserConfigConfig::VERSION, 1);
+            $this->set_version(1);
         }
     }
 
@@ -90,7 +89,7 @@ class UserConfig extends Extension
             ]);
             $duser = User::by_id($input['id']);
 
-            if ($user->id != $duser->id && !$user->can(UserAccountsPermission::CHANGE_OTHER_USER_SETTING)) {
+            if ($user->id !== $duser->id && !$user->can(UserAccountsPermission::CHANGE_OTHER_USER_SETTING)) {
                 throw new PermissionDenied("You do not have permission to change other user's settings");
             }
 

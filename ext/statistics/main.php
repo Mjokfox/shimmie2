@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class Statistics extends Extension
+final class Statistics extends Extension
 {
     public const KEY = "statistics";
     /** @var StatisticsTheme */
@@ -16,7 +16,7 @@ class Statistics extends Extension
     {
         global $config, $page;
         if ($event->page_matches("stats") || $event->page_matches("stats/100")) {
-            $base_href = get_base_href();
+            $base_href = Url::base();
             $sitename = $config->get_string(SetupConfig::TITLE);
             $theme_name = $config->get_string(SetupConfig::THEME);
             $unlisted = "'".implode("','", $this->unlisted)."'";
@@ -125,7 +125,7 @@ class Statistics extends Extension
         // Count changes made in each tag history and tally tags for users
         $tag_tally = [];
         $change_tally = [];
-        foreach ($tag_histories as $i => $image) {
+        foreach (array_values($tag_histories) as $image) {
             $prev = [];
             foreach ($image as $change) {
                 $curr = explode(' ', $change['tags']);

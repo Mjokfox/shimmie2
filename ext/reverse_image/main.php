@@ -17,7 +17,7 @@ class ReverseImage extends Extension
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         global $database;
-        if ($this->get_version(ReverseImageConfig::VERSION) < 1) {
+        if ($this->get_version() < 1) {
             $database->execute("CREATE EXTENSION IF NOT EXISTS vector;");
             $database->create_table(
                 'image_features',
@@ -27,7 +27,7 @@ class ReverseImage extends Extension
                 PRIMARY KEY(image_id)'
             );
 
-            $this->set_version(ReverseImageConfig::VERSION, 1);
+            $this->set_version(1);
 
             Log::info("Reverse_image", "extension installed");
         }
@@ -185,7 +185,7 @@ class ReverseImage extends Extension
         global $user, $config;
         $event->add_part(
             SHM_SIMPLE_FORM(
-                "reverse_image_search/",
+                make_link("reverse_image_search/"),
                 INPUT(["type" => "hidden", "name" => "hash", "value" => $event->image->hash]),
                 INPUT([
                     "type" => "submit",
@@ -275,7 +275,7 @@ class ReverseImage extends Extension
     /**
      * @param non-empty-string $url
      */
-    private function transload(string $url): string
+    private function transload(string $url): Path
     {
         $tmp_filename = shm_tempnam("transload");
         try {
@@ -326,10 +326,11 @@ class ReverseImage extends Extension
     // helper function
     /**
      * @return array<float>|false
+     * @param hash-string $hash
      */
     public function get_image_features_by_hash(string $hash): array|false
     {
-        return $this->get_image_features($_SERVER['DOCUMENT_ROOT'] ."/" . Filesystem::warehouse_path(Image::IMAGE_DIR, $hash));
+        return $this->get_image_features($_SERVER['DOCUMENT_ROOT'] ."/" . Filesystem::warehouse_path(Image::IMAGE_DIR, $hash)->str());
     }
 
     // makes the post request to the engine.py, returns the features as array[512] or false if it failed

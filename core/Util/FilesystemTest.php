@@ -6,105 +6,80 @@ namespace Shimmie2;
 
 use PHPUnit\Framework\TestCase;
 
-class FilesystemTest extends TestCase
+final class FilesystemTest extends TestCase
 {
     public function test_warehouse_path(): void
     {
-        $hash = "7ac19c10d6859415";
+        $hash = "7ac19c10d6859415a9bf32f335f564ad";
 
-        $this->assertEquals(
-            Filesystem::join_path(DATA_DIR, "base", $hash),
+        self::assertEquals(
+            Filesystem::join_path("data/base", $hash),
             Filesystem::warehouse_path("base", $hash, false, 0)
         );
 
-        $this->assertEquals(
-            Filesystem::join_path(DATA_DIR, "base", "7a", $hash),
+        self::assertEquals(
+            Filesystem::join_path("data/base", "7a", $hash),
             Filesystem::warehouse_path("base", $hash, false, 1)
         );
 
-        $this->assertEquals(
-            Filesystem::join_path(DATA_DIR, "base", "7a", "c1", $hash),
+        self::assertEquals(
+            Filesystem::join_path("data/base", "7a", "c1", $hash),
             Filesystem::warehouse_path("base", $hash, false, 2)
         );
 
-        $this->assertEquals(
-            Filesystem::join_path(DATA_DIR, "base", "7a", "c1", "9c", $hash),
-            Filesystem::warehouse_path("base", $hash, false, 3)
-        );
-
-        $this->assertEquals(
-            Filesystem::join_path(DATA_DIR, "base", "7a", "c1", "9c", "10", $hash),
+        self::assertEquals(
+            Filesystem::join_path("data/base", "7a", "c1", "9c", "10", $hash),
             Filesystem::warehouse_path("base", $hash, false, 4)
         );
 
-        $this->assertEquals(
-            Filesystem::join_path(DATA_DIR, "base", "7a", "c1", "9c", "10", "d6", $hash),
-            Filesystem::warehouse_path("base", $hash, false, 5)
-        );
-
-        $this->assertEquals(
-            Filesystem::join_path(DATA_DIR, "base", "7a", "c1", "9c", "10", "d6", "85", $hash),
-            Filesystem::warehouse_path("base", $hash, false, 6)
-        );
-
-        $this->assertEquals(
-            Filesystem::join_path(DATA_DIR, "base", "7a", "c1", "9c", "10", "d6", "85", "94", $hash),
-            Filesystem::warehouse_path("base", $hash, false, 7)
-        );
-
-        $this->assertEquals(
-            Filesystem::join_path(DATA_DIR, "base", "7a", "c1", "9c", "10", "d6", "85", "94", "15", $hash),
+        self::assertEquals(
+            Filesystem::join_path("data/base", "7a", "c1", "9c", "10", "d6", "85", "94", "15", $hash),
             Filesystem::warehouse_path("base", $hash, false, 8)
         );
 
-        $this->assertEquals(
-            Filesystem::join_path(DATA_DIR, "base", "7a", "c1", "9c", "10", "d6", "85", "94", "15", $hash),
-            Filesystem::warehouse_path("base", $hash, false, 9)
-        );
-
-        $this->assertEquals(
-            Filesystem::join_path(DATA_DIR, "base", "7a", "c1", "9c", "10", "d6", "85", "94", "15", $hash),
-            Filesystem::warehouse_path("base", $hash, false, 10)
+        self::assertEquals(
+            new Path("data/base/7a/c1/9c/10/d6/85/94/15/a9/bf/32/f3/35/f5/64/ad/7ac19c10d6859415a9bf32f335f564ad"),
+            Filesystem::warehouse_path("base", $hash, false, 50)
         );
     }
 
     public function test_path_to_tags(): void
     {
-        $this->assertEquals(
+        self::assertEquals(
             [],
-            Filesystem::path_to_tags("nope.jpg")
+            Filesystem::path_to_tags(new Path("nope.jpg"))
         );
-        $this->assertEquals(
+        self::assertEquals(
             [],
-            Filesystem::path_to_tags("\\")
+            Filesystem::path_to_tags(new Path("\\"))
         );
-        $this->assertEquals(
+        self::assertEquals(
             [],
-            Filesystem::path_to_tags("/")
+            Filesystem::path_to_tags(new Path("/"))
         );
-        $this->assertEquals(
+        self::assertEquals(
             [],
-            Filesystem::path_to_tags("C:\\")
+            Filesystem::path_to_tags(new Path("C:\\"))
         );
-        $this->assertEquals(
-            ["test", "tag"],
-            Filesystem::path_to_tags("123 - test tag.jpg")
+        self::assertEquals(
+            ["tag", "test"],
+            Filesystem::path_to_tags(new Path("123 - test tag.jpg"))
         );
-        $this->assertEquals(
+        self::assertEquals(
             ["foo", "bar"],
-            Filesystem::path_to_tags("/foo/bar/baz.jpg")
+            Filesystem::path_to_tags(new Path("/foo/bar/baz.jpg"))
         );
-        $this->assertEquals(
+        self::assertEquals(
             ["cake", "pie", "foo", "bar"],
-            Filesystem::path_to_tags("/foo/bar/123 - cake pie.jpg")
+            Filesystem::path_to_tags(new Path("/foo/bar/123 - cake pie.jpg"))
         );
-        $this->assertEquals(
+        self::assertEquals(
             ["bacon", "lemon"],
-            Filesystem::path_to_tags("\\bacon\\lemon\\baz.jpg")
+            Filesystem::path_to_tags(new Path("\\bacon\\lemon\\baz.jpg"))
         );
-        $this->assertEquals(
+        self::assertEquals(
             ["category:tag"],
-            Filesystem::path_to_tags("/category:/tag/baz.jpg")
+            Filesystem::path_to_tags(new Path("/category:/tag/baz.jpg"))
         );
     }
 
@@ -116,81 +91,38 @@ class FilesystemTest extends TestCase
         file_put_contents("$dir/foo", "bar");
         mkdir("$dir/baz");
         file_put_contents("$dir/baz/.qux", "quux");
-        $this->assertTrue(file_exists($dir));
-        $this->assertTrue(file_exists("$dir/foo"));
-        $this->assertTrue(file_exists("$dir/baz"));
-        $this->assertTrue(file_exists("$dir/baz/.qux"));
-        Filesystem::deltree($dir);
-        $this->assertFalse(file_exists($dir));
-    }
-
-    public function test_sanitize_path(): void
-    {
-        $this->assertEquals(
-            "one",
-            Filesystem::sanitize_path("one")
-        );
-
-        $this->assertEquals(
-            "one".DIRECTORY_SEPARATOR."two",
-            Filesystem::sanitize_path("one\\two")
-        );
-
-        $this->assertEquals(
-            "one".DIRECTORY_SEPARATOR."two",
-            Filesystem::sanitize_path("one/two")
-        );
-
-        $this->assertEquals(
-            "one".DIRECTORY_SEPARATOR."two",
-            Filesystem::sanitize_path("one\\\\two")
-        );
-
-        $this->assertEquals(
-            "one".DIRECTORY_SEPARATOR."two",
-            Filesystem::sanitize_path("one//two")
-        );
-
-        $this->assertEquals(
-            "one".DIRECTORY_SEPARATOR."two",
-            Filesystem::sanitize_path("one\\\\\\two")
-        );
-
-        $this->assertEquals(
-            "one".DIRECTORY_SEPARATOR."two",
-            Filesystem::sanitize_path("one///two")
-        );
-
-        $this->assertEquals(
-            DIRECTORY_SEPARATOR."one".DIRECTORY_SEPARATOR."two".DIRECTORY_SEPARATOR,
-            Filesystem::sanitize_path("\\/one/\\/\\/two\\/")
-        );
+        self::assertTrue(file_exists($dir));
+        self::assertTrue(file_exists("$dir/foo"));
+        self::assertTrue(file_exists("$dir/baz"));
+        self::assertTrue(file_exists("$dir/baz/.qux"));
+        Filesystem::deltree(new Path($dir));
+        self::assertFalse(file_exists($dir));
     }
 
     public function test_join_path(): void
     {
-        $this->assertEquals(
-            "one",
+        self::assertEquals(
+            new Path("one"),
             Filesystem::join_path("one")
         );
 
-        $this->assertEquals(
-            "one".DIRECTORY_SEPARATOR."two",
+        self::assertEquals(
+            new Path("one/two"),
             Filesystem::join_path("one", "two")
         );
 
-        $this->assertEquals(
-            "one".DIRECTORY_SEPARATOR."two".DIRECTORY_SEPARATOR."three",
+        self::assertEquals(
+            new Path("one/two/three"),
             Filesystem::join_path("one", "two", "three")
         );
 
-        $this->assertEquals(
-            "one".DIRECTORY_SEPARATOR."two".DIRECTORY_SEPARATOR."three",
+        self::assertEquals(
+            new Path("one/two/three"),
             Filesystem::join_path("one/two", "three")
         );
 
-        $this->assertEquals(
-            DIRECTORY_SEPARATOR."one".DIRECTORY_SEPARATOR."two".DIRECTORY_SEPARATOR."three".DIRECTORY_SEPARATOR,
+        self::assertEquals(
+            new Path("/one/two/three/"),
             Filesystem::join_path("\\/////\\\\one/\///"."\\//two\/\\//\\//", "//\/\\\/three/\\/\/")
         );
     }

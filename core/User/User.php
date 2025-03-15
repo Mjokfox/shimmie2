@@ -16,7 +16,7 @@ use GQLA\Query;
  * The currently logged in user will always be accessible via the global variable $user.
  */
 #[Type(name: "User")]
-class User
+final class User
 {
     public int $id;
     #[Field]
@@ -178,7 +178,7 @@ class User
             }
         }
 
-        if ($my_user->passhash == md5(strtolower($name) . $pass)) {
+        if ($my_user->passhash === md5(strtolower($name) . $pass)) {
             Log::info("core-user", "Migrating from md5 to bcrypt for $name");
             $my_user->set_password($pass);
         }

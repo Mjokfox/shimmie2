@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class TagHistory extends Extension
+final class TagHistory extends Extension
 {
     public const KEY = "tag_history";
     /** @var TagHistoryTheme */
@@ -69,6 +69,7 @@ class TagHistory extends Extension
 
         // if the image has no history, make one with the old tags
         $entries = $database->get_one("SELECT COUNT(*) FROM tag_histories WHERE image_id = :id", ["id" => $event->image->id]);
+        assert(is_int($entries));
         if ($entries == 0 && !empty($old_tags)) {
             $database->execute(
                 "
@@ -129,7 +130,7 @@ class TagHistory extends Extension
     {
         global $database;
 
-        if ($this->get_version("ext_tag_history_version") < 1) {
+        if ($this->get_version() < 1) {
             $database->create_table("tag_histories", "
 	    		id SCORE_AIPK,
 	    		image_id INTEGER NOT NULL,
@@ -141,18 +142,18 @@ class TagHistory extends Extension
 				FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 			");
             $database->execute("CREATE INDEX tag_histories_image_id_idx ON tag_histories(image_id)", []);
-            $this->set_version("ext_tag_history_version", 3);
+            $this->set_version(3);
         }
 
-        if ($this->get_version("ext_tag_history_version") == 1) {
+        if ($this->get_version() == 1) {
             $database->execute("ALTER TABLE tag_histories ADD COLUMN user_id INTEGER NOT NULL");
             $database->execute("ALTER TABLE tag_histories ADD COLUMN date_set TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP");
-            $this->set_version("ext_tag_history_version", 2);
+            $this->set_version(2);
         }
 
-        if ($this->get_version("ext_tag_history_version") == 2) {
+        if ($this->get_version() == 2) {
             $database->execute("ALTER TABLE tag_histories ADD COLUMN user_ip CHAR(15) NOT NULL");
-            $this->set_version("ext_tag_history_version", 3);
+            $this->set_version(3);
         }
     }
 

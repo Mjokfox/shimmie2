@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{BR,H3,HR,P,META,rawHTML,emptyHTML};
+use function MicroHTML\{BR,H3,HR,P,META,rawHTML,emptyHTML,INPUT};
 
 class IndexTheme extends Themelet
 {
@@ -53,8 +53,31 @@ and of course start organising your images :-)
 
         $this->display_page_header($page, $images);
 
-        $nav = $this->build_navigation($this->page_number, $this->total_pages, $this->search_terms);
-        $page->add_block(new Block("Navigation", $nav, "left", 0));
+        $extra = SHM_FORM(
+            action: search_link(),
+            method: "GET",
+            children: [
+                P(),
+                INPUT([
+                    "type" => "search",
+                    "name" => "search",
+                    "value" => Tag::implode($this->search_terms),
+                    "placeholder" => "Search",
+                    "class" => "autocomplete_tags"
+                ]),
+                INPUT([
+                    "type" => "submit",
+                    "value" => "Find",
+                    "style" => "display: none;"
+                ])
+            ],
+        );
+
+        $this->display_navigation([
+            ($this->page_number <= 1) ? null : search_link($this->search_terms, $this->page_number - 1),
+            make_link(),
+            ($this->page_number >= $this->total_pages) ? null : search_link($this->search_terms, $this->page_number + 1),
+        ], $extra);
 
         if (count($images) > 0) {
             $this->display_page_images($page, $images);
@@ -70,31 +93,6 @@ and of course start organising your images :-)
     {
         global $page;
         $page->add_block(new Block("List Controls", rawHTML(join("<br>", $parts)), "left", 50));
-    }
-
-
-    /**
-     * @param string[] $search_terms
-     */
-    protected function build_navigation(int $page_number, int $total_pages, array $search_terms): HTMLElement
-    {
-        $prev = $page_number - 1;
-        $next = $page_number + 1;
-
-        $h_prev = ($page_number <= 1) ? "Prev" : '<a href="'.search_link($search_terms, $prev).'">Prev</a>';
-        $h_index = "<a href='".make_link()."'>Index</a>";
-        $h_next = ($page_number >= $total_pages) ? "Next" : '<a href="'.search_link($search_terms, $next).'">Next</a>';
-
-        $h_search_string = html_escape(Tag::implode($search_terms));
-        $h_search = "
-			<p><form action='".search_link()."' method='GET'>
-				<input type='search' name='search' value='$h_search_string' placeholder='Search' class='autocomplete_tags' />
-				<input type='hidden' name='q' value='".search_page()."'>
-				<input type='submit' value='Find' style='display: none;' />
-			</form>
-		";
-
-        return rawHTML($h_prev.' | '.$h_index.' | '.$h_next.'<br>'.$h_search);
     }
 
     /**
@@ -116,12 +114,12 @@ and of course start organising your images :-)
         global $config;
 
         if (WikiInfo::is_enabled() && $config->get_bool(WikiConfig::TAG_SHORTWIKIS)) {
-            if (count($this->search_terms) == 1) {
+            if (count($this->search_terms) === 1) {
                 $st = Tag::implode($this->search_terms);
 
                 $wikiPage = Wiki::get_page($st);
                 $short_wiki_description = '';
-                if ($wikiPage->id != -1) {
+                if ($wikiPage->id !== -1) {
                     // only show first line of wiki
                     $short_wiki_description = format_text(explode("\n", $wikiPage->body, 2)[0]);
                 }
@@ -142,7 +140,7 @@ and of course start organising your images :-)
     {
         global $config;
 
-        if (count($this->search_terms) == 0) {
+        if (count($this->search_terms) === 0) {
             $page_title = $config->get_string(SetupConfig::TITLE);
         } else {
             $search_string = implode(' ', $this->search_terms);

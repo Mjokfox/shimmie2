@@ -8,7 +8,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\{InputInterface,InputArgument};
 use Symfony\Component\Console\Output\OutputInterface;
 
-class RegenThumb extends Extension
+final class RegenThumb extends Extension
 {
     public const KEY = "regen_thumb";
     /** @var RegenThumbTheme */
@@ -126,7 +126,7 @@ class RegenThumb extends Extension
                 foreach ($images as $image) {
                     if (!$force) {
                         $path = Filesystem::warehouse_path(Image::THUMBNAIL_DIR, $image->hash, false);
-                        if (file_exists($path)) {
+                        if ($path->exists()) {
                             continue;
                         }
                     }
@@ -143,21 +143,20 @@ class RegenThumb extends Extension
             case "delete_thumbs":
                 $event->redirect = true;
 
-                if (isset($event->params["delete_thumb_mime"]) && $event->params["delete_thumb_mime"] != "") {
+                if (isset($event->params["delete_thumb_mime"]) && $event->params["delete_thumb_mime"] !== "") {
                     $images = Search::find_images(tags: ["mime=" . $event->params["delete_thumb_mime"]]);
 
                     $i = 0;
                     foreach ($images as $image) {
                         $outname = $image->get_thumb_filename();
-                        if (file_exists($outname)) {
-                            unlink($outname);
+                        if ($outname->exists()) {
+                            filename: $outname->unlink();
                             $i++;
                         }
                     }
                     $page->flash("Deleted $i thumbnails for ".$event->params["delete_thumb_mime"]." images");
                 } else {
-                    $dir = "data/thumbs/";
-                    Filesystem::deltree($dir);
+                    Filesystem::deltree(new Path("data/thumbs/"));
                     $page->flash("Deleted all thumbnails");
                 }
 

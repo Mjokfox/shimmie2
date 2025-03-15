@@ -9,7 +9,7 @@ use GQLA\Field;
 use GQLA\Mutation;
 
 #[Type(name: "NumericScoreVote")]
-class NumericScoreVote
+final class NumericScoreVote
 {
     public int $image_id;
     public int $user_id;
@@ -79,7 +79,7 @@ class NumericScoreVote
     {
         global $user;
         if ($user->can(NumericScorePermission::CREATE_VOTE)) {
-            assert($score == 0 || $score == -1 || $score == 1);
+            assert($score === 0 || $score === -1 || $score === 1);
             send_event(new NumericScoreSetEvent($post_id, $user, $score));
             return true;
         }
@@ -87,7 +87,7 @@ class NumericScoreVote
     }
 }
 
-class NumericScoreSetEvent extends Event
+final class NumericScoreSetEvent extends Event
 {
     public int $image_id;
     public User $user;
@@ -102,7 +102,7 @@ class NumericScoreSetEvent extends Event
     }
 }
 
-class NumericScore extends Extension
+final class NumericScore extends Extension
 {
     public const KEY = "numeric_score";
     /** @var NumericScoreTheme */
@@ -160,7 +160,7 @@ class NumericScore extends Extension
         } elseif ($event->page_matches("numeric_score_vote", method: "POST", permission: NumericScorePermission::CREATE_VOTE)) {
             $image_id = int_escape($event->req_POST("image_id"));
             $score = int_escape($event->req_POST("vote"));
-            if (($score == -1 || $score == 0 || $score == 1) && $image_id > 0) {
+            if (($score === -1 || $score === 0 || $score === 1) && $image_id > 0) {
                 send_event(new NumericScoreSetEvent($image_id, $user, $score));
             }
             $page->set_mode(PageMode::REDIRECT);
@@ -216,9 +216,12 @@ class NumericScore extends Extension
                     $sql .= " AND EXTRACT(MONTH FROM posted) = :month AND EXTRACT(DAY FROM posted) = :day";
                 }
                 $args = array_merge($args, ["month" => $month, "day" => $day]);
+
                 $current = date("F jS, Y", \Safe\strtotime($totaldate));
-                $name = "day";
-                $fmt = "\\y\\e\\a\\r\\=Y\\&\\m\\o\\n\\t\\h\\=m\\&\\d\\a\\y\\=d";
+                $before = \Safe\strtotime("-1 day", \Safe\strtotime($totaldate));
+                $after = \Safe\strtotime("+1 day", \Safe\strtotime($totaldate));
+                $b_dte = make_link("popular_by_day", ["year" => date("Y", $before), "month" => date("m", $before), "day" => date("d", $before)]);
+                $f_dte = make_link("popular_by_day", ["year" => date("Y", $after), "month" => date("m", $after), "day" => date("d", $after)]);
             } elseif ($event->page_matches("popular_by_month")) {
                 if ($database->get_driver_id() === DatabaseDriverID::SQLITE) {
                     $sql .=	" AND strftime('%m', posted) = cast(:month as text)";
@@ -230,13 +233,18 @@ class NumericScore extends Extension
                 // See Example #3 on https://www.php.net/manual/en/datetime.modify.php
                 // To get around this, set the day to 1 when doing month work.
                 $totaldate = $year."/".$month."/01";
+
                 $current = date("F Y", \Safe\strtotime($totaldate));
-                $name = "month";
-                $fmt = "\\y\\e\\a\\r\\=Y\\&\\m\\o\\n\\t\\h\\=m";
+                $before = \Safe\strtotime("-1 month", \Safe\strtotime($totaldate));
+                $after = \Safe\strtotime("+1 month", \Safe\strtotime($totaldate));
+                $b_dte = make_link("popular_by_month", ["year" => date("Y", $before), "month" => date("m", $before)]);
+                $f_dte = make_link("popular_by_month", ["year" => date("Y", $after), "month" => date("m", $after)]);
             } elseif ($event->page_matches("popular_by_year")) {
                 $current = "$year";
-                $name = "year";
-                $fmt = "\\y\\e\\a\\r\=Y";
+                $before = \Safe\strtotime("-1 year", \Safe\strtotime($totaldate));
+                $after = \Safe\strtotime("+1 year", \Safe\strtotime($totaldate));
+                $b_dte = make_link("popular_by_year", ["year" => date("Y", $before)]);
+                $f_dte = make_link("popular_by_year", ["year" => date("Y", $after)]);
             } else {
                 // this should never happen due to the fact that the page event is already matched against earlier.
                 throw new \UnexpectedValueException("Error: Invalid page event.");
@@ -246,7 +254,7 @@ class NumericScore extends Extension
             //filter images by score != 0 + date > limit to max images on one page > order from highest to lowest score
             $ids = $database->get_col($sql, $args);
             $images = Search::get_images($ids);
-            $this->theme->view_popular($images, $totaldate, $current, $name, $fmt);
+            $this->theme->view_popular($images, $current, $b_dte, $f_dte);
         }
     }
 
@@ -280,7 +288,7 @@ class NumericScore extends Extension
 
         $image_ids = $database->get_col("SELECT image_id FROM numeric_score_votes WHERE user_id=:user_id", ['user_id' => $user_id]);
 
-        if (count($image_ids) == 0) {
+        if (count($image_ids) === 0) {
             return;
         }
 
@@ -368,7 +376,7 @@ class NumericScore extends Extension
         global $user;
 
         if ($matches = $event->matches("/^vote[=|:](up|down|remove)$/")) {
-            $score = ($matches[1] == "up" ? 1 : ($matches[1] == "down" ? -1 : 0));
+            $score = ($matches[1] === "up" ? 1 : ($matches[1] === "down" ? -1 : 0));
             if ($user->can(NumericScorePermission::CREATE_VOTE)) {
                 send_event(new NumericScoreSetEvent($event->image_id, $user, $score));
             }
@@ -377,7 +385,7 @@ class NumericScore extends Extension
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
-        if ($event->parent == "posts") {
+        if ($event->parent === "posts") {
             $event->add_nav_link(make_link('popular_by_day'), "Popular by Day");
             $event->add_nav_link(make_link('popular_by_month'), "Popular by Month");
             $event->add_nav_link(make_link('popular_by_year'), "Popular by Year");
@@ -388,7 +396,7 @@ class NumericScore extends Extension
     {
         global $database;
 
-        if ($this->get_version("ext_numeric_score_version") < 1) {
+        if ($this->get_version() < 1) {
             $database->execute("ALTER TABLE images ADD COLUMN numeric_score INTEGER NOT NULL DEFAULT 0");
             $database->execute("CREATE INDEX images__numeric_score ON images(numeric_score)");
             $database->create_table("numeric_score_votes", "
@@ -400,11 +408,11 @@ class NumericScore extends Extension
 				FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 			");
             $database->execute("CREATE INDEX numeric_score_votes_image_id_idx ON numeric_score_votes(image_id)", []);
-            $this->set_version("ext_numeric_score_version", 1);
+            $this->set_version(1);
         }
-        if ($this->get_version("ext_numeric_score_version") < 2) {
+        if ($this->get_version() < 2) {
             $database->execute("CREATE INDEX numeric_score_votes__user_votes ON numeric_score_votes(user_id, score)");
-            $this->set_version("ext_numeric_score_version", 2);
+            $this->set_version(2);
         }
     }
 
@@ -415,7 +423,7 @@ class NumericScore extends Extension
             "DELETE FROM numeric_score_votes WHERE image_id=:imageid AND user_id=:userid",
             ["imageid" => $image_id, "userid" => $user_id]
         );
-        if ($score != 0) {
+        if ($score !== 0) {
             $database->execute(
                 "INSERT INTO numeric_score_votes(image_id, user_id, score) VALUES(:imageid, :userid, :score)",
                 ["imageid" => $image_id, "userid" => $user_id, "score" => $score]

@@ -47,7 +47,7 @@ class Page
     // ==============================================
 
     public string $data = "";  // public only for unit test
-    private ?string $file = null;
+    private ?Path $file = null;
     private bool $file_delete = false;
     private ?string $filename = null;
     private ?string $disposition = null;
@@ -60,7 +60,7 @@ class Page
         $this->data = $data;
     }
 
-    public function set_file(string $file, bool $delete = false): void
+    public function set_file(Path $file, bool $delete = false): void
     {
         $this->file = $file;
         $this->file_delete = $delete;
@@ -89,9 +89,9 @@ class Page
      * Set the URL to redirect to (remember to use make_link() if linking
      * to a page in the same site).
      */
-    public function set_redirect(string $redirect): void
+    public function set_redirect(Url $redirect): void
     {
-        $this->redirect = $redirect;
+        $this->redirect = (string)$redirect;
     }
 
     // ==============================================
@@ -222,7 +222,7 @@ class Page
     public function find_block(?string $text): Block
     {
         foreach ($this->blocks as $block) {
-            if ($block->header == $text) {
+            if ($block->header === $text) {
                 return $block;
             }
         }
@@ -254,88 +254,99 @@ class Page
      */
     public function display(): void
     {
-        if ($this->mode != PageMode::MANUAL) {
-            $this->send_headers();
+        global $_tracer;
+        $_tracer->begin("Display ({$this->mode->value})");
+        match($this->mode) {
+            PageMode::MANUAL => null,
+            PageMode::PAGE => $this->display_page(),
+            PageMode::DATA => $this->display_data(),
+            PageMode::FILE => $this->display_file(),
+            PageMode::REDIRECT => $this->display_redirect(),
+        };
+        $_tracer->end();
+    }
+
+    private function display_page(): void
+    {
+        $this->send_headers();
+        usort($this->blocks, Block::cmp(...));
+        $this->add_auto_html_headers();
+        $this->render();
+    }
+
+    private function display_data(): void
+    {
+        $this->send_headers();
+        header("Content-Length: " . strlen($this->data));
+        if (!is_null($this->filename)) {
+            header('Content-Disposition: ' . $this->disposition . '; filename=' . $this->filename);
         }
+        print $this->data;
+    }
 
-        switch ($this->mode) {
-            case PageMode::MANUAL:
-                break;
-            case PageMode::PAGE:
-                usort($this->blocks, Block::cmp(...));
-                $this->add_auto_html_headers();
-                $this->render();
-                break;
-            case PageMode::DATA:
-                header("Content-Length: " . strlen($this->data));
-                if (!is_null($this->filename)) {
-                    header('Content-Disposition: ' . $this->disposition . '; filename=' . $this->filename);
-                }
-                print $this->data;
-                break;
-            case PageMode::FILE:
-                if (!is_null($this->filename)) {
-                    header('Content-Disposition: ' . $this->disposition . '; filename=' . $this->filename);
-                }
-                assert(!is_null($this->file), "file should not be null with PageMode::FILE");
+    private function display_file(): void
+    {
+        $this->send_headers();
+        if (!is_null($this->filename)) {
+            header('Content-Disposition: ' . $this->disposition . '; filename=' . $this->filename);
+        }
+        assert(!is_null($this->file), "file should not be null with PageMode::FILE");
 
-                // https://gist.github.com/codler/3906826
-                $size = \Safe\filesize($this->file); // File size
-                $length = $size;           // Content length
-                $start = 0;               // Start byte
-                $end = $size - 1;       // End byte
+        // https://gist.github.com/codler/3906826
+        $size = $this->file->filesize(); // File size
+        $length = $size;           // Content length
+        $start = 0;               // Start byte
+        $end = $size - 1;       // End byte
 
-                header("Content-Length: " . $size);
-                header('Accept-Ranges: bytes');
+        header("Content-Length: " . $size);
+        header('Accept-Ranges: bytes');
 
-                if (isset($_SERVER['HTTP_RANGE'])) {
-                    list(, $range) = explode('=', $_SERVER['HTTP_RANGE'], 2);
-                    if (str_contains($range, ',')) {
-                        header('HTTP/1.1 416 Requested Range Not Satisfiable');
-                        header("Content-Range: bytes $start-$end/$size");
-                        break;
-                    }
-                    if ($range == '-') {
-                        $c_start = $size - (int)substr($range, 1);
-                        $c_end = $end;
-                    } else {
-                        $range = explode('-', $range);
-                        $c_start = (int)$range[0];
-                        $c_end = (isset($range[1]) && is_numeric($range[1])) ? (int)$range[1] : $size;
-                    }
-                    $c_end = ($c_end > $end) ? $end : $c_end;
-                    if ($c_start > $c_end || $c_start > $size - 1 || $c_end >= $size) {
-                        header('HTTP/1.1 416 Requested Range Not Satisfiable');
-                        header("Content-Range: bytes $start-$end/$size");
-                        break;
-                    }
-                    $start = $c_start;
-                    $end = $c_end;
-                    $length = $end - $start + 1;
-                    header('HTTP/1.1 206 Partial Content');
-                }
+        if (isset($_SERVER['HTTP_RANGE'])) {
+            list(, $range) = explode('=', $_SERVER['HTTP_RANGE'], 2);
+            if (str_contains($range, ',')) {
+                header('HTTP/1.1 416 Requested Range Not Satisfiable');
                 header("Content-Range: bytes $start-$end/$size");
-                header("Content-Length: " . $length);
-
-                try {
-                    Filesystem::stream_file($this->file, $start, $end);
-                } finally {
-                    if ($this->file_delete === true) {
-                        unlink($this->file);
-                    }
-                }
-                break;
-            case PageMode::REDIRECT:
-                if ($this->flash) {
-                    $this->redirect = modify_url($this->redirect, ["flash" => implode("\n", $this->flash)]);
-                }
-                header('Location: ' . $this->redirect);
-                print 'You should be redirected to <a href="' . $this->redirect . '">' . $this->redirect . '</a>';
-                break;
-            default:
-                print "Invalid page mode";
-                break;
+                return;
+            }
+            if ($range === '-') {
+                $c_start = $size - (int)substr($range, 1);
+                $c_end = $end;
+            } else {
+                $range = explode('-', $range);
+                $c_start = (int)$range[0];
+                $c_end = (isset($range[1]) && is_numeric($range[1])) ? (int)$range[1] : $size;
+            }
+            $c_end = ($c_end > $end) ? $end : $c_end;
+            if ($c_start > $c_end || $c_start > $size - 1 || $c_end >= $size) {
+                header('HTTP/1.1 416 Requested Range Not Satisfiable');
+                header("Content-Range: bytes $start-$end/$size");
+                return;
+            }
+            $start = $c_start;
+            $end = $c_end;
+            $length = $end - $start + 1;
+            header('HTTP/1.1 206 Partial Content');
         }
+        header("Content-Range: bytes $start-$end/$size");
+        header("Content-Length: " . $length);
+
+        try {
+            Filesystem::stream_file($this->file, $start, $end);
+        } finally {
+            if ($this->file_delete === true) {
+                $this->file->unlink();
+            }
+        }
+    }
+
+    private function display_redirect(): void
+    {
+        $this->send_headers();
+        if ($this->flash) {
+            $this->redirect = (string)Url::parse($this->redirect)->withModifiedQuery(["flash" => implode("\n", $this->flash)]);
+        }
+        header('Location: ' . $this->redirect);
+        print 'You should be redirected to <a href="' . $this->redirect . '">' . $this->redirect . '</a>';
     }
 
     /**
@@ -351,7 +362,7 @@ class Page
     {
         global $config;
 
-        $data_href = get_base_href();
+        $data_href = (string)Url::base();
         $theme_name = $config->get_string(SetupConfig::THEME, 'default');
 
         # static handler will map these to themes/foo/static/bar.ico or ext/static_files/static/bar.ico
@@ -397,51 +408,51 @@ class Page
         //We use $config_latest to make sure cache is reset if config is ever updated.
         $config_latest = 0;
         foreach (Filesystem::zglob("data/config/*") as $conf) {
-            $config_latest = max($config_latest, filemtime($conf));
+            $config_latest = max($config_latest, $conf->filemtime());
         }
 
         $css_cache_file = $this->get_css_cache_file($theme_name, $config_latest);
         $this->add_html_header(LINK([
             'rel' => 'stylesheet',
-            'href' => "$data_href/$css_cache_file",
+            'href' => "$data_href/{$css_cache_file->str()}",
             'type' => 'text/css'
         ]), 43);
 
         $initjs_cache_file = $this->get_initjs_cache_file($theme_name, $config_latest);
         $this->add_html_header(SCRIPT([
-            'src' => "$data_href/$initjs_cache_file",
+            'src' => "$data_href/{$initjs_cache_file->str()}",
             'type' => 'text/javascript'
         ]));
 
         $js_cache_file = $this->get_js_cache_file($theme_name, $config_latest);
         $this->add_html_header(SCRIPT([
             'defer' => true,
-            'src' => "$data_href/$js_cache_file",
+            'src' => "$data_href/{$js_cache_file->str()}",
             'type' => 'text/javascript'
         ]));
     }
 
     /**
-     * @param string[] $files
+     * @param Path[] $files
      */
-    private function get_cache_file(string $type, string $ext, string $theme_name, int $timestamp, array $files): string
+    private function get_cache_file(string $type, string $ext, string $theme_name, int $timestamp, array $files): Path
     {
         foreach ($files as $file) {
-            $timestamp = max($timestamp, filemtime($file));
+            $timestamp = max($timestamp, $file->filemtime());
         }
         $md5 = md5(serialize($files));
         $cache_file = Filesystem::data_path("cache/{$type}/{$theme_name}.{$timestamp}.{$md5}.{$ext}");
-        if (!file_exists($cache_file)) {
+        if (!$cache_file->exists()) {
             $mcss = new \MicroBundler\MicroBundler();
             foreach ($files as $file) {
-                $mcss->addSource($file);
+                $mcss->addSource($file->str());
             }
-            $mcss->save($cache_file);
+            $mcss->save($cache_file->str());
         }
         return $cache_file;
     }
 
-    private function get_css_cache_file(string $theme_name, int $config_latest): string
+    private function get_css_cache_file(string $theme_name, int $config_latest): Path
     {
         $files = array_merge(
             Filesystem::zglob("ext/{" . Extension::get_enabled_extensions_as_string() . "}/style.css"),
@@ -450,7 +461,7 @@ class Page
         return self::get_cache_file('style', 'css', $theme_name, $config_latest, $files);
     }
 
-    private function get_initjs_cache_file(string $theme_name, int $config_latest): string
+    private function get_initjs_cache_file(string $theme_name, int $config_latest): Path
     {
         $files = array_merge(
             Filesystem::zglob("ext/{" . Extension::get_enabled_extensions_as_string() . "}/init.js"),
@@ -459,13 +470,13 @@ class Page
         return self::get_cache_file('initscript', 'js', $theme_name, $config_latest, $files);
     }
 
-    private function get_js_cache_file(string $theme_name, int $config_latest): string
+    private function get_js_cache_file(string $theme_name, int $config_latest): Path
     {
         $files = array_merge(
             [
-                "vendor/bower-asset/jquery/dist/jquery.min.js",
-                "vendor/bower-asset/jquery-timeago/jquery.timeago.js",
-                "vendor/bower-asset/js-cookie/src/js.cookie.js",
+                new Path("vendor/bower-asset/jquery/dist/jquery.min.js"),
+                new Path("vendor/bower-asset/jquery-timeago/jquery.timeago.js"),
+                new Path("vendor/bower-asset/js-cookie/src/js.cookie.js"),
             ],
             Filesystem::zglob("ext/{" . Extension::get_enabled_extensions_as_string() . "}/script.js"),
             Filesystem::zglob("themes/$theme_name/{" . implode(",", $this->get_theme_scripts()) . "}")
@@ -586,8 +597,8 @@ class Page
         return [
             "class" => "layout-{$this->layout}",
             "data-userclass" => $user->class->name,
-            "data-base-href" => get_base_href(),
-            "data-base-link" => make_link(""),
+            "data-base-href" => (string)Url::base(),
+            "data-base-link" => (string)make_link(""),
         ];
     }
 
@@ -666,7 +677,7 @@ class Page
             A(["href" => "https://www.shishnet.org/"], "Shish"),
             " & ",
             A(["href" => "https://github.com/shish/shimmie2/graphs/contributors"], "The Team"),
-            " 2007-2024, based on the Danbooru concept.",
+            " 2007-2025, based on the Danbooru concept.",
             $contact_link ? emptyHTML(BR(), A(["href" => $contact_link], "Contact")) : ""
         ]);
     }

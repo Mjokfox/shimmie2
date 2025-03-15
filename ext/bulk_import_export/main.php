@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class BulkImportExport extends DataHandlerExtension
+final class BulkImportExport extends DataHandlerExtension
 {
     public const KEY = "bulk_import_export";
     public const SUPPORTED_MIME = [MimeType::ZIP];
@@ -20,7 +20,7 @@ class BulkImportExport extends DataHandlerExtension
             $user->can(BulkImportExportPermission::BULK_IMPORT)) {
             $zip = new \ZipArchive();
 
-            if ($zip->open($event->tmpname) === true) {
+            if ($zip->open($event->tmpname->str())) {
                 $json_data = $this->get_export_data($zip);
 
                 if (empty($json_data)) {
@@ -35,7 +35,7 @@ class BulkImportExport extends DataHandlerExtension
                     $item = array_pop($json_data);
                     try {
                         $image = Image::by_hash($item->hash);
-                        if ($image != null) {
+                        if ($image !== null) {
                             $skipped++;
                             Log::info(BulkImportExportInfo::KEY, "Post $item->hash already present, skipping");
                             continue;
@@ -47,19 +47,19 @@ class BulkImportExport extends DataHandlerExtension
                             throw new UserError("Could not import " . $item->hash . ": File not in zip");
                         }
 
-                        file_put_contents($tmpfile, $stream);
+                        $tmpfile->put_contents($stream);
 
                         $database->with_savepoint(function () use ($item, $tmpfile, $event) {
                             $images = send_event(new DataUploadEvent($tmpfile, basename($item->filename), 0, [
                                 'tags' => $item->new_tags,
                             ]))->images;
 
-                            if (count($images) == 0) {
+                            if (count($images) === 0) {
                                 throw new UserError("Unable to import file $item->hash");
                             }
                             foreach ($images as $image) {
                                 $event->images[] = $image;
-                                if ($item->source != null) {
+                                if ($item->source !== null) {
                                     $image->set_source($item->source);
                                 }
                                 send_event(new BulkImportEvent($image, $item));
@@ -71,8 +71,8 @@ class BulkImportExport extends DataHandlerExtension
                         $failed++;
                         Log::error(BulkImportExportInfo::KEY, "Could not import " . $item->hash . ": " . $ex->getMessage(), "Could not import " . $item->hash . ": " . $ex->getMessage());
                     } finally {
-                        if (!empty($tmpfile) && is_file($tmpfile)) {
-                            unlink($tmpfile);
+                        if (!empty($tmpfile) && $tmpfile->is_file()) {
+                            $tmpfile->unlink();
                         }
                     }
                 }
@@ -102,14 +102,14 @@ class BulkImportExport extends DataHandlerExtension
         global $user, $page;
 
         if ($user->can(BulkImportExportPermission::BULK_EXPORT) &&
-            ($event->action == self::EXPORT_ACTION_NAME)) {
+            ($event->action === self::EXPORT_ACTION_NAME)) {
             $download_filename = $user->name . '-' . date('YmdHis') . '.zip';
             $zip_filename = shm_tempnam("bulk_export");
             $zip = new \ZipArchive();
 
             $json_data = [];
 
-            if ($zip->open($zip_filename, \ZIPARCHIVE::CREATE | \ZIPARCHIVE::OVERWRITE) === true) {
+            if ($zip->open($zip_filename->str(), \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
                 foreach ($event->items as $image) {
                     $img_loc = Filesystem::warehouse_path(Image::IMAGE_DIR, $image->hash, false);
 
@@ -122,7 +122,7 @@ class BulkImportExport extends DataHandlerExtension
 
                     $json_data[] = $data;
 
-                    $zip->addFile($img_loc, $image->hash);
+                    $zip->addFile($img_loc->str(), $image->hash);
                 }
 
                 $json_data = \Safe\json_encode($json_data, JSON_PRETTY_PRINT);
@@ -144,7 +144,7 @@ class BulkImportExport extends DataHandlerExtension
     {
     }
 
-    protected function check_contents(string $tmpname): bool
+    protected function check_contents(Path $tmpname): bool
     {
         return false;
     }

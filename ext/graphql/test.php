@@ -7,13 +7,13 @@ namespace Shimmie2;
 use GraphQL\Error\DebugFlag;
 use GraphQL\GraphQL as GQL;
 
-class GraphQLTest extends ShimmiePHPUnitTestCase
+final class GraphQLTest extends ShimmiePHPUnitTestCase
 {
     public function testSchema(): void
     {
         $schema = GraphQL::get_schema();
         $schema->assertValid();
-        $this->assertNotEmpty($schema->getTypeMap());
+        self::assertNotEmpty($schema->getTypeMap());
     }
 
     /**
@@ -28,7 +28,7 @@ class GraphQLTest extends ShimmiePHPUnitTestCase
 
     public function testQuery(): void
     {
-        $this->log_in_as_user();
+        self::log_in_as_user();
         $image_id = $this->post_image("tests/pbx_screenshot.jpg", "test");
         $image = Image::by_id_ex($image_id);
 
@@ -45,7 +45,7 @@ class GraphQLTest extends ShimmiePHPUnitTestCase
             }
         }');
 
-        $this->assertEquals([
+        self::assertEquals([
             'data' => [
                 'posts' => [
                     [
@@ -67,7 +67,7 @@ class GraphQLTest extends ShimmiePHPUnitTestCase
 
     public function testMutation(): void
     {
-        $this->log_in_as_user();
+        self::log_in_as_user();
         $image_id = $this->post_image("tests/pbx_screenshot.jpg", "test");
 
         $result = $this->graphql("mutation {
@@ -84,7 +84,7 @@ class GraphQLTest extends ShimmiePHPUnitTestCase
             }
         }");
 
-        $this->assertEquals([
+        self::assertEquals([
             'data' => [
                 'update_post_metadata' => [
                     'id' => "post:$image_id",
@@ -101,7 +101,7 @@ class GraphQLTest extends ShimmiePHPUnitTestCase
     {
         global $database;
 
-        $this->log_in_as_user();
+        self::log_in_as_user();
         $_FILES = [
             'data0' => [
                 'name' => 'puppy-hugs.jpg',
@@ -111,10 +111,10 @@ class GraphQLTest extends ShimmiePHPUnitTestCase
                 'size' => 271386,
             ],
         ];
-        $page = $this->post_page("graphql_upload", ["tags" => "foo", "tags0" => "bar"]);
-        $this->assertEquals(200, $page->code);
-        $this->assertEquals(1, $database->get_one("SELECT COUNT(*) FROM images"));
+        $page = self::post_page("graphql_upload", ["tags" => "foo", "tags0" => "bar"]);
+        self::assertEquals(200, $page->code);
+        self::assertEquals(1, $database->get_one("SELECT COUNT(*) FROM images"));
         $id = $database->get_one("SELECT id FROM images");
-        $this->assertEquals("{\"results\":[{\"image_ids\":[$id]}]}", $page->data);
+        self::assertEquals("{\"results\":[{\"image_ids\":[$id]}]}", $page->data);
     }
 }

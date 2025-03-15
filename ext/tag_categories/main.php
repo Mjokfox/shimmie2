@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class TagCategories extends Extension
+final class TagCategories extends Extension
 {
     public const KEY = "tag_categories";
     /** @var TagCategoriesTheme */
@@ -13,7 +13,8 @@ class TagCategories extends Extension
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         global $database;
-        if ($this->get_version(TagCategoriesConfig::VERSION) < 1) {
+
+        if ($this->get_version() < 1) {
             // primary extension database, holds all our stuff!
             $database->create_table(
                 'image_tag_categories',
@@ -36,21 +37,21 @@ class TagCategories extends Extension
                 FOREIGN KEY(tag_id) REFERENCES tags(id)'
             );
 
-            $this->set_version(TagCategoriesConfig::VERSION, 2);
+            $this->set_version(2);
 
             Log::info("tag_categories", "extension installed");
         }
-        if ($this->get_version(TagCategoriesConfig::VERSION) < 2) {
+        if ($this->get_version() < 2) {
             $database->execute("ALTER TABLE image_tag_categories RENAME COLUMN display_singular to upper_group;");
             $database->execute("ALTER TABLE image_tag_categories RENAME COLUMN display_multiple to lower_group;");
             $database->execute("ALTER TABLE image_tag_categories ADD COLUMN upload_page_type INTEGER;");
             $database->execute("ALTER TABLE image_tag_categories ADD COLUMN upload_page_priority INTEGER;");
             $database->execute("ALTER TABLE image_tag_categories ADD CONSTRAINT image_tag_categories_category_key UNIQUE (category);");
-            $this->set_version(TagCategoriesConfig::VERSION, 2);
+            $this->set_version(2);
         }
 
         // if empty, add our default values
-        $number_of_db_rows = $database->execute('SELECT COUNT(*) FROM image_tag_categories;')->fetchColumn();
+        $number_of_db_rows = $database->get_one('SELECT COUNT(*) FROM image_tag_categories');
 
         if ($number_of_db_rows == 0) {
             $database->execute(

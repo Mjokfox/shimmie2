@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\rawHTML;
+use function MicroHTML\{rawHTML, INPUT};
 
 class Danbooru2ViewPostTheme extends ViewPostTheme
 {
@@ -44,14 +44,14 @@ class Danbooru2ViewPostTheme extends ViewPostTheme
 		<br>Type: $h_type
 		";
 
-        if ($image->length != null) {
+        if ($image->length !== null) {
             $h_length = format_milliseconds($image->length);
             $html .= "<br/>Length: $h_length";
         }
 
 
         if (!is_null($image->source)) {
-            $h_source = html_escape(make_http($image->source));
+            $h_source = html_escape($image->source);
             $html .= "<br>Source: <a href='$h_source'>link</a>";
         }
 
@@ -69,15 +69,22 @@ class Danbooru2ViewPostTheme extends ViewPostTheme
 
     protected function build_navigation(Image $image): HTMLElement
     {
-        //$h_pin = $this->build_pin($image);
-        $h_search = "
-			<form action='".search_link()."' method='GET'>
-				<input name='search' type='text' class='autocomplete_tags' style='width:75%'>
-				<input type='submit' value='Go' style='width:20%'>
-				<input type='hidden' name='q' value='".search_page()."'>
-			</form>
-		";
-
-        return rawHTML($h_search);
+        return SHM_FORM(
+            action: search_link(),
+            method: 'GET',
+            children: [
+                INPUT([
+                    "name" => 'search',
+                    "type" => 'text',
+                    "class" => 'autocomplete_tags',
+                    "style" => 'width:75%'
+                ]),
+                INPUT([
+                    "type" => 'submit',
+                    "value" => 'Go',
+                    "style" => 'width:20%'
+                ]),
+            ]
+        );
     }
 }

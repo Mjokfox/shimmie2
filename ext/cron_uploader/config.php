@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class CronUploaderUserConfig extends UserConfigGroup
+final class CronUploaderUserConfig extends UserConfigGroup
 {
     public const KEY = "cron_uploader";
 
@@ -24,7 +24,7 @@ class CronUploaderUserConfig extends UserConfigGroup
     {
         return \MicroHTML\emptyHTML(
             $html,
-            \MicroHTML\A(["href" => make_http(make_link("cron_upload"))], "Read the documentation"),
+            \MicroHTML\A(["href" => make_link("cron_upload")], "Read the documentation"),
             " for cron setup instructions.",
         );
     }

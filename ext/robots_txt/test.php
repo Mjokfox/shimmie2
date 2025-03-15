@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class RobotsTxtTest extends ShimmiePHPUnitTestCase
+final class RobotsTxtTest extends ShimmiePHPUnitTestCase
 {
     public function testRobots(): void
     {
-        $page = $this->get_page("robots.txt");
-        $this->assertStringContainsString("User-agent: *", $page->data);
+        $page = self::get_page("robots.txt");
+        self::assertStringContainsString("User-agent: *", $page->data);
     }
 }

@@ -19,7 +19,7 @@ use MicroCRUD\Table;
 
 use function MicroHTML\{A, emptyHTML};
 
-class UserNameColumn extends TextColumn
+final class UserNameColumn extends TextColumn
 {
     public function display(array $row): HTMLElement
     {
@@ -27,7 +27,7 @@ class UserNameColumn extends TextColumn
     }
 }
 
-class UserActionColumn extends ActionColumn
+final class UserActionColumn extends ActionColumn
 {
     public function __construct()
     {
@@ -41,7 +41,7 @@ class UserActionColumn extends ActionColumn
     }
 }
 
-class UserTable extends Table
+final class UserTable extends Table
 {
     public function __construct(\FFSPHP\PDO $db)
     {
@@ -69,12 +69,12 @@ class UserTable extends Table
     }
 }
 
-class UserCreationException extends SCoreException
+final class UserCreationException extends SCoreException
 {
 }
 
 #[Type]
-class LoginResult
+final class LoginResult
 {
     public function __construct(
         #[Field]
@@ -127,7 +127,7 @@ class LoginResult
     }
 }
 
-class UserPage extends Extension
+final class UserPage extends Extension
 {
     public const KEY = "user";
     /** @var UserPageTheme $theme */
@@ -209,7 +209,7 @@ class UserPage extends Extension
                 array_splice($t->columns, 2, 0, [$col]);
             }
             $page->set_title("Users");
-            $page->add_block(Block::nav());
+            $this->theme->display_navigation();
             $page->add_block(new Block(null, emptyHTML($t->table($t->query()), $t->paginator())));
         }
         if ($event->page_matches("user_admin/logout", method: "GET")) {
@@ -238,7 +238,7 @@ class UserPage extends Extension
             ]);
             $duser = User::by_id($input['id']);
             if ($this->user_can_edit_user($user, $duser)) {
-                if ($input['pass1'] != $input['pass2']) {
+                if ($input['pass1'] !== $input['pass2']) {
                     throw new InvalidInput("Passwords don't match");
                 } else {
                     // FIXME: send_event()
@@ -345,7 +345,7 @@ class UserPage extends Extension
         if ($user->is_anonymous()) {
             $event->add_nav_link(make_link('user_admin/login'), "Account", category: "user", order: 10);
         } else {
-            $event->add_nav_link(make_link('user'), "Account", category: "user", order: 10);
+            $event->add_nav_link(make_link('user'), "Account", ["user"], "user", 10);
         }
     }
 
@@ -362,16 +362,16 @@ class UserPage extends Extension
             }
         }
 
-        if ($user->id == $event->display_user->id) {
+        if ($user->id === $event->display_user->id) {
             $ubbe = send_event(new UserBlockBuildingEvent());
             $this->theme->display_user_links($page, $user, $ubbe->get_parts());
         }
         if (
             (
                 $user->can(IPBanPermission::VIEW_IP) ||  # user can view all IPS
-                ($user->id == $event->display_user->id)  # or user is viewing themselves
+                ($user->id === $event->display_user->id)  # or user is viewing themselves
             ) &&
-            ($event->display_user->id != $config->get_int(UserAccountsConfig::ANON_ID)) # don't show anon's IP list, it is le huge
+            ($event->display_user->id !== $config->get_int(UserAccountsConfig::ANON_ID)) # don't show anon's IP list, it is le huge
         ) {
             $this->theme->display_ip_list(
                 $page,
@@ -402,9 +402,6 @@ class UserPage extends Extension
         $event->add_link("My Profile", make_link("user"), 0);
         if ($user->can(UserAccountsPermission::EDIT_USER_PASSWORD)) {
             $event->add_link("User List", make_link("user_admin/list"), 87);
-        }
-        if ($user->can(UserAccountsPermission::EDIT_USER_CLASS)) {
-            $event->add_link("User Classes", make_link("user_admin/classes"), 88);
         }
         $event->add_link("Log Out", make_link("user_admin/logout"), 99);
     }
@@ -449,7 +446,7 @@ class UserPage extends Extension
         if (!Captcha::check()) {
             throw new UserCreationException("Error in captcha");
         }
-        if ($event->password != $event->password2) {
+        if ($event->password !== $event->password2) {
             throw new UserCreationException("Passwords don't match");
         }
         if (
@@ -546,7 +543,7 @@ class UserPage extends Extension
         $page->set_mode(PageMode::REDIRECT);
 
         if ($config->get_string(UserAccountsConfig::LOGIN_REDIRECT, "previous") === "previous") {
-            $page->set_redirect(referer_or(make_link(), ["user/"]));
+            $page->set_redirect(Url::referer_or(ignore: ["user/"]));
         } else {
             $page->set_redirect(make_link("user"));
         }
@@ -583,8 +580,8 @@ class UserPage extends Extension
         }
 
         if (
-            ($a->name == $b->name) ||
-            ($b->can(UserAccountsPermission::PROTECTED) && $a->class->name == "admin") ||
+            ($a->name === $b->name) ||
+            ($b->can(UserAccountsPermission::PROTECTED) && $a->class->name === "admin") ||
             (!$b->can(UserAccountsPermission::PROTECTED) && $a->can(UserAccountsPermission::EDIT_USER_INFO))
         ) {
             return true;
@@ -597,7 +594,7 @@ class UserPage extends Extension
     {
         global $page, $user;
 
-        if ($user->id == $duser->id) {
+        if ($user->id === $duser->id) {
             $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("user"));
         } else {
@@ -660,9 +657,6 @@ class UserPage extends Extension
     private function delete_user(Page $page, int $uid, bool $with_images = false, bool $with_comments = false): void
     {
         global $user, $config, $database;
-
-        $page->set_title("Error");
-        $page->add_block(Block::nav());
 
         $duser = User::by_id($uid);
         Log::warning("user", "Deleting user #{$uid} (@{$duser->name})");

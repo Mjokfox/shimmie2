@@ -11,7 +11,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /*
  * Sent when the setup screen's 'Save Settings' button has been activated
  */
-class ConfigSaveEvent extends Event
+final class ConfigSaveEvent extends Event
 {
     public Config $config;
     /** @var array<string, null|string|int|boolean|array<string>> $values */
@@ -80,7 +80,7 @@ class ConfigSaveEvent extends Event
     }
 }
 
-class Setup extends Extension
+final class Setup extends Extension
 {
     public const KEY = "setup";
     /** @var SetupTheme */
@@ -92,8 +92,15 @@ class Setup extends Extension
 
         if ($event->page_starts_with("nicedebug")) {
             $page->set_mode(PageMode::DATA);
+            $page->set_mime(MimeType::JSON);
             $page->set_data(\Safe\json_encode([
                 "args" => $event->args,
+                "theme" => get_theme(),
+                "nice_urls" => $config->get_bool(SetupConfig::NICE_URLS, false),
+                "base" => (string)Url::base(),
+                "absolute_base" => (string)Url::base()->asAbsolute(),
+                "base_link" => (string)make_link(""),
+                "search_example" => (string)search_link(["AC/DC"]),
             ]));
         }
 
@@ -118,7 +125,7 @@ class Setup extends Extension
             send_event(new ConfigSaveEvent($config, ConfigSaveEvent::postToSettings($event->POST)));
             $page->flash("Config saved");
             $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(referer_or(make_link("setup")));
+            $page->set_redirect(Url::referer_or(make_link("setup")));
         }
     }
 

@@ -10,7 +10,7 @@ use GQLA\Mutation;
 
 use function MicroHTML\{emptyHTML, SPAN};
 
-class SendPMEvent extends Event
+final class SendPMEvent extends Event
 {
     public PM $pm;
     public int $id;
@@ -34,7 +34,7 @@ class EditPMEvent extends Event
 }
 
 #[Type(name: "PrivateMessage")]
-class PM
+final class PM
 {
     public int $id = -1;
     public int $from_id;
@@ -100,10 +100,10 @@ class PM
     }
 
     /**
-     * @return PM[]|null
+     * @return PM[]
      */
     #[Field(extends: "User", name: "private_messages", type: "[PrivateMessage!]")]
-    public static function get_pms_to(User $to, int $limit = null): ?array
+    public static function get_pms_to(User $to, int $limit = null): array
     {
         global $database;
 
@@ -119,10 +119,10 @@ class PM
     }
 
     /**
-     * @return PM[]|null
+     * @return PM[]
      */
     #[Field(extends: "User", name: "private_messages", type: "[PrivateMessage!]")]
-    public static function get_pms_by(User $by, int $limit = null): ?array
+    public static function get_pms_by(User $by, int $limit = null): array
     {
         global $database;
 
@@ -138,10 +138,10 @@ class PM
     }
 
     /**
-     * @return PM[]|null
+     * @return PM[]
      */
     #[Field(extends: "User", name: "private_messages", type: "[PrivateMessage!]")]
-    public static function get_pms_to_and_by(User $to, User $from, int $limit = null): ?array
+    public static function get_pms_to_and_by(User $to, User $from, int $limit = null): array
     {
         global $database;
 
@@ -157,10 +157,10 @@ class PM
     }
 
     /**
-     * @return PM[]|null
+     * @return PM[]
      */
     #[Field(extends: "User", name: "private_messages", type: "[PrivateMessage!]")]
-    public static function get_pm_archive(User $of, int $limit = null): ?array
+    public static function get_pm_archive(User $of, int $limit = null): array
     {
         global $database;
 
@@ -183,7 +183,7 @@ class PM
         if (!$user->can(PrivMsgPermission::READ_PM)) {
             return null;
         }
-        if (($duser->id != $user->id) && !$user->can(PrivMsgPermission::VIEW_OTHER_PMS)) {
+        if (($duser->id !== $user->id) && !$user->can(PrivMsgPermission::VIEW_OTHER_PMS)) {
             return null;
         }
 
@@ -205,9 +205,11 @@ class PM
     }
 }
 
-class PrivMsg extends Extension
+final class PrivMsg extends Extension
 {
     public const KEY = "pm";
+    public const VERSION_KEY = "pm_version";
+
     /** @var PrivMsgTheme */
     protected Themelet $theme;
 
@@ -216,7 +218,7 @@ class PrivMsg extends Extension
         global $database;
 
         // shortcut to latest
-        if ($this->get_version("pm_version") < 1) {
+        if ($this->get_version() < 1) {
             $database->create_table("private_message", "
 				id SCORE_AIPK,
 				from_id INTEGER NOT NULL,
@@ -231,31 +233,31 @@ class PrivMsg extends Extension
 				FOREIGN KEY (to_id) REFERENCES users(id) ON DELETE CASCADE
 			");
             $database->execute("CREATE INDEX private_message__to_id ON private_message(to_id)");
-            $this->set_version("pm_version", 5);
+            $this->set_version(5);
         }
 
-        if ($this->get_version("pm_version") < 2) {
+        if ($this->get_version() < 2) {
             Log::info("pm", "Adding foreign keys to private messages");
             $database->execute("delete from private_message where to_id not in (select id from users);");
             $database->execute("delete from private_message where from_id not in (select id from users);");
             $database->execute("ALTER TABLE private_message
 			ADD FOREIGN KEY (from_id) REFERENCES users(id) ON DELETE CASCADE,
 			ADD FOREIGN KEY (to_id) REFERENCES users(id) ON DELETE CASCADE;");
-            $this->set_version("pm_version", 2);
+            $this->set_version(2);
         }
 
-        if ($this->get_version("pm_version") < 3) {
+        if ($this->get_version() < 3) {
             $database->standardise_boolean("private_message", "is_read", true);
-            $this->set_version("pm_version", 3);
+            $this->set_version(3);
         }
-        if ($this->get_version("pm_version") < 4) {
+        if ($this->get_version() < 4) {
             $database->execute("ALTER TABLE private_message ALTER COLUMN subject TYPE VARCHAR(192);"); // 64 got very annoying with how long RE: threads
-            $this->set_version("pm_version", 4);
+            $this->set_version(4);
         }
-        if ($this->get_version("pm_version") < 5) {
+        if ($this->get_version() < 5) {
             $database->execute("ALTER TABLE private_message
 			add column archived_by INTEGER;");
-            $this->set_version("pm_version", 5);
+            $this->set_version(5);
         }
     }
 
@@ -314,7 +316,7 @@ class PrivMsg extends Extension
                     }
                 }
             }
-            if ($user->can(PrivMsgPermission::SEND_PM) && $user->id != $duser->id) {
+            if ($user->can(PrivMsgPermission::SEND_PM) && $user->id !== $duser->id) {
                 $this->theme->display_composer($page, $user, $duser);
             }
         }
@@ -328,9 +330,9 @@ class PrivMsg extends Extension
             $pm = $database->get_row("SELECT * FROM private_message WHERE id = :id", ["id" => $pm_id]);
             if (is_null($pm)) {
                 throw new ObjectNotFound("No such PM");
-            } elseif (($pm["to_id"] == $user->id) || ($pm["from_id"] == $user->id) || $user->can(PrivMsgPermission::VIEW_OTHER_PMS)) {
+            } elseif (($pm["to_id"] === $user->id) || ($pm["from_id"] === $user->id) || $user->can(PrivMsgPermission::VIEW_OTHER_PMS)) {
                 $from_user = User::by_id((int)$pm["from_id"]);
-                if ($pm["to_id"] == $user->id) {
+                if ($pm["to_id"] === $user->id) {
                     $database->execute("UPDATE private_message SET is_read=true WHERE id = :id", ["id" => $pm_id]);
                     $cache->delete("pm-count-{$user->id}");
                 }
@@ -428,14 +430,14 @@ class PrivMsg extends Extension
                 }
                 Log::info("pm", "Archived PM #$pm_id", "PM archived");
                 $page->set_mode(PageMode::REDIRECT);
-                $page->set_redirect(referer_or(make_link()));
+                $page->set_redirect(Url::referer_or(make_link()));
             }
         } elseif ($event->page_matches("pm/delete", method: "POST", permission: PrivMsgPermission::READ_PM)) {
             $pm_id = int_escape($event->req_POST("pm_id"));
             $pm = $database->get_row("SELECT * FROM private_message WHERE id = :id", ["id" => $pm_id]);
             if (is_null($pm)) {
                 throw new ObjectNotFound("No such PM");
-            } elseif (($pm["to_id"] == $user->id) || ($pm["from_id"] == $user->id) || $user->can(PrivMsgPermission::VIEW_OTHER_PMS)) {
+            } elseif (($pm["to_id"] == $user->id) || ($pm["from_id"] === $user->id) || $user->can(PrivMsgPermission::VIEW_OTHER_PMS)) {
                 $database->execute("DELETE FROM private_message WHERE id = :id", ["id" => $pm_id]);
                 if (($pm["to_id"] == $user->id)) {
                     $cache->delete("pm-count-{$user->id}");
@@ -444,7 +446,7 @@ class PrivMsg extends Extension
                 }
                 Log::info("pm", "Deleted PM #$pm_id", "PM deleted");
                 $page->set_mode(PageMode::REDIRECT);
-                $page->set_redirect(referer_or(make_link()));
+                $page->set_redirect(Url::referer_or());
             }
         } elseif ($event->page_matches("pm/send", method: "POST", permission: PrivMsgPermission::SEND_PM)) {
             $to_id = int_escape($event->req_POST("to_id"));
@@ -459,7 +461,7 @@ class PrivMsg extends Extension
             if ($PMe->id) {
                 $page->set_redirect(make_link("pm/read/{$PMe->id}"));
             } else {
-                $page->set_redirect(referer_or(make_link()));
+                $page->set_redirect(Url::referer_or(make_link()));
             }
         } elseif ($event->page_matches("pm/edit/{pm_id}", permission: PrivMsgPermission::SEND_PM)) {
             $pm_id = $event->get_iarg('pm_id');

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class RandomList extends Extension
+final class RandomList extends Extension
 {
     public const KEY = "random_list";
     /** @var RandomListTheme */
@@ -17,7 +17,7 @@ class RandomList extends Extension
         if ($event->page_matches("random")) {
             if ($event->get_GET('search')) {
                 // implode(explode()) to resolve aliases and sanitise
-                $search = url_escape(Tag::implode(Tag::explode($event->get_GET('search'), false)));
+                $search = Tag::implode(Tag::explode($event->get_GET('search'), false));
                 if (empty($search)) {
                     $page->set_mode(PageMode::REDIRECT);
                     $page->set_redirect(make_link("random"));
@@ -43,8 +43,7 @@ class RandomList extends Extension
                 $random_images[] = $random_image;
             }
 
-            $this->theme->set_page($search_terms);
-            $this->theme->display_page($page, $random_images);
+            $this->theme->display_page($page, $search_terms, $random_images);
         }
     }
 

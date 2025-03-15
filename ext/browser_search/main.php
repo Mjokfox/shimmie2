@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use function MicroHTML\LINK;
 
-class BrowserSearch extends Extension
+final class BrowserSearch extends Extension
 {
     public const KEY = "browser_search";
 
@@ -17,12 +17,11 @@ class BrowserSearch extends Extension
         // Add in header code to let the browser know that the search plugin exists
         // We need to build the data for the header
         $search_title = $config->get_string(SetupConfig::TITLE);
-        $search_file_url = make_link('browser_search.xml');
         $page->add_html_header(LINK([
             'rel' => 'search',
             'type' => 'application/opensearchdescription+xml',
             'title' => $search_title,
-            'href' => $search_file_url
+            'href' => make_link('browser_search.xml')
         ]));
 
         // The search.xml file that is generated on the fly
@@ -40,10 +39,10 @@ class BrowserSearch extends Extension
 				<os:InputEncoding>UTF-8</os:InputEncoding>
 				<os:Image width='16' height='16'>data:image/x-icon;base64,$icon_b64</os:Image>
 				<os:SearchForm>$search_form_url</os:SearchForm>
-				<os:Url type='text/html' method='GET' template='".html_escape(make_http($search_form_url))."'>
+				<os:Url type='text/html' method='GET' template='".html_escape($search_form_url->getPath())."'>
 				  <os:Param name='search' value='{searchTerms}'/>
 				</os:Url>
-				<os:Url type='application/x-suggestions+json' template='".html_escape(make_http($suggenton_url))."'/>
+				<os:Url type='application/x-suggestions+json' template='".html_escape($suggenton_url)."'/>
 				</SearchPlugin>
 			";
 

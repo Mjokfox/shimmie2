@@ -163,7 +163,7 @@ EOD;
     {
         $page->set_title("Private Message");
         $page->set_heading($pm->subject);
-        $page->add_block(Block::nav());
+        $this->display_navigation();
         $page->add_block(new Block("Message from {$from->name}:", rawHTML("<h2>{$pm->subject}</h2><hr><br>".format_text($pm->message)), "main", 10));
     }
 }

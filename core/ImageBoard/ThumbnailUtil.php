@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class ThumbnailUtil
+final class ThumbnailUtil
 {
     /**
      * Given a full size pair of dimensions, return a pair scaled down to fit
@@ -56,7 +56,7 @@ class ThumbnailUtil
         list($width, $height, $scale) = self::get_scaled_by_aspect_ratio($orig_width, $orig_height, $max_width, $max_height);
 
         if ($scale > 1 && $config->get_bool(ThumbnailConfig::UPSCALE)) {
-            return [(int)$orig_width, (int)$orig_height];
+            return [$orig_width, $orig_height];
         } else {
             return [$width, $height];
         }
@@ -118,8 +118,8 @@ class ThumbnailUtil
      * @param array{0: positive-int, 1: positive-int} $tsize
      */
     public static function create_scaled_image(
-        string $inname,
-        string $outname,
+        Path $inname,
+        Path $outname,
         array $tsize,
         string $mime,
         ?string $engine = null,

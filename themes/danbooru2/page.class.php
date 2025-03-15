@@ -76,7 +76,7 @@ class Danbooru2Page extends Page
                     $sub_block_html[] = $block->body;
                     break;
                 case "main":
-                    if ($block->header == "Posts") {
+                    if ($block->header === "Posts") {
                         $block->header = "&nbsp;";
                     }
                     $main_block_html[] = $this->block_html($block, false);
@@ -135,8 +135,7 @@ class Danbooru2Page extends Page
         );
     }
 
-    /** @param url-string $link */
-    private function navlinks(string $link, HTMLElement|string $desc, bool $active): HTMLElement
+    private function navlinks(Url $link, HTMLElement|string $desc, bool $active): HTMLElement
     {
         return A([
             "class" => $active ? "current-page" : "tab",

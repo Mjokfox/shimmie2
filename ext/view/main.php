@@ -9,7 +9,7 @@ require_once "events/image_info_box_building_event.php";
 require_once "events/image_info_set_event.php";
 require_once "events/image_admin_block_building_event.php";
 
-class ViewPost extends Extension
+final class ViewPost extends Extension
 {
     public const KEY = "view";
     /** @var ViewPostTheme */
@@ -25,10 +25,10 @@ class ViewPost extends Extension
             $search = $event->get_GET('search');
             if ($search) {
                 $search_terms = Tag::explode($search);
-                $query = "#search=".url_escape($search);
+                $fragment = "search=".url_escape($search);
             } else {
                 $search_terms = [];
-                $query = null;
+                $fragment = null;
             }
 
             $image = Image::by_id_ex($image_id);
@@ -41,10 +41,10 @@ class ViewPost extends Extension
 
             if (is_null($image)) {
                 $page->set_mode(PageMode::REDIRECT);
-                $page->set_redirect(make_link("post/view/{$image_id}", $query));
+                $page->set_redirect(make_link("post/view/{$image_id}", fragment: $fragment));
             } else {
                 $page->set_mode(PageMode::REDIRECT);
-                $page->set_redirect(make_link("post/view/{$image->id}", $query));
+                $page->set_redirect(make_link("post/view/{$image->id}", fragment: $fragment));
             }
         } elseif ($event->page_matches("post/view/{image_id}")) {
             if (!is_numeric($event->get_arg('image_id'))) {
@@ -97,11 +97,11 @@ class ViewPost extends Extension
                 $page->set_mode(PageMode::REDIRECT);
 
                 if ($event->get_GET('search')) {
-                    $query = "search=" . url_escape($event->get_GET('search'));
+                    $fragment = "search=" . url_escape($event->get_GET('search'));
                 } else {
-                    $query = null;
+                    $fragment = null;
                 }
-                $page->set_redirect(make_link("post/view/$image_id", null, $query));
+                $page->set_redirect(make_link("post/view/$image_id", fragment: $fragment));
             } else {
                 throw new PermissionDenied("An admin has locked this post");
             }

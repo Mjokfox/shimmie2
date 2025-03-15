@@ -66,8 +66,12 @@ class NumericScoreTheme extends Themelet
     /**
      * @param Image[] $images
      */
-    public function view_popular(array $images, string $totaldate, string $current, string $name, string $fmt): void
-    {
+    public function view_popular(
+        array $images,
+        string $current,
+        Url $b_dte,
+        Url $f_dte,
+    ): void {
         global $page, $config;
 
         $pop_images = "";
@@ -75,20 +79,14 @@ class NumericScoreTheme extends Themelet
             $pop_images .= $this->build_thumb($image)."\n";
         }
 
-        $b_dte = make_link("popular_by_$name", date($fmt, \Safe\strtotime("-1 $name", \Safe\strtotime($totaldate))));
-        $f_dte = make_link("popular_by_$name", date($fmt, \Safe\strtotime("+1 $name", \Safe\strtotime($totaldate))));
-
         $html = "\n".
             "<h3 style='text-align: center;'>\n".
             "	<a href='{$b_dte}'>&laquo;</a> {$current} <a href='{$f_dte}'>&raquo;</a>\n".
             "</h3>\n".
             "<br/>\n".$pop_images;
 
-
-        $nav_html = "<a href=".make_link().">Index</a>";
-
         $page->set_title($config->get_string(SetupConfig::TITLE));
-        $page->add_block(new Block("Navigation", rawHTML($nav_html), "left", 10));
+        $this->display_navigation();
         $page->add_block(new Block(null, rawHTML($html), "main", 30));
     }
 

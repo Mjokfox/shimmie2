@@ -33,10 +33,10 @@ class PostDescription extends Extension
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         global $database;
-        if ($this->get_version(PostDescriptionConfig::VERSION) < 1) {
+        if ($this->get_version() < 1) {
             $database->execute("ALTER TABLE images ADD COLUMN description VARCHAR(512)");
 
-            $this->set_version(PostDescriptionConfig::VERSION, 1);
+            $this->set_version(1);
 
             Log::info("Post description", "extension installed");
         }

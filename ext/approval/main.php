@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class Approval extends Extension
+final class Approval extends Extension
 {
     public const KEY = "approval";
 
@@ -93,7 +93,7 @@ class Approval extends Extension
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         global $user;
-        if ($event->parent == "posts") {
+        if ($event->parent === "posts") {
             if ($user->can(ApprovalPermission::APPROVE_IMAGE)) {
                 $event->add_nav_link(search_link(['approved:no']), "Pending Approval", order: 60);
             }
@@ -118,7 +118,7 @@ class Approval extends Extension
         }
 
         if ($matches = $event->matches(self::SEARCH_REGEXP)) {
-            if ($user->can(ApprovalPermission::APPROVE_IMAGE) && strtolower($matches[1]) == "no") {
+            if ($user->can(ApprovalPermission::APPROVE_IMAGE) && strtolower($matches[1]) === "no") {
                 $event->add_querylet(new Querylet("approved != :true", ["true" => true]));
             } else {
                 $event->add_querylet(new Querylet("approved = :true", ["true" => true]));
@@ -247,16 +247,16 @@ class Approval extends Extension
     {
         global $database;
 
-        if ($this->get_version(ApprovalConfig::VERSION) < 1) {
+        if ($this->get_version() < 1) {
             $database->execute("ALTER TABLE images ADD COLUMN approved BOOLEAN NOT NULL DEFAULT FALSE");
             $database->execute("ALTER TABLE images ADD COLUMN approved_by_id INTEGER NULL");
             $database->execute("CREATE INDEX images_approved_idx ON images(approved)");
-            $this->set_version(ApprovalConfig::VERSION, 2);
+            $this->set_version(2);
         }
 
-        if ($this->get_version(ApprovalConfig::VERSION) < 2) {
+        if ($this->get_version() < 2) {
             $database->standardise_boolean("images", "approved");
-            $this->set_version(ApprovalConfig::VERSION, 2);
+            $this->set_version(2);
         }
     }
 }

@@ -10,7 +10,7 @@ use MicroCRUD\Table;
 
 use function MicroHTML\{emptyHTML};
 
-class NotATagTable extends Table
+final class NotATagTable extends Table
 {
     public function __construct(\FFSPHP\PDO $db)
     {
@@ -32,9 +32,10 @@ class NotATagTable extends Table
     }
 }
 
-class NotATag extends Extension
+final class NotATag extends Extension
 {
     public const KEY = "not_a_tag";
+    public const VERSION_KEY = "ext_notatag_version";
 
     public function get_priority(): int
     {
@@ -44,12 +45,12 @@ class NotATag extends Extension
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         global $database;
-        if ($this->get_version("ext_notatag_version") < 1) {
+        if ($this->get_version() < 1) {
             $database->create_table("untags", "
 				tag VARCHAR(128) NOT NULL PRIMARY KEY,
 				redirect VARCHAR(255) NOT NULL
 			");
-            $this->set_version("ext_notatag_version", 1);
+            $this->set_version(1);
         }
     }
 
@@ -137,7 +138,7 @@ class NotATag extends Extension
                 ["tag" => $input['c_tag'], "redirect" => $input['c_redirect']]
             );
             $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(referer_or(make_link()));
+            $page->set_redirect(Url::referer_or());
         }
         if ($event->page_matches("untag/remove", method: "POST", permission: ImageHashBanPermission::BAN_IMAGE)) {
             $input = validate_input(["d_tag" => "string"]);
@@ -147,14 +148,14 @@ class NotATag extends Extension
             );
             $page->flash("Post ban removed");
             $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(referer_or(make_link()));
+            $page->set_redirect(Url::referer_or());
         }
         if ($event->page_matches("untag/list")) {
             $t = new NotATagTable($database->raw_db());
             $t->token = $user->get_auth_token();
             $t->inputs = $event->GET;
             $page->set_title("UnTags");
-            $page->add_block(Block::nav());
+            $this->theme->display_navigation();
             $page->add_block(new Block(null, emptyHTML($t->table($t->query()), $t->paginator())));
         }
     }

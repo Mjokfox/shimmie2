@@ -178,7 +178,7 @@ class TagCategoriesTheme extends Themelet
 
         // add html to stuffs
         $page->set_title("Tag Categories");
-        $page->add_block(Block::nav());
+        $this->display_navigation();
         $page->add_block(new Block("Editing", rawHTML($html), "main", 10));
     }
 
@@ -201,6 +201,7 @@ class TagCategoriesTheme extends Themelet
     public function show_count_tag_categories(Page $page): void
     {
         global $database;
+        $dict = [];
         $dict[] = $database->get_all(
             'SELECT tags.tag, tags.count
             FROM tags
@@ -234,14 +235,14 @@ class TagCategoriesTheme extends Themelet
         $page->set_heading("Tag Categories counts");
 
         $page->add_block(new Block("Tag Categories counts", DIV(["style" => "display:flex;justify-content:space-evenly;"], $html), "main", 10));
-        $page->add_block(Block::nav());
+        $this->display_navigation();
     }
 
     public function display_admin_form(): void
     {
         global $page;
         $html = (string)SHM_SIMPLE_FORM(
-            "admin/count_categories_tags",
+            make_link("admin/count_categories_tags"),
             SHM_SUBMIT('Display tag count'),
         );
         $page->add_block(new Block("Tag categories count", rawHTML($html)));

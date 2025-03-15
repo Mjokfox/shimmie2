@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class Featured extends Extension
+final class Featured extends Extension
 {
     public const KEY = "featured";
     /** @var FeaturedTheme */
@@ -25,7 +25,7 @@ class Featured extends Extension
             if (!is_null($image)) {
                 $page->set_mode(PageMode::DATA);
                 $page->set_mime($image->get_mime());
-                $page->set_data(\Safe\file_get_contents($image->get_image_filename()));
+                $page->set_data($image->get_image_filename()->get_contents());
             }
         }
         if ($event->page_matches("featured_image/view")) {

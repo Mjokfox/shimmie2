@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-class Home extends Extension
+final class Home extends Extension
 {
     public const KEY = "home";
     /** @var HomeTheme */
@@ -16,7 +16,7 @@ class Home extends Extension
     {
         global $config, $page;
         if ($event->page_matches("home")) {
-            $base_href = get_base_href();
+            $base_href = Url::base();
             // $sitename = $config->get_string(SetupConfig::TITLE);
             $sitename = $config->get_string(HomeConfig::TITLE) ?: $config->get_string(SetupConfig::TITLE);
             $theme_name = $config->get_string(SetupConfig::THEME);
@@ -31,8 +31,7 @@ class Home extends Extension
     {
         // returns just the contents of the body
         global $config;
-        $base_href = get_base_href();
-        // $sitename = $config->get_string('home_title') ?: $config->get_string(SetupConfig::TITLE);
+        $base_href = Url::base();
         $sitename = $config->get_string(SetupConfig::TITLE);
         $contact_link = contact_link();
         if (is_null($contact_link)) {
@@ -43,8 +42,8 @@ class Home extends Extension
         $total = Search::count_images();
         $num_comma = number_format($total);
         $counter_text = "";
-        if ($counter_dir != 'none') {
-            if ($counter_dir != 'text-only') {
+        if ($counter_dir !== 'none') {
+            if ($counter_dir !== 'text-only') {
                 $strtotal = "$total";
                 $length = strlen($strtotal);
                 for ($n = 0; $n < $length; $n++) {

@@ -44,7 +44,7 @@ class UploadTheme extends Themelet
 
         $limits = get_upload_limits();
 
-        $tl_enabled = ($config->get_string(UploadConfig::TRANSLOAD_ENGINE, "none") != "none");
+        $tl_enabled = ($config->get_string(UploadConfig::TRANSLOAD_ENGINE, "none") !== "none");
         $max_size = $limits['shm_filesize'];
         $split_view = $config->get_bool(UploadConfig::SPLITVIEW);
         $preview_enabled = $config->get_bool(UploadConfig::PREVIEW);
@@ -64,7 +64,7 @@ class UploadTheme extends Themelet
         } else {
             $preview_element = "";
         }
-        $form = SHM_FORM("upload", multipart: true, form_id: "file_upload");
+        $form = SHM_FORM(make_link("upload"), multipart: true, id: "file_upload");
         $form->appendChild(
             DIV(
                 ["class" => "container"],
@@ -143,7 +143,7 @@ class UploadTheme extends Themelet
         );
 
         $page->set_title("Upload");
-        $page->add_block(Block::nav());
+        $this->display_navigation();
         $page->add_block(new Block("Upload", $html, "main", 20));
 
         if ($tl_enabled) {
@@ -158,7 +158,7 @@ class UploadTheme extends Themelet
         $upload_count = $config->get_int(UploadConfig::COUNT);
         $preview_enabled = $config->get_bool(UploadConfig::PREVIEW);
         $split_view = $config->get_bool(UploadConfig::SPLITVIEW);
-        $tl_enabled = ($config->get_string(UploadConfig::TRANSLOAD_ENGINE, "none") != "none");
+        $tl_enabled = ($config->get_string(UploadConfig::TRANSLOAD_ENGINE, "none") !== "none");
         $accept = $this->get_accept();
 
         $headers = emptyHTML();
@@ -268,8 +268,8 @@ class UploadTheme extends Themelet
     {
         global $config;
         $limits = get_upload_limits();
-        $link = make_http(make_link("upload"));
-        $main_page = make_http(make_link());
+        $link = make_link("upload")->asAbsolute();
+        $main_page = make_link()->asAbsolute();
         $title = $config->get_string(SetupConfig::TITLE);
         $max_size = $limits['shm_filesize'];
         $max_kb = to_shorthand_int($max_size);
@@ -311,7 +311,7 @@ class UploadTheme extends Themelet
             var supext=&quot;'.$supported_ext.'&quot;;
             var maxsize=&quot;'.$max_kb.'&quot;;
             var CA=0;
-            void(document.body.appendChild(document.createElement(&quot;script&quot;)).src=&quot;'.make_http(get_base_href())."/ext/upload/bookmarklet.js".'&quot;)
+            void(document.body.appendChild(document.createElement(&quot;script&quot;)).src=&quot;'.Url::base()->asAbsolute()."/ext/upload/bookmarklet.js".'&quot;)
         ';
         $html2 = P(
             A(["href" => $js], $title),
@@ -336,13 +336,13 @@ class UploadTheme extends Themelet
 
         if (count($errors) > 0) {
             $page->set_title("Upload Status");
-            $page->add_block(Block::nav());
+            $this->display_navigation();
             foreach ($errors as $error) {
                 $page->add_block(new Block($error->name, rawHTML(format_text($error->error))));
             }
         } elseif (count($successes) == 0) {
             $page->set_title("No images uploaded");
-            $page->add_block(Block::nav());
+            $this->display_navigation();
             $page->add_block(new Block("No images uploaded", rawHTML("Upload attempted, but nothing succeeded and nothing failed?")));
         } elseif (count($successes) == 1) {
             $page->set_mode(PageMode::REDIRECT);
@@ -369,7 +369,7 @@ class UploadTheme extends Themelet
         $max_total_kb = to_shorthand_int($max_total_size);
 
         // <input type='hidden' name='max_file_size' value='$max_size' />
-        $form = SHM_FORM("upload", multipart: true);
+        $form = SHM_FORM(make_link("upload"), multipart: true);
         $form->appendChild(
             emptyHTML(
                 INPUT(["id" => "data[]", "name" => "data[]", "size" => "16", "type" => "file", "accept" => $accept, "multiple" => true]),

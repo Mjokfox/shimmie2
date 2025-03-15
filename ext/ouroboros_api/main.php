@@ -63,7 +63,7 @@ class _SafeOuroborosImage
         $this->width = intval($img->width);
         $this->file_ext = $img->get_ext();
         $this->file_size = intval($img->filesize);
-        $this->file_url = make_http($img->get_image_link());
+        $this->file_url = (string)$img->get_image_link()->asAbsolute();
         $this->md5 = $img->hash;
 
         // meta
@@ -75,7 +75,7 @@ class _SafeOuroborosImage
 
         if (RatingsInfo::is_enabled() !== false) {
             // 'u' is not a "valid" rating
-            if ($img['rating'] == 's' || $img['rating'] == 'q' || $img['rating'] == 'e') {
+            if ($img['rating'] === 's' || $img['rating'] === 'q' || $img['rating'] === 'e') {
                 $this->rating = $img['rating'];
             }
         }
@@ -93,16 +93,16 @@ class _SafeOuroborosImage
         // thumb
         $this->preview_height = $config->get_int(ThumbnailConfig::HEIGHT);
         $this->preview_width = $config->get_int(ThumbnailConfig::WIDTH);
-        $this->preview_url = make_http($img->get_thumb_link());
+        $this->preview_url = (string)$img->get_thumb_link()->asAbsolute();
 
         // sample (use the full image here)
         $this->sample_height = intval($img->height);
         $this->sample_width = intval($img->width);
-        $this->sample_url = make_http($img->get_image_link());
+        $this->sample_url = (string)$img->get_image_link()->asAbsolute();
     }
 }
 
-class OuroborosPost extends _SafeOuroborosImage
+final class OuroborosPost extends _SafeOuroborosImage
 {
     /** @var array{tmp_name:string,name:string} */
     public ?array $file = null;
@@ -116,6 +116,7 @@ class OuroborosPost extends _SafeOuroborosImage
      *
      * @param array<string,mixed> $post
      */
+    // @phpstan-ignore-next-line
     public function __construct(array $post)
     {
         if (array_key_exists('tags', $post)) {
@@ -132,9 +133,9 @@ class OuroborosPost extends _SafeOuroborosImage
         }
         if (array_key_exists('rating', $post)) {
             assert(
-                $post['rating'] == 's' ||
-                $post['rating'] == 'q' ||
-                $post['rating'] == 'e'
+                $post['rating'] === 's' ||
+                $post['rating'] === 'q' ||
+                $post['rating'] === 'e'
             );
             $this->rating = $post['rating'];
         }
@@ -165,7 +166,7 @@ class OuroborosPost extends _SafeOuroborosImage
     }
 }
 
-class _SafeOuroborosTag
+final class _SafeOuroborosTag
 {
     public bool $ambiguous = false;
     public int $count = 0;
@@ -184,7 +185,7 @@ class _SafeOuroborosTag
     }
 }
 
-class OuroborosAPI extends Extension
+final class OuroborosAPI extends Extension
 {
     public const KEY = "ouroboros_api";
     private string $type;
@@ -237,7 +238,7 @@ class OuroborosAPI extends Extension
             $event_args = $matches[1];
             $this->type = $matches[2];
 
-            if ($event_args == 'post/create') {
+            if ($event_args === 'post/create') {
                 // Create
                 $this->tryAuth();
                 if ($user->can(ImagePermission::CREATE_IMAGE)) {
@@ -246,12 +247,12 @@ class OuroborosAPI extends Extension
                 } else {
                     $this->sendResponse(403, 'You cannot create new posts');
                 }
-            } elseif ($event_args == 'post/show') {
+            } elseif ($event_args === 'post/show') {
                 // Show
                 $this->tryAuth();
                 $id = int_escape(@$_REQUEST['id']);
                 $this->postShow($id);
-            } elseif ($event_args == 'post/index' || $event_args == 'post/list') {
+            } elseif ($event_args === 'post/index' || $event_args === 'post/list') {
                 // List
                 $this->tryAuth();
                 $limit = int_escape(@$_REQUEST['limit']);
@@ -264,7 +265,7 @@ class OuroborosAPI extends Extension
                 }
                 $tags = Tag::explode(@$_REQUEST['tags'] ?: '');
                 $this->postIndex($limit, $p, $tags);
-            } elseif ($event_args == 'tag/index' || $event_args == 'tag/list') {
+            } elseif ($event_args === 'tag/index' || $event_args === 'tag/list') {
                 $this->tryAuth();
                 $limit = int_escape(@$_REQUEST['limit']);
                 if ($limit <= 0) {
@@ -301,7 +302,7 @@ class OuroborosAPI extends Extension
     {
         global $config, $database;
         $handler = $config->get_string(UploadConfig::COLLISION_HANDLER);
-        if (!empty($md5) && !($handler == 'merge')) {
+        if (!empty($md5) && !($handler === 'merge')) {
             $img = Image::by_hash($md5);
             if (!is_null($img)) {
                 $this->sendResponse(420, self::ERROR_POST_CREATE_DUPE);
@@ -318,10 +319,10 @@ class OuroborosAPI extends Extension
         // Check where we should try for the file
         if (empty($post->file) && !empty($post->file_url)) {
             // Transload from source
-            $meta['file'] = shm_tempnam('transload_' . $config->get_string(UploadConfig::TRANSLOAD_ENGINE));
+            $meta['file'] = shm_tempnam('transload_' . $config->get_string(UploadConfig::TRANSLOAD_ENGINE))->str();
             $meta['filename'] = basename($post->file_url);
             try {
-                Network::fetch_url($post->file_url, $meta['file']);
+                Network::fetch_url($post->file_url, new Path($meta['file']));
             } catch (FetchException $e) {
                 $this->sendResponse(500, "Transloading failed: $e");
                 return;
@@ -341,7 +342,7 @@ class OuroborosAPI extends Extension
         $img = Image::by_hash($meta['hash']);
         if (!is_null($img)) {
             $handler = $config->get_string(UploadConfig::COLLISION_HANDLER);
-            if ($handler == 'merge') {
+            if ($handler === 'merge') {
                 $postTags = Tag::explode($post->tags);
                 $merged = array_merge($postTags, $img->get_tag_array());
                 send_event(new TagSetEvent($img, $merged));
@@ -359,10 +360,10 @@ class OuroborosAPI extends Extension
         }
         try {
             $image = $database->with_savepoint(function () use ($meta) {
-                $dae = send_event(new DataUploadEvent($meta['file'], basename($meta['file']), 0, $meta));
+                $dae = send_event(new DataUploadEvent(new Path($meta['file']), basename($meta['file']), 0, $meta));
                 return $dae->images[0];
             });
-            $this->sendResponse(200, make_link('post/view/' . $image->id), true);
+            $this->sendResponse(200, (string)make_link('post/view/' . $image->id), true);
         } catch (UploadException $e) {
             // Cleanup in case shit hit the fan
             $this->sendResponse(500, $e->getMessage());
@@ -455,7 +456,7 @@ class OuroborosAPI extends Extension
     private function sendResponse(int $code = 200, string $reason = '', bool $location = false): void
     {
         global $page;
-        if ($code == 200) {
+        if ($code === 200) {
             $success = true;
         } else {
             $success = false;
@@ -467,7 +468,7 @@ class OuroborosAPI extends Extension
                 $reason = self::MSG_HTTP_418;
             }
         }
-        if ($code != 200) {
+        if ($code !== 200) {
             $proto = $_SERVER['SERVER_PROTOCOL'];
             if (defined("self::HEADER_HTTP_{$code}")) {
                 $header = constant("self::HEADER_HTTP_{$code}");
@@ -479,14 +480,14 @@ class OuroborosAPI extends Extension
             header("{$proto} {$code} {$header}", true);
         }
         $response = ['success' => $success, 'reason' => $reason];
-        if ($this->type == 'json') {
+        if ($this->type === 'json') {
             $page->set_mime(self::MIME_JSON);
             if ($location !== false) {
                 $response['location'] = $response['reason'];
                 unset($response['reason']);
             }
             $response = \Safe\json_encode($response);
-        } elseif ($this->type == 'xml') {
+        } elseif ($this->type === 'xml') {
             $page->set_mime(self::MIME_XML);
             // Seriously, XML sucks...
             $xml = new \XMLWriter();
@@ -515,21 +516,21 @@ class OuroborosAPI extends Extension
     {
         global $page;
         $response = '';
-        if ($this->type == 'json') {
+        if ($this->type === 'json') {
             $page->set_mime(self::MIME_JSON);
             $response = \Safe\json_encode($data);
-        } elseif ($this->type == 'xml') {
+        } elseif ($this->type === 'xml') {
             $page->set_mime(self::MIME_XML);
             $xml = new \XMLWriter();
             $xml->openMemory();
             $xml->startDocument('1.0', 'utf-8');
 
             $xml->startElement($type . 's');
-            if ($type == 'post') {
+            if ($type === 'post') {
                 $xml->writeAttribute('count', (string)count($data));
                 $xml->writeAttribute('offset', (string)$offset);
             }
-            if ($type == 'tag') {
+            if ($type === 'tag') {
                 $xml->writeAttribute('type', 'array');
             }
             foreach ($data as $item) {
@@ -549,7 +550,7 @@ class OuroborosAPI extends Extension
     {
         $xml->startElement($type);
         foreach (json_decode(\Safe\json_encode($item)) as $key => $val) {
-            if ($key == 'created_at' && $type == 'post') {
+            if ($key === 'created_at' && $type === 'post') {
                 $xml->writeAttribute($key, $val['s']);
             } else {
                 if (is_bool($val)) {

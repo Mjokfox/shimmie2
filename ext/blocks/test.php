@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class BlocksTest extends ShimmiePHPUnitTestCase
+final class BlocksTest extends ShimmiePHPUnitTestCase
 {
     public function testBlocks(): void
     {
-        $this->log_in_as_admin();
-        $this->get_page("blocks/list");
-        $this->assert_response(200);
-        $this->assert_title("Blocks");
+        self::log_in_as_admin();
+        self::get_page("blocks/list");
+        self::assert_response(200);
+        self::assert_title("Blocks");
     }
 }

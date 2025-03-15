@@ -19,6 +19,31 @@ use function MicroHTML\TR;
 
 class CommonElementsTheme extends Themelet
 {
+    /**
+     * @param array<Url|null> $links
+     */
+    public function display_navigation(array $links = [], ?HTMLElement $extra = null): void
+    {
+        global $page;
+        if (count($links) == 0) {
+            $content = A(["href" => make_link()], "Index");
+        } elseif (count($links) == 1) {
+            $content = A(["href" => $links[0]], "Index");
+        } elseif (count($links) == 3) {
+            $content = joinHTML(" | ", [
+                $links[0] === null ? "Prev" : A(["href" => $links[0]], "Prev"),
+                $links[1] === null ? "Index" : A(["href" => $links[1]], "Index"),
+                $links[2] === null ? "Next" : A(["href" => $links[2]], "Next"),
+            ]);
+        } else {
+            throw new \Exception("Invalid navigation array");
+        }
+        if ($extra !== null) {
+            $content = emptyHTML($content, BR(), $extra);
+        }
+        $page->add_block(new Block("Navigation", $content, "left", 0));
+    }
+
     public function build_tag(
         string $tag,
         bool $show_underscores = true,
@@ -114,7 +139,10 @@ class CommonElementsTheme extends Themelet
         );
     }
 
-    public function display_paginator(Page $page, string $base, ?string $query, int $page_number, int $total_pages, bool $show_random = false): void
+    /**
+     * @param ?query-array $query
+     */
+    public function display_paginator(Page $page, string $base, ?array $query, int $page_number, int $total_pages, bool $show_random = false): void
     {
         if ($total_pages == 0) {
             $total_pages = 1;
@@ -133,12 +161,18 @@ class CommonElementsTheme extends Themelet
         $page->add_html_header(LINK(['rel' => 'last', 'href' => make_link($base.'/'.$total_pages, $query)]));
     }
 
-    private function gen_page_link(string $base_url, ?string $query, int $page, string $name): HTMLElement
+    /**
+     * @param ?query-array $query
+     */
+    private function gen_page_link(string $base_url, ?array $query, int $page, string $name): HTMLElement
     {
         return A(["href" => make_link($base_url.'/'.$page, $query)], $name);
     }
 
-    private function gen_page_link_block(string $base_url, ?string $query, int $page, int $current_page, string $name): HTMLElement
+    /**
+     * @param ?query-array $query
+     */
+    private function gen_page_link_block(string $base_url, ?array $query, int $page, int $current_page, string $name): HTMLElement
     {
         $paginator = $this->gen_page_link($base_url, $query, $page, $name);
         if ($page == $current_page) {
@@ -147,7 +181,10 @@ class CommonElementsTheme extends Themelet
         return $paginator;
     }
 
-    private function build_paginator(int $current_page, int $total_pages, string $base_url, ?string $query, bool $show_random): HTMLElement
+    /**
+     * @param ?query-array $query
+     */
+    private function build_paginator(int $current_page, int $total_pages, string $base_url, ?array $query, bool $show_random): HTMLElement
     {
         $next = $current_page + 1;
         $prev = $current_page - 1;

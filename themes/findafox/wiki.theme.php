@@ -34,7 +34,7 @@ class CustomWikiTheme extends WikiTheme
         }
 
         $page->set_title(html_escape($wiki_page->title));
-        $page->add_block(Block::nav());
+        $this->display_navigation();
         $page->add_block(new Block("Wiki Index", rawHTML($tfe->formatted), "left", 20));
         $page->add_block(new Block("Recent wiki changes", $this->get_recent_changes(), "left", 21));
         $page->add_block(new Block($title_html, $this->create_display_html($wiki_page)));

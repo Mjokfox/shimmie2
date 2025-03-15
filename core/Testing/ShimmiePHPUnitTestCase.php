@@ -34,7 +34,7 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
         $class = str_replace("Test", "Info", get_class($this));
         try {
             if (defined("$class::KEY") && !ExtensionInfo::get_all()[$class::KEY]->is_supported()) {
-                $this->markTestSkipped("$class not supported with this database");
+                self::markTestSkipped("$class not supported with this database");
             }
         } catch (ExtensionNotFound $e) {
             // ignore - this is a core test rather than an extension test
@@ -74,7 +74,7 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
 
     /**
      * @param array<string, mixed> $args
-     * @return array<string, string|mixed[]>
+     * @return query-array
      */
     private static function check_args(array $args): array
     {
@@ -92,8 +92,8 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @param array<string, mixed> $get_args
-     * @param array<string, mixed> $post_args
+     * @param query-array $get_args
+     * @param query-array $post_args
      * @param array<string, string> $cookies
      */
     protected static function request(
@@ -112,13 +112,13 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
             throw new \RuntimeException("Query string included in page name");
         }
         $_SERVER['REQUEST_METHOD'] = $method;
-        $_SERVER['REQUEST_URI'] = make_link($page_name, http_build_query($get_args));
+        $_SERVER['REQUEST_URI'] = (string)make_link($page_name, $get_args);
         $_GET = $get_args;
         $_POST = $post_args;
         $_COOKIE = $cookies;
         $page = new Page();
         send_event(new PageRequestEvent($method, $page_name, $get_args, $post_args));
-        if ($page->mode == PageMode::REDIRECT) {
+        if ($page->mode === PageMode::REDIRECT) {
             $page->code = 302;
         }
         return $page;
@@ -144,25 +144,25 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
     protected function assert_title(string $title): void
     {
         global $page;
-        $this->assertStringContainsString($title, $page->title);
+        self::assertStringContainsString($title, $page->title);
     }
 
     protected function assert_title_matches(string $title): void
     {
         global $page;
-        $this->assertStringMatchesFormat($title, $page->title);
+        self::assertStringMatchesFormat($title, $page->title);
     }
 
     protected function assert_no_title(string $title): void
     {
         global $page;
-        $this->assertStringNotContainsString($title, $page->title);
+        self::assertStringNotContainsString($title, $page->title);
     }
 
     protected function assert_response(int $code): void
     {
         global $page;
-        $this->assertEquals($code, $page->code);
+        self::assertEquals($code, $page->code);
     }
 
     /**
@@ -174,7 +174,7 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
     {
         $text = "";
         foreach ($blocks as $block) {
-            if (is_null($section) || $section == $block->section) {
+            if (is_null($section) || $section === $block->section) {
                 $text .= $block->header . "\n";
                 $text .= $block->body . "\n\n";
             }
@@ -189,10 +189,10 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
         return match($page->mode) {
             PageMode::PAGE => $page->title . "\n" . $this->blocks_to_text($page->blocks, $section),
             PageMode::DATA => $page->data,
-            PageMode::REDIRECT => $this->fail("Page mode is REDIRECT ($page->redirect) (only PAGE and DATA are supported)"),
-            PageMode::FILE => $this->fail("Page mode is FILE ($page->file) (only PAGE and DATA are supported)"),
-            PageMode::MANUAL => $this->fail("Page mode is MANUAL (only PAGE and DATA are supported)"),
-            default => $this->fail("Unknown page mode {$page->mode->name}"),  // just for phpstan
+            PageMode::REDIRECT => self::fail("Page mode is REDIRECT ({$page->redirect}) (only PAGE and DATA are supported)"),
+            PageMode::FILE => self::fail("Page mode is FILE (only PAGE and DATA are supported)"),
+            PageMode::MANUAL => self::fail("Page mode is MANUAL (only PAGE and DATA are supported)"),
+            default => self::fail("Unknown page mode {$page->mode->name}"),  // just for phpstan
         };
     }
 
@@ -201,12 +201,12 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
      */
     protected function assert_text(string $text, ?string $section = null): void
     {
-        $this->assertStringContainsString($text, $this->page_to_text($section));
+        self::assertStringContainsString($text, $this->page_to_text($section));
     }
 
     protected function assert_no_text(string $text, ?string $section = null): void
     {
-        $this->assertStringNotContainsString($text, $this->page_to_text($section));
+        self::assertStringNotContainsString($text, $this->page_to_text($section));
     }
 
     /**
@@ -215,13 +215,13 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
     protected function assert_content(string $content): void
     {
         global $page;
-        $this->assertStringContainsString($content, $page->data);
+        self::assertStringContainsString($content, $page->data);
     }
 
     protected function assert_no_content(string $content): void
     {
         global $page;
-        $this->assertStringNotContainsString($content, $page->data);
+        self::assertStringNotContainsString($content, $page->data);
     }
 
     /**
@@ -235,7 +235,7 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
         foreach ($images as $image) {
             $ids[] = $image->id;
         }
-        $this->assertEquals($results, $ids, $message);
+        self::assertEquals($results, $ids, $message);
     }
 
     protected function assertException(string $type, callable $function): \Exception
@@ -273,11 +273,12 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
     // post things
     protected function post_image(string $filename, string $tags): int
     {
-        $dae = send_event(new DataUploadEvent($filename, basename($filename), 0, [
-            "filename" => $filename,
+        $file = new Path($filename);
+        $dae = send_event(new DataUploadEvent($file, $file->basename()->str(), 0, [
+            "filename" => $file->basename()->str(),
             "tags" => $tags,
         ]));
-        if (count($dae->images) == 0) {
+        if (count($dae->images) === 0) {
             throw new \Exception("Upload failed :(");
         }
         return $dae->images[0]->id;

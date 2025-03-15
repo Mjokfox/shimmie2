@@ -4,31 +4,31 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class AdminPageTest extends ShimmiePHPUnitTestCase
+final class AdminPageTest extends ShimmiePHPUnitTestCase
 {
     public function testAuth(): void
     {
-        $this->log_out();
-        $this->assertException(PermissionDenied::class, function () {
-            $this->get_page('admin');
+        self::log_out();
+        self::assertException(PermissionDenied::class, function () {
+            self::get_page('admin');
         });
 
-        $this->log_in_as_user();
-        $this->assertException(PermissionDenied::class, function () {
-            $this->get_page('admin');
+        self::log_in_as_user();
+        self::assertException(PermissionDenied::class, function () {
+            self::get_page('admin');
         });
 
-        $this->log_in_as_admin();
-        $page = $this->get_page('admin');
-        $this->assertEquals(200, $page->code);
-        $this->assertEquals("Admin Tools", $page->title);
+        self::log_in_as_admin();
+        $page = self::get_page('admin');
+        self::assertEquals(200, $page->code);
+        self::assertEquals("Admin Tools", $page->title);
     }
 
     public function testAct(): void
     {
-        $this->log_in_as_admin();
-        $page = $this->post_page('admin/test');
-        $this->assertEquals("test", $page->data);
+        self::log_in_as_admin();
+        $page = self::post_page('admin/test');
+        self::assertEquals("test", $page->data);
     }
 
     // does this belong here??
@@ -36,6 +36,6 @@ class AdminPageTest extends ShimmiePHPUnitTestCase
     {
         $app = new CliApp();
         $e = send_event(new CliGenEvent($app));
-        $this->assertFalse($e->stop_processing);
+        self::assertFalse($e->stop_processing);
     }
 }

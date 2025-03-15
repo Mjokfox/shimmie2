@@ -8,12 +8,12 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\{InputInterface,InputArgument};
 use Symfony\Component\Console\Output\OutputInterface;
 
-use function MicroHTML\{INPUT, emptyHTML, STYLE};
+use function MicroHTML\{INPUT, STYLE};
 
 /**
  * A class to handle adding / getting / removing image files from the disk.
  */
-class ImageIO extends Extension
+final class ImageIO extends Extension
 {
     public const KEY = "image";
 
@@ -21,7 +21,7 @@ class ImageIO extends Extension
     {
         global $config;
 
-        if ($this->get_version(ImageConfig::VERSION) < 1) {
+        if ($this->get_version() < 1) {
             switch ($config->get_string("thumb_type")) {
                 case FileExtension::WEBP:
                     $config->set_string(ThumbnailConfig::MIME, MimeType::WEBP);
@@ -31,8 +31,7 @@ class ImageIO extends Extension
                     break;
             }
             $config->delete("thumb_type");
-
-            $this->set_version(ImageConfig::VERSION, 1);
+            $this->set_version(1);
         }
     }
 
@@ -53,7 +52,7 @@ class ImageIO extends Extension
                     $this->redirect_to_next_image($image, $event->get_GET('search'));
                 } else {
                     $page->set_mode(PageMode::REDIRECT);
-                    $page->set_redirect(referer_or(make_link(), ['post/view']));
+                    $page->set_redirect(Url::referer_or(ignore: ['post/view']));
                 }
             } else {
                 throw new PermissionDenied("You do not have permission to delete this image.");
@@ -72,12 +71,14 @@ class ImageIO extends Extension
         global $user;
 
         if ($user->can(ImagePermission::DELETE_IMAGE)) {
-            $form = SHM_FORM("image/delete", form_id: "image_delete_form");
-            $form->appendChild(emptyHTML(
-                INPUT(["type" => 'hidden', "name" => 'image_id', "value" => $event->image->id]),
-                INPUT(["type" => 'submit', "value" => 'Delete', "onclick" => 'return confirm("Delete the image?");', "id" => "image_delete_button"]),
+            $event->add_part(SHM_FORM(
+                action: make_link("image/delete"),
+                id: "image_delete_form",
+                children: [
+                    INPUT(["type" => 'hidden', "name" => 'image_id', "value" => $event->image->id]),
+                    INPUT(["type" => 'submit', "value" => 'Delete', "onclick" => 'return confirm("Delete the image?");', "id" => "image_delete_button"]),
+                ]
             ));
-            $event->add_part($form);
         }
     }
 
@@ -107,11 +108,10 @@ class ImageIO extends Extension
 
     public function onUserPageBuilding(UserPageBuildingEvent $event): void
     {
-        $u_name = url_escape($event->display_user->name);
         $i_image_count = Search::count_images(["user={$event->display_user->name}"]);
         $i_days_old = ((time() - \Safe\strtotime($event->display_user->join_date)) / 86400) + 1;
         $h_image_rate = sprintf("%.1f", ($i_image_count / $i_days_old));
-        $images_link = search_link(["user=$u_name"]);
+        $images_link = search_link(["user={$event->display_user->name}"]);
         $event->add_part("<a href='$images_link'>Posts uploaded</a>: $i_image_count, $h_image_rate per day");
     }
 
@@ -139,18 +139,18 @@ class ImageIO extends Extension
 
         if (!is_null($search)) {
             $search_terms = Tag::explode($search);
-            $query = "search=" . url_escape($search);
+            $fragment = "search=" . url_escape($search);
         } else {
             $search_terms = [];
-            $query = null;
+            $fragment = null;
         }
 
         $target_image = $image->get_next($search_terms);
 
         if ($target_image === null) {
-            $redirect_target = referer_or(search_link(), ['post/view']);
+            $redirect_target = Url::referer_or(search_link(), ['post/view']);
         } else {
-            $redirect_target = make_link("post/view/{$target_image->id}", null, $query);
+            $redirect_target = make_link("post/view/{$target_image->id}", fragment: $fragment);
         }
 
         $page->set_mode(PageMode::REDIRECT);
@@ -159,7 +159,7 @@ class ImageIO extends Extension
 
     private function can_user_delete_image(User $user, Image $image): bool
     {
-        if ($user->can(ImagePermission::DELETE_OWN_IMAGE) && $image->owner_id == $user->id) {
+        if ($user->can(ImagePermission::DELETE_OWN_IMAGE) && $image->owner_id === $user->id) {
             return true;
         }
         return $user->can(ImagePermission::DELETE_IMAGE);
@@ -174,14 +174,14 @@ class ImageIO extends Extension
 
         $image = Image::by_id_ex($image_id);
 
-        if ($type == "thumb") {
+        if ($type === "thumb") {
             $mime = $config->get_string(ThumbnailConfig::MIME);
             $file = $image->get_thumb_filename();
         } else {
             $mime = $image->get_mime();
             $file = $image->get_image_filename();
         }
-        if (!file_exists($file)) {
+        if (!$file->exists()) {
             http_response_code(404);
             die();
         }
@@ -194,16 +194,16 @@ class ImageIO extends Extension
         } else {
             $if_modified_since = "";
         }
-        $gmdate_mod = gmdate('D, d M Y H:i:s', \Safe\filemtime($file)) . ' GMT';
+        $gmdate_mod = gmdate('D, d M Y H:i:s', $file->filemtime()) . ' GMT';
 
-        if ($if_modified_since == $gmdate_mod) {
+        if ($if_modified_since === $gmdate_mod) {
             $page->set_mode(PageMode::DATA);
             $page->set_code(304);
             $page->set_data("");
         } else {
             $page->set_mode(PageMode::FILE);
             $page->add_http_header("Last-Modified: $gmdate_mod");
-            if ($type != "thumb") {
+            if ($type !== "thumb") {
                 $page->set_filename($image->get_nice_image_name(), 'inline');
             }
 

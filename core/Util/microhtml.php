@@ -19,19 +19,19 @@ use function MicroHTML\SPAN;
 use function MicroHTML\{TABLE,THEAD,TFOOT,TR,TH,TD};
 
 /**
- * @param page-string $target
+ * @param array<string|HTMLElement|null> $children
  */
-function SHM_FORM(string $target, bool $multipart = false, string $form_id = "", string $onsubmit = "", string $name = ""): HTMLElement
+function SHM_FORM(Url $action, bool $multipart = false, string $id = "", string $onsubmit = "", string $name = "", string $method = "POST", array $children = []): HTMLElement
 {
     global $user;
 
     $attrs = [
-        "action" => make_link($target),
-        "method" => 'POST'
+        "action" => $action,
+        "method" => $method,
     ];
 
-    if ($form_id) {
-        $attrs["id"] = $form_id;
+    if ($id) {
+        $attrs["id"] = $id;
     }
     if ($multipart) {
         $attrs["enctype"] = 'multipart/form-data';
@@ -45,19 +45,20 @@ function SHM_FORM(string $target, bool $multipart = false, string $form_id = "",
 
     return FORM(
         $attrs,
-        INPUT(["type" => "hidden", "name" => "auth_token", "value" => $user->get_auth_token()])
+        $method === "GET" ? INPUT(["type" => "hidden", "name" => "q", "value" => $action->getPath()]) : null,
+        INPUT(["type" => "hidden", "name" => "auth_token", "value" => $user->get_auth_token()]),
+        ...$children,
     );
 }
 
 /**
  * For when you just want a <form> with default settings and some children
  *
- * @param page-string $target
  * @param array<string|HTMLElement|null> $children
  */
-function SHM_SIMPLE_FORM(string $target, ...$children): HTMLElement
+function SHM_SIMPLE_FORM(Url $action, ...$children): HTMLElement
 {
-    $form = SHM_FORM($target);
+    $form = SHM_FORM($action);
     $form->appendChild(emptyHTML(...$children));
     return $form;
 }
@@ -72,24 +73,6 @@ function SHM_SUBMIT(string $text, array $args = []): HTMLElement
     return INPUT($args);
 }
 
-/**
- * @param page-string $href
- * @param array<string, mixed> $args
- */
-function SHM_A(string $href, string|HTMLElement $text, string $id = "", string $class = "", array $args = []): HTMLElement
-{
-    $args["href"] = make_link($href);
-
-    if ($id) {
-        $args["id"] = $id;
-    }
-    if ($class) {
-        $args["class"] = $class;
-    }
-
-    return A($args, $text);
-}
-
 function SHM_COMMAND_EXAMPLE(string $ex, string $desc): HTMLElement
 {
     return DIV(
@@ -99,10 +82,7 @@ function SHM_COMMAND_EXAMPLE(string $ex, string $desc): HTMLElement
     );
 }
 
-/**
- * @param page-string $target
- */
-function SHM_USER_FORM(User $duser, string $target, string $title, HTMLElement $body, HTMLElement|string $foot): HTMLElement
+function SHM_USER_FORM(User $duser, Url $target, string $title, HTMLElement $body, HTMLElement|string $foot): HTMLElement
 {
     if (is_string($foot)) {
         $foot = TFOOT(TR(TD(["colspan" => "2"], INPUT(["type" => "submit", "value" => $foot]))));
@@ -152,7 +132,7 @@ function SHM_SELECT(string $name, array $options, array $selected_options = [], 
     }
 
     foreach ($options as $value => $text) {
-        $_options[] = SHM_OPTION((string)$value, (string)$text, in_array($value, $selected_options));
+        $_options[] = SHM_OPTION((string)$value, $text, in_array($value, $selected_options));
     }
 
     return SELECT($attrs, ...$_options);
@@ -171,7 +151,7 @@ function SHM_POST_INFO(
     string $title,
     HTMLElement|string|null $view = null,
     HTMLElement|string|null $edit = null,
-    string|null $link = null,
+    Url|null $link = null,
 ): HTMLElement {
     if (!is_null($view) && !is_null($edit)) {
         $show = emptyHTML(
@@ -187,7 +167,7 @@ function SHM_POST_INFO(
     }
     return TR(
         ["data-row" => $title],
-        TH(["width" => "50px"], $link ? A(["href" => $link], $title) : $title),
+        TH(["width" => "50px"], $link ? A(["href" => (string)$link], $title) : $title),
         TD($show)
     );
 }

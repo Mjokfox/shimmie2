@@ -8,7 +8,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\{InputInterface,InputArgument};
 use Symfony\Component\Console\Output\OutputInterface;
 
-class BulkActionBlockBuildingEvent extends Event
+final class BulkActionBlockBuildingEvent extends Event
 {
     /**
      * @var array<array{block:string,access_key:?string,confirmation_message:string,action:string,button_text:string,position:int}>
@@ -20,9 +20,9 @@ class BulkActionBlockBuildingEvent extends Event
     public function add_action(string $action, string $button_text, ?string $access_key = null, string $confirmation_message = "", string $block = "", int $position = 40): void
     {
         if (!empty($access_key)) {
-            assert(strlen($access_key) == 1);
+            assert(strlen($access_key) === 1);
             foreach ($this->actions as $existing) {
-                if ($existing["access_key"] == $access_key) {
+                if ($existing["access_key"] === $access_key) {
                     throw new UserError("Access key $access_key is already in use");
                 }
             }
@@ -39,7 +39,7 @@ class BulkActionBlockBuildingEvent extends Event
     }
 }
 
-class BulkActionEvent extends Event
+final class BulkActionEvent extends Event
 {
     public string $action;
     public \Generator $items;
@@ -59,7 +59,7 @@ class BulkActionEvent extends Event
     }
 }
 
-class BulkActions extends Extension
+final class BulkActions extends Extension
 {
     public const KEY = "bulk_actions";
     /** @var BulkActionsTheme */
@@ -74,7 +74,7 @@ class BulkActions extends Extension
 
         send_event($babbe);
 
-        if (sizeof($babbe->actions) == 0) {
+        if (sizeof($babbe->actions) === 0) {
             return;
         }
 
@@ -141,7 +141,7 @@ class BulkActions extends Extension
                 if ($user->can(BulkActionsPermission::BULK_EDIT_IMAGE_TAG)) {
                     $tags = $event->params['bulk_tags'];
                     $replace = false;
-                    if (isset($event->params['bulk_tags_replace']) &&  $event->params['bulk_tags_replace'] == "true") {
+                    if (isset($event->params['bulk_tags_replace']) &&  $event->params['bulk_tags_replace'] === "true") {
                         $replace = true;
                     }
 
@@ -186,7 +186,7 @@ class BulkActions extends Extension
 
             if ($bae->redirect) {
                 $page->set_mode(PageMode::REDIRECT);
-                $page->set_redirect(referer_or(make_link()));
+                $page->set_redirect(Url::referer_or());
             }
         }
     }
@@ -199,7 +199,7 @@ class BulkActions extends Extension
     {
         foreach ($data as $id) {
             $image = Image::by_id($id);
-            if ($image != null) {
+            if ($image !== null) {
                 yield $image;
             }
         }

@@ -115,7 +115,7 @@ class EmailVerification extends Extension
                 $html = emptyHTML();
                 $html->appendChild(SHM_USER_FORM(
                     $duser,
-                    "user_admin/send_verification_mail",
+                    make_link("user_admin/send_verification_mail"),
                     "",
                     emptyHTML(),
                     "Resend verification email"

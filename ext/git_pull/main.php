@@ -17,7 +17,7 @@ class GitPull extends Extension
     {
         global $page;
         $html = (string)SHM_SIMPLE_FORM(
-            "admin/git_pull",
+            make_link("admin/git_pull"),
             SHM_SUBMIT('Pull from git'),
         );
         $page->add_block(new Block("Git Pull", rawHTML($html)));

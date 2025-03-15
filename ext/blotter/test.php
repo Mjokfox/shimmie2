@@ -4,36 +4,36 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class BlotterTest extends ShimmiePHPUnitTestCase
+final class BlotterTest extends ShimmiePHPUnitTestCase
 {
     public function testDenial(): void
     {
-        $this->assertException(PermissionDenied::class, function () {
-            $this->get_page("blotter/editor");
+        self::assertException(PermissionDenied::class, function () {
+            self::get_page("blotter/editor");
         });
-        $this->assertException(PermissionDenied::class, function () {
-            $this->post_page("blotter/add");
+        self::assertException(PermissionDenied::class, function () {
+            self::post_page("blotter/add");
         });
-        $this->assertException(PermissionDenied::class, function () {
-            $this->post_page("blotter/remove");
+        self::assertException(PermissionDenied::class, function () {
+            self::post_page("blotter/remove");
         });
     }
 
     public function testAddViewRemove(): void
     {
-        $this->log_in_as_admin();
+        self::log_in_as_admin();
 
-        $page = $this->get_page("blotter/editor");
-        $this->assertEquals(200, $page->code);
+        $page = self::get_page("blotter/editor");
+        self::assertEquals(200, $page->code);
         //$this->set_field("entry_text", "blotter testing");
         //$this->click("Add");
-        //$this->assert_text("blotter testing");
+        //self::assert_text("blotter testing");
 
-        $this->get_page("post/list");
-        //$this->assert_text("blotter testing");
+        self::get_page("post/list");
+        //self::assert_text("blotter testing");
 
-        $this->get_page("blotter/editor");
+        self::get_page("blotter/editor");
         //$this->click("Remove");
-        //$this->assert_no_text("blotter testing");
+        //self::assert_no_text("blotter testing");
     }
 }

@@ -12,7 +12,7 @@ class SiteCaptchaTheme extends Themelet
     {
         $page->set_mode(PageMode::DATA);
         $page->add_http_header("Refresh: 3");
-        $data_href = get_base_href();
+        $data_href = Url::base();
         $time = time(); // add a 'random' string behind the image urls to avoid caching
 
         $page->set_data((string)$page->html_html(

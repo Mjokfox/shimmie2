@@ -20,7 +20,7 @@ use GQLA\Query;
  * @implements \ArrayAccess<string, mixed>
  */
 #[Type(name: "Post")]
-class Image implements \ArrayAccess
+final class Image implements \ArrayAccess
 {
     public const IMAGE_DIR = "images";
     public const THUMBNAIL_DIR = "thumbs";
@@ -63,7 +63,7 @@ class Image implements \ArrayAccess
     public ?bool $image = null;
     public ?bool $audio = null;
     public ?int $length = null;
-    public ?string $tmp_file = null;
+    public ?Path $tmp_file = null;
 
     /** @var array<string, ImagePropType> */
     public static array $prop_types = [];
@@ -201,7 +201,7 @@ class Image implements \ArrayAccess
      */
     public static function by_id_or_hash(string $id): ?Image
     {
-        return (is_numberish($id) && strlen($id) != 32) ? Image::by_id((int)$id) : Image::by_hash($id);
+        return (is_numberish($id) && strlen($id) !== 32) ? Image::by_id((int)$id) : Image::by_hash($id);
     }
 
     /**
@@ -280,7 +280,7 @@ class Image implements \ArrayAccess
     public function set_owner(User $owner): void
     {
         global $database;
-        if ($owner->id != $this->owner_id) {
+        if ($owner->id !== $this->owner_id) {
             $database->execute("
                 UPDATE images
                 SET owner_id=:owner_id
@@ -379,10 +379,9 @@ class Image implements \ArrayAccess
 
     /**
      * Get the URL for the full size image
-     * @return url-string
      */
     #[Field(name: "image_link")]
-    public function get_image_link(): string
+    public function get_image_link(): Url
     {
         // return $this->get_link(ImageConfig::ILINK, '_images/$hash/$id%20-%20$tags.$ext', 'image/$id/$id%20-%20$tags.$ext');
         return $this->get_link(ImageConfig::ILINK, 'images/$hash/$idF_$filename.$ext', 'image/$id/$idF_$filename.$ext');
@@ -399,10 +398,9 @@ class Image implements \ArrayAccess
 
     /**
      * Get the URL for the thumbnail
-     * @return url-string
      */
     #[Field(name: "thumb_link")]
-    public function get_thumb_link(): string
+    public function get_thumb_link(): Url
     {
         global $config;
         $mime = $config->get_string(ThumbnailConfig::MIME);
@@ -412,9 +410,8 @@ class Image implements \ArrayAccess
 
     /**
      * Check configured template for a link, then try nice URL, then plain URL
-     * @return url-string
      */
-    private function get_link(string $template, string $nice, string $plain): string
+    private function get_link(string $template, string $nice, string $plain): Url
     {
         global $config;
 
@@ -430,7 +427,8 @@ class Image implements \ArrayAccess
         } else {
             $chosen = make_link($plain);
         }
-        return $this->parse_link_template($chosen);
+        $link_string = $this->parse_link_template((string)$chosen);
+        return Url::parse($link_string);
     }
 
     /**
@@ -459,7 +457,7 @@ class Image implements \ArrayAccess
     /**
      * Figure out where the full size image is on disk.
      */
-    public function get_image_filename(): string
+    public function get_image_filename(): Path
     {
         if (!is_null($this->tmp_file)) {
             return $this->tmp_file;
@@ -470,7 +468,7 @@ class Image implements \ArrayAccess
     /**
      * Figure out where the thumbnail is on disk.
      */
-    public function get_thumb_filename(): string
+    public function get_thumb_filename(): Path
     {
         return Filesystem::warehouse_path(self::THUMBNAIL_DIR, $this->hash);
     }
@@ -527,7 +525,7 @@ class Image implements \ArrayAccess
         if (empty($new_source)) {
             $new_source = null;
         }
-        if ($new_source != $old_source) {
+        if ($new_source !== $old_source) {
             $database->execute("UPDATE images SET source=:source WHERE id=:id", ["source" => $new_source, "id" => $this->id]);
             Log::info("core_image", "Source for Post #{$this->id} set to: $new_source (was $old_source)");
         }
@@ -601,7 +599,7 @@ class Image implements \ArrayAccess
             throw new TagSetException('Tried to set zero tags');
         }
 
-        if (strtolower(Tag::implode($tags)) != strtolower($this->get_tag_list())) {
+        if (strtolower(Tag::implode($tags)) !== strtolower($this->get_tag_list())) {
             // delete old
             $this->delete_tags_from_image();
 
@@ -642,16 +640,25 @@ class Image implements \ArrayAccess
      */
     public function remove_image_only(bool $quiet = false): void
     {
-        $img_del = @unlink($this->get_image_filename());
-        $thumb_del = @unlink($this->get_thumb_filename());
-        if ($img_del && $thumb_del) {
-            if (!$quiet) {
-                Log::info("core_image", "Deleted files for Post #{$this->id} ({$this->hash})");
-            }
-        } else {
-            $img = $img_del ? '' : ' image';
-            $thumb = $thumb_del ? '' : ' thumbnail';
-            Log::error('core_image', "Failed to delete files for Post #{$this->id}{$img}{$thumb}");
+        $img_del = false;
+        $thumb_del = false;
+
+        try {
+            $this->get_image_filename()->unlink();
+            $img_del = true;
+        } catch (\Exception $e) {
+            Log::error('core_image', "Failed to delete image file for Post #{$this->id}: {$e->getMessage()}");
+        }
+
+        try {
+            $this->get_thumb_filename()->unlink();
+            $thumb_del = true;
+        } catch (\Exception $e) {
+            Log::error('core_image', "Failed to delete thumbnail file for Post #{$this->id}: {$e->getMessage()}");
+        }
+
+        if ($img_del && $thumb_del && !$quiet) {
+            Log::info("core_image", "Deleted files for Post #{$this->id} ({$this->hash})");
         }
     }
 

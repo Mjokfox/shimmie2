@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class RemoveReportedImageEvent extends Event
+final class RemoveReportedImageEvent extends Event
 {
     public int $id;
 
@@ -15,7 +15,7 @@ class RemoveReportedImageEvent extends Event
     }
 }
 
-class AddReportedImageEvent extends Event
+final class AddReportedImageEvent extends Event
 {
     public ImageReport $report;
 
@@ -26,7 +26,7 @@ class AddReportedImageEvent extends Event
     }
 }
 
-class ImageReport
+final class ImageReport
 {
     public int $user_id;
     public int $image_id;
@@ -43,7 +43,7 @@ class ImageReport
 /**
  * @phpstan-type Report array{id: int, image: Image, reason: string, reporter_name: string}
  */
-class ReportImage extends Extension
+final class ReportImage extends Extension
 {
     public const KEY = "report_image";
     /** @var ReportImageTheme */
@@ -156,7 +156,7 @@ class ReportImage extends Extension
     {
         global $database;
 
-        if ($this->get_version("ext_report_image_version") < 1) {
+        if ($this->get_version() < 1) {
             $database->create_table("image_reports", "
 				id SCORE_AIPK,
 				image_id INTEGER NOT NULL,
@@ -165,7 +165,7 @@ class ReportImage extends Extension
 				FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE,
 				FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE
 			");
-            $this->set_version("ext_report_image_version", 1);
+            $this->set_version(1);
         }
     }
 

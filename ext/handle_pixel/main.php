@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class PixelFileHandler extends DataHandlerExtension
+use function MicroHTML\{FORM, SELECT, OPTION};
+
+final class PixelFileHandler extends DataHandlerExtension
 {
     public const KEY = "handle_pixel";
     public const SUPPORTED_MIME = [
@@ -35,17 +37,17 @@ class PixelFileHandler extends DataHandlerExtension
         }
         $event->image->image = !$event->image->video;
 
-        $info = getimagesize($event->image->get_image_filename());
+        $info = getimagesize($event->image->get_image_filename()->str());
         if ($info) {
             $event->image->width = $info[0];
             $event->image->height = $info[1];
         }
     }
 
-    protected function check_contents(string $tmpname): bool
+    protected function check_contents(Path $tmpname): bool
     {
         $valid = [IMAGETYPE_PNG, IMAGETYPE_GIF, IMAGETYPE_JPEG, IMAGETYPE_WEBP, IMAGETYPE_AVIF];
-        $info = getimagesize($tmpname);
+        $info = getimagesize($tmpname->str());
         return $info && in_array($info[2], $valid);
     }
 
@@ -62,16 +64,15 @@ class PixelFileHandler extends DataHandlerExtension
     public function onImageAdminBlockBuilding(ImageAdminBlockBuildingEvent $event): void
     {
         if ($event->context == "view") {
-            $event->add_part(\MicroHTML\rawHTML("
-                <form>
-                    <select class='shm-zoomer'>
-                        <option value='full'>Full Size</option>
-                        <option value='width'>Fit Width</option>
-                        <option value='height'>Fit Height</option>
-                        <option value='both'>Fit Both</option>
-                    </select>
-                </form>
-            "), 20);
+            $event->add_part(FORM(
+                SELECT(
+                    ["class" => "shm-zoomer"],
+                    OPTION(["value" => "full"], "Full Size"),
+                    OPTION(["value" => "width"], "Fit Width"),
+                    OPTION(["value" => "height"], "Fit Height"),
+                    OPTION(["value" => "both"], "Fit Both")
+                )
+            ), 20);
         }
     }
 }

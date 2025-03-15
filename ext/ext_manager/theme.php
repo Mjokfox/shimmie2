@@ -30,7 +30,7 @@ class ExtManagerTheme extends Themelet
         $tbody = TBODY();
 
         $form = SHM_SIMPLE_FORM(
-            "ext_manager/set",
+            make_link("ext_manager/set"),
             TABLE(
                 ["id" => 'extensions', "class" => 'zebra form'],
                 $tbody,
@@ -66,7 +66,7 @@ class ExtManagerTheme extends Themelet
                     "type" => 'checkbox',
                     "name" => "ext_" . $extension::KEY,
                     "id" => "ext_" . $extension::KEY,
-                    "checked" => ($extension->is_enabled() === true),
+                    "checked" => ($extension::is_enabled() === true),
                     "disabled" => ($extension->is_supported() === false || $extension->core === true)
                 ])) : null,
                 TD(LABEL(
@@ -80,7 +80,7 @@ class ExtManagerTheme extends Themelet
                     // TODO: A proper "docs" symbol would be preferred here.
                     $extension->documentation ?
                         A(
-                            ["href" => make_link("ext_doc/" . url_escape($extension::KEY))],
+                            ["href" => make_link("ext_doc/" . $extension::KEY)],
                             IMG(["src" => 'ext/ext_manager/baseline_open_in_new_black_18dp.png'])
                         ) :
                         null
@@ -100,14 +100,13 @@ class ExtManagerTheme extends Themelet
                     $form->appendChild(INPUT([
                         "type" => 'hidden',
                         "name" => "ext_" . $extension::KEY,
-                        "value" => ($extension->is_enabled() === true) ? "on" : "off"
+                        "value" => ($extension::is_enabled() === true) ? "on" : "off"
                     ]));
                 }
             }
         }
 
         $cat_html = [
-            A(["href" => make_link()], "Index"),
             " ",
         ];
         foreach ($categories as $cat) {
@@ -115,7 +114,7 @@ class ExtManagerTheme extends Themelet
         }
 
         $page->set_title("Extensions");
-        $page->add_block(new Block("Navigation", \MicroHTML\joinHTML(BR(), $cat_html), "left", 0));
+        $this->display_navigation(extra: \MicroHTML\joinHTML(BR(), $cat_html));
         $page->add_block(new Block(null, $form));
     }
 
@@ -146,7 +145,7 @@ class ExtManagerTheme extends Themelet
 
         $page->set_title("Documentation for {$info->name}");
         $page->set_heading($info->name);
-        $page->add_block(Block::nav());
+        $this->display_navigation();
         $page->add_block(new Block(null, $html));
     }
 }

@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{A, joinHTML, TABLE, TR, TD, INPUT, emptyHTML, rawHTML, DIV, META, LINK};
+use function MicroHTML\{A, joinHTML, TABLE, TR, TD, INPUT, emptyHTML, BR, DIV, META, LINK};
 
 class ViewPostTheme extends Themelet
 {
@@ -18,13 +18,13 @@ class ViewPostTheme extends Themelet
         $page->add_html_header(META(["name" => "keywords", "content" => $h_metatags]));
         $page->add_html_header(META(["property" => "og:title", "content" => $h_metatags]));
         $page->add_html_header(META(["property" => "og:type", "content" => "article"]));
-        $page->add_html_header(META(["property" => "og:image", "content" => make_http($image->get_image_link())]));
-        $page->add_html_header(META(["property" => "og:url", "content" => make_http(make_link("post/view/{$image->id}"))]));
+        $page->add_html_header(META(["property" => "og:image", "content" => $image->get_image_link()->asAbsolute()]));
+        $page->add_html_header(META(["property" => "og:url", "content" => make_link("post/view/{$image->id}")->asAbsolute()]));
         $page->add_html_header(META(["property" => "og:image:width", "content" => $image->width]));
         $page->add_html_header(META(["property" => "og:image:height", "content" => $image->height]));
         $page->add_html_header(META(["property" => "twitter:title", "content" => $h_metatags]));
         $page->add_html_header(META(["property" => "twitter:card", "content" => "summary_large_image"]));
-        $page->add_html_header(META(["property" => "twitter:image:src", "content" => make_http($image->get_image_link())]));
+        $page->add_html_header(META(["property" => "twitter:image:src", "content" => $image->get_image_link()->asAbsolute()]));
     }
 
     /**
@@ -41,8 +41,8 @@ class ViewPostTheme extends Themelet
         $page->add_block(new Block(null, $this->build_info($image, $editor_parts), "main", 20, "ImageInfo"));
         //$page->add_block(new Block(null, $this->build_pin($image), "main", 11));
 
-        $query = $this->get_query();
         if (!$this->is_ordered_search()) {
+            $query = $this->get_query();
             $page->add_html_header(LINK(["id" => "nextlink", "rel" => "next", "href" => make_link("post/next/{$image->id}", $query)]));
             $page->add_html_header(LINK(["id" => "prevlink", "rel" => "previous", "href" => make_link("post/prev/{$image->id}", $query)]));
         }
@@ -58,10 +58,13 @@ class ViewPostTheme extends Themelet
         }
     }
 
-    protected function get_query(): ?string
+    /**
+     * @return array<string, string>|null
+     */
+    protected function get_query(): ?array
     {
         if (isset($_GET['search'])) {
-            $query = "search=".url_escape($_GET['search']);
+            $query = ["search" => $_GET['search']];
         } else {
             $query = null;
         }
@@ -87,10 +90,10 @@ class ViewPostTheme extends Themelet
 
     protected function build_pin(Image $image): HTMLElement
     {
-        $query = $this->get_query();
         if ($this->is_ordered_search()) {
             return A(["href" => make_link()], "Index");
         } else {
+            $query = $this->get_query();
             return joinHTML(" | ", [
                 A(["href" => make_link("post/prev/{$image->id}", $query), "id" => "prevlink"], "Prev"),
                 A(["href" => make_link()], "Index"),
@@ -101,16 +104,26 @@ class ViewPostTheme extends Themelet
 
     protected function build_navigation(Image $image): HTMLElement
     {
-        $h_pin = $this->build_pin($image);
-        $h_search = "
-			<p><form action='".search_link()."' method='GET'>
-				<input type='hidden' name='q' value='".search_page()."'>
-				<input type='search' name='search' placeholder='Search' class='autocomplete_tags'>
-				<input type='submit' value='Find' style='display: none;'>
-			</form>
-		";
+        $pin = $this->build_pin($image);
 
-        return rawHTML("$h_pin<br>$h_search");
+        $search = SHM_FORM(
+            action: search_link(),
+            method: 'GET',
+            children: [
+                INPUT([
+                    "name" => 'search',
+                    "type" => 'text',
+                    "class" => 'autocomplete_tags',
+                ]),
+                INPUT([
+                    "type" => 'submit',
+                    "value" => 'Find',
+                    "style" => 'display: none;'
+                ]),
+            ]
+        );
+
+        return emptyHTML($pin, BR(), $search);
     }
 
     /**
@@ -149,7 +162,7 @@ class ViewPostTheme extends Themelet
         }
 
         return SHM_SIMPLE_FORM(
-            "post/set",
+            make_link("post/set"),
             INPUT(["type" => "hidden", "name" => "image_id", "value" => $image->id]),
             TABLE(
                 [

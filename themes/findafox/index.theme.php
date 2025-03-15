@@ -20,7 +20,7 @@ class CustomIndexTheme extends IndexTheme
 
         $this->display_page_header($page, $images);
         $path = "list";
-        if (\safe\preg_match("/^\/post\/(list|search)\//", $_SERVER['REQUEST_URI'], $matches)) {
+        if (\Safe\preg_match("/^\/post\/(list|search)\//", $_SERVER['REQUEST_URI'], $matches)) {
             /** @var array{0: string, 1: string} $matches */
             $path = $matches[1];
         }
@@ -79,7 +79,7 @@ class CustomIndexTheme extends IndexTheme
     protected function display_page_images(Page $page, array $images): void
     {
         $path = "list";
-        if (\safe\preg_match("/^\/post\/(list|search)\//", $_SERVER['REQUEST_URI'], $matches)) {
+        if (\Safe\preg_match("/^\/post\/(list|search)\//", $_SERVER['REQUEST_URI'], $matches)) {
             /** @var array{0: string, 1: string} $matches */
             $path = $matches[1];
         }

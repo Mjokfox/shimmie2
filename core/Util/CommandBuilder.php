@@ -7,7 +7,7 @@ namespace Shimmie2;
 // Provides mechanisms for cleanly executing command-line applications
 // Was created to try to centralize a solution for whatever caused this:
 // quotes are only needed if the path to convert contains a space; some other times, quotes break things, see github bug #27
-class CommandBuilder
+final class CommandBuilder
 {
     private string $executable;
     /** @var string[] */
@@ -63,7 +63,7 @@ class CommandBuilder
 
         Log::debug('command_builder', "Command `$cmd` returned $ret and outputted $output");
 
-        if ($fail_on_non_zero_return && (int)$ret !== (int)0) {
+        if ($fail_on_non_zero_return && $ret !== 0) {
             throw new ServerError("Command `$cmd` failed, returning $ret and outputting $output");
         }
         return $output;

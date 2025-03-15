@@ -8,7 +8,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class ET extends Extension
+final class ET extends Extension
 {
     public const KEY = "et";
     /** @var ETTheme */
@@ -63,7 +63,7 @@ class ET extends Extension
         $core_exts = [];
         $extra_exts = [];
         foreach (ExtensionInfo::get_all() as $key => $info) {
-            if ($info->is_enabled()) {
+            if ($info::is_enabled()) {
                 if ($info->core) {
                     $core_exts[] = $info::KEY;
                 } else {
@@ -78,7 +78,7 @@ class ET extends Extension
             "about" => [
                 'title' => $config->get_string(SetupConfig::TITLE),
                 'theme' => $config->get_string(SetupConfig::THEME),
-                'url'   => make_http(make_link("")),
+                'url'   => (string)(make_link("")->asAbsolute()),
             ],
             "versions" => [
                 'shimmie' => SysConfig::getVersion(),

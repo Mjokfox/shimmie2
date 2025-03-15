@@ -6,11 +6,11 @@ namespace Shimmie2;
 
 use PHPUnit\Framework\TestCase;
 
-class DatabaseUpgradeEventTest extends TestCase
+final class DatabaseUpgradeEventTest extends TestCase
 {
     public function testDatabaseUpgrade(): void
     {
         $e = send_event(new DatabaseUpgradeEvent());
-        $this->assertFalse($e->stop_processing);
+        self::assertFalse($e->stop_processing);
     }
 }

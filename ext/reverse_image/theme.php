@@ -39,7 +39,7 @@ class ReverseImageTheme extends Themelet
         $max_reverse_result_limit = $config->get_int(ReverseImageConfig::CONF_MAX_LIMIT);
         $default_reverse_result_limit = $config->get_int(ReverseImageConfig::CONF_DEFAULT_AMOUNT);
         $url = $_POST["url"] ?? "";
-        $html = SHM_FORM("reverse_image_search", multipart: true, form_id: "reverse_image_search");
+        $html = SHM_FORM(make_link("reverse_image_search"), multipart: true, id: "reverse_image_search");
         $html->appendChild(
             DIV(
                 ["class" => " RIS-spacer"],
@@ -151,7 +151,7 @@ class ReverseImageTheme extends Themelet
     {
         global $page;
         $html = (string)SHM_SIMPLE_FORM(
-            "admin/reverse_image",
+            make_link("admin/reverse_image"),
             TABLE(
                 TR(
                     TD(["style" => "padding-right:5px"], B("Start id")),

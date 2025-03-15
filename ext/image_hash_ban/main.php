@@ -11,7 +11,7 @@ use MicroCRUD\Table;
 
 use function MicroHTML\{INPUT,emptyHTML};
 
-class HashBanTable extends Table
+final class HashBanTable extends Table
 {
     public function __construct(\FFSPHP\PDO $db)
     {
@@ -34,7 +34,7 @@ class HashBanTable extends Table
     }
 }
 
-class RemoveImageHashBanEvent extends Event
+final class RemoveImageHashBanEvent extends Event
 {
     public string $hash;
 
@@ -45,7 +45,7 @@ class RemoveImageHashBanEvent extends Event
     }
 }
 
-class AddImageHashBanEvent extends Event
+final class AddImageHashBanEvent extends Event
 {
     public string $hash;
     public string $reason;
@@ -58,21 +58,22 @@ class AddImageHashBanEvent extends Event
     }
 }
 
-class ImageBan extends Extension
+final class ImageBan extends Extension
 {
     public const KEY = "image_hash_ban";
+    public const VERSION_KEY = "ext_imageban_version";
 
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         global $database;
-        if ($this->get_version("ext_imageban_version") < 1) {
+        if ($this->get_version() < 1) {
             $database->create_table("image_bans", "
 				id SCORE_AIPK,
 				hash CHAR(32) NOT NULL,
 				date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 				reason TEXT NOT NULL
 			");
-            $this->set_version("ext_imageban_version", 1);
+            $this->set_version(1);
         }
     }
 
@@ -106,7 +107,7 @@ class ImageBan extends Extension
                 }
 
                 $page->set_mode(PageMode::REDIRECT);
-                $page->set_redirect(referer_or(make_link()));
+                $page->set_redirect(Url::referer_or());
             }
         }
         if ($event->page_matches("image_hash_ban/remove", method: "POST", permission: ImageHashBanPermission::BAN_IMAGE)) {
@@ -114,14 +115,14 @@ class ImageBan extends Extension
             send_event(new RemoveImageHashBanEvent($input['d_hash']));
             $page->flash("Post ban removed");
             $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(referer_or(make_link()));
+            $page->set_redirect(Url::referer_or());
         }
         if ($event->page_matches("image_hash_ban/list", permission: ImageHashBanPermission::BAN_IMAGE)) {
             $t = new HashBanTable($database->raw_db());
             $t->token = $user->get_auth_token();
             $t->inputs = $event->GET;
             $page->set_title("Post Bans");
-            $page->add_block(Block::nav());
+            $this->theme->display_navigation();
             $page->add_block(new Block(null, emptyHTML($t->table($t->query()), $t->paginator())));
         }
     }
@@ -165,7 +166,7 @@ class ImageBan extends Extension
         global $user;
         if ($user->can(ImageHashBanPermission::BAN_IMAGE)) {
             $event->add_part(SHM_SIMPLE_FORM(
-                "image_hash_ban/add",
+                make_link("image_hash_ban/add"),
                 INPUT(["type" => 'hidden', "name" => 'c_hash', "value" => $event->image->hash]),
                 INPUT(["type" => 'hidden', "name" => 'c_image_id', "value" => $event->image->id]),
                 INPUT(["type" => 'text', "name" => 'c_reason']),

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class SourceHistory extends Extension
+final class SourceHistory extends Extension
 {
     public const KEY = "source_history";
     /** @var SourceHistoryTheme */
@@ -77,7 +77,7 @@ class SourceHistory extends Extension
     {
         global $database;
 
-        if ($this->get_version("ext_source_history_version") < 1) {
+        if ($this->get_version() < 1) {
             $database->create_table("source_histories", "
 	    		id SCORE_AIPK,
 	    		image_id INTEGER NOT NULL,
@@ -89,18 +89,18 @@ class SourceHistory extends Extension
 				FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 			");
             $database->execute("CREATE INDEX source_histories_image_id_idx ON source_histories(image_id)", []);
-            $this->set_version("ext_source_history_version", 3);
+            $this->set_version(3);
         }
 
-        if ($this->get_version("ext_source_history_version") == 1) {
+        if ($this->get_version() == 1) {
             $database->execute("ALTER TABLE source_histories ADD COLUMN user_id INTEGER NOT NULL");
             $database->execute("ALTER TABLE source_histories ADD COLUMN date_set DATETIME NOT NULL");
-            $this->set_version("ext_source_history_version", 2);
+            $this->set_version(2);
         }
 
-        if ($this->get_version("ext_source_history_version") == 2) {
+        if ($this->get_version() == 2) {
             $database->execute("ALTER TABLE source_histories ADD COLUMN user_ip CHAR(15) NOT NULL");
-            $this->set_version("ext_source_history_version", 3);
+            $this->set_version(3);
         }
     }
 
@@ -346,6 +346,7 @@ class SourceHistory extends Extension
 
         // if the image has no history, make one with the old source
         $entries = $database->get_one("SELECT COUNT(*) FROM source_histories WHERE image_id = :image_id", ['image_id' => $image->id]);
+        assert(is_int($entries));
         if ($entries == 0 && !empty($old_source)) {
             $database->execute(
                 "

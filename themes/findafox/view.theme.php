@@ -113,7 +113,7 @@ class CustomViewPostTheme extends ViewPostTheme
         }
 
         return SHM_SIMPLE_FORM(
-            "post/set",
+            make_link("post/set"),
             INPUT(["type" => "hidden", "name" => "image_id", "value" => $image->id]),
             TABLE(
                 [
