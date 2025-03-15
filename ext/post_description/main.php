@@ -22,6 +22,8 @@ class DescriptionSetEvent extends Event
 
 class PostDescription extends Extension
 {
+    public const KEY = "post_description";
+
     /** @var PostDescriptionTheme */
     protected Themelet $theme;
 
