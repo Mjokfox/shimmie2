@@ -502,10 +502,6 @@ ul.flat-list li a {
 	font-weight: normal;
 }
 
-#tips {
-	margin-left: 16px;
-}
-
 #blotter1 {
 	position: relative;
 	margin-right: 16px;
@@ -1084,5 +1080,25 @@ table.pm-text {
 
 table#threadList {
 	width:100%;
+}
+
+#tips .markdown {
+	hyphens: none;
+}
+
+.tips-subcont {
+	display: flex;
+	gap:1em
+}
+
+.tips-subcont IMG {
+	width: 5em;
+}
+
+.tips-subcont SPAN {
+	padding:.5em;
+	border-radius: .5em;
+	height: fit-content;
+	border: 1px solid var(--link-hover);
 }
 /* end of changes */

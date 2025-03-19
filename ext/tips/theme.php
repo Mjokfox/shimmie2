@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\rawHTML;
+use function MicroHTML\{rawHTML,TABLE,TR,TD,SELECT,OPTION,INPUT,TEXTAREA,DIV,IMG};
 
 /**
  * @phpstan-type Tip array{id: int, image: string, text: string, enable: bool}
@@ -17,39 +17,52 @@ class TipsTheme extends Themelet
     public function manageTips(string $url, array $images): void
     {
         global $page;
-        $select = "<select name='image'><option value=''>- Select Post -</option>";
+        $select = SELECT(
+            ["name" => "image"],
+            OPTION(
+                ["value" => ""],
+                "- Select Post -"
+            )
+        );
 
         foreach ($images as $image) {
-            $select .= "<option style='background-image:url(".$url.$image."); background-repeat:no-repeat; padding-left:20px;'  value=\"".$image."\">".$image."</option>\n";
+            $select->appendChild(OPTION(
+                [
+                    "style" => "background-image:url($url$image); background-repeat:no-repeat; padding-left:20px;",
+                    "value" => $image,
+                ],
+                $image
+            ));
         }
 
-        $select .= "</select>";
-
-        $html = "
-".make_form(make_link("tips/save"))."
-<table>
-  <tr>
-    <td>Enable:</td>
-    <td><input name='enable' type='checkbox' value='Y' checked/></td>
-  </tr>
-  <tr>
-    <td>Post:</td>
-    <td>{$select}</td>
-  </tr>
-  <tr>
-    <td>Message:</td>
-    <td><textarea name='text'></textarea></td>
-  </tr>
-  <tr>
-    <td colspan='2'><input type='submit' value='Submit' /></td>
-  </tr>
-</table>
-</form>
-";
+        $html = SHM_SIMPLE_FORM(make_link("tips/save"));
+        $html->appendChild(TABLE(
+            TR(
+                TD("Enable:"),
+                TD(
+                    INPUT(
+                        ["name" => "enable", "type" => "checkbox", "value" => "Y", "checked" => true]
+                    )
+                )
+            ),
+            TR(
+                TD("Post:"),
+                TD($select)
+            ),
+            TR(
+                TD("Message:"),
+                TD(TEXTAREA(["name" => "text"]))
+            ),
+            TR(
+                TD(
+                    INPUT(["type" => "submit", "value" => "submit"])
+                )
+            )
+        ));
 
         $page->set_title("Tips List");
         $this->display_navigation();
-        $page->add_block(new Block("Add Tip", rawHTML($html), "main", 10));
+        $page->add_block(new Block("Add Tip", $html, "main", 10));
     }
 
     /**
@@ -59,12 +72,12 @@ class TipsTheme extends Themelet
     {
         global $page;
 
-        $img = "";
-        if (!empty($tip['image'])) {
-            $img = "<img src=".$url.url_escape($tip['image'])." /> ";
-        }
-        $html = "<div id='tips'>".$img.html_escape($tip['text'])."</div>";
-        $page->add_block(new Block(null, rawHTML($html), "subheading", 10));
+        $html = DIV(
+            ["id" => "tips", "class" => "tips-container"],
+            (empty($tip['image']) ? null : IMG(["class" => "tips-image", "src" => $url.url_escape($tip['image'])])),
+            html_escape($tip['text'])
+        );
+        $page->add_block(new Block(null, $html, "left", 75));
     }
 
     /**

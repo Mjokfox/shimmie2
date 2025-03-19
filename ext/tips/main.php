@@ -64,24 +64,21 @@ final class Tips extends Extension
         if ($event->page_matches("tips/list", permission: TipsPermission::ADMIN)) {
             $this->manageTips();
             $this->getAll();
-        }
-        if ($event->page_matches("tips/save", method: "POST", permission: TipsPermission::ADMIN)) {
+        } elseif ($event->page_matches("tips/save", method: "POST", permission: TipsPermission::ADMIN)) {
             send_event(new CreateTipEvent(
-                $event->get_POST("enable") == "on",
+                $event->get_POST("enable") == "Y",
                 $event->req_POST("image"),
                 $event->req_POST("text")
             ));
             $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("tips/list"));
-        }
-        if ($event->page_matches("tips/status/{tipID}", permission: TipsPermission::ADMIN)) {
+        } elseif ($event->page_matches("tips/status/{tipID}", permission: TipsPermission::ADMIN)) {
             // FIXME: HTTP GET CSRF
             $tipID = $event->get_iarg('tipID');
             $this->setStatus($tipID);
             $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("tips/list"));
-        }
-        if ($event->page_matches("tips/delete/{tipID}", permission: TipsPermission::ADMIN)) {
+        } elseif ($event->page_matches("tips/delete/{tipID}", permission: TipsPermission::ADMIN)) {
             // FIXME: HTTP GET CSRF
             $tipID = $event->get_iarg('tipID');
             send_event(new DeleteTipEvent($tipID));
@@ -110,6 +107,7 @@ final class Tips extends Extension
 
     private function manageTips(): void
     {
+        global $config;
         $data_href = Url::base();
         $url = $data_href."/ext/tips/images/";
 
@@ -120,6 +118,16 @@ final class Tips extends Extension
                 $images[] = trim($file);
             }
         }
+        // theme HAX
+        $theme_name = $config->get_string(SetupConfig::THEME, "default");
+        $dirPath = \Safe\dir("./themes/$theme_name/static/");
+        while (($file = $dirPath->read()) !== false) {
+            error_log($file);
+            if ($file[0] !== "." && str_starts_with($file, "ext_tips_images_")) {
+                $images[] = trim(substr($file, 16));
+            }
+        }
+
         $dirPath->close();
         sort($images);
 
@@ -148,7 +156,7 @@ final class Tips extends Extension
             SELECT *
             FROM tips
             WHERE enable = :true
-            ORDER BY RAND()
+            ORDER BY RANDOM()
             LIMIT 1
         ", ["true" => true]);
 
@@ -175,7 +183,7 @@ final class Tips extends Extension
 
         $tip = $database->get_row("SELECT * FROM tips WHERE id = :id ", ["id" => $tipID]);
 
-        $enable = bool_escape($tip['enable']);
+        $enable = !bool_escape($tip['enable']);
 
         $database->execute("UPDATE tips SET enable = :enable WHERE id = :id", ["enable" => $enable, "id" => $tipID]);
     }
