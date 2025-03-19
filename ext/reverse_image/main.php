@@ -119,7 +119,7 @@ class ReverseImage extends Extension
                 if (!is_null($image)) {
                     $closest = [
                         "id" => $first,
-                        "link" => $image->get_thumb_link(),
+                        "link" => $image->get_thumb_link()->getPath(),
                         "width" => $image->width,
                         "height" => $image->height,
                         "filesize" => $image->filesize,
@@ -169,7 +169,7 @@ class ReverseImage extends Extension
                 $this->theme->display_results($ids);
             } else {
                 $page->set_mode(PageMode::REDIRECT);
-                $page->set_redirect("reverse_image_search");
+                $page->set_redirect(make_link("reverse_image_search"));
                 $page->flash("Something broke in the backed or no file or url given");
             }
         }

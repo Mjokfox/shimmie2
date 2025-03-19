@@ -18,7 +18,7 @@ class SillyCookiesConfig extends ConfigGroup
 
     #[ConfigMeta("The text to the right", ConfigType::STRING, default: "Shimmie", input: "longtext")]
     public const COOKIES_TEXT = "silly_cookies_text";
-    
+
     #[ConfigMeta("Add cookie dispenser?", ConfigType::BOOL, default: true)]
     public const GIB = "silly_cookies_give";
 }

@@ -303,6 +303,7 @@ final class TagCategories extends Extension
                 );
                 $this->delete_tags_from_category($_POST['tc_category']);
                 $this->add_tags_to_category($_POST['tc_category'], $_POST['tc_tag_list']);
+                Log::info("tag_categories", "Edited category: ".$_POST['tc_category'], "Edited category: ".$_POST['tc_category']);
 
             } elseif ($_POST['tc_status'] == 'new') {
                 $database->execute(
@@ -318,6 +319,7 @@ final class TagCategories extends Extension
                     ]
                 );
                 $this->add_tags_to_category($_POST['tc_category'], $_POST['tc_tag_list']);
+                Log::info("tag_categories", "Created category: ".$_POST['tc_category'], "Created category: ".$_POST['tc_category']);
             } elseif ($_POST['tc_status'] == 'delete') {
                 $this->delete_tags_from_category($_POST['tc_category']);
                 $database->execute(
@@ -327,6 +329,7 @@ final class TagCategories extends Extension
                         'category' => $_POST['tc_category']
                     ]
                 );
+                Log::info("tag_categories", "Deleted category: ".$_POST['tc_category'], "Deleted category: ".$_POST['tc_category']);
             }
         }
     }
