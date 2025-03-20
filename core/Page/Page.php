@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{emptyHTML, rawHTML, HTML, HEAD, BODY, TITLE, LINK, META, SCRIPT, A, B, joinHTML, BR, H1, HEADER as HTML_HEADER, NAV, ARTICLE, FOOTER, SECTION, H3, DIV};
+use function MicroHTML\{emptyHTML, HTML, HEAD, BODY, TITLE, LINK, META, SCRIPT, A, B, joinHTML, BR, H1, HEADER as HTML_HEADER, NAV, ARTICLE, FOOTER, SECTION, H3, DIV};
 
 /**
  * A data structure for holding all the bits of data that make up a page.
@@ -568,7 +568,7 @@ class Page
     public function html_html(HTMLElement $head, HTMLElement $body): HTMLElement
     {
         return emptyHTML(
-            rawHTML("<!doctype html>"),
+            \MicroHTML\rawHTML("<!doctype html>"),
             HTML(
                 ["lang" => "en"],
                 "\n",
@@ -661,7 +661,7 @@ class Page
     protected function flash_html(): HTMLElement
     {
         if ($this->flash) {
-            return B(["id" => "flash"], rawHTML(nl2br(html_escape(implode("\n", $this->flash)))));
+            return B(["id" => "flash"], joinHTML(BR(), $this->flash));
         }
         return emptyHTML();
     }

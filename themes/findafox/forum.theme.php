@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{H3, H1, TR, TABLE, TH, TBODY, THEAD, DIV, A, BR, emptyHTML, rawHTML};
+use function MicroHTML\{H3, H1, TR, TABLE, TH, TBODY, TD, THEAD, DIV, A, BR, emptyHTML, INPUT, TEXTAREA};
 
 /**
  * @phpstan-type Thread array{id:int,title:string,sticky:bool,user_name:string,uptodate:string,response_count:int}
@@ -72,51 +72,49 @@ class CustomForumTheme extends ForumTheme
         global $user, $cache;
 
         $tfe = send_event(new TextFormattingEvent($post["message"]));
-        $h_comment = $tfe->formatted;
+        $h_comment = $tfe->getFormattedHTML();
 
         $h_name = html_escape($post["user_name"]);
 
-        $i_post_id = $post["id"];
-
-        $h_posted = autodate($post["date"]);
+        $h_posted = SHM_DATE($post["date"]);
 
         $duser = User::by_name($post["user_name"]);
-        $h_userlink = "<a class='username' href='".make_link("user/$h_name")."'>$h_name</a><br>{$duser->class->name}";
-        /** @var BuildAvatarEvent $avatar_e */
-        $avatar_e = send_event(new BuildAvatarEvent($duser));
-        $h_avatar = $avatar_e->html;
-        $h_del = "";
+        $h_userlink = emptyHTML(A(["class" => "username", "href" => make_link("user/$h_name")], $h_name), BR(), $duser->class->name);
+        /** @var BuildAvatarEvent $BAE */
+        $BAE = send_event(new BuildAvatarEvent($duser));
+        $h_avatar = $BAE->html;
+        $h_del = null;
         if ($user->can(ForumPermission::FORUM_ADMIN)) {
             $h_del = A(["href" => make_link("forum/delete/".$threadID."/".$post['id'])], "Delete");
         }
-        $h_edit = "";
+        $h_edit = null;
         if ($user->can(CommentPermission::DELETE_COMMENT) || ($user->can(CommentPermission::CREATE_COMMENT) && $user->id === $duser->id)) {
-            $h_edit = $this->edit_button($threadID, $i_post_id);
+            $h_edit = $this->edit_button($threadID, $post["id"]);
         }
-        return rawHTML("
-            <table class='comment' id=\"$i_post_id\"><tr>
-                <td class='meta'>$h_userlink<br>$h_avatar<br/>$h_posted $h_del</td>
-                <td class='c_body'>$h_comment<br><br>$h_edit</td>
-            </tr></table>
-        ");
+        return TABLE(
+            ["class" => "comment", "id" => $post["id"]],
+            TR(
+                TD(["class" => "meta"], $h_userlink, BR(), $h_avatar, br(), $h_posted, $h_del),
+                TD(["class" => "c_body"], $h_comment, BR(), BR(), $h_edit)
+            )
+        );
 
     }
 
     protected function build_postbox(int $threadID): HTMLElement
     {
         global $config;
-
         $max_characters = $config->get_int(ForumConfig::MAX_CHARS_PER_POST);
-        return rawHTML('
-		<div class="comment comment_add" id="cadd'.$threadID.'">
-			'.make_form(make_link("forum/answer")).'
-                Max characters allowed: '.$max_characters.'
-				<input type="hidden" name="threadID" value="'.$threadID.'" />
-				<textarea id="comment_on_'.$threadID.'" name="message" rows="5" cols="50"></textarea>
-				<br><input type="submit" value="Reply" />
-			</form>
-		</div>
-		');
+        return DIV(
+            ["class" => "comment comment_add", "id" => "cadd$threadID"],
+            SHM_SIMPLE_FORM(
+                make_link("forum/answer"),
+                "Max characters allowed: $max_characters ",
+                INPUT(["type" => "hidden", "name" => "threadID", "value" => $threadID]),
+                TEXTAREA(["id" => "comment_on_$threadID", "name" => "comment", "rows" => 5, "cols" => 50]),
+                SHM_SUBMIT("Reply")
+            )
+        );
     }
 
     public function add_actions_block_custom(Page $page, int $threadID): HTMLElement
@@ -127,8 +125,8 @@ class CustomForumTheme extends ForumTheme
         );
     }
 
-    protected function edit_button(int $threadID, int $postID): string
+    protected function edit_button(int $threadID, int $postID): HTMLElement
     {
-        return "<a class=\"c-edit\" onclick='forum_edit_box(this,$threadID, $postID)'>Edit</a>";
+        return A(["class" => "c-edit", "onclick" => "forum_edit_box(this,$threadID,$postID);"], " Edit");
     }
 }

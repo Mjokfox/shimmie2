@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\rawHTML;
+use function MicroHTML\{A,B,BR,EM,P,SPAN,DIV,INPUT,TABLE,TR,TD,TEXTAREA,emptyHTML,joinHTML};
 
 class CustomCommentListTheme extends CommentListTheme
 {
@@ -19,75 +19,78 @@ class CustomCommentListTheme extends CommentListTheme
 
         $page->set_layout("no-left");
 
-        // parts for the whole page
-        $prev = $page_number - 1;
-        $next = $page_number + 1;
-
-        $h_prev = ($page_number <= 1) ? "Prev" :
-            "<a href='".make_link("comment/list/$prev")."'>Prev</a>";
-        $h_index = "<a href='".make_link()."'>Index</a>";
-        $h_next = ($page_number >= $total_pages) ? "Next" :
-            "<a href='".make_link("comment/list/$next")."'>Next</a>";
-
-        $nav = "$h_prev | $h_index | $h_next";
-
         $page->set_title("Comments");
-        $page->add_block(new Block("Navigation", rawHTML($nav), "left"));
+        $this->display_navigation([
+            ($page_number <= 1) ? null : make_link('comment/list/'.($page_number - 1)),
+            make_link(),
+            ($page_number >= $total_pages) ? null : make_link('comment/list/'.($page_number + 1))
+        ]);
         $this->display_paginator($page, "comment/list", null, $page_number, $total_pages);
 
         // parts for each image
         $position = 10;
 
-        $comment_captcha = $config->get_bool('comment_captcha');
+        $comment_captcha = $config->get_bool(CommentConfig::CAPTCHA);
         $comment_limit = $config->get_int(CommentConfig::LIST_COUNT, 10);
 
         foreach ($images as $pair) {
             $image = $pair[0];
             $comments = $pair[1];
 
-            $thumb_html = $this->build_thumb($image);
-
-            $s = "&nbsp;&nbsp;&nbsp;";
-            $un = $image->get_owner()->name;
-            $t = "";
+            $tags = [];
             foreach ($image->get_tag_array() as $tag) {
-                $t .= "<a href='".search_link([$tag])."'>".html_escape($tag)."</a> ";
+                $tags[] = A(["href" => search_link([$tag])], $tag);
             }
-            $p = autodate($image->posted);
 
-            $r = RatingsInfo::is_enabled() ? "<b>Rating</b> ".Ratings::rating_to_human($image['rating']) : "";
-            $comment_html =   "<b>Date</b> $p $s <b>Uploader</b> $un $s $r<br><b>Tags</b> $t<p>&nbsp;";
+            $comment_html = SPAN(
+                ["class" => "comment-info"],
+                SPAN(
+                    B("Date"),
+                    SHM_DATE($image->posted),
+                ),
+                SPAN(
+                    B("Uploader"),
+                    $image->get_owner()->name,
+                ),
+                RatingsInfo::is_enabled()
+                    ? SPAN(B("Rating"), Ratings::rating_to_human($image['rating']))
+                    : null,
+                BR(),
+                SPAN(
+                    B("Tags"),
+                    joinHTML(" ", $tags),
+                ),
+                P(),
+            );
 
             $comment_count = count($comments);
             if ($comment_limit > 0 && $comment_count > $comment_limit) {
-                //$hidden = $comment_count - $comment_limit;
-                $comment_html .= "<p>showing $comment_limit of $comment_count comments</p>";
+                $comment_html->appendChild(P("showing $comment_limit of $comment_count comments"));
                 $comments = array_slice($comments, negative_int($comment_limit));
             }
             foreach ($comments as $comment) {
-                $comment_html .= $this->comment_to_html($comment);
+                $comment_html->appendChild($this->comment_to_html($comment));
             }
             if ($can_post) {
                 if (!$user->is_anonymous()) {
-                    $comment_html .= $this->build_postbox($image->id);
+                    $comment_html->appendChild($this->build_postbox($image->id));
                 } else {
                     if (!$comment_captcha) {
-                        $comment_html .= $this->build_postbox($image->id);
+                        $comment_html->appendChild($this->build_postbox($image->id));
                     } else {
-                        $comment_html .= "<a href='".make_link("post/view/".$image->id)."'>Add Comment</a>";
+                        $comment_html->appendChild(A(["href" => make_link("post/view/".$image->id)], "Add Comment"));
                     }
                 }
             }
 
-            $html  = "
-				<table><tr>
-					<td style='width: 220px;'>$thumb_html</td>
-					<td style='text-align: left;'>$comment_html</td>
-				</tr></table>
-			";
+            $html = TABLE(
+                TR(
+                    TD(["style" => "width: 220px;"], $this->build_thumb($image)),
+                    TD(["style" => "text-align: left;"], $comment_html)
+                )
+            );
 
-
-            $page->add_block(new Block(null, rawHTML($html), "main", $position++));
+            $page->add_block(new Block(null, $html, "main", $position++));
         }
     }
 
@@ -96,48 +99,52 @@ class CustomCommentListTheme extends CommentListTheme
         // no recent comments in this theme
     }
 
-
     protected function comment_to_html(Comment $comment, bool $trim = false): HTMLElement
     {
-        global $user, $cache;
+        global $user;
 
         $tfe = send_event(new TextFormattingEvent($comment->comment));
 
-        $h_name = html_escape($comment->owner_name);
         if ($trim) {
             $h_comment = truncate($tfe->stripped, 50);
         } else {
-            $h_comment = $tfe->formatted;
+            $h_comment = $tfe->getFormattedHTML();
         }
-        $i_comment_id = $comment->comment_id;
-        $i_image_id = $comment->image_id;
-        $h_posted = autodate($comment->posted);
+        $h_posted = SHM_DATE($comment->posted);
 
         $duser = $comment->get_owner();
-        $h_userlink = "<a class='username' href='".make_link("user/$h_name")."'>$h_name</a><br>{$duser->class->name}";
-        /** @var BuildAvatarEvent $avatar_e */
-        $avatar_e = send_event(new BuildAvatarEvent($duser));
-        $h_avatar = $avatar_e->html;
-        $h_del = "";
+        $h_userlink = emptyHTML(A(["class" => "username", "href" => make_link("user/{$comment->owner_name}")], $comment->owner_name), BR(), $duser->class->name);
+        /** @var BuildAvatarEvent $BAE */
+        $BAE = send_event(new BuildAvatarEvent($duser));
+        $h_avatar = $BAE->html;
+        $h_del = null;
         if ($user->can(CommentPermission::DELETE_COMMENT) || $user->id === $comment->owner_id) {
-            $h_del = " - " . $this->delete_link($i_comment_id, $i_image_id, $comment->owner_name, $tfe->stripped);
+            $h_del = emptyHTML(" - ", $this->delete_link($comment->comment_id, $comment->image_id, $comment->owner_name, $tfe->stripped));
         }
-        $h_edit = "";
+        $h_edit = null;
         if ($user->can(CommentPermission::DELETE_COMMENT) || ($user->can(CommentPermission::CREATE_COMMENT) && $user->id === $comment->owner_id)) {
-            $h_edit = " - " . $this->edit_button($i_comment_id, $i_image_id);
+            $h_edit = emptyHTML(" - ", $this->edit_button($comment->comment_id, $comment->image_id));
         }
-        $h_edited = $comment->edited ? "<br><em>(edited)</em>" : "";
-        //$h_imagelink = $trim ? "<a href='".make_link("post/view/$i_image_id")."'>&gt;&gt;&gt;</a>\n" : "";
+        $h_edited = $comment->edited ? emptyHTML(BR(), EM("edited")) : null;
         if ($trim) {
-            return rawHTML("<p class='comment'>$h_userlink $h_del<br/>$h_posted<br/>$h_comment</p>");
+            return P(
+                ["class" => "comment"],
+                $h_userlink,
+                $h_del,
+                BR(),
+                $h_posted,
+                BR(),
+                $h_comment
+            );
         } else {
-            $h_reply = " > <a href='javascript: replyTo($i_image_id, $i_comment_id, \"$h_name\")'>Reply</a>";
-            return rawHTML("
-				<table class='comment' id=\"c$i_comment_id\"><tr>
-					<td class='meta'>$h_userlink<br>$h_avatar<br/>$h_posted$h_del$h_edited</td>
-					<td class='c_body'>$h_comment<br><br>$h_reply $h_edit</td>
-				</tr></table>
-			");
+            $h_reply = A(["href" => "javascript: replyTo({$comment->image_id}, {$comment->comment_id}, \"{$comment->owner_name}\");"], "Reply");
+            return TABLE(
+                ["class" => "comment", "id" => "c{$comment->comment_id}"],
+                TR(
+                    TD(["class" => "meta"], $h_userlink, BR(), $h_avatar, br(), $h_posted, $h_del, $h_edited),
+                    TD(["class" => "c_body"], $h_comment, BR(), BR(), $h_reply, $h_edit)
+                )
+            );
         }
     }
 
@@ -147,21 +154,20 @@ class CustomCommentListTheme extends CommentListTheme
 
         $hash = CommentList::get_hash();
         $h_captcha = $config->get_bool(CommentConfig::CAPTCHA) ? Captcha::get_html() : "";
-        //<a class="c-add" onclick=document.getElementById("cadd'.$image_id.'").style["display"]="unset">Add comment</a>
-        return rawHTML('
-		<div class="comment comment_add" id="cadd'.$image_id.'">
-			'.make_form(make_link("comment/add")).'
-				<input type="hidden" name="image_id" value="'.$image_id.'" />
-				<input type="hidden" name="hash" value="'.$hash.'" />
-				<textarea id="comment_on_'.$image_id.'" name="comment" rows="5" cols="50"></textarea>
-				'.$h_captcha.'
-				<br><input type="submit" value="Post Comment" />
-			</form>
-		</div>
-		');
+        return DIV(
+            ["class" => "comment comment_add", "id" => "cadd$image_id"],
+            SHM_SIMPLE_FORM(
+                make_link("comment/add"),
+                INPUT(["type" => "hidden", "name" => "image_id", "value" => $image_id]),
+                INPUT(["type" => "hidden", "name" => "hash", "value" => $hash]),
+                TEXTAREA(["id" => "comment_on_$image_id", "name" => "comment", "rows" => 5, "cols" => 50]),
+                $h_captcha,
+                SHM_SUBMIT("Post Comment")
+            )
+        );
     }
-    protected function edit_button(int $comment_id, int $image_id): string
+    protected function edit_button(int $comment_id, int $image_id): HTMLElement
     {
-        return "<a class=\"c-edit\" onclick='comment_edit_box(this,$image_id,$comment_id)'>Edit</a>";
+        return A(["class" => "c-edit", "onclick" => "comment_edit_box(this,$image_id,$comment_id);"], " Edit");
     }
 }

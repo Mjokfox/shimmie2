@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+use MicroHTML\HTMLElement;
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
 * Misc                                                                      *
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -169,10 +171,10 @@ function check_im_version(): int
 /**
  * A shorthand way to send a TextFormattingEvent and get the results.
  */
-function format_text(string $string): string
+function format_text(string $string): HTMLElement
 {
     $event = send_event(new TextFormattingEvent($string));
-    return $event->formatted;
+    return $event->getFormattedHTML();
 }
 
 /**
@@ -225,7 +227,7 @@ function get_debug_info(): string
 /**
  * Collects some debug information (execution time, memory usage, queries, etc)
  *
- * @return array<string, mixed>
+ * @return array{time:float,dbtime:float,mem_mb:float,files:int,query_count:int,event_count:int,cache_hits:int,cache_misses:int,version:string}
  */
 function get_debug_info_arr(): array
 {
@@ -374,8 +376,10 @@ function _get_user(): User
 {
     global $config, $page;
     $my_user = null;
-    if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
-        $parts = explode(" ", $_SERVER['HTTP_AUTHORIZATION'], 2);
+    /** @var ?string $auth */
+    $auth = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+    if (!is_null($auth)) {
+        $parts = explode(" ", $auth, 2);
         if (count($parts) === 2 && $parts[0] === "Bearer") {
             $parts = explode(":", $parts[1], 2);
             if (count($parts) === 2) {
@@ -397,20 +401,6 @@ function _get_user(): User
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
 * HTML Generation                                                           *
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-/**
- * Give a HTML string which shows an IP (if the user is allowed to see IPs),
- * and a link to ban that IP (if the user is allowed to ban IPs)
- *
- * FIXME: also check that IP ban ext is installed
- */
-function show_ip(string $ip, string $ban_reason): string
-{
-    global $user;
-    $ban = $user->can(IPBanPermission::BAN_IP) ? ", <a href='".make_link("ip_ban/list", ["c_ip" => $ip, "c_reason" => $ban_reason, "c_expires" => "+1 week"], "create")."'>Ban</a>" : "";
-    $ip = $user->can(IPBanPermission::VIEW_IP) ? $ip.$ban : "";
-    return $ip;
-}
 
 /**
  * Make a form tag with relevant auth token and stuff
@@ -501,7 +491,7 @@ function search_link(array $terms = [], int $page = 1): Url
  */
 function make_link(?string $page = null, ?array $query = null, ?string $fragment = null): Url
 {
-    return new Url(page: $page ?? "", query: $query, fragment: $fragment);
+    return new Url(page: $page ?? "", query: $query ?? [], fragment: $fragment);
 }
 
 /**
@@ -531,7 +521,9 @@ function make_link(?string $page = null, ?array $query = null, ?string $fragment
  */
 function _get_query(?string $uri = null): string
 {
-    $parsed_url = parse_url($uri ?? $_SERVER['REQUEST_URI'] ?? "");
+    /** @var ?string $request_uri */
+    $request_uri = $_SERVER['REQUEST_URI'] ?? null;
+    $parsed_url = parse_url($uri ?? $request_uri ?? "");
 
     // if we're looking at http://site.com/.../index.php,
     // then get the query from the "q" parameter

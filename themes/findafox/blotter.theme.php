@@ -33,7 +33,7 @@ class CustomBlotterTheme extends BlotterTheme
             $entry = $entries[0];
             $messy_date = $entry['entry_date'];
             $clean_date = date("m/d/y", \Safe\strtotime($messy_date));
-            $cleaner_time = autodate($messy_date);
+            $cleaner_time = SHM_DATE($messy_date);
             $out_text = "Server news: {$clean_date} ($cleaner_time)";
             $in_text = $entry['entry_text'];
             $id = $entry['id'];

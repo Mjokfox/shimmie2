@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{A, BR, rawHTML, emptyHTML,DIV,H3, TABLE, COLGROUP, COL, THEAD, TH, TR, TD, SPAN};
+use function MicroHTML\{A, BR, emptyHTML, DIV, H3, TABLE, COLGROUP, COL, THEAD, TH, TR, TD, SPAN};
 use function MicroHTML\joinHTML;
 
 class TagListTheme extends Themelet
@@ -92,7 +92,7 @@ class TagListTheme extends Themelet
         }
 
         foreach (array_keys($tag_categories_html) as $group) {
-            $tag_categories_html[$group] .= '</tbody></table>';
+            $tag_categories_html[$group] = TABLE($tag_categories_html[$group]);
         }
 
         if (isset($tag_categories_html["NULL"])) {
@@ -107,13 +107,13 @@ class TagListTheme extends Themelet
         $tagshtml = emptyHTML();
         foreach (array_keys($tag_categories_html) as $group) {
             $tagshtml->appendChild(H3(html_escape($group)));
-            $tagshtml->appendChild(rawHTML((string)$tag_categories_html[$group]));
+            $tagshtml->appendChild($tag_categories_html[$group]);
         }
 
         if (!is_null($other_html)) {
             $tagshtml->appendChild(DIV(
                 H3("Other"),
-                DIV(["class" => "blockbody"], rawHTML((string)$other_html)),
+                DIV(["class" => "blockbody"], $other_html),
             ));
         }
         $page->add_block(new Block(null, $tagshtml, "left", 10, "Tagsleft"));
@@ -146,7 +146,7 @@ class TagListTheme extends Themelet
                 $tag_infos,
                 $config->get_string(TagListConfig::POPULAR_SORT)
             ),
-            rawHTML("&nbsp;"),
+            " ",
             BR(),
             A(["class" => "more", "href" => make_link("tags")], "Full List")
         );
@@ -166,7 +166,7 @@ class TagListTheme extends Themelet
                 $config->get_string(TagListConfig::POPULAR_SORT),
                 $search
             ),
-            rawHTML("&nbsp;"),
+            " ",
             BR(),
             A(["class" => "more", "href" => make_link("tags")], "Full List")
         );

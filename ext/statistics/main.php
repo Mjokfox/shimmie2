@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+use function MicroHTML\emptyHTML;
+use function MicroHTML\SPAN;
+
 final class Statistics extends Extension
 {
     public const KEY = "statistics";
     /** @var StatisticsTheme */
     protected Themelet $theme;
-    /** @var String[] */
+    /** @var string[] */
     private array $unlisted = ['anonymous', 'ghost'];
 
     public function onPageRequest(PageRequestEvent $event): void
     {
         global $config, $page;
         if ($event->page_matches("stats") || $event->page_matches("stats/100")) {
-            $base_href = Url::base();
-            $sitename = $config->get_string(SetupConfig::TITLE);
-            $theme_name = $config->get_string(SetupConfig::THEME);
             $unlisted = "'".implode("','", $this->unlisted)."'";
 
             $limit = 10;
@@ -31,11 +31,11 @@ final class Statistics extends Extension
                 arsort($tallies[0], SORT_NUMERIC);
                 $stats = [];
                 foreach ($tallies[0] as $name => $tag_diff) {
-                    $entries = "";
-                    if (isset($tallies[1][$name])) {
-                        $entries = " <span class='tag_count' title='Total edits'>" . $tallies[1][$name] . "</span>";
-                    }
-                    $stats[$name] = "<span title='Tags changed (ignoring aliases)'>$tag_diff</span>$entries";
+                    $stats[$name] = emptyHTML(
+                        SPAN(["title" => "Tags changed (ignoring aliases)"], $tag_diff),
+                        isset($tallies[1][$name]) ?
+                            SPAN(["class" => "tag_count", "title" => "Total edits"], $tallies[1][$name]) : null
+                    );
                 }
                 $tag_table = $this->theme->build_table($stats, "Taggers", "Top $limit taggers", $limit);
             } else {

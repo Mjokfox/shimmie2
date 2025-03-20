@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{rawHTML, LINK, META};
+use function MicroHTML\{INPUT, DIV, LINK, META, FORM};
 
 class CustomIndexTheme extends IndexTheme
 {
@@ -62,15 +62,25 @@ class CustomIndexTheme extends IndexTheme
      */
     protected function build_navigation(int $page_number, int $total_pages, array $search_terms, string $class = ""): HTMLElement
     {
-        $h_search_string = count($search_terms) == 0 ? "" : html_escape(implode(" ", $search_terms));
-        $h_search_link = search_link();
-        return rawHTML("
-			<p><form action='$h_search_link' method='GET' class='search-bar $class'>
-				<input name='search' type='text' value='$h_search_string' class='autocomplete_tags' placeholder='tags'/>
-				<input type='submit' value='Go!'>
-				<input type='hidden' name='q' value='post/list'>
-			</form>
-		");
+        global $user;
+        $action = search_link();
+        return FORM(
+            [
+                "action" => $action,
+                "method" => "GET",
+                "class" => "search-bar $class"
+            ],
+            INPUT(["type" => "hidden", "name" => "q", "value" => $action->getPath()]),
+            INPUT(["type" => "hidden", "name" => "auth_token", "value" => $user->get_auth_token()]),
+            INPUT([
+                "name" => 'search',
+                "type" => 'text',
+                "value" => Tag::implode($search_terms),
+                "class" => 'autocomplete_tags',
+                "placeholder" => 'tags'
+            ]),
+            SHM_SUBMIT("Go!"),
+        );
     }
 
     /**
@@ -102,12 +112,10 @@ class CustomIndexTheme extends IndexTheme
      */
     protected function build_table(array $images, ?string $query): HTMLElement
     {
-        $h_query = html_escape($query);
-        $table = "<div class='shm-image-list' data-query='$h_query'>";
+        $table = DIV(["class" => "shm-image-list", "data-query" => $query]);
         foreach ($images as $image) {
-            $table .= $this->build_thumb($image) . "\n";
+            $table->appendChild($this->build_thumb($image));
         }
-        $table .= "</div>";
-        return rawHTML($table);
+        return $table;
     }
 }

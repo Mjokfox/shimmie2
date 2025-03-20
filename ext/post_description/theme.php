@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{rawHTML, TR, TD, TEXTAREA};
+use function MicroHTML\{TR, TD, TEXTAREA};
 
 class PostDescriptionTheme extends Themelet
 {
@@ -17,7 +17,7 @@ class PostDescriptionTheme extends Themelet
         $tfe = send_event(new TextFormattingEvent($image->offsetGet("description") ?? ""));
         return SHM_POST_INFO(
             "Description",
-            rawHTML($tfe->formatted),
+            $tfe->getFormattedHTML(),
             $user->can(ImagePermission::CREATE_IMAGE) ? TEXTAREA(["type" => "text", "name" => "description"], $tfe->original) : null
         );
     }

@@ -95,7 +95,6 @@ class ReverseImage extends Extension
                 $images[] = new Image($r);
             }
 
-            $plbe = send_event(new PostListBuildingEvent([]));
             $this->theme->list_search($page, $search);
 
             $image_count = $database->get_one("SELECT count(id) from images;");
@@ -106,9 +105,6 @@ class ReverseImage extends Extension
             $IT->set_page($page_number, (int)ceil($image_count / $page_size), [$search]);
             $IT->display_page($page, $images);
 
-            if (count($plbe->parts) > 0) {
-                $IT->display_admin_block($plbe->parts);
-            }
         } elseif ($event->page_matches("reverse_image_search_fromupload", method: "POST", authed: false)) {
             $ids = $this->reverse_image_search_post();
             $page->set_mode(PageMode::DATA);
@@ -185,7 +181,7 @@ class ReverseImage extends Extension
         global $user, $config;
         $event->add_part(
             SHM_SIMPLE_FORM(
-                make_link("reverse_image_search/"),
+                make_link("reverse_image_search"),
                 INPUT(["type" => "hidden", "name" => "hash", "value" => $event->image->hash]),
                 INPUT([
                     "type" => "submit",
@@ -301,16 +297,16 @@ class ReverseImage extends Extension
             if ($_FILES['file']['error']) {
                 throw new UploadException("Upload failed: ".$_FILES['file']['error']);
             } else {
-                $file = $_FILES['file']['tmp_name'];
+                $file = new Path($_FILES['file']['tmp_name']);
             }
         } else {
             return [];
         }
 
-        $features = $this->get_image_features($file);
+        $features = $this->get_image_features($file->str());
 
         if (isset($_POST["url"]) && $_POST["url"]) {
-            unlink($file);
+            unlink($file->str());
         }
 
         if (!$features) {

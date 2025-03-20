@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{A, BR, DIV, rawHTML, emptyHTML};
+use function MicroHTML\{A, BR, DIV, emptyHTML};
 
 class CustomWikiTheme extends WikiTheme
 {
@@ -23,7 +23,9 @@ class CustomWikiTheme extends WikiTheme
 
         // only the admin can edit the sidebar
         if ($user->can(WikiPermission::ADMIN)) {
-            $tfe->formatted .= "<p>(<a href='".make_link("wiki/wiki:sidebar/edit")."'>Edit</a>)";
+            $nav = emptyHTML($tfe->getFormattedHTML(), BR(), A(["href" => make_link("wiki/wiki:sidebar/edit")], "Edit"));
+        } else {
+            $nav = $tfe->getFormattedHTML();
         }
 
         // see if title is a category'd tag
@@ -35,7 +37,7 @@ class CustomWikiTheme extends WikiTheme
 
         $page->set_title(html_escape($wiki_page->title));
         $this->display_navigation();
-        $page->add_block(new Block("Wiki Index", rawHTML($tfe->formatted), "left", 20));
+        $page->add_block(new Block("Wiki Index", $nav, "left", 20));
         $page->add_block(new Block("Recent wiki changes", $this->get_recent_changes(), "left", 21));
         $page->add_block(new Block($title_html, $this->create_display_html($wiki_page)));
     }
@@ -72,9 +74,9 @@ class CustomWikiTheme extends WikiTheme
             $html->appendChild(
                 A(
                     ["href" => make_link("wiki/$title")],
-                    ucfirst($title)
+                    ucfirst("$title ")
                 ),
-                rawHTML(" ".autodate($date)),
+                SHM_DATE($date),
                 BR(),
             );
         }

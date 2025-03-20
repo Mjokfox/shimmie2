@@ -14,8 +14,8 @@ class CustomPostOwnerTheme extends PostOwnerTheme
     {
         global $user;
         $owner = $image->get_owner()->name;
-        $date = rawHTML(autodate($image->posted));
-        $ip = $user->can(IPBanPermission::VIEW_IP) ? rawHTML(" (" . show_ip($image->owner_ip, "Post posted {$image->posted}") . ")") : "";
+        $date = SHM_DATE($image->posted);
+        $ip = $user->can(IPBanPermission::VIEW_IP) ? rawHTML(" (" . SHM_IP($image->owner_ip, "Post posted {$image->posted}") . ")") : "";
         /** @var BuildAvatarEvent $avatar_e */
         $avatar_e = send_event(new BuildAvatarEvent($image->get_owner()));
         $avatar = $avatar_e->html;

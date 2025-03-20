@@ -6,20 +6,31 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{H2, B, LABEL, DIV, TABLE, TR, TD, INPUT, rawHTML, emptyHTML, IMG};
+use function MicroHTML\{H2, B, LABEL, DIV, TABLE, TR, TD, INPUT, emptyHTML, IMG, FORM};
 
 class ReverseImageTheme extends Themelet
 {
     public function build_navigation(string $search_string = "", string $class = ""): HTMLElement
     {
-        $h_search_link = make_link("post/search/1");
-        return rawHTML("
-			<form action='$h_search_link' method='GET' class='search-bar $class'>
-				<input name='search' type='text' value='$search_string' class='text-search' placeholder='text'/>
-				<input type='submit' value='Go!'>
-				<input type='hidden' name='q' value='post/list'>
-			</form>
-		");
+        global $user;
+        $action = make_link("post/search/1");
+        return FORM(
+            [
+                "action" => $action,
+                "method" => "GET",
+                "class" => "search-bar $class"
+            ],
+            INPUT(["type" => "hidden", "name" => "q", "value" => $action->getPath()]),
+            INPUT(["type" => "hidden", "name" => "auth_token", "value" => $user->get_auth_token()]),
+            INPUT([
+                "name" => 'search',
+                "type" => 'text',
+                "class" => 'text-search',
+                "placeholder" => 'text',
+                "value" => $search_string
+            ]),
+            SHM_SUBMIT("Go!"),
+        );
     }
 
     public function list_search(Page $page, string $search = ""): void
@@ -131,26 +142,25 @@ class ReverseImageTheme extends Themelet
             IMG(["src" => $src,"alt" => "Uploaded image.","style" => "max-height:512px;max-width:512px;"]),
             H2("Visually similar images on this site:"),
         );
-        $table = "<div class='shm-image-list'>";
+        $table = DIV(["class" => 'shm-image-list']);
         foreach (array_keys($ids) as $id) {
             $similarity = 100 * round(1 - $ids[$id], 2);
             $image = Image::by_id($id);
             if ($image) {
-                $table .= LABEL(
+                $table->appendChild(LABEL(
                     "Similarity: $similarity%",
                     $this->build_thumb($image)
-                );
+                ));
             }
         }
-        $table .= "</div>";
-        $html->appendChild(rawHTML($table));
+        $html->appendChild($table);
         $page->add_block(new Block(null, $html, "main", 20));
     }
 
     public function display_admin(): void
     {
         global $page;
-        $html = (string)SHM_SIMPLE_FORM(
+        $html = SHM_SIMPLE_FORM(
             make_link("admin/reverse_image"),
             TABLE(
                 TR(
@@ -164,6 +174,6 @@ class ReverseImageTheme extends Themelet
             ),
             SHM_SUBMIT('Extract features into database'),
         );
-        $page->add_block(new Block("Extract Features", rawHTML($html)));
+        $page->add_block(new Block("Extract Features", $html));
     }
 }

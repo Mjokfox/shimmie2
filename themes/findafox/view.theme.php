@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{emptyHTML, A, DIV, SPAN, LINK, rawHTML, TR, TD, INPUT, TABLE};
+use function MicroHTML\{emptyHTML, A, DIV, SPAN, LINK, rawHTML, TR, TD, INPUT, TABLE, FORM};
 
 class CustomViewPostTheme extends ViewPostTheme
 {
@@ -31,7 +31,7 @@ class CustomViewPostTheme extends ViewPostTheme
         $h_ownerlink = "<a href='".make_link("user/$h_owner")."'>$h_owner</a>";
         $h_ip = html_escape($image->owner_ip);
         $h_type = html_escape($image->get_mime());
-        $h_date = autodate($image->posted);
+        $h_date = SHM_DATE($image->posted);
         $h_filesize = to_shorthand_int($image->filesize);
 
         global $user;
@@ -81,16 +81,25 @@ class CustomViewPostTheme extends ViewPostTheme
 
     protected function build_navigation(Image $image): HTMLElement
     {
-        //$h_pin = $this->build_pin($image);
-        $h_search = "
-			<form action='".search_link()."' method='GET' class='search-bar '>
-				<input id='searchinput' name='search' type='text' placeholder='tags' class='autocomplete_tags' value=\"".(isset($_GET['search']) ? $_GET['search'] : "")."\">
-				<input type='submit' value='Go!'>
-				<input type='hidden' name='q' value='post/list'>
-			</form>
-		";
-
-        return rawHTML($h_search);
+        global $user;
+        $action = search_link();
+        return FORM(
+            [
+                "action" => $action,
+                "method" => "GET",
+                "class" => "search-bar"
+            ],
+            INPUT(["type" => "hidden", "name" => "q", "value" => $action->getPath()]),
+            INPUT(["type" => "hidden", "name" => "auth_token", "value" => $user->get_auth_token()]),
+            INPUT([
+                "name" => 'search',
+                "type" => 'text',
+                "class" => 'autocomplete_tags',
+                "placeholder" => 'tags',
+                "value" => $_GET['search'] ?? ""
+            ]),
+            SHM_SUBMIT("Go!"),
+        );
     }
 
     protected function build_info(Image $image, array $editor_parts): HTMLElement
