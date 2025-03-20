@@ -121,7 +121,7 @@ class PrivMsgTheme extends Themelet
 
     public function display_edit_button(Page $page, int $pm_id): void
     {
-        $page->add_block(new Block("", A(["href" => make_link("pm/edit/$pm_id")],"Edit"), "main", 49));
+        $page->add_block(new Block("", A(["href" => make_link("pm/edit/$pm_id")], "Edit"), "main", 49));
     }
 
     public function display_message(Page $page, User $from, User $to, PM $pm): void
@@ -129,6 +129,6 @@ class PrivMsgTheme extends Themelet
         $page->set_title("Private Message");
         $page->set_heading($pm->subject);
         $this->display_navigation();
-        $page->add_block(new Block("Message from {$from->name}:", emptyHTML(H2($pm->subject),HR(),BR(),format_text($pm->message)), "main", 10));
+        $page->add_block(new Block("Message from {$from->name}:", emptyHTML(H2($pm->subject), HR(), BR(), format_text($pm->message)), "main", 10));
     }
 }
