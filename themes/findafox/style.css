@@ -1109,4 +1109,9 @@ table#threadList {
 	height: fit-content;
 	border: 1px solid var(--link-hover);
 }
+
+DIV.wiki-all-grid {
+	display: block;
+	column-count: 3;
+}
 /* end of changes */

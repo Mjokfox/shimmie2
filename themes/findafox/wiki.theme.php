@@ -42,6 +42,29 @@ class CustomWikiTheme extends WikiTheme
         $page->add_block(new Block($title_html, $this->create_display_html($wiki_page)));
     }
 
+    public function display_list_page(Page $page, ?WikiPage $nav_page = null): void
+    {
+        global $database;
+        if (is_null($nav_page)) {
+            $nav_page = new WikiPage();
+            $nav_page->body = "";
+        }
+
+        $body_html = format_text($nav_page->body);
+
+        $query = "SELECT DISTINCT title FROM wiki_pages
+                ORDER BY title ASC";
+        $titles = $database->get_col($query);
+        $html = DIV(["class" => "wiki-all-grid"]);
+        foreach ($titles as $title) {
+            $html->appendChild(DIV(A(["href" => make_link("wiki/$title")], $title)));
+        }
+        $page->set_title("Wiki page list");
+        $page->add_block(new Block("Wiki Index", $body_html, "left", 20));
+        $page->add_block(new Block("Recent wiki changes", $this->get_recent_changes(), "left", 21));
+        $page->add_block(new Block("All Wiki Pages", $html));
+    }
+
     public function get_recent_changes(): HTMLElement
     {
         global $database;
