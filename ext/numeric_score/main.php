@@ -92,16 +92,12 @@ final class NumericScoreVote
 
 final class NumericScoreSetEvent extends Event
 {
-    public int $image_id;
-    public User $user;
-    public int $score;
-
-    public function __construct(int $image_id, User $user, int $score)
-    {
+    public function __construct(
+        public int $image_id,
+        public User $user,
+        public int $score
+    ) {
         parent::__construct();
-        $this->image_id = $image_id;
-        $this->user = $user;
-        $this->score = $score;
     }
 }
 
@@ -301,7 +297,7 @@ final class NumericScore extends Extension
 
         // vote recounting is pretty heavy, and often hits statement timeouts
         // if you try to recount all the images in one go
-        shm_set_timeout(null);
+        Ctx::$event_bus->set_timeout(null);
         foreach (array_chunk($image_ids, 100) as $chunk) {
             $id_list = implode(",", $chunk);
             $database->execute(

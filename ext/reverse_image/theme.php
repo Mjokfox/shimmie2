@@ -33,14 +33,16 @@ class ReverseImageTheme extends Themelet
         );
     }
 
-    public function list_search(Page $page, string $search = ""): void
+    public function list_search(string $search = ""): void
     {
+        global $page;
         $nav = $this->build_navigation($search, "full-width");
         $page->add_block(new Block("Text Search", $nav, "left", 2, "text-search"));
     }
 
-    public function view_search(Page $page, string $search = ""): void
+    public function view_search(string $search = ""): void
     {
+        global $page;
         $nav = $this->build_navigation($search, "");
         $page->add_block(new Block("Text Search", $nav, "left", 2, "text-search-view"));
     }

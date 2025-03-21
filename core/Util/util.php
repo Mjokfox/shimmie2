@@ -12,35 +12,16 @@ use MicroHTML\HTMLElement;
 
 function get_theme(): string
 {
-    global $config;
-    $theme = $config->get_string(SetupConfig::THEME, "default");
+    $theme = Ctx::$config->get_string(SetupConfig::THEME, "default");
     if (!file_exists("themes/$theme")) {
         $theme = "default";
     }
     return $theme;
 }
 
-function get_theme_class(string $class): ?object
-{
-    $theme = ucfirst(get_theme());
-    $options = [
-        "\\Shimmie2\\$theme$class",
-        "\\Shimmie2\\Custom$class",
-        "\\Shimmie2\\$class",
-    ];
-    foreach ($options as $option) {
-        if (class_exists($option)) {
-            return new $option();
-        }
-    }
-    return null;
-}
-
-
 function contact_link(?string $contact = null): ?string
 {
-    global $config;
-    $text = $contact ?? $config->get_string(SetupConfig::CONTACT_LINK);
+    $text = $contact ?? Ctx::$config->get_string(SetupConfig::CONTACT_LINK);
     if (is_null($text)) {
         return null;
     }
@@ -69,11 +50,9 @@ function contact_link(?string $contact = null): ?string
  */
 function get_memory_limit(): int
 {
-    global $config;
-
     // thumbnail generation requires lots of memory
     $shimmie_limit = max(
-        $config->get_int(MediaConfig::MEM_LIMIT),
+        Ctx::$config->get_int(MediaConfig::MEM_LIMIT),
         8 * 1024 * 1024 // don't go below 8MB
     );
 
@@ -112,8 +91,6 @@ function get_memory_limit(): int
  */
 function get_upload_limits(): array
 {
-    global $config;
-
     $ini_files = ini_get('max_file_uploads');
     $ini_filesize = ini_get('upload_max_filesize');
     $ini_post = ini_get('post_max_size');
@@ -122,17 +99,17 @@ function get_upload_limits(): array
     $sys_filesize = empty($ini_filesize) ? null : parse_shorthand_int($ini_filesize);
     $sys_post = empty($ini_post) ? null : parse_shorthand_int($ini_post);
 
-    $conf_files = $config->get_int(UploadConfig::COUNT);
-    $conf_filesize = $config->get_int(UploadConfig::SIZE);
+    $conf_files = Ctx::$config->get_int(UploadConfig::COUNT);
+    $conf_filesize = Ctx::$config->get_int(UploadConfig::SIZE);
     $conf_post = ($conf_files ?? 0) * ($conf_filesize ?? 0);
 
     $limits = [
         'files' => $sys_files,
         'filesize' => $sys_filesize,
         'post' => $sys_post,
-        'shm_files' => (int)min($conf_files ?? PHP_INT_MAX, $sys_files ?? PHP_INT_MAX),
-        'shm_filesize' => (int)min($conf_filesize ?? PHP_INT_MAX, $sys_filesize ?? PHP_INT_MAX),
-        'shm_post' => (int)min($conf_post, $sys_post ?? PHP_INT_MAX),
+        'shm_files' => min($conf_files ?? PHP_INT_MAX, $sys_files ?? PHP_INT_MAX),
+        'shm_filesize' => min($conf_filesize ?? PHP_INT_MAX, $sys_filesize ?? PHP_INT_MAX),
+        'shm_post' => min($conf_post, $sys_post ?? PHP_INT_MAX),
     ];
 
     return $limits;
@@ -231,18 +208,18 @@ function get_debug_info(): string
  */
 function get_debug_info_arr(): array
 {
-    global $cache, $config, $_shm_event_bus, $database, $_shm_load_start;
+    global $_shm_load_start;
 
     return [
         "time" => round(ftime() - $_shm_load_start, 2),
-        "dbtime" => round($database->dbtime, 2),
+        "dbtime" => round(Ctx::$database->dbtime, 2),
         "mem_mb" => round(((memory_get_peak_usage(true) + 512) / 1024) / 1024, 2),
         "files" => count(get_included_files()),
-        "query_count" => $database->query_count,
-        // "query_log" => $database->queries,
-        "event_count" => $_shm_event_bus->event_count,
-        "cache_hits" => $cache->get("__etc_cache_hits"),
-        "cache_misses" => $cache->get("__etc_cache_misses"),
+        "query_count" => Ctx::$database->query_count,
+        // "query_log" => Ctx::$database->queries,
+        "event_count" => Ctx::$event_bus->event_count,
+        "cache_hits" => Ctx::$cache->get("__etc_cache_hits"),
+        "cache_misses" => Ctx::$cache->get("__etc_cache_misses"),
         "version" => SysConfig::getVersion(),
     ];
 }
@@ -264,8 +241,7 @@ function require_all(array $files): void
 
 function _load_ext_files(): void
 {
-    global $_tracer;
-    $_tracer->begin("Load Ext Files");
+    Ctx::$tracer->begin("Load Ext Files");
     require_all(array_merge(
         Filesystem::zglob("ext/*/info.php"),
         Filesystem::zglob("ext/*/config.php"),
@@ -273,23 +249,20 @@ function _load_ext_files(): void
         Filesystem::zglob("ext/*/theme.php"),
         Filesystem::zglob("ext/*/main.php"),
     ));
-    $_tracer->end();
+    Ctx::$tracer->end();
 }
 
 function _load_theme_files(): void
 {
-    global $_tracer;
-    $_tracer->begin("Load Theme Files");
+    Ctx::$tracer->begin("Load Theme Files");
     $theme = get_theme();
     require_once('themes/'.$theme.'/page.class.php');
     require_all(Filesystem::zglob('themes/'.$theme.'/*.theme.php'));
-    $_tracer->end();
+    Ctx::$tracer->end();
 }
 
 function _set_up_shimmie_environment(): void
 {
-    global $tracer_enabled;
-
     if (file_exists("images") && !file_exists("data/images")) {
         die_nicely("Upgrade error", "As of Shimmie 2.7 images and thumbs should be moved to data/images and data/thumbs");
     }
@@ -305,7 +278,7 @@ function _set_up_shimmie_environment(): void
     // The trace system has a certain amount of memory consumption every time it is used,
     // so to prevent running out of memory during complex operations code that uses it should
     // check if tracer output is enabled before making use of it.
-    $tracer_enabled = !is_null(SysConfig::getTraceFile());
+    Ctx::$tracer_enabled = !is_null(SysConfig::getTraceFile());
 }
 
 /**
@@ -374,7 +347,6 @@ function _fatal_error(\Throwable $e): void
 
 function _get_user(): User
 {
-    global $config, $page;
     $my_user = null;
     /** @var ?string $auth */
     $auth = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
@@ -387,11 +359,11 @@ function _get_user(): User
             }
         }
     }
-    if (is_null($my_user) && $page->get_cookie("user") && $page->get_cookie("session")) {
-        $my_user = User::by_session($page->get_cookie("user"), $page->get_cookie("session"));
+    if (is_null($my_user) && Ctx::$page->get_cookie("user") && Ctx::$page->get_cookie("session")) {
+        $my_user = User::by_session(Ctx::$page->get_cookie("user"), Ctx::$page->get_cookie("session"));
     }
     if (is_null($my_user)) {
-        $my_user = User::by_id($config->get_int(UserAccountsConfig::ANON_ID, 0));
+        $my_user = User::by_id(Ctx::$config->get_int(UserAccountsConfig::ANON_ID, 0));
     }
 
     return $my_user;
@@ -407,8 +379,7 @@ function _get_user(): User
  */
 function make_form(Url $target, bool $multipart = false, string $form_id = "", string $onsubmit = "", string $name = ""): string
 {
-    global $user;
-    $at = $user->get_auth_token();
+    $at = Ctx::$user->get_auth_token();
 
     $extra = empty($form_id) ? '' : 'id="'. $form_id .'"';
     if ($multipart) {

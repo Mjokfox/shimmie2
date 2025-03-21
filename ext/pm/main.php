@@ -25,6 +25,7 @@ final class SendPMEvent extends Event
 class EditPMEvent extends Event
 {
     public PM $pm;
+    public int $id;
 
     public function __construct(PM $pm)
     {
@@ -37,16 +38,20 @@ class EditPMEvent extends Event
 final class PM
 {
     public int $id = -1;
-    public int $from_id;
-    public string $from_ip;
-    public int $to_id;
     public mixed $sent_date;
-    #[Field]
-    public string $subject;
-    #[Field]
-    public string $message;
-    #[Field]
-    public bool $is_read;
+
+    public function __construct(
+        public int $from_id,
+        public string $from_ip,
+        public int $to_id,
+        #[Field]
+        public string $subject,
+        #[Field]
+        public string $message,
+        #[Field]
+        public bool $is_read = false
+    ) {
+    }
 
     #[Field]
     public function from(): User
@@ -63,22 +68,6 @@ final class PM
     public function graphql_guid(): string
     {
         return "pm:{$this->id}";
-    }
-
-    public function __construct(
-        int $from_id,
-        string $from_ip,
-        int $to_id,
-        string $subject,
-        string $message,
-        bool $is_read = false
-    ) {
-        $this->from_id = $from_id;
-        $this->from_ip = $from_ip;
-        $this->to_id   = $to_id;
-        $this->subject = $subject;
-        $this->message = $message;
-        $this->is_read = $is_read;
     }
 
     /**
@@ -296,28 +285,28 @@ final class PrivMsg extends Extension
 
     public function onUserPageBuilding(UserPageBuildingEvent $event): void
     {
-        global $page, $user;
+        global $user;
         $duser = $event->display_user;
         if (!$user->is_anonymous() && !$duser->is_anonymous()) {
             if ($user->can(PrivMsgPermission::READ_PM)) {
                 if (($duser->id == $user->id) || $user->can(PrivMsgPermission::VIEW_OTHER_PMS)) {
                     $pms = PM::get_pms_to($duser, 5, );
                     if (!empty($pms)) {
-                        $this->theme->display_pms($page, $pms, from:true, more:$duser->id, archived:$duser->id);
+                        $this->theme->display_pms($pms, from:true, more:$duser->id, archived:$duser->id);
                     }
                     $sent_pms = PM::get_pms_by($duser, 5);
                     if (!empty($sent_pms)) {
-                        $this->theme->display_pms($page, $sent_pms, header:"Sent messages", to:true, edit:true, delete:true, more:$duser->id, archived:$duser->id);
+                        $this->theme->display_pms($sent_pms, header:"Sent messages", to:true, edit:true, delete:true, more:$duser->id, archived:$duser->id);
                     }
                 } else {
                     $pms = PM::get_pms_to_and_by($duser, $user, 5);
                     if (!empty($pms)) {
-                        $this->theme->display_pms($page, $pms, header:"Messages from you", to:true, edit:true, delete:true, more:$duser->id);
+                        $this->theme->display_pms($pms, header:"Messages from you", to:true, edit:true, delete:true, more:$duser->id);
                     }
                 }
             }
             if ($user->can(PrivMsgPermission::SEND_PM) && $user->id !== $duser->id) {
-                $this->theme->display_composer($page, $user, $duser);
+                $this->theme->display_composer($user, $duser);
             }
         }
     }
@@ -337,12 +326,12 @@ final class PrivMsg extends Extension
                     $cache->delete("pm-count-{$user->id}");
                 }
                 $pmo = PM::from_row($pm);
-                $this->theme->display_message($page, $from_user, $user, $pmo);
+                $this->theme->display_message($from_user, $user, $pmo);
                 if ($user->can(PrivMsgPermission::SEND_PM)) {
                     if ($pm["from_id"] == $user->id) {
-                        $this->theme->display_edit_button($page, $pmo->id);
+                        $this->theme->display_edit_button($pmo->id);
                     } else {
-                        $this->theme->display_composer($page, $user, $from_user, "Re: ".$pmo->subject);
+                        $this->theme->display_composer($user, $from_user, "Re: ".$pmo->subject);
                     }
                 }
             } else {
@@ -354,11 +343,11 @@ final class PrivMsg extends Extension
                 if ($duser_id == 0 || ($duser_id == $user->id)) {
                     $pms = PM::get_pms_to($user);
                     if (!empty($pms)) {
-                        $this->theme->display_pms($page, $pms, from:true, archived:$user->id);
+                        $this->theme->display_pms($pms, from:true, archived:$user->id);
                     }
                     $sent_pms = PM::get_pms_by($user);
                     if (!empty($sent_pms)) {
-                        $this->theme->display_pms($page, $sent_pms, header:"Sent messages", to:true, edit:true, delete:true, archived:$user->id);
+                        $this->theme->display_pms($sent_pms, header:"Sent messages", to:true, edit:true, delete:true, archived:$user->id);
                     } elseif (empty($pms)) {
                         throw new ObjectNotFound("You have no messages to display!");
                     }
@@ -366,11 +355,11 @@ final class PrivMsg extends Extension
                     $duser = User::by_id($duser_id);
                     $pms = PM::get_pms_to($duser);
                     if (!empty($pms)) {
-                        $this->theme->display_pms($page, $pms, from:true, archived:$duser->id);
+                        $this->theme->display_pms($pms, from:true, archived:$duser->id);
                     }
                     $sent_pms = PM::get_pms_by($duser);
                     if (!empty($sent_pms)) {
-                        $this->theme->display_pms($page, $sent_pms, header:"Sent messages", to:true, edit:true, delete:true, archived:$duser->id);
+                        $this->theme->display_pms($sent_pms, header:"Sent messages", to:true, edit:true, delete:true, archived:$duser->id);
                     } elseif (empty($pms)) {
                         throw new ObjectNotFound("You have no messages to display!");
                     }
@@ -378,7 +367,7 @@ final class PrivMsg extends Extension
                     $duser = User::by_id($duser_id);
                     $pms = PM::get_pms_to_and_by($duser, $user);
                     if (!empty($pms)) {
-                        $this->theme->display_pms($page, $pms, header:"Messages from you", to:true, edit:true, delete:true);
+                        $this->theme->display_pms($pms, header:"Messages from you", to:true, edit:true, delete:true);
                     } else {
                         throw new ObjectNotFound("You have not sent anything to this user");
                     }
@@ -392,7 +381,7 @@ final class PrivMsg extends Extension
                 if ($duser_id == 0 || ($duser_id == $user->id)) {
                     $pms = PM::get_pm_archive($user);
                     if (!empty($pms)) {
-                        $this->theme->display_pms($page, $pms, header:"Archive", from:true, to:true, edit:true, archive:false, delete:true);
+                        $this->theme->display_pms($pms, header:"Archive", from:true, to:true, edit:true, archive:false, delete:true);
                     } else {
                         throw new ObjectNotFound("Your archive is empty!");
                     }
@@ -400,7 +389,7 @@ final class PrivMsg extends Extension
                     $duser = User::by_id($duser_id);
                     $pms = PM::get_pm_archive($duser);
                     if (!empty($pms)) {
-                        $this->theme->display_pms($page, $pms, header:"Archive from {$duser->name}", from:true, to:true, edit:true, archive:false, delete:true);
+                        $this->theme->display_pms($pms, header:"Archive from {$duser->name}", from:true, to:true, edit:true, archive:false, delete:true);
                     } else {
                         throw new ObjectNotFound("{$duser->name}'s archive is empty!");
                     }
@@ -474,7 +463,7 @@ final class PrivMsg extends Extension
                 if (substr($subject, -9) === " (edited)") {
                     $subject = substr($subject, 0, -9);
                 }
-                $this->theme->display_editor($page, $pmo->id, $subject, $pmo->message, $pmo->to_id);
+                $this->theme->display_editor($pmo->id, $subject, $pmo->message, $pmo->to_id);
             } else {
                 throw new PermissionDenied("You do not have permission to edit this PM");
             }

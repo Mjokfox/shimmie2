@@ -13,10 +13,9 @@ class TagCategoriesTheme extends Themelet
     /**
      * @param array<array{category: string, upper_group: string, lower_group: string, color: string, upload_page_type: ?int, upload_page_priority: ?int}> $tc_dict
      */
-    public function show_tag_categories(Page $page, array $tc_dict): void
+    public function show_tag_categories(array $tc_dict): void
     {
-        global $database;
-
+        global $page, $database;
         $tc_block_index = 0;
         $html = [];
 
@@ -225,8 +224,9 @@ class TagCategoriesTheme extends Themelet
         );
     }
 
-    public function show_count_tag_categories(Page $page): void
+    public function show_count_tag_categories(): void
     {
+        global $page;
         global $database;
         $dict = [];
         $dict[] = $database->get_all(

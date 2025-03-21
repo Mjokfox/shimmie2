@@ -89,9 +89,9 @@ final class Forum extends Extension
         global $page, $user;
         if ($event->page_matches("forum/index", paged: true)) {
             $pageNumber = $event->get_iarg('page_num', 1) - 1;
-            $this->show_last_threads($page, $pageNumber, $user->can(ForumPermission::FORUM_ADMIN));
+            $this->show_last_threads($pageNumber, $user->can(ForumPermission::FORUM_ADMIN));
             if ($user->can(ForumPermission::FORUM_CREATE)) {
-                $this->theme->display_new_thread_composer($page);
+                $this->theme->display_new_thread_composer();
             }
         }
         if ($event->page_matches("forum/view/{threadID}", paged: true)) {
@@ -107,7 +107,7 @@ final class Forum extends Extension
 
         }
         if ($event->page_matches("forum/new", permission: ForumPermission::FORUM_CREATE)) {
-            $this->theme->display_new_thread_composer($page);
+            $this->theme->display_new_thread_composer();
         }
         if ($event->page_matches("forum/create", permission: ForumPermission::FORUM_CREATE)) {
             $errors = $this->sanity_check_new_thread();
@@ -247,7 +247,7 @@ final class Forum extends Extension
         return $database->get_one("SELECT t.title FROM forum_threads AS t WHERE t.id = :id ", ['id' => $threadID]);
     }
 
-    private function show_last_threads(Page $page, int $pageNumber, bool $showAdminOptions = false): void
+    private function show_last_threads(int $pageNumber, bool $showAdminOptions = false): void
     {
         global $config, $database;
         $threadsPerPage = $config->get_int(ForumConfig::THREADS_PER_PAGE, 15);
@@ -265,7 +265,7 @@ final class Forum extends Extension
             ["limit" => $threadsPerPage, "offset" => $pageNumber * $threadsPerPage]
         );
 
-        $this->theme->display_thread_list($page, $threads, $showAdminOptions, $pageNumber + 1, $totalPages);
+        $this->theme->display_thread_list($threads, $showAdminOptions, $pageNumber + 1, $totalPages);
     }
 
     private function show_posts(int $threadID, int $pageNumber): void

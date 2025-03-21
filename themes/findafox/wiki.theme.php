@@ -10,9 +10,9 @@ use function MicroHTML\{A, BR, DIV, emptyHTML};
 
 class CustomWikiTheme extends WikiTheme
 {
-    public function display_page(Page $page, WikiPage $wiki_page, ?WikiPage $nav_page = null): void
+    public function display_page(WikiPage $wiki_page, ?WikiPage $nav_page = null): void
     {
-        global $user;
+        global $user, $page;
 
         if (is_null($nav_page)) {
             $nav_page = new WikiPage();
@@ -42,9 +42,9 @@ class CustomWikiTheme extends WikiTheme
         $page->add_block(new Block($title_html, $this->create_display_html($wiki_page)));
     }
 
-    public function display_list_page(Page $page, ?WikiPage $nav_page = null): void
+    public function display_list_page(?WikiPage $nav_page = null): void
     {
-        global $database;
+        global $database, $page;
         if (is_null($nav_page)) {
             $nav_page = new WikiPage();
             $nav_page->body = "";

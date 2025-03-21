@@ -60,21 +60,17 @@ final class BulkActionBlockBuildingEvent extends Event
 
 final class BulkActionEvent extends Event
 {
-    public string $action;
-    public \Generator $items;
-    /** @var array<string, mixed> */
-    public array $params;
     public bool $redirect = true;
 
     /**
      * @param array<string, mixed> $params
      */
-    public function __construct(string $action, \Generator $items, array $params)
-    {
+    public function __construct(
+        public string $action,
+        public \Generator $items,
+        public array $params
+    ) {
         parent::__construct();
-        $this->action = $action;
-        $this->items = $items;
-        $this->params = $params;
     }
 }
 
@@ -98,7 +94,7 @@ final class BulkActions extends Extension
         }
 
         usort($babbe->actions, $this->sort_blocks(...));
-        $this->theme->display_selector($page, $babbe->actions, Tag::implode($event->search_terms));
+        $this->theme->display_selector($babbe->actions, Tag::implode($event->search_terms));
     }
 
     public function onBulkActionBlockBuilding(BulkActionBlockBuildingEvent $event): void
@@ -199,7 +195,7 @@ final class BulkActions extends Extension
                 throw new InvalidInput("No ids selected and no query present, cannot perform bulk operation on entire collection");
             }
 
-            shm_set_timeout(null);
+            Ctx::$event_bus->set_timeout(null);
             $bae = send_event(new BulkActionEvent($action, $items, $event->POST));
 
             if ($bae->redirect) {

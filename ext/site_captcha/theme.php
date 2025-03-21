@@ -8,8 +8,9 @@ use function MicroHTML\{BODY, emptyHTML, TITLE, META, H1, SCRIPT, NOSCRIPT, IMG,
 
 class SiteCaptchaTheme extends Themelet
 {
-    public function display_page(Page $page): void
+    public function display_page(): void
     {
+        global $page;
         $page->set_mode(PageMode::DATA);
         $page->add_http_header("Refresh: 3");
         $data_href = Url::base();
@@ -33,8 +34,9 @@ class SiteCaptchaTheme extends Themelet
         ));
     }
 
-    public function display_block(Page $page): void
+    public function display_block(): void
     {
+        global $page;
         $page->add_block(new Block(
             null,
             DIV(
@@ -46,8 +48,9 @@ class SiteCaptchaTheme extends Themelet
         ));
     }
 
-    public function display_cookie_image(Page $page, string $cookie_name, string $token): void
+    public function display_cookie_image(string $cookie_name, string $token): void
     {
+        global $page;
         $page->add_cookie(
             $cookie_name,
             $token,

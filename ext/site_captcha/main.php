@@ -24,16 +24,16 @@ class SiteCaptcha extends Extension
         $css_token = $this->get_token("css");
 
         if ($event->page_matches("captcha/image", method:"GET")) {
-            $this->theme->display_cookie_image($page, "captcha_image", $image_token);
+            $this->theme->display_cookie_image("captcha_image", $image_token);
         } elseif ($event->page_matches("captcha/css", method:"GET")) {
-            $this->theme->display_cookie_image($page, "captcha_css", $css_token);
+            $this->theme->display_cookie_image("captcha_css", $css_token);
         } elseif (!$event->page_matches("robots.txt") && ($image_cookie !== $image_token || $css_cookie !== $css_token)) {
             if (!$this->is_ip_whitelisted()) {
-                $this->theme->display_page($page);
+                $this->theme->display_page();
                 $event->stop_processing = true;
             }
         } else {
-            $this->theme->display_block($page);
+            $this->theme->display_block();
         }
 
     }

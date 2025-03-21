@@ -11,9 +11,9 @@ class PrivMsgTheme extends Themelet
     /**
      * @param PM[] $pms
      */
-    public function display_pms(Page $page, array $pms, string $header = "Inbox", bool $to = false, bool $from = false, bool $edit = false, bool $archive = true, bool $delete = true, int $more = 0, int $archived = 0): void
+    public function display_pms(array $pms, string $header = "Inbox", bool $to = false, bool $from = false, bool $edit = false, bool $archive = true, bool $delete = true, int $more = 0, int $archived = 0): void
     {
-        global $user;
+        global $user, $page;
 
         $tbody = TBODY();
         foreach ($pms as $pm) {
@@ -80,11 +80,12 @@ class PrivMsgTheme extends Themelet
             $more != 0 ? A(["href" => make_link("pm/list/$more")], "See all") : null,
             $archived != 0 ? A(["href" => make_link("pm/archived/$archived"), "style" => "margin-left:1em"], "Archived messages") : null,
         );
-        $page->add_block(new Block($header, $html, "main", 40, "private-messages"));
+        $page->add_block(new Block($header, $html, "main", 40, "private-messages-$header", hidable:true));
     }
 
-    public function display_composer(Page $page, User $from, User $to, string $subject = ""): void
+    public function display_composer(User $from, User $to, string $subject = ""): void
     {
+        global $user, $page;
         $html = SHM_SIMPLE_FORM(
             make_link("pm/send"),
             INPUT(["type" => "hidden", "name" => "to_id", "value" => $to->id]),
@@ -101,8 +102,9 @@ class PrivMsgTheme extends Themelet
         $page->add_block(new Block("Write a PM", $html, "main", 50));
     }
 
-    public function display_editor(Page $page, int $pm_id, string $subject = "", string $message = "", int $to_id = null): void
+    public function display_editor(int $pm_id, string $subject = "", string $message = "", int $to_id = null): void
     {
+        global $page;
         $html = SHM_SIMPLE_FORM(
             make_link("pm/edit"),
             INPUT(["type" => "hidden", "name" => "to_id", "value" => $pm_id]),
@@ -119,13 +121,15 @@ class PrivMsgTheme extends Themelet
         $page->add_block(new Block("Editing PM" . ($to_id ? " to ".User::by_id($to_id)->name : ""), $html, "main", 50));
     }
 
-    public function display_edit_button(Page $page, int $pm_id): void
+    public function display_edit_button(int $pm_id): void
     {
+        global $page;
         $page->add_block(new Block("", A(["href" => make_link("pm/edit/$pm_id")], "Edit"), "main", 49));
     }
 
-    public function display_message(Page $page, User $from, User $to, PM $pm): void
+    public function display_message(User $from, User $to, PM $pm): void
     {
+        global $page;
         $page->set_title("Private Message");
         $page->set_heading($pm->subject);
         $this->display_navigation();

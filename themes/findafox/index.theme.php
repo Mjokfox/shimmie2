@@ -13,12 +13,13 @@ class CustomIndexTheme extends IndexTheme
     /**
      * @param Image[] $images
      */
-    public function display_page(Page $page, array $images): void
+    public function display_page(array $images): void
     {
+        global $page;
         global $config, $user;
-        $this->display_shortwiki($page);
+        $this->display_shortwiki();
 
-        $this->display_page_header($page, $images);
+        $this->display_page_header($images);
         $path = "list";
         if (\Safe\preg_match("/^\/post\/(list|search)\//", $_SERVER['REQUEST_URI'], $matches)) {
             /** @var array{0: string, 1: string} $matches */
@@ -51,7 +52,7 @@ class CustomIndexTheme extends IndexTheme
             $page->add_html_header(LINK(["id" => "prevlink", "rel" => "previous", "href" => make_link("post/$path".($query ? "/$query" : "")."/$prev")]));
         }
         if (count($images) > 0) {
-            $this->display_page_images($page, $images);
+            $this->display_page_images($images);
         } else {
             throw new PostNotFound("No posts were found to match the search criteria");
         }
@@ -86,8 +87,9 @@ class CustomIndexTheme extends IndexTheme
     /**
      * @param Image[] $images
      */
-    protected function display_page_images(Page $page, array $images): void
+    protected function display_page_images(array $images): void
     {
+        global $page;
         $path = "list";
         if (\Safe\preg_match("/^\/post\/(list|search)\//", $_SERVER['REQUEST_URI'], $matches)) {
             /** @var array{0: string, 1: string} $matches */
@@ -100,10 +102,10 @@ class CustomIndexTheme extends IndexTheme
             }
             $query = url_escape(Tag::implode($this->search_terms));
             $page->add_block(new Block("Posts ", $this->build_table($images, "search=$query"), "main", 10, "image-list"));
-            $this->display_paginator($page, "post/$path/$query", null, $this->page_number, $this->total_pages, true);
+            $this->display_paginator("post/$path/$query", null, $this->page_number, $this->total_pages, true);
         } else {
             $page->add_block(new Block("Posts ", $this->build_table($images, null), "main", 10, "image-list"));
-            $this->display_paginator($page, "post/$path", null, $this->page_number, $this->total_pages, true);
+            $this->display_paginator("post/$path", null, $this->page_number, $this->total_pages, true);
         }
     }
 

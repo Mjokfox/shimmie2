@@ -39,18 +39,16 @@ final class CliApp extends \Symfony\Component\Console\Application
 
     public function run(?InputInterface $input = null, ?OutputInterface $output = null): int
     {
-        global $user, $tracer_enabled;
-
         $input ??= new ArgvInput();
         $output ??= new ConsoleOutput();
 
         if ($input->hasParameterOption(['--user', '-u'])) {
             $name = $input->getParameterOption(['--user', '-u']);
-            $user = User::by_name($name);
-            send_event(new UserLoginEvent($user));
+            Ctx::setUser(User::by_name($name));
+            send_event(new UserLoginEvent(Ctx::$user));
         }
         $this->traceFile = $input->getParameterOption(['--trace', '-t'], null);
-        $tracer_enabled = !is_null($this->traceFile);
+        Ctx::$tracer_enabled = !is_null($this->traceFile);
 
         $log_level = LogLevel::WARNING->value;
         if (true === $input->hasParameterOption(['--quiet', '-q'], true)) {

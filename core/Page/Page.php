@@ -254,8 +254,7 @@ class Page
      */
     public function display(): void
     {
-        global $_tracer;
-        $_tracer->begin("Display ({$this->mode->value})");
+        Ctx::$tracer->begin("Display ({$this->mode->value})");
         match($this->mode) {
             PageMode::MANUAL => null,
             PageMode::PAGE => $this->display_page(),
@@ -263,7 +262,7 @@ class Page
             PageMode::FILE => $this->display_file(),
             PageMode::REDIRECT => $this->display_redirect(),
         };
-        $_tracer->end();
+        Ctx::$tracer->end();
     }
 
     private function display_page(): void
@@ -360,10 +359,8 @@ class Page
      */
     public function add_auto_html_headers(): void
     {
-        global $config;
-
         $data_href = (string)Url::base();
-        $theme_name = $config->get_string(SetupConfig::THEME, 'default');
+        $theme_name = get_theme();
 
         # static handler will map these to themes/foo/static/bar.ico or ext/static_files/static/bar.ico
         /*
@@ -593,10 +590,9 @@ class Page
      */
     public function body_attrs(): array
     {
-        global $user;
         return [
             "class" => "layout-{$this->layout}",
-            "data-userclass" => $user->class->name,
+            "data-userclass" => Ctx::$user->class->name,
             "data-base-href" => (string)Url::base(),
             "data-base-link" => (string)make_link(""),
         ];

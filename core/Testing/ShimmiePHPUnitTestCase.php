@@ -17,9 +17,8 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
      */
     public static function setUpBeforeClass(): void
     {
-        global $_tracer, $database;
-        $_tracer->begin(get_called_class());
-        $database->begin_transaction();
+        Ctx::$tracer->begin(get_called_class());
+        Ctx::$database->begin_transaction();
         parent::setUpBeforeClass();
     }
 
@@ -28,9 +27,8 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
      */
     public function setUp(): void
     {
-        global $database, $_tracer, $page, $config;
-        $_tracer->begin($this->name());
-        $_tracer->begin("setUp");
+        Ctx::$tracer->begin($this->name());
+        Ctx::$tracer->begin("setUp");
         $class = str_replace("Test", "Info", get_class($this));
         try {
             if (defined("$class::KEY") && !ExtensionInfo::get_all()[$class::KEY]->is_supported()) {
@@ -41,35 +39,33 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
         }
 
         // Set up a clean environment for each test
-        $database->execute("SAVEPOINT test_start");
+        Ctx::$database->execute("SAVEPOINT test_start");
         self::log_out();
-        foreach ($database->get_col("SELECT id FROM images") as $image_id) {
+        foreach (Ctx::$database->get_col("SELECT id FROM images") as $image_id) {
             send_event(new ImageDeletionEvent(Image::by_id_ex((int)$image_id), true));
         }
-        $page = new Page();
-        $this->config_snapshot = $config->values;
+        Ctx::setPage(new Page());
+        $this->config_snapshot = Ctx::$config->values;
 
-        $_tracer->end();  # setUp
-        $_tracer->begin("test");
+        Ctx::$tracer->end();  # setUp
+        Ctx::$tracer->begin("test");
     }
 
     public function tearDown(): void
     {
-        global $_tracer, $config, $database;
-        $database->execute("ROLLBACK TO test_start");
-        $config->values = $this->config_snapshot;
-        $_tracer->end();  # test
-        $_tracer->end();  # $this->getName()
+        Ctx::$database->execute("ROLLBACK TO test_start");
+        Ctx::$config->values = $this->config_snapshot;
+        Ctx::$tracer->end();  # test
+        Ctx::$tracer->end();  # $this->getName()
     }
 
     public static function tearDownAfterClass(): void
     {
         parent::tearDownAfterClass();
-        global $_tracer, $database;
-        $database->rollback();
-        $_tracer->end();  # get_called_class()
-        $_tracer->clear();
-        $_tracer->flush("data/test-trace.json");
+        Ctx::$database->rollback();
+        Ctx::$tracer->end();  # get_called_class()
+        Ctx::$tracer->clear();
+        Ctx::$tracer->flush("data/test-trace.json");
     }
 
     /**
@@ -104,7 +100,6 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
         array $cookies = ["shm_accepted_terms" => "true"],
     ): Page {
         // use a fresh page
-        global $page;
         $get_args = self::check_args($get_args);
         $post_args = self::check_args($post_args);
 
@@ -116,12 +111,12 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
         $_GET = $get_args;
         $_POST = $post_args;
         $_COOKIE = $cookies;
-        $page = new Page();
+        Ctx::setPage(new Page());
         send_event(new PageRequestEvent($method, $page_name, $get_args, $post_args));
-        if ($page->mode === PageMode::REDIRECT) {
-            $page->code = 302;
+        if (Ctx::$page->mode === PageMode::REDIRECT) {
+            Ctx::$page->code = 302;
         }
-        return $page;
+        return Ctx::$page;
     }
 
     /**
@@ -143,26 +138,22 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
     // page things
     protected function assert_title(string $title): void
     {
-        global $page;
-        self::assertStringContainsString($title, $page->title);
+        self::assertStringContainsString($title, Ctx::$page->title);
     }
 
     protected function assert_title_matches(string $title): void
     {
-        global $page;
-        self::assertStringMatchesFormat($title, $page->title);
+        self::assertStringMatchesFormat($title, Ctx::$page->title);
     }
 
     protected function assert_no_title(string $title): void
     {
-        global $page;
-        self::assertStringNotContainsString($title, $page->title);
+        self::assertStringNotContainsString($title, Ctx::$page->title);
     }
 
     protected function assert_response(int $code): void
     {
-        global $page;
-        self::assertEquals($code, $page->code);
+        self::assertEquals($code, Ctx::$page->code);
     }
 
     /**
@@ -184,13 +175,14 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
 
     protected function page_to_text(?string $section = null): string
     {
-        global $page;
+        $page = Ctx::$page;
 
         return match($page->mode) {
             PageMode::PAGE => $page->title . "\n" . $this->blocks_to_text($page->blocks, $section),
             PageMode::DATA => $page->data,
             PageMode::REDIRECT => self::fail("Page mode is REDIRECT ({$page->redirect}) (only PAGE and DATA are supported)"),
             PageMode::FILE => self::fail("Page mode is FILE (only PAGE and DATA are supported)"),
+            // @phpstan-ignore-next-line
             PageMode::MANUAL => self::fail("Page mode is MANUAL (only PAGE and DATA are supported)"),
             default => self::fail("Unknown page mode {$page->mode->name}"),  // just for phpstan
         };
@@ -214,14 +206,12 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
      */
     protected function assert_content(string $content): void
     {
-        global $page;
-        self::assertStringContainsString($content, $page->data);
+        self::assertStringContainsString($content, Ctx::$page->data);
     }
 
     protected function assert_no_content(string $content): void
     {
-        global $page;
-        self::assertStringNotContainsString($content, $page->data);
+        self::assertStringNotContainsString($content, Ctx::$page->data);
     }
 
     /**
@@ -238,16 +228,17 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
         self::assertEquals($results, $ids, $message);
     }
 
-    protected function assertException(string $type, callable $function): \Exception
+    protected function assertException(string $type, callable $function, string $message = ''): \Exception
     {
+        $message = $message ? " ($message)" : '';
         try {
             call_user_func($function);
-            self::fail("Expected exception of type $type, but none was thrown");
+            self::fail("Expected exception of type $type, but none was thrown$message");
         } catch (\Exception $exception) {
             self::assertThat(
                 $exception,
                 new \PHPUnit\Framework\Constraint\Exception($type),
-                "Expected exception of type $type, but got " . get_class($exception)
+                "Expected exception of type $type, but got " . get_class($exception) . $message
             );
             return $exception;
         }
@@ -266,8 +257,7 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
 
     protected static function log_out(): void
     {
-        global $config;
-        send_event(new UserLoginEvent(User::by_id($config->get_int(UserAccountsConfig::ANON_ID, 0))));
+        send_event(new UserLoginEvent(User::by_id(Ctx::$config->get_int(UserAccountsConfig::ANON_ID, 0))));
     }
 
     // post things

@@ -119,7 +119,7 @@ final class ViewPost extends Extension
     public function onDisplayingImage(DisplayingImageEvent $event): void
     {
         global $page, $user;
-        $image = $event->get_image();
+        $image = $event->image;
 
         $this->theme->display_meta_headers($image);
 
@@ -127,7 +127,7 @@ final class ViewPost extends Extension
         $this->theme->display_page($image, $iibbe->get_parts());
 
         $iabbe = send_event(new ImageAdminBlockBuildingEvent($image, $user, "view"));
-        $this->theme->display_admin_block($page, $iabbe->get_parts());
+        $this->theme->display_admin_block($iabbe->get_parts());
     }
 
     public function onImageInfoBoxBuilding(ImageInfoBoxBuildingEvent $event): void
@@ -135,7 +135,8 @@ final class ViewPost extends Extension
         global $config;
         $image_info = $config->get_string(ImageConfig::INFO);
         if ($image_info) {
-            $event->add_part(SHM_POST_INFO("Info", $event->image->get_info()), 85);
+            $text = send_event(new ParseLinkTemplateEvent($image_info, $event->image))->text;
+            $event->add_part(SHM_POST_INFO("Info", $text), 85);
         }
     }
 }

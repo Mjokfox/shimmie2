@@ -47,7 +47,7 @@ class CustomForumTheme extends ForumTheme
             )
         );
 
-        $this->display_paginator($page, "forum/view/".$threadID, null, $pageNumber, $totalPages);
+        $this->display_paginator("forum/view/$threadID", null, $pageNumber, $totalPages);
 
         $page->set_title($threadTitle);
 
@@ -57,7 +57,7 @@ class CustomForumTheme extends ForumTheme
         }
 
         if ($user->can(ForumPermission::FORUM_ADMIN)) {
-            $html->appendChild($this->add_actions_block_custom($page, $threadID));
+            $html->appendChild($this->add_actions_block_custom($threadID));
         }
 
         $page->add_block(new Block(null, $html, "main", 20));
@@ -117,7 +117,7 @@ class CustomForumTheme extends ForumTheme
         );
     }
 
-    public function add_actions_block_custom(Page $page, int $threadID): HTMLElement
+    public function add_actions_block_custom(int $threadID): HTMLElement
     {
         return DIV(
             H3("Admin Actions"),

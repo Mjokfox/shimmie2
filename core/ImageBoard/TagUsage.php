@@ -11,15 +11,12 @@ use GQLA\Query;
 #[Type(name: "TagUsage")]
 final class TagUsage
 {
-    #[Field]
-    public string $tag;
-    #[Field]
-    public int $uses;
-
-    public function __construct(string $tag, int $uses)
-    {
-        $this->tag = $tag;
-        $this->uses = $uses;
+    public function __construct(
+        #[Field]
+        public string $tag,
+        #[Field]
+        public int $uses,
+    ) {
     }
 
     /**
@@ -28,8 +25,6 @@ final class TagUsage
     #[Query(name: "tags", type: '[TagUsage!]!')]
     public static function tags(string $search, int $limit = 10): array
     {
-        global $cache, $database;
-
         $search = strtolower($search);
         if (
             $search === '' ||
@@ -53,7 +48,7 @@ final class TagUsage
 
         $res = cache_get_or_set(
             $cache_key,
-            fn () => $database->get_pairs(
+            fn () => Ctx::$database->get_pairs(
                 "
                 SELECT tag, count
                 FROM tags

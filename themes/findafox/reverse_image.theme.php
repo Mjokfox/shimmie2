@@ -10,15 +10,17 @@ use function MicroHTML\{rawHTML};
 
 class CustomReverseImageTheme extends ReverseImageTheme
 {
-    public function list_search(Page $page, string $search = ""): void
+    public function list_search(string $search = ""): void
     {
+        global $page;
         $nav = $this->build_navigation($search, "full-width");
         $page->add_block(new Block("Or describe an image", $nav, "main", 2, "text-search-right"));
         $page->add_block(new Block("Or describe an image", $nav, "main", 6, "text-mobile-search"));
     }
 
-    public function view_search(Page $page, string $search = ""): void
+    public function view_search(string $search = ""): void
     {
+        global $page;
         $nav = $this->build_navigation($search, "");
         $page->add_block(new Block("Or describe an image", $nav, "left", 2, "text-search"));
         $page->add_block(new Block("Or describe an image", $nav, "main", 6, "text-mobile-search"));

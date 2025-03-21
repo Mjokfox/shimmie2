@@ -45,11 +45,11 @@ class ReverseImage extends Extension
         if ($event->page_matches("post/list", paged: true)
             || $event->page_matches("post/list/{search}", paged: true)) {
             if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
-                $this->theme->list_search($page);
+                $this->theme->list_search();
             }
         } elseif ($event->page_matches("post/view/{id}")) {
             if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
-                $this->theme->view_search($page, $event->get_GET('search') ?? "");
+                $this->theme->view_search($event->get_GET('search') ?? "");
             }
         } elseif ($event->page_matches("post/search", paged: true)
             || $event->page_matches("post/search/{search}", paged: true)
@@ -95,15 +95,15 @@ class ReverseImage extends Extension
                 $images[] = new Image($r);
             }
 
-            $this->theme->list_search($page, $search);
+            $this->theme->list_search($search);
 
             $image_count = $database->get_one("SELECT count(id) from images;");
 
 
             /** @var IndexTheme $IT */
-            $IT = Themelet::get_for_extension_class("Index");
+            $IT = Themelet::get_theme_class(IndexTheme::class);
             $IT->set_page($page_number, (int)ceil($image_count / $page_size), [$search]);
-            $IT->display_page($page, $images);
+            $IT->display_page($images);
 
         } elseif ($event->page_matches("reverse_image_search_fromupload", method: "POST", authed: false)) {
             $ids = $this->reverse_image_search_post();

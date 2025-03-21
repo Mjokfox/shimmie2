@@ -35,25 +35,24 @@ if (!file_exists("data/config/shimmie.conf.php")) {
 @include_once "data/config/shimmie.conf.php";
 @include_once "data/config/extensions.conf.php";
 
-global $cache, $config, $database, $user, $page, $_tracer;
 _set_up_shimmie_environment();
-$_tracer = new \EventTracer();
+Ctx::setTracer(new \EventTracer());
 // Override TS to show that bootstrapping started in the past
-$_tracer->begin("Bootstrap", raw: ["ts" => $_shm_load_start * 1e6]);
+Ctx::$tracer->begin("Bootstrap", raw: ["ts" => $_shm_load_start * 1e6]);
 _load_ext_files();
 // Depends on core files
-$cache = load_cache(SysConfig::getCacheDsn());
-$database = new Database(SysConfig::getDatabaseDsn());
+$cache = Ctx::setCache(load_cache(SysConfig::getCacheDsn()));
+$database = Ctx::setDatabase(new Database(SysConfig::getDatabaseDsn()));
 // $config depends on _load_ext_files (to load config.php files and
 // calculate defaults) and $cache (to cache config values)
-$config = new DatabaseConfig($database, defaults: ConfigGroup::get_all_defaults());
+$config = Ctx::setConfig(new DatabaseConfig($database, defaults: ConfigGroup::get_all_defaults()));
 // theme files depend on $config (theme name is a config value)
 _load_theme_files();
 // $page depends on theme files (to load theme-specific Page class)
-$page = get_theme_class("Page");
-// $_shm_event_bus depends on ext/*/main.php being loaded
-$_shm_event_bus = new EventBus();
-$_tracer->end();
+$page = Ctx::setPage(Themelet::get_theme_class(Page::class) ?? new Page());
+// $event_bus depends on ext/*/main.php being loaded
+Ctx::setEventBus(new EventBus());
+Ctx::$tracer->end();
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
 * Send events, display output                                               *
@@ -61,11 +60,11 @@ $_tracer->end();
 
 function main(): int
 {
-    global $cache, $config, $database, $user, $page, $_tracer, $_shm_load_start;
+    global $cache, $config, $database, $user, $page, $_shm_load_start;
 
     try {
-        // $_tracer->mark($_SERVER["REQUEST_URI"] ?? "No Request");
-        $_tracer->begin(
+        // Ctx::$tracer->mark($_SERVER["REQUEST_URI"] ?? "No Request");
+        Ctx::$tracer->begin(
             $_SERVER["REQUEST_URI"] ?? "No Request",
             [
                 "user" => $_COOKIE["shm_user"] ?? "No User",
@@ -80,7 +79,7 @@ function main(): int
         send_event(new InitExtEvent());
 
         // start the page generation waterfall
-        $user = _get_user();
+        $user = Ctx::setUser(_get_user());
         send_event(new UserLoginEvent($user));
         if (PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg') {
             ob_end_flush();
@@ -91,8 +90,8 @@ function main(): int
                 throw new \Exception("CLI command failed");
             }
             if ($app->traceFile !== null) {
-                $_tracer->end();
-                $_tracer->flush($app->traceFile);
+                Ctx::$tracer->end();
+                Ctx::$tracer->flush($app->traceFile);
             }
         } else {
             send_event(new PageRequestEvent($_SERVER['REQUEST_METHOD'], _get_query(), $_GET, $_POST));
@@ -123,7 +122,7 @@ function main(): int
         }
         $exit_code = 1;
     } finally {
-        $_tracer->end();
+        Ctx::$tracer->end();
         if (!is_null(SysConfig::getTraceFile())) {
             if (
                 empty($_SERVER["REQUEST_URI"])
@@ -133,7 +132,7 @@ function main(): int
                     && ($_SERVER["REQUEST_URI"] ?? "") !== "/upload"
                 )
             ) {
-                $_tracer->flush(SysConfig::getTraceFile());
+                Ctx::$tracer->flush(SysConfig::getTraceFile());
             }
         }
     }

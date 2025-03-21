@@ -10,38 +10,30 @@ use GQLA\Query;
 
 final class WikiUpdateEvent extends Event
 {
-    public User $user;
-    public WikiPage $wikipage;
-
-    public function __construct(User $user, WikiPage $wikipage)
-    {
+    public function __construct(
+        public User $user,
+        public WikiPage $wikipage
+    ) {
         parent::__construct();
-        $this->user = $user;
-        $this->wikipage = $wikipage;
     }
 }
 
 final class WikiDeleteRevisionEvent extends Event
 {
-    public string $title;
-    public int $revision;
-
-    public function __construct(string $title, int $revision)
-    {
+    public function __construct(
+        public string $title,
+        public int $revision
+    ) {
         parent::__construct();
-        $this->title = $title;
-        $this->revision = $revision;
     }
 }
 
 final class WikiDeletePageEvent extends Event
 {
-    public string $title;
-
-    public function __construct(string $title)
-    {
+    public function __construct(
+        public string $title
+    ) {
         parent::__construct();
-        $this->title = $title;
     }
 }
 
@@ -145,11 +137,11 @@ final class Wiki extends Extension
 
             if ($action === "history") {
                 $history = self::get_history($title);
-                $this->theme->display_page_history($page, $title, $history);
+                $this->theme->display_page_history($title, $history);
             } elseif ($action === "edit") {
                 $content = self::get_page($title);
                 if (self::can_edit($user, $content)) {
-                    $this->theme->display_page_editor($page, $content);
+                    $this->theme->display_page_editor($content);
                 } else {
                     throw new PermissionDenied("You are not allowed to edit this page");
                 }
@@ -203,11 +195,11 @@ final class Wiki extends Extension
         } elseif ($event->page_matches("wiki/{title}")) {
             $title = $event->get_arg('title');
             if ($title === "wiki:list") {
-                $this->theme->display_list_page($page, self::get_page("wiki:sidebar"));
+                $this->theme->display_list_page(self::get_page("wiki:sidebar"));
             } else {
                 $revision = int_escape($event->get_GET('revision') ?? "-1");
                 $content = self::get_page($title, $revision);
-                $this->theme->display_page($page, $content, self::get_page("wiki:sidebar"));
+                $this->theme->display_page($content, self::get_page("wiki:sidebar"));
             }
         } elseif ($event->page_matches("wiki")) {
             $page->set_mode(PageMode::REDIRECT);
