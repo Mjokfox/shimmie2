@@ -29,9 +29,11 @@ async function update_vote(imageID,score,score_without,auth_token) {
         $(".vote-button").removeClass(score_classes);
         $(`.vote-button[score=${res}]`).addClass(sc);
 
-        $display = $(".current-score b").text(Number(score_without)+Number(res));;
+        const new_score = Number(score_without)+Number(res);
+        const tsc = get_score_class(new_score)
+        $display = $(".current-score b").text(new_score);
         $display = $(".current-score");
         $display.removeClass(score_classes);
-        $display.addClass(sc);
+        $display.addClass(tsc);
     }
 }
