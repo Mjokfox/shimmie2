@@ -1,0 +1,11 @@
+.score-zero {
+    color:gray;
+}
+
+.score-pos {
+    color:lime;
+}
+
+.score-neg {
+    color:red;
+}

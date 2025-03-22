@@ -784,17 +784,17 @@ DIV.numeric-score DIV {
 	padding-right: 5px;
 }
 
-DIV.numeric-score DIV INPUT[type="submit"] {
+.vote-button {
 	border-radius: 3px;
 	background: #fff0;
 	cursor: pointer;
 }
 
-DIV.numeric-score DIV INPUT[type="submit"]:hover {
+.vote-button:hover {
 	background: #fff3;
 }
 
-DIV.numeric-score DIV INPUT[type="submit"], DIV.numeric-score DIV B {
+ .vote-button, DIV.numeric-score DIV B {
 	font-size:1.5em;
 	padding-left: 5px;
 	padding-right: 5px;

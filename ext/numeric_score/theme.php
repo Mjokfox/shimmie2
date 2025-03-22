@@ -53,7 +53,6 @@ class NumericScoreTheme extends Themelet
         }
         $html = emptyHTML(
             $vote_form($image->id, 1, "Vote Up"),
-            $vote_form($image->id, 0, "Remove Vote"),
             $vote_form($image->id, -1, "Vote Down"),
             $remove_votes,
             $voters

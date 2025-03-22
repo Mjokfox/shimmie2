@@ -82,7 +82,7 @@ final class NumericScoreVote
     {
         global $user;
         if ($user->can(NumericScorePermission::CREATE_VOTE)) {
-            assert($score === 0 || $score === -1 || $score === 1);
+            assert($score === -1 || $score === 1);
             send_event(new NumericScoreSetEvent($post_id, $user, $score));
             return true;
         }
@@ -92,6 +92,7 @@ final class NumericScoreVote
 
 final class NumericScoreSetEvent extends Event
 {
+    public int $new_score = 0;
     public function __construct(
         public int $image_id,
         public User $user,
@@ -163,11 +164,19 @@ final class NumericScore extends Extension
         } elseif ($event->page_matches("numeric_score/vote", method: "POST", permission: NumericScorePermission::CREATE_VOTE)) {
             $image_id = int_escape($event->req_POST("image_id"));
             $score = int_escape($event->req_POST("vote"));
-            if (($score === -1 || $score === 0 || $score === 1) && $image_id > 0) {
-                send_event(new NumericScoreSetEvent($image_id, $user, $score));
+            if (($score === -1 || $score === 1) && $image_id > 0) {
+                $NSSE = send_event(new NumericScoreSetEvent($image_id, $user, $score));
+            } else {
+                throw new InvalidInput("Invalid score");
             }
-            $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(make_link("post/view/$image_id"));
+            if ($_SERVER['HTTP_USER_AGENT'] === "shimmie-js") {
+                $page->set_mode(PageMode::DATA);
+                $page->set_data((string)$NSSE->new_score);
+            } else {
+                $page->set_mode(PageMode::REDIRECT);
+                $page->set_redirect(make_link("post/view/$image_id"));
+            }
+
         } elseif ($event->page_matches("numeric_score/remove_votes_on", method: "POST", permission: NumericScorePermission::EDIT_OTHER_VOTE)) {
             $image_id = int_escape($event->req_POST("image_id"));
             $database->execute(
@@ -269,9 +278,8 @@ final class NumericScore extends Extension
 
     public function onNumericScoreSet(NumericScoreSetEvent $event): void
     {
-        global $user;
         Log::debug("numeric_score", "Rated >>{$event->image_id} as {$event->score}", "Rated Post");
-        $this->add_vote($event->image_id, $user->id, $event->score);
+        $this->add_vote($event);
     }
 
     public function onImageDeletion(ImageDeletionEvent $event): void
@@ -419,19 +427,36 @@ final class NumericScore extends Extension
         }
     }
 
-    private function add_vote(int $image_id, int $user_id, int $score): void
+    private function add_vote(NumericScoreSetEvent $event): void
     {
-        global $database;
-        $database->execute(
-            "DELETE FROM numeric_score_votes WHERE image_id=:imageid AND user_id=:userid",
+        global $database, $user;
+        $image_id = $event->image_id;
+        $user_id = $user->id;
+        $score = $event->score;
+        $old_score = $database->get_one(
+            "SELECT score FROM numeric_score_votes WHERE image_id=:imageid AND user_id=:userid",
             ["imageid" => $image_id, "userid" => $user_id]
         );
-        if ($score !== 0) {
+        if (is_null($old_score)) {
             $database->execute(
                 "INSERT INTO numeric_score_votes(image_id, user_id, score) VALUES(:imageid, :userid, :score)",
                 ["imageid" => $image_id, "userid" => $user_id, "score" => $score]
             );
+            $event->new_score = $score;
+        } elseif ($old_score === $score) {
+            $database->execute(
+                "DELETE FROM numeric_score_votes WHERE image_id=:imageid AND user_id=:userid",
+                ["imageid" => $image_id, "userid" => $user_id]
+            );
+            $event->new_score = 0;
+        } else {
+            $database->execute(
+                "UPDATE numeric_score_votes SET score = :score WHERE image_id=:imageid AND user_id=:userid",
+                ["imageid" => $image_id, "userid" => $user_id, "score" => $score]
+            );
+            $event->new_score = $score;
         }
+
         $database->execute(
             "UPDATE images SET numeric_score=(
 				COALESCE(
