@@ -29,7 +29,7 @@ class PostDescriptionTheme extends Themelet
                 ["colspan" => "100%"],
                 TEXTAREA([
                     "type" => "text",
-                    "name" => "Description{$suffix}",
+                    "name" => "description{$suffix}",
                     "placeholder" => "Description (512 characters max)"
                 ])
             )
