@@ -51,11 +51,9 @@ final class HelpPages extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page;
-
+        $page = Ctx::$page;
         if ($event->page_matches("help/{topic}")) {
             $pages = send_event(new HelpPageListBuildingEvent())->pages;
-            $page->set_mode(PageMode::PAGE);
             $name = $event->get_arg('topic');
             if (array_key_exists($name, $pages)) {
                 $title = $pages[$name];
@@ -71,7 +69,6 @@ final class HelpPages extends Extension
         } elseif ($event->page_matches("help")) {
             $pages = send_event(new HelpPageListBuildingEvent())->pages;
             $name = array_key_first($pages);
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("help/".$name));
         }
     }

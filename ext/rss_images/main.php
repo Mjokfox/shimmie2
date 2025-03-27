@@ -11,8 +11,8 @@ final class RSSImages extends Extension
     public const KEY = "rss_images";
     public function onPostListBuilding(PostListBuildingEvent $event): void
     {
-        global $config, $page;
-        $title = $config->get_string(SetupConfig::TITLE);
+        global $page;
+        $title = Ctx::$config->req_string(SetupConfig::TITLE);
 
         if (count($event->search_terms) > 0) {
             $search = Tag::implode($event->search_terms);
@@ -34,15 +34,14 @@ final class RSSImages extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $config;
         if (
             $event->page_matches("rss/images", paged: true)
             || $event->page_matches("rss/images/{search}", paged: true)
         ) {
             $search_terms = Tag::explode($event->get_arg('search', ""));
             $page_number = $event->get_iarg('page_num', 1);
-            $page_size = $config->get_int(IndexConfig::IMAGES);
-            if ($config->get_bool(RSSImagesConfig::RSS_LIMIT) && $page_number > 9) {
+            $page_size = Ctx::$config->req_int(IndexConfig::IMAGES);
+            if (Ctx::$config->req_bool(RSSImagesConfig::RSS_LIMIT) && $page_number > 9) {
                 return;
             }
             $images = Search::find_images(($page_number - 1) * $page_size, $page_size, $search_terms);
@@ -52,8 +51,7 @@ final class RSSImages extends Extension
 
     public function onImageInfoSet(ImageInfoSetEvent $event): void
     {
-        global $cache;
-        $cache->delete("rss-item-image:{$event->image->id}");
+        Ctx::$cache->delete("rss-item-image:{$event->image->id}");
     }
 
     /**
@@ -62,17 +60,12 @@ final class RSSImages extends Extension
      */
     private function do_rss(array $images, array $search_terms, int $page_number): void
     {
-        global $page;
-        global $config;
-        $page->set_mode(PageMode::DATA);
-        $page->set_mime(MimeType::RSS);
-
         $data = "";
         foreach ($images as $image) {
             $data .= $this->thumb($image);
         }
 
-        $title = $config->get_string(SetupConfig::TITLE);
+        $title = Ctx::$config->req_string(SetupConfig::TITLE);
         $base_href = Url::base()->asAbsolute();
         $search = "";
         if (count($search_terms) > 0) {
@@ -102,14 +95,12 @@ final class RSSImages extends Extension
 		$data
 	</channel>
 </rss>";
-        $page->set_data($xml);
+        Ctx::$page->set_data(MimeType::RSS, $xml);
     }
 
     private function thumb(Image $image): string
     {
-        global $cache;
-
-        $cached = $cache->get("rss-item-image:{$image->id}");
+        $cached = Ctx::$cache->get("rss-item-image:{$image->id}");
         if (!is_null($cached)) {
             return $cached;
         }
@@ -137,7 +128,7 @@ final class RSSImages extends Extension
 		</item>
 		";
 
-        $cache->set("rss-item-image:{$image->id}", $data, rand(43200, 86400));
+        Ctx::$cache->set("rss-item-image:{$image->id}", $data, rand(43200, 86400));
 
         return $data;
     }

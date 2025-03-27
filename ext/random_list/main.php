@@ -12,28 +12,24 @@ final class RandomList extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $config, $page;
-
         if ($event->page_matches("random")) {
             if ($event->get_GET('search')) {
                 // implode(explode()) to resolve aliases and sanitise
                 $search = Tag::implode(Tag::explode($event->get_GET('search'), false));
                 if (empty($search)) {
-                    $page->set_mode(PageMode::REDIRECT);
-                    $page->set_redirect(make_link("random"));
+                    Ctx::$page->set_redirect(make_link("random"));
                 } else {
-                    $page->set_mode(PageMode::REDIRECT);
-                    $page->set_redirect(make_link('random/'.url_escape($search)));
+                    Ctx::$page->set_redirect(make_link('random/'.url_escape($search)));
                 }
                 return;
             }
 
             $search_terms = [];
             if ($event->page_matches("random/{search}")) {
-                $search_terms = explode(' ', $event->get_arg('search'));
+                $search_terms = Tag::explode($event->get_arg('search'));
             }
 
-            $images_per_page = $config->get_int(RandomListConfig::LIST_COUNT, 12);
+            $images_per_page = Ctx::$config->get_int(RandomListConfig::LIST_COUNT);
             $random_images = [];
             for ($i = 0; $i < $images_per_page; $i++) {
                 $random_image = Image::by_random($search_terms);

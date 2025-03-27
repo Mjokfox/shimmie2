@@ -33,7 +33,7 @@ final class EventBus
         $speed_hax = (Ctx::$config->get_bool(SetupConfig::CACHE_EVENT_LISTENERS));
         $cache_path = Filesystem::data_path("cache/event_listeners/el.$ver.$key.php");
         if ($speed_hax && $cache_path->exists()) {
-            $this->event_listeners = require_once($cache_path);
+            $this->event_listeners = require_once($cache_path->str());
         } else {
             $this->event_listeners = $this->calc_event_listeners();
 
@@ -100,7 +100,7 @@ final class EventBus
         $listeners_str = "return [\n";
         foreach ($this->event_listeners as $event => $listeners) {
             $t = [];
-            foreach ($listeners as $id => $listener) {
+            foreach ($listeners as $_id => $listener) {
                 $class_name = $this->namespaced_class_name(get_class($listener));
                 $classes[] = $class_name;
                 $t[] = "\$".$class_name;

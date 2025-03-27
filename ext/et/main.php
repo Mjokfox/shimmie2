@@ -16,7 +16,6 @@ final class ET extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $user;
         if ($event->page_matches("system_info", permission: ETPermission::VIEW_SYSINFO)) {
             $this->theme->display_info_page(
                 $this->to_yaml($this->get_site_info()),
@@ -27,9 +26,8 @@ final class ET extends Extension
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
-        global $user;
         if ($event->parent === "system") {
-            if ($user->can(ETPermission::VIEW_SYSINFO)) {
+            if (Ctx::$user->can(ETPermission::VIEW_SYSINFO)) {
                 $event->add_nav_link(make_link('system_info'), "System Info", order: 10);
             }
         }
@@ -37,8 +35,7 @@ final class ET extends Extension
 
     public function onUserBlockBuilding(UserBlockBuildingEvent $event): void
     {
-        global $user;
-        if ($user->can(ETPermission::VIEW_SYSINFO)) {
+        if (Ctx::$user->can(ETPermission::VIEW_SYSINFO)) {
             $event->add_link("System Info", make_link("system_info"), 99);
         }
     }
@@ -58,7 +55,8 @@ final class ET extends Extension
      */
     private function get_site_info(): array
     {
-        global $config, $database;
+        $config = Ctx::$config;
+        $database = Ctx::$database;
 
         $core_exts = [];
         $extra_exts = [];
@@ -76,8 +74,8 @@ final class ET extends Extension
         $disk_free = \Safe\disk_free_space("./");
         $info = [
             "about" => [
-                'title' => $config->get_string(SetupConfig::TITLE),
-                'theme' => $config->get_string(SetupConfig::THEME),
+                'title' => $config->req_string(SetupConfig::TITLE),
+                'theme' => $config->req_string(SetupConfig::THEME),
                 'url'   => (string)(make_link("")->asAbsolute()),
             ],
             "versions" => [
@@ -99,17 +97,17 @@ final class ET extends Extension
                 'users'    => (int)$database->get_one("SELECT COUNT(*) FROM users"),
             ],
             "media" => [
-                "memory_limit" => to_shorthand_int($config->get_int(MediaConfig::MEM_LIMIT)),
+                "memory_limit" => to_shorthand_int($config->req_int(MediaConfig::MEM_LIMIT)),
                 "disk_use" => to_shorthand_int($disk_total - $disk_free),
                 "disk_total" => to_shorthand_int($disk_total),
             ],
             "thumbnails" => [
-                "engine" => $config->get_string(ThumbnailConfig::ENGINE),
-                "quality" => $config->get_int(ThumbnailConfig::QUALITY),
-                "width" => $config->get_int(ThumbnailConfig::WIDTH),
-                "height" => $config->get_int(ThumbnailConfig::HEIGHT),
-                "scaling" => $config->get_int(ThumbnailConfig::SCALING),
-                "mime" => $config->get_string(ThumbnailConfig::MIME),
+                "engine" => $config->req_string(ThumbnailConfig::ENGINE),
+                "quality" => $config->req_int(ThumbnailConfig::QUALITY),
+                "width" => $config->req_int(ThumbnailConfig::WIDTH),
+                "height" => $config->req_int(ThumbnailConfig::HEIGHT),
+                "scaling" => $config->req_int(ThumbnailConfig::SCALING),
+                "mime" => $config->req_string(ThumbnailConfig::MIME),
             ],
         ];
 
@@ -142,8 +140,6 @@ final class ET extends Extension
      */
     private function get_system_info(): array
     {
-        global $config, $database;
-
         $info = [
             "server" => $_SERVER,
             "env" => $_ENV,

@@ -33,8 +33,8 @@ class ForumTheme extends Themelet
 
     public function display_new_thread_composer(?string $threadText = null, ?string $threadTitle = null): void
     {
-        global $config, $user, $page;
-        $max_characters = $config->get_int(ForumConfig::MAX_CHARS_PER_POST);
+        global $page;
+        $max_characters = Ctx::$config->get_int(ForumConfig::MAX_CHARS_PER_POST);
 
         $html = SHM_SIMPLE_FORM(
             make_link("forum/create"),
@@ -55,7 +55,7 @@ class ForumTheme extends Themelet
                     TD(),
                     TD(SMALL("Max characters allowed: $max_characters."))
                 ),
-                $user->can(ForumPermission::FORUM_ADMIN) ? TR(
+                Ctx::$user->can(ForumPermission::FORUM_ADMIN) ? TR(
                     TD(),
                     TD(
                         LABEL(["for" => "sticky"], "Sticky:"),
@@ -78,9 +78,7 @@ class ForumTheme extends Themelet
 
     public function display_new_post_composer(int $threadID): void
     {
-        global $config, $page;
-
-        $max_characters = $config->get_int(ForumConfig::MAX_CHARS_PER_POST);
+        $max_characters = Ctx::$config->get_int(ForumConfig::MAX_CHARS_PER_POST);
 
         $html = SHM_SIMPLE_FORM(
             make_link("forum/answer"),
@@ -104,8 +102,7 @@ class ForumTheme extends Themelet
             )
         );
 
-        $blockTitle = "Answer to this thread";
-        $page->add_block(new Block($blockTitle, $html, "main", 130));
+        Ctx::$page->add_block(new Block("Answer to this thread", $html, "main", 130));
     }
 
 
@@ -114,9 +111,7 @@ class ForumTheme extends Themelet
      */
     public function display_thread(array $posts, string $threadTitle, int $threadID, int $pageNumber, int $totalPages): void
     {
-        global $config, $page, $user;
-
-        $posts_per_page = $config->get_int(ForumConfig::POSTS_PER_PAGE);
+        $posts_per_page = Ctx::$config->req_int(ForumConfig::POSTS_PER_PAGE);
 
         $current_post = 0;
 
@@ -138,7 +133,7 @@ class ForumTheme extends Themelet
                             ["class" => "forumSupmessage"],
                             DIV(
                                 ["class" => "deleteLink"],
-                                $user->can(ForumPermission::FORUM_ADMIN) ? A(["href" => make_link("forum/delete/".$threadID."/".$post['id'])], "Delete") : null
+                                Ctx::$user->can(ForumPermission::FORUM_ADMIN) ? A(["href" => make_link("forum/delete/".$threadID."/".$post['id'])], "Delete") : null
                             )
                         )
                     ),
@@ -190,23 +185,21 @@ class ForumTheme extends Themelet
         );
 
         $this->display_paginator("forum/view/".$threadID, null, $pageNumber, $totalPages);
+        Ctx::$page->set_title($threadTitle);
+        Ctx::$page->add_block(new Block($threadTitle, $html, "main", 20));
 
-        $page->set_title($threadTitle);
-        $page->add_block(new Block($threadTitle, $html, "main", 20));
-
-        if ($user->can(ForumPermission::FORUM_ADMIN)) {
+        if (Ctx::$user->can(ForumPermission::FORUM_ADMIN)) {
             $this->add_actions_block($threadID);
         }
-        if ($user->can(ForumPermission::FORUM_CREATE)) {
+        if (Ctx::$user->can(ForumPermission::FORUM_CREATE)) {
             $this->display_new_post_composer($threadID);
         }
     }
 
     public function add_actions_block(int $threadID): void
     {
-        global $page;
         $html = A(["href" => make_link("forum/nuke/".$threadID)], "Delete this thread and its posts.");
-        $page->add_block(new Block("Admin Actions", $html, "main", 140));
+        Ctx::$page->add_block(new Block("Admin Actions", $html, "main", 140));
     }
 
     /**
@@ -214,8 +207,6 @@ class ForumTheme extends Themelet
      */
     private function make_thread_list(array $threads, bool $showAdminOptions): HTMLElement
     {
-        global $config;
-
         $tbody = TBODY();
         $html = TABLE(
             ["id" => "threadList", "class" => "zebra"],
@@ -232,7 +223,7 @@ class ForumTheme extends Themelet
         );
 
         foreach ($threads as $thread) {
-            $titleSubString = $config->get_int(ForumConfig::TITLE_SUBSTRING);
+            $titleSubString = Ctx::$config->req_int(ForumConfig::TITLE_SUBSTRING);
             $title = truncate($thread["title"], $titleSubString);
 
             $tbody->appendChild(

@@ -22,8 +22,6 @@ class PoolsTheme extends Themelet
      */
     public function pool_info(array $navIDs): void
     {
-        global $page;
-
         //TODO: Use a 3 column table?
         $linksPools = emptyHTML();
         foreach ($navIDs as $poolID => $poolInfo) {
@@ -42,7 +40,7 @@ class PoolsTheme extends Themelet
         }
 
         if (!empty($navIDs)) {
-            $page->add_block(new Block("Pools", $linksPools, "left"));
+            Ctx::$page->add_block(new Block("Pools", $linksPools, "left"));
         }
     }
 
@@ -108,10 +106,6 @@ class PoolsTheme extends Themelet
 
     private function display_top(?Pool $pool, string $heading, bool $check_all = false): void
     {
-        global $page, $user;
-
-        $page->set_title($heading);
-
         $poolnav = emptyHTML(
             A(["href" => make_link("pool/list")], "Pool Index"),
             BR(),
@@ -134,13 +128,15 @@ class PoolsTheme extends Themelet
             ])
         );
 
+        $page = Ctx::$page;
+        $page->set_title($heading);
         $this->display_navigation();
         $page->add_block(new Block("Pool Navigation", $poolnav, "left", 10));
         $page->add_block(new Block("Search", $search, "left", 10));
 
         if (!is_null($pool)) {
-            if ($pool->public || $user->can(PoolsPermission::ADMIN)) {// IF THE POOL IS PUBLIC OR IS ADMIN SHOW EDIT PANEL
-                if (!$user->is_anonymous()) {// IF THE USER IS REGISTERED AND LOGGED IN SHOW EDIT PANEL
+            if ($pool->public || Ctx::$user->can(PoolsPermission::ADMIN)) {// IF THE POOL IS PUBLIC OR IS ADMIN SHOW EDIT PANEL
+                if (!Ctx::$user->is_anonymous()) {// IF THE USER IS REGISTERED AND LOGGED IN SHOW EDIT PANEL
                     $this->sidebar_options($pool, $check_all);
                 }
             }
@@ -153,8 +149,6 @@ class PoolsTheme extends Themelet
      */
     public function view_pool(Pool $pool, array $images, int $pageNumber, int $totalPages): void
     {
-        global $page;
-
         $this->display_top($pool, "Pool: " . html_escape($pool->title));
 
         $image_list = DIV(["class" => "shm-image-list"]);
@@ -162,14 +156,12 @@ class PoolsTheme extends Themelet
             $image_list->appendChild($this->build_thumb($image));
         }
 
-        $page->add_block(new Block("Viewing Posts", $image_list, "main", 30));
+        Ctx::$page->add_block(new Block("Viewing Posts", $image_list, "main", 30));
         $this->display_paginator("pool/view/" . $pool->id, null, $pageNumber, $totalPages);
     }
 
     public function sidebar_options(Pool $pool, bool $check_all): void
     {
-        global $user, $page;
-
         $editor = emptyHTML(
             SHM_SIMPLE_FORM(
                 make_link("pool/import/{$pool->id}"),
@@ -194,7 +186,7 @@ class PoolsTheme extends Themelet
             )
         );
 
-        if ($user->id === $pool->user_id || $user->can(PoolsPermission::ADMIN)) {
+        if (Ctx::$user->id === $pool->user_id || Ctx::$user->can(PoolsPermission::ADMIN)) {
             $editor->appendChild(
                 SHM_SIMPLE_FORM(
                     make_link("pool/nuke/{$pool->id}"),
@@ -210,7 +202,7 @@ class PoolsTheme extends Themelet
             );
         }
 
-        $page->add_block(new Block("Manage Pool", $editor, "left", 15));
+        Ctx::$page->add_block(new Block("Manage Pool", $editor, "left", 15));
     }
 
     /**
@@ -312,8 +304,6 @@ class PoolsTheme extends Themelet
      */
     public function show_history(array $histories, int $pageNumber, int $totalPages): void
     {
-        global $page;
-
         $table = TABLE(
             ["id" => "poolsList", "class" => "zebra"],
             THEAD(TR(TH("Pool"), TH("Post Count"), TH("Changes"), TH("Updater"), TH("Date"), TH("Action")))
@@ -354,8 +344,7 @@ class PoolsTheme extends Themelet
         $table->appendChild(TBODY(...$body));
 
         $this->display_top(null, "Recent Changes");
-        $page->add_block(new Block("Recent Changes", $table, position: 10));
-
+        Ctx::$page->add_block(new Block("Recent Changes", $table, position: 10));
         $this->display_paginator("pool/updated", null, $pageNumber, $totalPages);
     }
 

@@ -17,8 +17,7 @@ final class ViewPost extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page, $user;
-
+        $page = Ctx::$page;
         if ($event->page_matches("post/prev/{image_id}") || $event->page_matches("post/next/{image_id}")) {
             $image_id = $event->get_iarg('image_id');
 
@@ -40,10 +39,8 @@ final class ViewPost extends Extension
             }
 
             if (is_null($image)) {
-                $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(make_link("post/view/{$image_id}", fragment: $fragment));
             } else {
-                $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(make_link("post/view/{$image->id}", fragment: $fragment));
             }
         } elseif ($event->page_matches("post/view/{image_id}")) {
@@ -70,7 +67,6 @@ final class ViewPost extends Extension
             }
             $image_id = $event->get_iarg('image_id');
             $image = Image::by_id_ex($image_id);
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect($image->get_image_link());
         } elseif ($event->page_matches("post/thumb/{image_id}")) {
             if (!is_numeric($event->get_arg('image_id'))) {
@@ -78,7 +74,6 @@ final class ViewPost extends Extension
             }
             $image_id = $event->get_iarg('image_id');
             $image = Image::by_id_ex($image_id);
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect($image->get_thumb_link());
         } elseif ($event->page_matches("post/widget/{image_id}")) {
             if (!is_numeric($event->get_arg('image_id'))) {
@@ -86,22 +81,19 @@ final class ViewPost extends Extension
             }
             $image_id = $event->get_iarg('image_id');
             $image = Image::by_id_ex($image_id);
-            $page->set_mode(PageMode::DATA);
-            $page->set_mime(MimeType::HTML);
-            $page->set_data((string)$this->theme->build_thumb($image));
+            $page->set_data(MimeType::HTML, (string)$this->theme->build_thumb($image));
         } elseif ($event->page_matches("post/set", method: "POST")) {
             $image_id = int_escape($event->req_POST('image_id'));
             $image = Image::by_id_ex($image_id);
-            if (!$image->is_locked() || $user->can(PostLockPermission::EDIT_IMAGE_LOCK)) {
+            if (!$image->is_locked() || Ctx::$user->can(PostLockPermission::EDIT_IMAGE_LOCK)) {
                 send_event(new ImageInfoSetEvent($image, 0, only_strings($event->POST)));
-                $page->set_mode(PageMode::REDIRECT);
 
                 if ($event->get_GET('search')) {
                     $fragment = "search=" . url_escape($event->get_GET('search'));
                 } else {
                     $fragment = null;
                 }
-                $page->set_redirect(make_link("post/view/$image_id", fragment: $fragment));
+                Ctx::$page->set_redirect(make_link("post/view/$image_id", fragment: $fragment));
             } else {
                 throw new PermissionDenied("An admin has locked this post");
             }
@@ -118,22 +110,18 @@ final class ViewPost extends Extension
 
     public function onDisplayingImage(DisplayingImageEvent $event): void
     {
-        global $page, $user;
-        $image = $event->image;
+        $this->theme->display_meta_headers($event->image);
 
-        $this->theme->display_meta_headers($image);
+        $iibbe = send_event(new ImageInfoBoxBuildingEvent($event->image, Ctx::$user));
+        $this->theme->display_page($event->image, $iibbe->get_parts());
 
-        $iibbe = send_event(new ImageInfoBoxBuildingEvent($image, $user));
-        $this->theme->display_page($image, $iibbe->get_parts());
-
-        $iabbe = send_event(new ImageAdminBlockBuildingEvent($image, $user, "view"));
+        $iabbe = send_event(new ImageAdminBlockBuildingEvent($event->image, Ctx::$user, "view"));
         $this->theme->display_admin_block($iabbe->get_parts());
     }
 
     public function onImageInfoBoxBuilding(ImageInfoBoxBuildingEvent $event): void
     {
-        global $config;
-        $image_info = $config->get_string(ImageConfig::INFO);
+        $image_info = Ctx::$config->get_string(ImageConfig::INFO);
         if ($image_info) {
             $text = send_event(new ParseLinkTemplateEvent($image_info, $event->image))->text;
             $event->add_part(SHM_POST_INFO("Info", $text), 85);

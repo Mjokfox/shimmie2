@@ -62,16 +62,15 @@ class UserPageTheme extends Themelet
 
     public function display_signup_page(): void
     {
-        global $config, $user, $page;
-        $tac = $config->get_string(UserAccountsConfig::LOGIN_TAC, "");
+        $tac = Ctx::$config->get_string(UserAccountsConfig::LOGIN_TAC) ?? "";
 
-        if ($config->get_bool(UserAccountsConfig::LOGIN_TAC_BBCODE)) {
+        if (Ctx::$config->get_bool(UserAccountsConfig::LOGIN_TAC_BBCODE)) {
             $tac = format_text($tac);
         }
 
         $email_required = (
-            $config->get_bool(UserAccountsConfig::USER_EMAIL_REQUIRED) &&
-            !$user->can(UserAccountsPermission::CREATE_OTHER_USER)
+            Ctx::$config->get_bool(UserAccountsConfig::USER_EMAIL_REQUIRED) &&
+            !Ctx::$user->can(UserAccountsPermission::CREATE_OTHER_USER)
         );
 
         $form = SHM_SIMPLE_FORM(
@@ -110,15 +109,13 @@ class UserPageTheme extends Themelet
             $form
         );
 
-        $page->set_title("Create Account");
+        Ctx::$page->set_title("Create Account");
         $this->display_navigation();
-        $page->add_block(new Block("Signup", $html));
+        Ctx::$page->add_block(new Block("Signup", $html));
     }
 
     public function display_user_creator(): void
     {
-        global $page;
-
         $form = SHM_SIMPLE_FORM(
             make_link("user_admin/create_other"),
             TABLE(
@@ -149,29 +146,26 @@ class UserPageTheme extends Themelet
                 )
             )
         );
-        $page->add_block(new Block("Create User", $form, "main", 75));
+        Ctx::$page->add_block(new Block("Create User", $form, "main", 75));
     }
 
     public function display_signups_disabled(): void
     {
-        global $config, $page;
-        $page->set_title("Signups Disabled");
+        Ctx::$page->set_title("Signups Disabled");
         $this->display_navigation();
-        $page->add_block(new Block(
+        Ctx::$page->add_block(new Block(
             "Signups Disabled",
-            format_text($config->get_string(UserAccountsConfig::SIGNUP_DISABLED_MESSAGE)),
+            format_text(Ctx::$config->req_string(UserAccountsConfig::SIGNUP_DISABLED_MESSAGE)),
         ));
     }
 
     public function display_login_block(): void
     {
-        global $page;
-        $page->add_block(new Block("Login", $this->create_login_block(), "left", 90));
+        Ctx::$page->add_block(new Block("Login", $this->create_login_block(), "left", 90));
     }
 
     public function create_login_block(): HTMLElement
     {
-        global $config, $user;
         $form = SHM_SIMPLE_FORM(
             make_link("user_admin/login"),
             TABLE(
@@ -194,7 +188,7 @@ class UserPageTheme extends Themelet
 
         $html = emptyHTML();
         $html->appendChild($form);
-        if ($config->get_bool(UserAccountsConfig::SIGNUP_ENABLED) && $user->can(UserAccountsPermission::CREATE_USER)) {
+        if (Ctx::$config->req_bool(UserAccountsConfig::SIGNUP_ENABLED) && Ctx::$user->can(UserAccountsPermission::CREATE_USER)) {
             $html->appendChild(SMALL(A(["href" => make_link("user_admin/create")], "Create Account")));
         }
 
@@ -227,7 +221,6 @@ class UserPageTheme extends Themelet
      */
     public function display_ip_list(array $uploads, array $comments, array $events): void
     {
-        global $page;
         $html = TABLE(
             ["id" => "ip-history"],
             TR(
@@ -240,7 +233,7 @@ class UserPageTheme extends Themelet
             )
         );
 
-        $page->add_block(new Block("IPs", $html, "main", 70));
+        Ctx::$page->add_block(new Block("IPs", $html, "main", 70));
     }
 
     /**
@@ -259,12 +252,11 @@ class UserPageTheme extends Themelet
 
     public function build_operations(User $duser, UserOperationsBuildingEvent $event): HTMLElement
     {
-        global $config, $user;
         $html = emptyHTML();
 
         // just a fool-admin protection so they dont mess around with anon users.
-        if ($duser->id !== $config->get_int(UserAccountsConfig::ANON_ID)) {
-            if ($user->can(UserAccountsPermission::EDIT_USER_NAME)) {
+        if ($duser->id !== Ctx::$config->req_int(UserAccountsConfig::ANON_ID)) {
+            if (Ctx::$user->can(UserAccountsPermission::EDIT_USER_NAME)) {
                 $html->appendChild(SHM_USER_FORM(
                     $duser,
                     make_link("user_admin/change_name"),
@@ -305,7 +297,7 @@ class UserPageTheme extends Themelet
                 "Set"
             ));
 
-            if ($user->can(UserAccountsPermission::EDIT_USER_CLASS)) {
+            if (Ctx::$user->can(UserAccountsPermission::EDIT_USER_CLASS)) {
                 $select = SELECT(["name" => "class"]);
                 foreach (UserClass::$known_classes as $name => $values) {
                     $select->appendChild(
@@ -321,7 +313,7 @@ class UserPageTheme extends Themelet
                 ));
             }
 
-            if ($user->can(UserAccountsPermission::DELETE_USER)) {
+            if (Ctx::$user->can(UserAccountsPermission::DELETE_USER)) {
                 $html->appendChild(SHM_USER_FORM(
                     $duser,
                     make_link("user_admin/delete_user"),
@@ -346,12 +338,11 @@ class UserPageTheme extends Themelet
 
     public function get_help_html(): HTMLElement
     {
-        global $user;
         return emptyHTML(
             P("Search for posts posted by particular individuals."),
             SHM_COMMAND_EXAMPLE("poster=username", 'Returns posts posted by "username"'),
             // SHM_COMMAND_EXAMPLE("poster_id=123", 'Returns posts posted by user 123'),
-            $user->can(IPBanPermission::VIEW_IP)
+            Ctx::$user->can(IPBanPermission::VIEW_IP)
                 ? SHM_COMMAND_EXAMPLE("poster_ip=127.0.0.1", "Returns posts posted from IP 127.0.0.1.")
                 : null
         );

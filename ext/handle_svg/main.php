@@ -22,21 +22,17 @@ final class SVGFileHandler extends DataHandlerExtension
             $image = Image::by_id_ex($id);
             $hash = $image->hash;
 
-            $page->set_mime(MimeType::SVG);
-            $page->set_mode(PageMode::DATA);
-
             $sanitizer = new Sanitizer();
             $sanitizer->removeRemoteReferences(true);
             $dirtySVG = Filesystem::warehouse_path(Image::IMAGE_DIR, $hash)->get_contents();
-            $cleanSVG = $sanitizer->sanitize($dirtySVG);
-            $page->set_data($cleanSVG);
+            $cleanSVG = false_throws($sanitizer->sanitize($dirtySVG));
+
+            $page->set_data(MimeType::SVG, $cleanSVG);
         }
     }
 
     public function onDataUpload(DataUploadEvent $event): void
     {
-        global $config;
-
         if ($this->supported_mime($event->mime)) {
             // If the SVG handler intends to handle this file,
             // then sanitise it before touching it
@@ -84,7 +80,7 @@ final class SVGFileHandler extends DataHandlerExtension
 
     protected function check_contents(Path $tmpname): bool
     {
-        if (MimeType::get_for_file($tmpname->str()) !== MimeType::SVG) {
+        if (MimeType::get_for_file($tmpname)->base !== MimeType::SVG) {
             return false;
         }
 

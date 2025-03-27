@@ -10,14 +10,14 @@ final class LogLogstash extends Extension
 
     public function onLog(LogEvent $event): void
     {
-        global $user;
+        $username = isset(Ctx::$user) ? Ctx::$user->name : "Anonymous";
 
         try {
             $data = [
                 "@type" => "shimmie",
                 "@message" => $event->message,
                 "@fields" => [
-                    "username" => ($user && $user->name) ? $user->name : "Anonymous",
+                    "username" => $username,
                     "section" => $event->section,
                     "priority" => $event->priority,
                     "time" => time(),
@@ -40,9 +40,7 @@ final class LogLogstash extends Extension
      */
     private function send_data(array $data): void
     {
-        global $config;
-
-        $host = $config->get_string(LogLogstashConfig::HOST);
+        $host = Ctx::$config->get_string(LogLogstashConfig::HOST);
         if (!$host) {
             return;
         }
@@ -51,7 +49,7 @@ final class LogLogstash extends Extension
             $parts = explode(":", $host);
             $host = $parts[0];
             $port = (int)$parts[1];
-            $fp = fsockopen("udp://$host", $port, $errno, $errstr);
+            $fp = fsockopen("udp://$host", $port);
             if (!$fp) {
                 return;
             }

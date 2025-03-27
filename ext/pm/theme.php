@@ -13,8 +13,6 @@ class PrivMsgTheme extends Themelet
      */
     public function display_pms(array $pms, string $header = "Inbox", bool $to = false, bool $from = false, bool $edit = false, bool $archive = true, bool $delete = true, int $more = 0, int $archived = 0): void
     {
-        global $user, $page;
-
         $tbody = TBODY();
         foreach ($pms as $pm) {
             $tr = TR();
@@ -80,12 +78,11 @@ class PrivMsgTheme extends Themelet
             $more != 0 ? A(["href" => make_link("pm/list/$more")], "See all") : null,
             $archived != 0 ? A(["href" => make_link("pm/archived/$archived"), "style" => "margin-left:1em"], "Archived messages") : null,
         );
-        $page->add_block(new Block($header, $html, "main", 40, "private-messages-$header", hidable:true));
+        Ctx::$page->add_block(new Block($header, $html, "main", 40, "private-messages-$header", hidable:true));
     }
 
     public function display_composer(User $from, User $to, string $subject = ""): void
     {
-        global $user, $page;
         $html = SHM_SIMPLE_FORM(
             make_link("pm/send"),
             INPUT(["type" => "hidden", "name" => "to_id", "value" => $to->id]),
@@ -99,7 +96,7 @@ class PrivMsgTheme extends Themelet
                 TR(TD(["colspan" => 2], SHM_SUBMIT("Send")))
             ),
         );
-        $page->add_block(new Block("Write a PM", $html, "main", 50));
+        Ctx::$page->add_block(new Block("Write a PM", $html, "main", 50));
     }
 
     public function display_editor(int $pm_id, string $subject = "", string $message = "", int $to_id = null): void
@@ -129,7 +126,7 @@ class PrivMsgTheme extends Themelet
 
     public function display_message(User $from, User $to, PM $pm): void
     {
-        global $page;
+        $page = Ctx::$page;
         $page->set_title("Private Message");
         $page->set_heading($pm->subject);
         $this->display_navigation();

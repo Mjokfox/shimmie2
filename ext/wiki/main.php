@@ -130,7 +130,9 @@ final class Wiki extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page, $user;
+        $page = Ctx::$page;
+        $user = Ctx::$user;
+
         if ($event->page_matches("wiki/{title}/{action}", method: "GET")) {
             $title = $event->get_arg('title');
             $action = $event->get_arg('action');
@@ -154,7 +156,6 @@ final class Wiki extends Extension
             if ($action === "edit") {
                 // we're only here because making a form do a GET request is a
                 // pain, so we accept the POST and do a GET redirect
-                $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(make_link("wiki/$title/edit"));
             } elseif ($action === "save") {
                 $rev = int_escape($event->req_POST('revision'));
@@ -168,7 +169,6 @@ final class Wiki extends Extension
                     $wikipage->locked = $lock;
                     send_event(new WikiUpdateEvent($user, $wikipage));
                     $u_title = url_escape($title);
-                    $page->set_mode(PageMode::REDIRECT);
                     $page->set_redirect(make_link("wiki/$u_title"));
                 } else {
                     throw new PermissionDenied("You are not allowed to edit this page");
@@ -179,7 +179,6 @@ final class Wiki extends Extension
                     $revision = int_escape($event->req_POST('revision'));
                     send_event(new WikiDeleteRevisionEvent($title, $revision));
                     $u_title = url_escape($title);
-                    $page->set_mode(PageMode::REDIRECT);
                     $page->set_redirect(make_link("wiki/$u_title"));
                 } else {
                     throw new PermissionDenied("You are not allowed to edit this page");
@@ -188,7 +187,6 @@ final class Wiki extends Extension
                 if ($user->can(WikiPermission::ADMIN)) {
                     send_event(new WikiDeletePageEvent($title));
                     $u_title = url_escape($title);
-                    $page->set_mode(PageMode::REDIRECT);
                     $page->set_redirect(make_link("wiki/$u_title"));
                 }
             }
@@ -202,7 +200,6 @@ final class Wiki extends Extension
                 $this->theme->display_page($content, self::get_page("wiki:sidebar"));
             }
         } elseif ($event->page_matches("wiki")) {
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("wiki/Index"));
         }
     }
@@ -229,14 +226,13 @@ final class Wiki extends Extension
 
     public function onWikiUpdate(WikiUpdateEvent $event): void
     {
-        global $database, $config;
         $wpage = $event->wikipage;
 
-        $exists = $database->exists("SELECT id FROM wiki_pages WHERE title = :title", ["title" => $wpage->title]);
+        $exists = Ctx::$database->exists("SELECT id FROM wiki_pages WHERE title = :title", ["title" => $wpage->title]);
 
         try {
-            if ($config->get_bool(WikiConfig::ENABLE_REVISIONS) || !$exists) {
-                $database->execute(
+            if (Ctx::$config->get_bool(WikiConfig::ENABLE_REVISIONS) || !$exists) {
+                Ctx::$database->execute(
                     "
                         INSERT INTO wiki_pages(owner_id, owner_ip, date, title, revision, locked, body)
                         VALUES (:owner_id, :owner_ip, now(), :title, :revision, :locked, :body)",
@@ -244,7 +240,7 @@ final class Wiki extends Extension
                     "title" => $wpage->title, "revision" => $wpage->revision, "locked" => $wpage->locked, "body" => $wpage->body]
                 );
             } else {
-                $database->execute(
+                Ctx::$database->execute(
                     "
                         UPDATE wiki_pages SET owner_id=:owner_id, owner_ip=:owner_ip, date=now(), locked=:locked, body=:body
                         WHERE title = :title ORDER BY revision DESC LIMIT 1",
@@ -259,8 +255,7 @@ final class Wiki extends Extension
 
     public function onWikiDeleteRevision(WikiDeleteRevisionEvent $event): void
     {
-        global $database;
-        $database->execute(
+        Ctx::$database->execute(
             "DELETE FROM wiki_pages WHERE title=:title AND revision=:rev",
             ["title" => $event->title, "rev" => $event->revision]
         );
@@ -268,8 +263,7 @@ final class Wiki extends Extension
 
     public function onWikiDeletePage(WikiDeletePageEvent $event): void
     {
-        global $database;
-        $database->execute(
+        Ctx::$database->execute(
             "DELETE FROM wiki_pages WHERE title=:title",
             ["title" => $event->title]
         );
@@ -319,9 +313,8 @@ final class Wiki extends Extension
     #[Query(name: "wiki")]
     public static function get_page(string $title, ?int $revision = null): WikiPage
     {
-        global $database;
         // first try and get the actual page
-        $row = $database->get_row(
+        $row = Ctx::$database->get_row(
             "
 				SELECT *
 				FROM wiki_pages
@@ -334,7 +327,7 @@ final class Wiki extends Extension
 
         // fall back to wiki:default
         if (empty($row)) {
-            $row = $database->get_row("
+            $row = Ctx::$database->get_row("
                 SELECT *
                 FROM wiki_pages
                 WHERE title LIKE :title
@@ -355,12 +348,9 @@ final class Wiki extends Extension
             }
 
             // correct the default
-            global $config;
             $row["title"] = $title;
-            $row["owner_id"] = $config->get_int(UserAccountsConfig::ANON_ID, 0);
+            $row["owner_id"] = Ctx::$config->req_int(UserAccountsConfig::ANON_ID);
         }
-
-        assert(!empty($row));
 
         return new WikiPage($row);
     }

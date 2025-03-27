@@ -12,24 +12,18 @@ final class RSSComments extends Extension
 
     public function onPostListBuilding(PostListBuildingEvent $event): void
     {
-        global $config, $page;
-        $title = $config->get_string(SetupConfig::TITLE);
-
-        $page->add_html_header(LINK([
+        Ctx::$page->add_html_header(LINK([
             'rel' => 'alternate',
             'type' => 'application/rss+xml',
-            'title' => "$title - Comments",
+            'title' => Ctx::$config->req_string(SetupConfig::TITLE) . " - Comments",
             'href' => (string)make_link("rss/comments")
         ]));
     }
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $config, $database, $page;
+        global $database;
         if ($event->page_matches("rss/comments")) {
-            $page->set_mode(PageMode::DATA);
-            $page->set_mime(MimeType::RSS);
-
             $comments = $database->get_all("
 				SELECT
 					users.id as user_id, users.name as user_name,
@@ -63,7 +57,7 @@ final class RSSComments extends Extension
 				";
             }
 
-            $title = $config->get_string(SetupConfig::TITLE);
+            $title = Ctx::$config->req_string(SetupConfig::TITLE);
             $base_href = Url::base()->asAbsolute();
             $version = SysConfig::getVersion();
             $xml = <<<EOD
@@ -79,7 +73,7 @@ final class RSSComments extends Extension
 	</channel>
 </rss>
 EOD;
-            $page->set_data($xml);
+            Ctx::$page->set_data(MimeType::RSS, $xml);
         }
     }
 

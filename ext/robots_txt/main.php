@@ -25,30 +25,25 @@ final class RobotsTxt extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $config, $page;
-
         if ($event->page_matches("robots.txt")) {
             $rbe = send_event(new RobotsBuildingEvent());
-            $page->set_mode(PageMode::DATA);
-            $page->set_mime("text/plain");
             $data = [
-                $config->get_string(RobotsTxtConfig::ROBOTS_BEFORE),
+                Ctx::$config->get_string(RobotsTxtConfig::ROBOTS_BEFORE),
                 join("\n", $rbe->parts)
             ];
-            $after = $config->get_string(RobotsTxtConfig::ROBOTS_AFTER);
+            $after = Ctx::$config->get_string(RobotsTxtConfig::ROBOTS_AFTER);
             if ($after) {
                 $data[] = $after;
             }
-            $data[] = "Crawl-delay: " . $config->get_int(RobotsTxtConfig::ROBOTS_DELAY, 3);
-            $page->set_data(join("\n", $data));
+            $data[] = "Crawl-delay: " . Ctx::$config->get_int(RobotsTxtConfig::ROBOTS_DELAY);
+            Ctx::$page->set_data(MimeType::TEXT, join("\n", $data));
         }
     }
 
 
     public function onRobotsBuilding(RobotsBuildingEvent $event): void
     {
-        global $config;
-        $domain = $config->get_string(RobotsTxtConfig::CANONICAL_DOMAIN);
+        $domain = Ctx::$config->get_string(RobotsTxtConfig::CANONICAL_DOMAIN);
         if (!empty($domain) && $_SERVER['HTTP_HOST'] !== $domain) {
             $event->add_disallow("");
         }

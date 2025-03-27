@@ -17,15 +17,11 @@ final class TaggerXML extends Extension
     public function onPageRequest(PageRequestEvent $event): void
     {
         if ($event->page_matches("tagger/tags")) {
-            global $page;
-
-            //$match_tags = null;
-            //$image_tags = null;
             $tags = null;
             if ($event->get_GET('s')) { // tagger/tags[/...]?s=$string
                 // return matching tags in XML form
                 $tags = $this->match_tag_list($event->get_GET('s'));
-            } elseif ($event->page_matches("tagger/tags/{image_id}")) { // tagger/tags/$int
+            } elseif ($event->page_matches("tagger/tags/{image_id}")) {
                 // return arg[1] AS image_id's tag list in XML form
                 $tags = $this->image_tag_list($event->get_iarg('image_id'));
             }
@@ -35,18 +31,15 @@ final class TaggerXML extends Extension
                 $tags.
             "</tags>";
 
-            $page->set_mode(PageMode::DATA);
-            $page->set_mime(MimeType::XML);
-            $page->set_data($xml);
+            $page = Ctx::$page;
+            $page->set_data(MimeType::XML, $xml);
         }
     }
 
     private function match_tag_list(string $s): string
     {
-        global $database, $config;
-
-        $max_rows = $config->get_int("ext_tagger_tag_max", 30);
-        $limit_rows = $config->get_int("ext_tagger_limit", 30);
+        $max_rows = Ctx::$config->req_int(TaggerXMLConfig::TAG_MAX);
+        $limit_rows = Ctx::$config->req_int(TaggerXMLConfig::LIMIT);
 
         $p = strlen($s) == 1 ? " " : "\_";
         $values = [
@@ -60,8 +53,9 @@ final class TaggerXML extends Extension
         //		$exclude = $event->get_arg('exclude')? "AND NOT IN ".$this->image_tags($event->get_arg('exclude')) : null;
 
         // Hidden Tags
-        $hidden = $config->get_string('ext-tagger_show-hidden', 'N') == 'N' ?
-            "AND substring(tag,1,1) != '.'" : null;
+        $hidden = Ctx::$config->req_bool(TaggerXMLConfig::SHOW_HIDDEN)
+            ? null
+            : "AND substring(tag,1,1) != '.'";
 
         $q_where = "WHERE {$match} {$hidden} AND count > 0";
 
@@ -77,22 +71,15 @@ final class TaggerXML extends Extension
             $count = [];
         }
 
-        $tags = $database->execute(
-            "
-			SELECT *
-			{$q_from}
-			{$q_where}
-			ORDER BY tag",
-            $values
-        );
+        // @phpstan-ignore-next-line
+        $tags = Ctx::$database->execute("SELECT * {$q_from} {$q_where} ORDER BY tag", $values);
 
         return $this->list_to_xml($tags, "search", $s, $count);
     }
 
     private function image_tag_list(int $image_id): string
     {
-        global $database;
-        $tags = $database->execute("
+        $tags = Ctx::$database->execute("
 			SELECT tags.*
 			FROM image_tags JOIN tags ON image_tags.tag_id = tags.id
 			WHERE image_id=:image_id ORDER BY tag", ['image_id' => $image_id]);
@@ -129,7 +116,7 @@ final class TaggerXML extends Extension
      */
     private function count(string $query, array $values): int
     {
-        global $database;
-        return $database->get_one("SELECT COUNT(*) FROM `tags` $query", $values);
+        // @phpstan-ignore-next-line
+        return Ctx::$database->get_one("SELECT COUNT(*) FROM `tags` $query", $values);
     }
 }

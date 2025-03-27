@@ -115,20 +115,17 @@ final class S3 extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $config, $page, $user;
         if ($event->page_matches("s3/sync/{image_id}", method: "POST", permission: ImagePermission::DELETE_IMAGE)) {
             $id = $event->get_iarg('image_id');
             $this->sync_post(Image::by_id_ex($id));
             Log::info("s3", "Manual resync for >>$id", "File re-sync'ed");
-            $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(make_link("post/view/$id"));
+            Ctx::$page->set_redirect(make_link("post/view/$id"));
         }
     }
 
     public function onImageAdminBlockBuilding(ImageAdminBlockBuildingEvent $event): void
     {
-        global $user;
-        if ($user->can(ImagePermission::DELETE_IMAGE)) {
+        if (Ctx::$user->can(ImagePermission::DELETE_IMAGE)) {
             $event->add_button("CDN Re-Sync", "s3/sync/{$event->image->id}");
         }
     }
@@ -158,13 +155,12 @@ final class S3 extends Extension
     // utils
     private function get_client(): \S3Client\S3
     {
-        global $config;
-        $access_key_id = $config->get_string(S3Config::ACCESS_KEY_ID);
-        $access_key_secret = $config->get_string(S3Config::ACCESS_KEY_SECRET);
+        $access_key_id = Ctx::$config->get_string(S3Config::ACCESS_KEY_ID);
+        $access_key_secret = Ctx::$config->get_string(S3Config::ACCESS_KEY_SECRET);
         if (is_null($access_key_id) || is_null($access_key_secret)) {
             throw new ServerError("S3 credentials not set");
         }
-        $endpoint = $config->get_string(S3Config::ENDPOINT);
+        $endpoint = Ctx::$config->req_string(S3Config::ENDPOINT);
 
         return new \S3Client\S3(
             $access_key_id,
@@ -182,12 +178,11 @@ final class S3 extends Extension
 
     private function is_busy(): bool
     {
-        global $config;
         $this->synced++;
         if (PHP_SAPI == "cli") {
             return false; // CLI can go on for as long as it wants
         }
-        return $this->synced > $config->get_int(UploadConfig::COUNT);
+        return $this->synced > Ctx::$config->req_int(UploadConfig::COUNT);
     }
 
     // underlying s3 interaction functions
@@ -196,7 +191,6 @@ final class S3 extends Extension
      */
     private function sync_post(Image $image, ?array $new_tags = null): void
     {
-        global $config;
         if (defined("UNITTEST")) {
             return;
         }
@@ -213,12 +207,12 @@ final class S3 extends Extension
             }
             $client = $this->get_client();
             $client->putObject(
-                $config->get_string(S3Config::IMAGE_BUCKET),
+                Ctx::$config->req_string(S3Config::IMAGE_BUCKET),
                 $this->hash_to_path($image->hash),
                 $image->get_image_filename()->get_contents(),
                 [
                     'ACL' => 'public-read',
-                    'ContentType' => $image->get_mime(),
+                    'ContentType' => (string)$image->get_mime(),
                     'ContentDisposition' => "inline; filename=\"$friendly\"",
                 ]
             );
@@ -228,7 +222,6 @@ final class S3 extends Extension
 
     private function remove_file(string $hash): void
     {
-        global $config;
         if (defined("UNITTEST")) {
             return;
         }
@@ -237,7 +230,7 @@ final class S3 extends Extension
         } else {
             $client = $this->get_client();
             $client->deleteObject(
-                $config->get_string(S3Config::IMAGE_BUCKET),
+                Ctx::$config->req_string(S3Config::IMAGE_BUCKET),
                 $this->hash_to_path($hash),
             );
             $this->dequeue($hash);

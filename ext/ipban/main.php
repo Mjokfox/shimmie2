@@ -85,11 +85,11 @@ final class IPBan extends Extension
 
     public function onUserLogin(UserLoginEvent $event): void
     {
-        global $cache, $config, $database, $page;
+        global $database, $page;
 
         // Get lists of banned IPs and banned networks
-        $ips = $cache->get("ip_bans");
-        $networks = $cache->get("network_bans");
+        $ips = Ctx::$cache->get("ip_bans");
+        $networks = Ctx::$cache->get("network_bans");
         if (is_null($ips) || is_null($networks)) {
             $rows = $database->get_pairs("
 				SELECT ip, id
@@ -107,8 +107,8 @@ final class IPBan extends Extension
                 }
             }
 
-            $cache->set("ip_bans", $ips, 60);
-            $cache->set("network_bans", $networks, 60);
+            Ctx::$cache->set("ip_bans", $ips, 60);
+            Ctx::$cache->set("network_bans", $networks, 60);
         }
 
         // Check if our current IP is in either of the ban lists
@@ -125,7 +125,7 @@ final class IPBan extends Extension
 
             $row_banner_id_int = intval($row['banner_id']);
 
-            $msg = $config->get_string("ipban_message_{$row['mode']}") ?? $config->get_string("ipban_message") ?? "(no message)";
+            $msg = Ctx::$config->get_string("ipban_message_{$row['mode']}") ?? Ctx::$config->get_string("ipban_message") ?? "(no message)";
             $msg = str_replace('$IP', $row["ip"], $msg);
             $msg = str_replace('$DATE', $row['expires'] ?? 'the end of time', $msg);
             $msg = str_replace('$ADMIN', User::by_id($row_banner_id_int)->name, $msg);
@@ -136,7 +136,6 @@ final class IPBan extends Extension
             } else {
                 $msg = str_replace('$CONTACT', "", $msg);
             }
-            assert(is_string($msg));
             $msg .= "<!-- $active_ban_id / {$row["mode"]} -->";
 
             if ($row["mode"] == "ghost") {
@@ -163,26 +162,24 @@ final class IPBan extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $database, $page, $user;
+        global $page;
         if ($event->page_matches("ip_ban/create", method: "POST", permission: IPBanPermission::BAN_IP)) {
             $input = validate_input(["c_ip" => "string", "c_mode" => "string", "c_reason" => "string", "c_expires" => "optional,date"]);
             send_event(new AddIPBanEvent($input['c_ip'], $input['c_mode'], $input['c_reason'], $input['c_expires']));
             $page->flash("Ban for {$input['c_ip']} added");
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("ip_ban/list"));
         }
         if ($event->page_matches("ip_ban/delete", method: "POST", permission: IPBanPermission::BAN_IP)) {
             $input = validate_input(["d_id" => "int"]);
             send_event(new RemoveIPBanEvent($input['d_id']));
             $page->flash("Ban removed");
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("ip_ban/list"));
         }
         if ($event->page_matches("ip_ban/list", method: "GET", permission: IPBanPermission::BAN_IP)) {
-            $event->GET['c_banner'] = $user->name;
+            $event->GET['c_banner'] = Ctx::$user->name;
             $event->GET['c_added'] = date('Y-m-d');
-            $t = new IPBanTable($database->raw_db());
-            $t->token = $user->get_auth_token();
+            $t = new IPBanTable(Ctx::$database->raw_db());
+            $t->token = Ctx::$user->get_auth_token();
             $t->inputs = $event->GET;
             $this->theme->display_bans($t->table($t->query()), $t->paginator());
         }
@@ -190,9 +187,8 @@ final class IPBan extends Extension
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
-        global $user;
         if ($event->parent === "system") {
-            if ($user->can(IPBanPermission::BAN_IP)) {
+            if (Ctx::$user->can(IPBanPermission::BAN_IP)) {
                 $event->add_nav_link(make_link('ip_ban/list'), "IP Bans", ["ip_ban"]);
             }
         }
@@ -200,37 +196,37 @@ final class IPBan extends Extension
 
     public function onUserBlockBuilding(UserBlockBuildingEvent $event): void
     {
-        global $user;
-        if ($user->can(IPBanPermission::BAN_IP)) {
+        if (Ctx::$user->can(IPBanPermission::BAN_IP)) {
             $event->add_link("IP Bans", make_link("ip_ban/list"));
         }
     }
 
     public function onAddIPBan(AddIPBanEvent $event): void
     {
-        global $cache, $user, $database;
-        $sql = "INSERT INTO bans (ip, mode, reason, expires, banner_id) VALUES (:ip, :mode, :reason, :expires, :admin_id)";
-        $database->execute($sql, ["ip" => $event->ip, "mode" => $event->mode, "reason" => $event->reason, "expires" => $event->expires, "admin_id" => $user->id]);
-        $cache->delete("ip_bans");
-        $cache->delete("network_bans");
+        Ctx::$database->execute(
+            "INSERT INTO bans (ip, mode, reason, expires, banner_id) VALUES (:ip, :mode, :reason, :expires, :admin_id)",
+            ["ip" => $event->ip, "mode" => $event->mode, "reason" => $event->reason, "expires" => $event->expires, "admin_id" => Ctx::$user->id]
+        );
+        Ctx::$cache->delete("ip_bans");
+        Ctx::$cache->delete("network_bans");
         Log::info("ipban", "Banned ({$event->mode}) {$event->ip} because '{$event->reason}' until {$event->expires}");
     }
 
     public function onRemoveIPBan(RemoveIPBanEvent $event): void
     {
-        global $cache, $database;
+        global $database;
         $ban = $database->get_row("SELECT * FROM bans WHERE id = :id", ["id" => $event->id]);
         if ($ban) {
             $database->execute("DELETE FROM bans WHERE id = :id", ["id" => $event->id]);
-            $cache->delete("ip_bans");
-            $cache->delete("network_bans");
+            Ctx::$cache->delete("ip_bans");
+            Ctx::$cache->delete("network_bans");
             Log::info("ipban", "Removed {$ban['ip']}'s ban");
         }
     }
 
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
-        global $database;
+        $database = Ctx::$database;
 
         // shortcut to latest
         if ($this->get_version() < 1) {
@@ -306,7 +302,8 @@ final class IPBan extends Extension
         }
 
         if ($this->get_version() == 7) {
-            $database->execute($database->scoreql_to_sql("ALTER TABLE bans CHANGE ip ip SCORE_INET"));
+            // @phpstan-ignore-next-line
+            Ctx::$database->execute($database->scoreql_to_sql("ALTER TABLE bans CHANGE ip ip SCORE_INET"));
             $database->execute("ALTER TABLE bans ADD COLUMN added TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP");
             $this->set_version(8);
         }

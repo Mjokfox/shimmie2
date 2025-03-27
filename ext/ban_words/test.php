@@ -8,9 +8,8 @@ final class BanWordsTest extends ShimmiePHPUnitTestCase
 {
     public function check_blocked(int $image_id, string $words): void
     {
-        global $user;
         try {
-            send_event(new CommentPostingEvent($image_id, $user, $words));
+            send_event(new CommentPostingEvent($image_id, Ctx::$user, $words));
             self::fail("Exception not thrown");
         } catch (CommentPostingException $e) {
             self::assertEquals("Comment contains banned terms", $e->getMessage());
@@ -19,8 +18,7 @@ final class BanWordsTest extends ShimmiePHPUnitTestCase
 
     public function testWordBan(): void
     {
-        global $config;
-        $config->set_string("banned_words", "viagra\nporn\n\n/http:.*\.cn\//");
+        Ctx::$config->set_string("banned_words", "viagra\nporn\n\n/http:.*\.cn\//");
 
         self::log_in_as_user();
         $image_id = $this->post_image("tests/pbx_screenshot.jpg", "pbx computer screenshot");
@@ -39,8 +37,7 @@ final class BanWordsTest extends ShimmiePHPUnitTestCase
 
     public function testCyrillicBan(): void
     {
-        global $config;
-        $config->set_string("banned_words", "СОЮЗ\nсоветских\nСоциалистических\n/Республик/\n");
+        Ctx::$config->set_string("banned_words", "СОЮЗ\nсоветских\nСоциалистических\n/Республик/\n");
 
         self::log_in_as_user();
         $image_id = $this->post_image("tests/pbx_screenshot.jpg", "pbx computer screenshot");

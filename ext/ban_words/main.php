@@ -10,14 +10,14 @@ final class BanWords extends Extension
 
     public function onCommentPosting(CommentPostingEvent $event): void
     {
-        if (!$event->user->can(CommentPermission::BYPASS_COMMENT_CHECKS)) {
+        if (!Ctx::$user->can(CommentPermission::BYPASS_COMMENT_CHECKS)) {
             $this->test_text($event->comment, new CommentPostingException("Comment contains banned terms"));
         }
     }
 
     public function onCommentEditing(CommentEditingEvent $event): void
     {
-        if (!$event->user->can(CommentPermission::BYPASS_COMMENT_CHECKS)) {
+        if (!Ctx::$user->can(CommentPermission::BYPASS_COMMENT_CHECKS)) {
             $this->test_text($event->comment, new CommentPostingException("Comment contains banned terms"));
         }
     }
@@ -66,10 +66,9 @@ final class BanWords extends Extension
      */
     public static function get_words(): array
     {
-        global $config;
         $words = [];
 
-        $banned = $config->get_string(BanWordsConfig::BANNED_WORDS);
+        $banned = Ctx::$config->req_string(BanWordsConfig::BANNED_WORDS);
         foreach (explode("\n", $banned) as $word) {
             $word = trim(mb_strtolower($word));
             if (strlen($word) == 0) {

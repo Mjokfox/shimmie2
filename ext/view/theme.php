@@ -13,8 +13,7 @@ class ViewPostTheme extends Themelet
 {
     public function display_meta_headers(Image $image): void
     {
-        global $page;
-
+        $page = Ctx::$page;
         $h_metatags = str_replace(" ", ", ", $image->get_tag_list());
         $page->add_html_header(META(["name" => "keywords", "content" => $h_metatags]));
         $page->add_html_header(META(["property" => "og:title", "content" => $h_metatags]));
@@ -133,15 +132,13 @@ class ViewPostTheme extends Themelet
      */
     protected function build_info(Image $image, array $editor_parts): HTMLElement
     {
-        global $config, $user;
-
         if (count($editor_parts) == 0) {
             return emptyHTML($image->is_locked() ? "[Post Locked]" : "");
         }
 
         if (
-            (!$image->is_locked() || $user->can(PostLockPermission::EDIT_IMAGE_LOCK)) &&
-            $user->can(PostTagsPermission::EDIT_IMAGE_TAG)
+            (!$image->is_locked() || Ctx::$user->can(PostLockPermission::EDIT_IMAGE_LOCK)) &&
+            Ctx::$user->can(PostTagsPermission::EDIT_IMAGE_TAG)
         ) {
             $editor_parts[] = TR(TD(
                 ["colspan" => 4],
@@ -157,7 +154,7 @@ class ViewPostTheme extends Themelet
         if ($bae->html) {
             array_values($editor_parts)[0]->appendChild(
                 TD(
-                    ["class" => "image-info-avatar-box", "width" => $config->get_int(SetupConfig::AVATAR_SIZE) . "px", "rowspan" => count($editor_parts) - 2],
+                    ["class" => "image-info-avatar-box", "width" => Ctx::$config->req_int(SetupConfig::AVATAR_SIZE) . "px", "rowspan" => count($editor_parts) - 2],
                     $bae->html
                 )
             );
@@ -177,10 +174,8 @@ class ViewPostTheme extends Themelet
 
     protected function build_stats(Image $image): HTMLElement
     {
-        global $user;
-
         $owner = $image->get_owner()->name;
-        $ip = $user->can(IPBanPermission::VIEW_IP) ? " ({$image->owner_ip})" : "";
+        $ip = Ctx::$user->can(IPBanPermission::VIEW_IP) ? " ({$image->owner_ip})" : "";
 
         $parts = [
             "ID: {$image->id}",
@@ -190,7 +185,7 @@ class ViewPostTheme extends Themelet
             "Type: {$image->get_mime()}",
         ];
         if ($image->video_codec !== null) {
-            $parts[] = "Video Codec: $image->video_codec";
+            $parts[] = "Video Codec: {$image->video_codec->name}";
         }
         if ($image->length !== null) {
             $parts[] = "Length: " . format_milliseconds($image->length);

@@ -52,7 +52,6 @@ class _SafeOuroborosImage
 
     public function __construct(Image $img)
     {
-        global $config;
         // author
         $author = $img->get_owner();
         $this->author = $author->name;
@@ -91,8 +90,8 @@ class _SafeOuroborosImage
         $this->has_notes = false;
 
         // thumb
-        $this->preview_height = $config->get_int(ThumbnailConfig::HEIGHT);
-        $this->preview_width = $config->get_int(ThumbnailConfig::WIDTH);
+        $this->preview_height = Ctx::$config->req_int(ThumbnailConfig::HEIGHT);
+        $this->preview_width = Ctx::$config->req_int(ThumbnailConfig::WIDTH);
         $this->preview_url = (string)$img->get_thumb_link()->asAbsolute();
 
         // sample (use the full image here)
@@ -227,13 +226,8 @@ final class OuroborosAPI extends Extension
     public const ERROR_POST_CREATE_DUPE = 'Duplicate';
     public const OK_POST_CREATE_UPDATE = 'Updated';
 
-    public const MIME_JSON = 'application/json; charset=utf-8';
-    public const MIME_XML = 'text/xml; charset=utf-8';
-
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page, $user;
-
         if (\Safe\preg_match("%(.*)\.(xml|json)$%", implode('/', $event->args), $matches)) {
             $event_args = $matches[1];
             $this->type = $matches[2];
@@ -241,7 +235,7 @@ final class OuroborosAPI extends Extension
             if ($event_args === 'post/create') {
                 // Create
                 $this->tryAuth();
-                if ($user->can(ImagePermission::CREATE_IMAGE)) {
+                if (Ctx::$user->can(ImagePermission::CREATE_IMAGE)) {
                     $md5 = isset($_REQUEST['md5']) && \Safe\preg_match("%^[0-9A-Fa-f]{32}$%", $_REQUEST['md5']) ? strtolower($_REQUEST['md5']) : null;
                     $this->postCreate(new OuroborosPost($_REQUEST['post']), $md5);
                 } else {
@@ -284,7 +278,7 @@ final class OuroborosAPI extends Extension
                 $this->tagIndex($limit, $p, $order, $name, $name_pattern);
             }
         } elseif ($event->page_matches('post/show')) {
-            $page->set_mode(PageMode::REDIRECT);
+            $page = Ctx::$page;
             $page->set_redirect(make_link(str_replace('post/show', 'post/view', implode('/', $event->args))));
             $page->display();
             die();
@@ -300,8 +294,7 @@ final class OuroborosAPI extends Extension
      */
     protected function postCreate(OuroborosPost $post, ?string $md5 = ''): void
     {
-        global $config, $database;
-        $handler = $config->get_string(UploadConfig::COLLISION_HANDLER);
+        $handler = Ctx::$config->get_string(UploadConfig::COLLISION_HANDLER);
         if (!empty($md5) && !($handler === 'merge')) {
             $img = Image::by_hash($md5);
             if (!is_null($img)) {
@@ -319,7 +312,7 @@ final class OuroborosAPI extends Extension
         // Check where we should try for the file
         if (empty($post->file) && !empty($post->file_url)) {
             // Transload from source
-            $meta['file'] = shm_tempnam('transload_' . $config->get_string(UploadConfig::TRANSLOAD_ENGINE))->str();
+            $meta['file'] = shm_tempnam('transload_' . Ctx::$config->req_string(UploadConfig::TRANSLOAD_ENGINE))->str();
             $meta['filename'] = basename($post->file_url);
             try {
                 Network::fetch_url($post->file_url, new Path($meta['file']));
@@ -341,7 +334,7 @@ final class OuroborosAPI extends Extension
         }
         $img = Image::by_hash($meta['hash']);
         if (!is_null($img)) {
-            $handler = $config->get_string(UploadConfig::COLLISION_HANDLER);
+            $handler = Ctx::$config->get_string(UploadConfig::COLLISION_HANDLER);
             if ($handler === 'merge') {
                 $postTags = Tag::explode($post->tags);
                 $merged = array_merge($postTags, $img->get_tag_array());
@@ -359,7 +352,7 @@ final class OuroborosAPI extends Extension
             }
         }
         try {
-            $image = $database->with_savepoint(function () use ($meta) {
+            $image = Ctx::$database->with_savepoint(function () use ($meta) {
                 $dae = send_event(new DataUploadEvent(new Path($meta['file']), basename($meta['file']), 0, $meta));
                 return $dae->images[0];
             });
@@ -385,7 +378,7 @@ final class OuroborosAPI extends Extension
 
     /**
      * Wrapper for getting a list of posts
-     * @param string[] $tags
+     * @param list<tag-string> $tags
      */
     protected function postIndex(int $limit, int $page, array $tags): void
     {
@@ -404,13 +397,10 @@ final class OuroborosAPI extends Extension
 
     protected function tagIndex(int $limit, int $page, string $order, string $name, string $name_pattern): void
     {
-        global $database, $config;
+        global $database;
 
         // This class will only exist if the tag map plugin is enabled
-        $tags_min = 0;
-        if (class_exists('\Shimmie2\TagMapConfig')) {
-            $tags_min = $config->get_int(TagMapConfig::TAGS_MIN);
-        }
+        $tags_min = Ctx::$config->get_int(TagMapConfig::TAGS_MIN);
 
         $start = ($page - 1) * $limit;
         switch ($order) {
@@ -481,14 +471,12 @@ final class OuroborosAPI extends Extension
         }
         $response = ['success' => $success, 'reason' => $reason];
         if ($this->type === 'json') {
-            $page->set_mime(self::MIME_JSON);
             if ($location !== false) {
                 $response['location'] = $response['reason'];
                 unset($response['reason']);
             }
-            $response = \Safe\json_encode($response);
+            $page->set_data(MimeType::JSON, \Safe\json_encode($response));
         } elseif ($this->type === 'xml') {
-            $page->set_mime(self::MIME_XML);
             // Seriously, XML sucks...
             $xml = new \XMLWriter();
             $xml->openMemory();
@@ -502,11 +490,11 @@ final class OuroborosAPI extends Extension
             }
             $xml->endElement();
             $xml->endDocument();
-            $response = $xml->outputMemory(true);
+            $page->set_data(MimeType::XML, $xml->outputMemory(true));
             unset($xml);
+        } else {
+            throw new \Exception("Unsupported response type: {$this->type}");
         }
-        $page->set_data($response);
-        $page->set_mode(PageMode::DATA);
     }
 
     /**
@@ -517,10 +505,8 @@ final class OuroborosAPI extends Extension
         global $page;
         $response = '';
         if ($this->type === 'json') {
-            $page->set_mime(self::MIME_JSON);
-            $response = \Safe\json_encode($data);
+            $page->set_data(MimeType::JSON, \Safe\json_encode($data));
         } elseif ($this->type === 'xml') {
-            $page->set_mime(self::MIME_XML);
             $xml = new \XMLWriter();
             $xml->openMemory();
             $xml->startDocument('1.0', 'utf-8');
@@ -539,11 +525,9 @@ final class OuroborosAPI extends Extension
             $xml->endElement();
 
             $xml->endDocument();
-            $response = $xml->outputMemory(true);
+            $page->set_data(MimeType::XML, $xml->outputMemory(true));
             unset($xml);
         }
-        $page->set_data($response);
-        $page->set_mode(PageMode::DATA);
     }
 
     private function createItemXML(\XMLWriter $xml, string $type, _SafeOuroborosTag|_SafeOuroborosImage $item): void
@@ -570,18 +554,13 @@ final class OuroborosAPI extends Extension
      */
     private function tryAuth(): void
     {
-        global $config, $user;
+        $user = Ctx::$user;
 
         if (isset($_REQUEST['user']) && isset($_REQUEST['session'])) {
             //Auth by session data from query
             $name = $_REQUEST['user'];
             $session = $_REQUEST['session'];
-            $duser = User::by_session($name, $session);
-            if (!is_null($duser)) {
-                $user = $duser;
-            } else {
-                $user = User::by_id($config->get_int(UserAccountsConfig::ANON_ID, 0));
-            }
+            $user = User::by_session($name, $session) ?? User::by_id(Ctx::$config->req_int(UserAccountsConfig::ANON_ID));
             send_event(new UserLoginEvent($user));
         } elseif (isset($_COOKIE[SysConfig::getCookiePrefix() . '_' . 'session']) &&
             isset($_COOKIE[SysConfig::getCookiePrefix() . '_' . 'user'])
@@ -589,12 +568,7 @@ final class OuroborosAPI extends Extension
             //Auth by session data from cookies
             $session = $_COOKIE[SysConfig::getCookiePrefix() . '_' . 'session'];
             $user = $_COOKIE[SysConfig::getCookiePrefix() . '_' . 'user'];
-            $duser = User::by_session($user, $session);
-            if (!is_null($duser)) {
-                $user = $duser;
-            } else {
-                $user = User::by_id($config->get_int(UserAccountsConfig::ANON_ID, 0));
-            }
+            $user = User::by_session($user, $session) ?? User::by_id(Ctx::$config->req_int(UserAccountsConfig::ANON_ID));
             send_event(new UserLoginEvent($user));
         }
     }

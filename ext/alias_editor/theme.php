@@ -16,8 +16,6 @@ class AliasEditorTheme extends Themelet
      */
     public function display_aliases(HTMLElement $table, HTMLElement $paginator): void
     {
-        global $page, $user;
-
         $html = emptyHTML(
             "A tag alias replaces a tag with another tag or tags.",
             BR(),
@@ -42,11 +40,12 @@ class AliasEditorTheme extends Themelet
         );
         $bulk_html = emptyHTML($bulk_form);
 
+        $page = Ctx::$page;
         $page->set_title("Alias List");
         $this->display_navigation();
         $page->add_block(new Block("Aliases", $html));
 
-        if ($user->can(AliasEditorPermission::MANAGE_ALIAS_LIST)) {
+        if (Ctx::$user->can(AliasEditorPermission::MANAGE_ALIAS_LIST)) {
             $page->add_block(new Block("Bulk Upload", $bulk_html, "main", 51));
         }
     }

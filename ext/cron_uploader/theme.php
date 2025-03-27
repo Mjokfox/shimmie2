@@ -42,11 +42,11 @@ class CronUploaderTheme extends Themelet
         string $cron_url,
         ?array $log_entries
     ): void {
-        global $page, $config, $user;
+        global $page;
         $page->set_title("Cron Uploader");
 
         $info_html = emptyHTML();
-        if (!$config->get_bool(UserAccountsConfig::ENABLE_API_KEYS)) {
+        if (!Ctx::$config->req_bool(UserAccountsConfig::ENABLE_API_KEYS)) {
             $info_html->appendChild(B(["style" => "color:red"], "THIS EXTENSION REQUIRES USER API KEYS TO BE ENABLED IN BOARD ADMIN"));
         }
 
@@ -97,7 +97,7 @@ class CronUploaderTheme extends Themelet
                 LI("If an import is already running, another cannot start until it is done."),
                 LI("Each time it runs it will import for up to ".number_format(intval(ini_get('max_execution_time')) * .8)." seconds. This is controlled by the PHP max execution time."),
                 LI("Uploaded images will be moved to the 'uploaded' directory into a subfolder named after the time the import started. It's recommended that you remove everything out of this directory from time to time. If you have admin controls enabled, this can be done from <a href='".make_link("admin")."'>Board Admin</a>."),
-                LI("If you enable the db logging extension, you can view the log output on this screen. Otherwise the log will be written to a file at ".$user->get_config()->get_string(CronUploaderUserConfig::DIR).DIRECTORY_SEPARATOR."uploads.log")
+                LI("If you enable the db logging extension, you can view the log output on this screen. Otherwise the log will be written to a file at ".Ctx::$user->get_config()->get_string(CronUploaderUserConfig::DIR).DIRECTORY_SEPARATOR."uploads.log")
             )
         );
         $page->add_block(new Block("Usage Guide", $usage_html, "main", 20));
@@ -153,8 +153,6 @@ class CronUploaderTheme extends Themelet
      */
     public function display_form(array $failed_dirs): void
     {
-        global $page;
-
         $failed_dir_select = SELECT(["name" => "failed_dir", "required" => true]);
         foreach ($failed_dirs as $dir) {
             $failed_dir_select->appendChild(OPTION(["value" => $dir->str()], $dir->str()));
@@ -204,6 +202,6 @@ class CronUploaderTheme extends Themelet
             ),
         );
 
-        $page->add_block(new Block("Cron Upload", $html));
+        Ctx::$page->add_block(new Block("Cron Upload", $html));
     }
 }

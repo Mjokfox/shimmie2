@@ -96,8 +96,7 @@ final class Comment
 
     public static function count_comments_by_user(User $user): int
     {
-        global $database;
-        return (int)$database->get_one("
+        return (int)Ctx::$database->get_one("
 			SELECT COUNT(*) AS count
 			FROM comments
 			WHERE owner_id=:owner_id
@@ -143,8 +142,7 @@ final class Comment
     #[Mutation(name: "create_comment")]
     public static function create_comment(int $post_id, string $comment): bool
     {
-        global $user;
-        send_event(new CommentPostingEvent($post_id, $user, $comment));
+        send_event(new CommentPostingEvent($post_id, Ctx::$user, $comment));
         return true;
     }
 }
@@ -159,7 +157,7 @@ final class CommentList extends Extension
 
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
-        global $database;
+        $database = Ctx::$database;
         if ($this->get_version() < 3) {
             // shortcut to latest
             if ($this->get_version() < 1) {
@@ -232,19 +230,17 @@ final class CommentList extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $cache, $config, $database, $user, $page;
+        global $database, $page;
         if ($event->page_matches("comment/add", method: "POST", permission: CommentPermission::CREATE_COMMENT)) {
             $i_iid = int_escape($event->req_POST('image_id'));
-            send_event(new CommentPostingEvent($i_iid, $user, $event->req_POST('comment')));
-            $page->set_mode(PageMode::REDIRECT);
+            send_event(new CommentPostingEvent($i_iid, Ctx::$user, $event->req_POST('comment')));
             $page->set_redirect(make_link("post/view/$i_iid", null, "comment_on_$i_iid"));
         } elseif ($event->page_matches("comment/delete/{comment_id}/{image_id}")) {
             $comment = Comment::by_id($event->get_iarg('comment_id'));
-            if (!is_null($comment) && ($user->can(CommentPermission::DELETE_COMMENT) || $comment->owner_id === $user->id)) {
+            if (!is_null($comment) && (Ctx::$user->can(CommentPermission::DELETE_COMMENT) || $comment->owner_id === Ctx::$user->id)) {
                 // FIXME: post, not args
                 send_event(new CommentDeletionEvent($event->get_iarg('comment_id')));
                 $page->flash("Deleted comment");
-                $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(Url::referer_or(make_link("post/view/" . $event->get_iarg('image_id'))));
             } else {
                 throw new PermissionDenied("Permission Denied: You cant just go around and delete others' comments.");
@@ -263,13 +259,11 @@ final class CommentList extends Extension
                 send_event(new CommentDeletionEvent($cid));
             }
             $page->flash("Deleted $num comments");
-
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("admin"));
         } elseif ($event->page_matches("comment/list", paged: true)) {
             $threads_per_page = 10;
 
-            $where = $config->get_bool(CommentConfig::RECENT_COMMENTS)
+            $where = Ctx::$config->req_bool(CommentConfig::RECENT_COMMENTS)
                 ? "WHERE posted > now() - interval '24 hours'"
                 : "";
 
@@ -291,7 +285,7 @@ final class CommentList extends Extension
                 LIMIT :limit OFFSET :offset
             ", ["limit" => $threads_per_page, "offset" => $start]);
 
-            $user_ratings = RatingsInfo::is_enabled() ? Ratings::get_user_class_privs($user) : [];
+            $user_ratings = RatingsInfo::is_enabled() ? Ratings::get_user_class_privs(Ctx::$user) : [];
 
             $images = [];
             while ($row = $result->fetch()) {
@@ -314,14 +308,13 @@ final class CommentList extends Extension
                 }
             }
 
-            $this->theme->display_comment_list($images, $current_page + 1, $total_pages, $user->can(CommentPermission::CREATE_COMMENT));
+            $this->theme->display_comment_list($images, $current_page + 1, $total_pages, Ctx::$user->can(CommentPermission::CREATE_COMMENT));
         } elseif ($event->page_matches("comment/edit", method: "POST", permission: CommentPermission::CREATE_COMMENT)) {
             $cid = int_escape($event->req_POST('comment_id'));
             $comment = Comment::by_id($cid);
-            if (!is_null($comment) && ($user->can(CommentPermission::DELETE_COMMENT) || $comment->owner_id === $user->id)) {
+            if (!is_null($comment) && (Ctx::$user->can(CommentPermission::DELETE_COMMENT) || $comment->owner_id === Ctx::$user->id)) {
                 $i_iid = int_escape($event->req_POST('image_id'));
-                send_event(new CommentEditingEvent($i_iid, $cid, $user, $event->req_POST('comment')));
-                $page->set_mode(PageMode::REDIRECT);
+                send_event(new CommentEditingEvent($i_iid, $cid, Ctx::$user, $event->req_POST('comment')));
                 $page->set_redirect(make_link("post/view/$i_iid", null, "c$cid"));
 
             } else {
@@ -353,8 +346,7 @@ final class CommentList extends Extension
 
     public function onPostListBuilding(PostListBuildingEvent $event): void
     {
-        global $cache, $config;
-        $cc = $config->get_int(CommentConfig::COUNT);
+        $cc = Ctx::$config->get_int(CommentConfig::COUNT);
         if ($cc > 0) {
             $recent = cache_get_or_set("recent_comments", fn () => self::get_recent_comments($cc), 60);
             if (count($recent) > 0) {
@@ -376,11 +368,10 @@ final class CommentList extends Extension
 
     public function onDisplayingImage(DisplayingImageEvent $event): void
     {
-        global $user;
         $this->theme->display_image_comments(
             $event->image,
             self::get_comments($event->image->id),
-            $user->can(CommentPermission::CREATE_COMMENT)
+            Ctx::$user->can(CommentPermission::CREATE_COMMENT)
         );
     }
 
@@ -397,8 +388,7 @@ final class CommentList extends Extension
 
     public function onCommentDeletion(CommentDeletionEvent $event): void
     {
-        global $database;
-        $database->execute("
+        Ctx::$database->execute("
 			DELETE FROM comments
 			WHERE id=:comment_id
 		", ["comment_id" => $event->comment_id]);
@@ -428,13 +418,13 @@ final class CommentList extends Extension
     }
 
     /**
+     * @param literal-string $query
      * @param array<string,mixed> $args
      * @return Comment[]
      */
     private static function get_generic_comments(string $query, array $args): array
     {
-        global $database;
-        $rows = $database->get_all($query, $args);
+        $rows = Ctx::$database->get_all($query, $args);
         $comments = [];
         foreach ($rows as $row) {
             $comments[] = new Comment($row);
@@ -500,24 +490,23 @@ final class CommentList extends Extension
 
     private function is_comment_limit_hit(): bool
     {
-        global $config, $database;
-
         // sqlite fails at intervals
-        if ($database->get_driver_id() === DatabaseDriverID::SQLITE) {
+        if (Ctx::$database->get_driver_id() === DatabaseDriverID::SQLITE) {
             return false;
         }
 
-        $window = $config->get_int(CommentConfig::WINDOW);
-        $max = $config->get_int(CommentConfig::LIMIT);
+        $window = Ctx::$config->get_int(CommentConfig::WINDOW);
+        $max = Ctx::$config->get_int(CommentConfig::LIMIT);
 
-        if ($database->get_driver_id() === DatabaseDriverID::MYSQL) {
+        if (Ctx::$database->get_driver_id() === DatabaseDriverID::MYSQL) {
             $window_sql = "interval $window minute";
         } else {
             $window_sql = "interval '$window minute'";
         }
 
         // window doesn't work as an SQL param because it's inside quotes >_<
-        $result = $database->get_all("
+        // @phpstan-ignore-next-line
+        $result = Ctx::$database->get_all("
 			SELECT *
 			FROM comments
 			WHERE owner_ip = :remote_ip AND posted > now() - $window_sql
@@ -540,12 +529,11 @@ final class CommentList extends Extension
 
     private function is_spam_akismet(string $text): bool
     {
-        global $config, $user;
-        $key = $config->get_string(CommentConfig::WORDPRESS_KEY);
+        $key = Ctx::$config->get_string(CommentConfig::WORDPRESS_KEY);
         if (!is_null($key) && strlen($key) > 0) {
             $comment = [
-                'author'       => $user->name,
-                'email'        => $user->email,
+                'author'       => Ctx::$user->name,
+                'email'        => Ctx::$user->email,
                 'website'      => '',
                 'body'         => $text,
                 'permalink'    => '',
@@ -570,8 +558,7 @@ final class CommentList extends Extension
 
     private function is_dupe(int $image_id, string $comment): bool
     {
-        global $database;
-        return (bool)$database->get_row("
+        return (bool)Ctx::$database->get_row("
 			SELECT *
 			FROM comments
 			WHERE image_id=:image_id AND comment=:comment
@@ -580,8 +567,6 @@ final class CommentList extends Extension
 
     private function add_comment_wrapper(int $image_id, User $user, string $comment): void
     {
-        global $database, $page;
-
         if (!$user->can(CommentPermission::BYPASS_COMMENT_CHECKS)) {
             // will raise an exception if anything is wrong
             $this->comment_checks($image_id, $user, $comment);
@@ -589,14 +574,14 @@ final class CommentList extends Extension
 
         // all checks passed
         if ($user->is_anonymous()) {
-            $page->add_cookie("nocache", "Anonymous Commenter", time() + 60 * 60 * 24, "/");
+            Ctx::$page->add_cookie("nocache", "Anonymous Commenter", time() + 60 * 60 * 24, "/");
         }
-        $database->execute(
+        Ctx::$database->execute(
             "INSERT INTO comments(image_id, owner_id, owner_ip, posted, comment) ".
                 "VALUES(:image_id, :user_id, :remote_addr, now(), :comment)",
             ["image_id" => $image_id, "user_id" => $user->id, "remote_addr" => Network::get_real_ip(), "comment" => $comment]
         );
-        $cid = $database->get_last_insert_id('comments_id_seq');
+        $cid = Ctx::$database->get_last_insert_id('comments_id_seq');
         $snippet = substr($comment, 0, 100);
         $snippet = str_replace("\n", " ", $snippet);
         $snippet = str_replace("\r", " ", $snippet);
@@ -638,9 +623,8 @@ final class CommentList extends Extension
 
     private function comment_checks(int $image_id, User $user, string $comment): void
     {
-        global $config, $page;
         // basic sanity checks
-        if (!$user->can(CommentPermission::CREATE_COMMENT)) {
+        if (!Ctx::$user->can(CommentPermission::CREATE_COMMENT)) {
             throw new CommentPostingException("You do not have permission to add comments");
         } elseif (is_null(Image::by_id($image_id))) {
             throw new CommentPostingException("The image does not exist");
@@ -653,8 +637,8 @@ final class CommentList extends Extension
         // advanced sanity checks
         elseif (strlen($comment) / strlen(\Safe\gzcompress($comment)) > 10) {
             throw new CommentPostingException("Comment too repetitive");
-        } elseif ($user->is_anonymous() && ($_POST['hash'] !== self::get_hash())) {
-            $page->add_cookie("nocache", "Anonymous Commenter", time() + 60 * 60 * 24, "/");
+        } elseif (Ctx::$user->is_anonymous() && ($_POST['hash'] !== self::get_hash())) {
+            Ctx::$page->add_cookie("nocache", "Anonymous Commenter", time() + 60 * 60 * 24, "/");
             throw new CommentPostingException(
                 "Comment submission form is out of date; refresh the ".
                     "comment form to show you aren't a spammer"
@@ -669,9 +653,9 @@ final class CommentList extends Extension
         }
 
         // rate-limited external service checks last
-        elseif ($config->get_bool(CommentConfig::CAPTCHA) && !Captcha::check()) {
+        elseif (Ctx::$config->req_bool(CommentConfig::CAPTCHA) && !Captcha::check()) {
             throw new CommentPostingException("Error in captcha");
-        } elseif ($user->is_anonymous() && $this->is_spam_akismet($comment)) {
+        } elseif (Ctx::$user->is_anonymous() && $this->is_spam_akismet($comment)) {
             throw new CommentPostingException("Akismet thinks that your comment is spam. Try rewriting the comment, or logging in.");
         }
     }

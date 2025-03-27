@@ -40,8 +40,7 @@ class SiteCaptcha extends Extension
 
     private function get_token(string $extra = ""): string
     {
-        global $config;
-        return hash("sha3-256", Network::get_session_ip($config) . $extra . SECRET);
+        return hash("sha3-256", Network::get_session_ip() . $extra . SECRET);
     }
 
     public function is_ip_whitelisted(): bool

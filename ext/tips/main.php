@@ -24,6 +24,9 @@ final class DeleteTipEvent extends Event
     }
 }
 
+/**
+ * @phpstan-type Tip array{id: int, image: string, text: string, enable: bool}
+ */
 final class Tips extends Extension
 {
     public const KEY = "tips";
@@ -32,7 +35,7 @@ final class Tips extends Extension
 
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
-        global $database;
+        $database = Ctx::$database;
 
         if ($this->get_version() < 1) {
             $database->create_table("tips", "
@@ -52,8 +55,6 @@ final class Tips extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page, $user;
-
         $this->getTip();
 
         if ($event->page_matches("tips/list", permission: TipsPermission::ADMIN)) {
@@ -65,28 +66,24 @@ final class Tips extends Extension
                 $event->req_POST("image"),
                 $event->req_POST("text")
             ));
-            $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(make_link("tips/list"));
+            Ctx::$page->set_redirect(make_link("tips/list"));
         } elseif ($event->page_matches("tips/status/{tipID}", permission: TipsPermission::ADMIN)) {
             // FIXME: HTTP GET CSRF
             $tipID = $event->get_iarg('tipID');
             $this->setStatus($tipID);
-            $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(make_link("tips/list"));
+            Ctx::$page->set_redirect(make_link("tips/list"));
         } elseif ($event->page_matches("tips/delete/{tipID}", permission: TipsPermission::ADMIN)) {
             // FIXME: HTTP GET CSRF
             $tipID = $event->get_iarg('tipID');
             send_event(new DeleteTipEvent($tipID));
-            $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(make_link("tips/list"));
+            Ctx::$page->set_redirect(make_link("tips/list"));
         }
     }
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
-        global $user;
         if ($event->parent === "system") {
-            if ($user->can(TipsPermission::ADMIN)) {
+            if (Ctx::$user->can(TipsPermission::ADMIN)) {
                 $event->add_nav_link(make_link('tips/list'), "Tips Editor");
             }
         }
@@ -94,8 +91,7 @@ final class Tips extends Extension
 
     public function onUserBlockBuilding(UserBlockBuildingEvent $event): void
     {
-        global $user;
-        if ($user->can(TipsPermission::ADMIN)) {
+        if (Ctx::$user->can(TipsPermission::ADMIN)) {
             $event->add_link("Tips Editor", make_link("tips/list"));
         }
     }
@@ -107,7 +103,7 @@ final class Tips extends Extension
         $images = array_map(fn ($p) => $p->basename()->str(), $images);
 
         // theme HAX
-        $theme_name = $config->get_string(SetupConfig::THEME, "default");
+        $theme_name = $config->get_string(SetupConfig::THEME);
         $theme_images = Filesystem::get_dir_contents(new Path("themes/$theme_name/static/"));
         if (count($theme_images) > 0) {
             $theme_images = array_map(fn ($p) => $p->basename()->str(), $theme_images);
@@ -123,8 +119,7 @@ final class Tips extends Extension
 
     public function onCreateTip(CreateTipEvent $event): void
     {
-        global $database;
-        $database->execute(
+        Ctx::$database->execute(
             "
 				INSERT INTO tips (enable, image, text)
 				VALUES (:enable, :image, :text)",
@@ -134,9 +129,8 @@ final class Tips extends Extension
 
     private function getTip(): void
     {
-        global $database;
-
-        $tip = $database->get_row("
+        /** @var ?Tip $tip */
+        $tip = Ctx::$database->get_row("
             SELECT *
             FROM tips
             WHERE enable = :true
@@ -151,22 +145,22 @@ final class Tips extends Extension
 
     private function getAll(): void
     {
-        global $database;
-        $tips = $database->get_all("SELECT * FROM tips ORDER BY id ASC");
+        /** @var array<Tip> $tips */
+        $tips = Ctx::$database->get_all("SELECT * FROM tips ORDER BY id ASC");
         $this->theme->showAll($tips);
     }
 
     private function setStatus(int $tipID): void
     {
-        global $database;
-        $tip = $database->get_row("SELECT * FROM tips WHERE id = :id ", ["id" => $tipID]);
-        $enable = !bool_escape($tip['enable']);
-        $database->execute("UPDATE tips SET enable = :enable WHERE id = :id", ["enable" => $enable, "id" => $tipID]);
+        $enabled = Ctx::$database->get_one("SELECT enable FROM tips WHERE id = :id ", ["id" => $tipID]);
+        Ctx::$database->execute(
+            "UPDATE tips SET enable = :enable WHERE id = :id",
+            ["enable" => !bool_escape($enabled), "id" => $tipID]
+        );
     }
 
     public function onDeleteTip(DeleteTipEvent $event): void
     {
-        global $database;
-        $database->execute("DELETE FROM tips WHERE id = :id", ["id" => $event->tip_id]);
+        Ctx::$database->execute("DELETE FROM tips WHERE id = :id", ["id" => $event->tip_id]);
     }
 }

@@ -16,7 +16,7 @@ final class ImageViewCounter extends Extension
     # Adds view to database if needed
     public function onDisplayingImage(DisplayingImageEvent $event): void
     {
-        global $database, $user;
+        global $database;
 
         $imgid = $event->image->id;
 
@@ -47,7 +47,7 @@ final class ImageViewCounter extends Extension
 			",
             [
                 "image_id" => $imgid,
-                "user_id" => $user->id,
+                "user_id" => Ctx::$user->id,
                 "timestamp" => time(),
                 "ipaddress" => Network::get_real_ip(),
             ]
@@ -56,9 +56,9 @@ final class ImageViewCounter extends Extension
 
     public function onImageInfoBoxBuilding(ImageInfoBoxBuildingEvent $event): void
     {
-        global $user, $database;
+        global $database;
 
-        if ($user->can(ImageViewCounterPermission::SEE_IMAGE_VIEW_COUNTS)) {
+        if (Ctx::$user->can(ImageViewCounterPermission::SEE_IMAGE_VIEW_COUNTS)) {
             $view_count = (string)$database->get_one(
                 "SELECT COUNT(*) FROM image_views WHERE image_id =:image_id",
                 ["image_id" => $event->image->id]
@@ -70,11 +70,11 @@ final class ImageViewCounter extends Extension
 
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
-        global $database, $config;
+        global $database;
 
-        if ($config->get_bool("image_viewcounter_installed")) {
+        if (Ctx::$config->get_bool("image_viewcounter_installed")) {
             $this->set_version(1);
-            $config->delete("image_viewcounter_installed");
+            Ctx::$config->delete("image_viewcounter_installed");
         }
         if ($this->get_version() < 1) {
             $database->create_table("image_views", "

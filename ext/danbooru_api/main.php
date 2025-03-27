@@ -42,21 +42,15 @@ final class DanbooruApi extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page;
-
+        $page = Ctx::$page;
         if ($event->page_matches("api/danbooru/add_post") || $event->page_matches("api/danbooru/post/create.xml")) {
             // No XML data is returned from this function
-            $page->set_mode(PageMode::DATA);
-            $page->set_mime(MimeType::TEXT);
+            $page->set_data(MimeType::TEXT, "");
             $this->api_add_post($event);
         } elseif ($event->page_matches("api/danbooru/find_posts") || $event->page_matches("api/danbooru/post/index.xml")) {
-            $page->set_mode(PageMode::DATA);
-            $page->set_mime(MimeType::XML_APPLICATION);
-            $page->set_data((string)$this->api_find_posts($event));
+            $page->set_data(MimeType::XML_APPLICATION, (string)$this->api_find_posts($event));
         } elseif ($event->page_matches("api/danbooru/find_tags")) {
-            $page->set_mode(PageMode::DATA);
-            $page->set_mime(MimeType::XML_APPLICATION);
-            $page->set_data((string)$this->api_find_tags($event));
+            $page->set_data(MimeType::XML_APPLICATION, (string)$this->api_find_tags($event));
         }
 
         // Hackery for danbooruup 0.3.2 providing the wrong view url. This simply redirects to the proper
@@ -65,7 +59,6 @@ final class DanbooruApi extends Extension
         // This redirects that to https://shimmie/post/view/123
         elseif ($event->page_matches("api/danbooru/post/show/{id}")) {
             $fixedlocation = make_link("post/view/" . $event->get_iarg('id'));
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect($fixedlocation);
         }
     }
@@ -77,19 +70,17 @@ final class DanbooruApi extends Extension
      */
     private function authenticate_user(PageRequestEvent $event): void
     {
-        global $config, $user;
-
         if ($event->get_POST('login') && $event->get_POST('password')) {
             // Get this user from the db, if it fails the user becomes anonymous
             // Code borrowed from /ext/user
             try {
                 $name = $event->req_POST('login');
                 $pass = $event->req_POST('password');
-                $user = User::by_name_and_pass($name, $pass);
+                Ctx::$user = User::by_name_and_pass($name, $pass);
             } catch (UserNotFound $e) {
-                $user = User::by_id($config->get_int(UserAccountsConfig::ANON_ID, 0));
+                Ctx::$user = User::by_id(Ctx::$config->req_int(UserAccountsConfig::ANON_ID));
             }
-            send_event(new UserLoginEvent($user));
+            send_event(new UserLoginEvent(Ctx::$user));
         }
     }
 
@@ -281,7 +272,7 @@ final class DanbooruApi extends Extension
      */
     private function api_add_post(PageRequestEvent $event): void
     {
-        global $database, $user, $page;
+        global $database, $page;
 
         // Check first if a login was supplied, if it wasn't check if the user is logged in via cookie
         // If all that fails, it's an anonymous upload
@@ -289,7 +280,7 @@ final class DanbooruApi extends Extension
         // Now we check if a file was uploaded or a url was provided to transload
         // Much of this code is borrowed from /ext/upload
 
-        if (!$user->can(ImagePermission::CREATE_IMAGE)) {
+        if (!Ctx::$user->can(ImagePermission::CREATE_IMAGE)) {
             $page->set_code(409);
             $page->add_http_header("X-Danbooru-Errors: authentication error");
             return;

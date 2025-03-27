@@ -72,6 +72,12 @@ final class BulkActionEvent extends Event
     ) {
         parent::__construct();
     }
+
+    public function log_action(string $message): void
+    {
+        Log::debug(BulkActions::KEY, $message);
+        Ctx::$page->flash($message);
+    }
 }
 
 final class BulkActions extends Extension
@@ -82,8 +88,6 @@ final class BulkActions extends Extension
 
     public function onPostListBuilding(PostListBuildingEvent $event): void
     {
-        global $page, $user;
-
         $babbe = new BulkActionBlockBuildingEvent();
         $babbe->search_terms = $event->search_terms;
 
@@ -99,24 +103,15 @@ final class BulkActions extends Extension
 
     public function onBulkActionBlockBuilding(BulkActionBlockBuildingEvent $event): void
     {
-        global $user;
-
-        if ($user->can(ImagePermission::DELETE_IMAGE)) {
+        if (Ctx::$user->can(ImagePermission::DELETE_IMAGE)) {
             $event->add_action("bulk_delete", "(D)elete", "d", "Delete selected images?", $this->theme->render_ban_reason_input(), 10);
         }
 
-        if ($user->can(BulkActionsPermission::BULK_EDIT_IMAGE_TAG)) {
-            $event->add_action(
-                "bulk_tag",
-                "Tag",
-                "t",
-                "",
-                $this->theme->render_tag_input(),
-                10
-            );
+        if (Ctx::$user->can(BulkActionsPermission::BULK_EDIT_IMAGE_TAG)) {
+            $event->add_action("bulk_tag", "Tag", "t", "", $this->theme->render_tag_input(), 10);
         }
 
-        if ($user->can(BulkActionsPermission::BULK_EDIT_IMAGE_SOURCE)) {
+        if (Ctx::$user->can(BulkActionsPermission::BULK_EDIT_IMAGE_SOURCE)) {
             $event->add_action("bulk_source", "Set (S)ource", "s", "", $this->theme->render_source_input(), 10);
         }
     }
@@ -139,20 +134,18 @@ final class BulkActions extends Extension
 
     public function onBulkAction(BulkActionEvent $event): void
     {
-        global $page, $user;
-
         switch ($event->action) {
             case "bulk_delete":
-                if ($user->can(ImagePermission::DELETE_IMAGE)) {
+                if (Ctx::$user->can(ImagePermission::DELETE_IMAGE)) {
                     $i = $this->delete_posts($event->items);
-                    $page->flash("Deleted $i[0] items, totaling ".human_filesize($i[1]));
+                    $event->log_action("Deleted $i[0] items, totaling ".human_filesize($i[1]));
                 }
                 break;
             case "bulk_tag":
                 if (!isset($event->params['bulk_tags'])) {
                     return;
                 }
-                if ($user->can(BulkActionsPermission::BULK_EDIT_IMAGE_TAG)) {
+                if (Ctx::$user->can(BulkActionsPermission::BULK_EDIT_IMAGE_TAG)) {
                     $tags = $event->params['bulk_tags'];
                     $replace = false;
                     if (isset($event->params['bulk_tags_replace']) &&  $event->params['bulk_tags_replace'] === "true") {
@@ -160,17 +153,17 @@ final class BulkActions extends Extension
                     }
 
                     $i = $this->tag_items($event->items, $tags, $replace);
-                    $page->flash("Tagged $i items");
+                    $event->log_action("Tagged $i items");
                 }
                 break;
             case "bulk_source":
                 if (!isset($event->params['bulk_source'])) {
                     return;
                 }
-                if ($user->can(BulkActionsPermission::BULK_EDIT_IMAGE_SOURCE)) {
+                if (Ctx::$user->can(BulkActionsPermission::BULK_EDIT_IMAGE_SOURCE)) {
                     $source = $event->params['bulk_source'];
                     $i = $this->set_source($event->items, $source);
-                    $page->flash("Set source for $i items");
+                    $event->log_action("Set source for $i items");
                 }
                 break;
         }
@@ -178,7 +171,6 @@ final class BulkActions extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page, $user;
         if ($event->page_matches("bulk_action", method: "POST", permission: BulkActionsPermission::PERFORM_BULK_ACTIONS)) {
             $action = $event->req_POST('bulk_action');
             $items = null;
@@ -199,8 +191,7 @@ final class BulkActions extends Extension
             $bae = send_event(new BulkActionEvent($action, $items, $event->POST));
 
             if ($bae->redirect) {
-                $page->set_mode(PageMode::REDIRECT);
-                $page->set_redirect(Url::referer_or());
+                Ctx::$page->set_redirect(Url::referer_or());
             }
         }
     }

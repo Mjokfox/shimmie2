@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+/**
+ * @phpstan-type BlotterEntry array{id:int,entry_date:string,entry_text:string,important:bool}
+ */
 final class Blotter extends Extension
 {
     public const KEY = "blotter";
@@ -14,7 +17,7 @@ final class Blotter extends Extension
 
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
-        global $database;
+        $database = Ctx::$database;
 
         if ($this->get_version() < 1) {
             $database->create_table("blotter", "
@@ -39,9 +42,8 @@ final class Blotter extends Extension
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
-        global $user;
         if ($event->parent === "system") {
-            if ($user->can(BlotterPermission::ADMIN)) {
+            if (Ctx::$user->can(BlotterPermission::ADMIN)) {
                 $event->add_nav_link(make_link('blotter/editor'), "Blotter Editor");
             }
         }
@@ -50,16 +52,16 @@ final class Blotter extends Extension
 
     public function onUserBlockBuilding(UserBlockBuildingEvent $event): void
     {
-        global $user;
-        if ($user->can(BlotterPermission::ADMIN)) {
+        if (Ctx::$user->can(BlotterPermission::ADMIN)) {
             $event->add_link("Blotter Editor", make_link("blotter/editor"));
         }
     }
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page, $database, $user;
+        $database = Ctx::$database;
         if ($event->page_matches("blotter/editor", method: "GET", permission: BlotterPermission::ADMIN)) {
+            /** @var BlotterEntry[] $entries */
             $entries = $database->get_all("SELECT * FROM blotter ORDER BY id DESC");
             $this->theme->display_editor($entries);
         }
@@ -72,17 +74,16 @@ final class Blotter extends Extension
                 ["text" => $entry_text, "important" => $important]
             );
             Log::info("blotter", "Added Message: $entry_text");
-            $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(make_link("blotter/editor"));
+            Ctx::$page->set_redirect(make_link("blotter/editor"));
         }
         if ($event->page_matches("blotter/remove", method: "POST", permission: BlotterPermission::ADMIN)) {
             $id = int_escape($event->req_POST('id'));
             $database->execute("DELETE FROM blotter WHERE id=:id", ["id" => $id]);
             Log::info("blotter", "Removed Entry #$id");
-            $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(make_link("blotter/editor"));
+            Ctx::$page->set_redirect(make_link("blotter/editor"));
         }
         if ($event->page_matches("blotter/list", method: "GET")) {
+            /** @var BlotterEntry[] $entries */
             $entries = $database->get_all("SELECT * FROM blotter ORDER BY id DESC");
             $this->theme->display_blotter_page($entries);
         }
@@ -94,10 +95,10 @@ final class Blotter extends Extension
 
     private function display_blotter(): void
     {
-        global $database, $config;
-        $entries = $database->get_all(
+        /** @var BlotterEntry[] $entries */
+        $entries = Ctx::$database->get_all(
             'SELECT * FROM blotter ORDER BY id DESC LIMIT :limit',
-            ["limit" => $config->get_int(BlotterConfig::RECENT, 5)]
+            ["limit" => Ctx::$config->req_int(BlotterConfig::RECENT)]
         );
         $this->theme->display_blotter($entries);
     }

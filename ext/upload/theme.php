@@ -42,14 +42,12 @@ class UploadTheme extends Themelet
 
     public function display_page(): void
     {
-        global $config, $page;
-
         $limits = get_upload_limits();
 
-        $tl_enabled = ($config->get_string(UploadConfig::TRANSLOAD_ENGINE, "none") !== "none");
+        $tl_enabled = (Ctx::$config->req_string(UploadConfig::TRANSLOAD_ENGINE) !== "none");
         $max_size = $limits['shm_filesize'];
-        $split_view = $config->get_bool(UploadConfig::SPLITVIEW);
-        $preview_enabled = $config->get_bool(UploadConfig::PREVIEW);
+        $split_view = Ctx::$config->get_bool(UploadConfig::SPLITVIEW);
+        $preview_enabled = Ctx::$config->get_bool(UploadConfig::PREVIEW);
         $max_kb = to_shorthand_int($max_size);
         $max_total_size = $limits['shm_post'];
         $max_total_kb = to_shorthand_int($max_total_size);
@@ -144,6 +142,7 @@ class UploadTheme extends Themelet
             ")
         );
 
+        $page = Ctx::$page;
         $page->set_title("Upload");
         $this->display_navigation();
         $page->add_block(new Block("Upload", $html, "main", 20));
@@ -155,12 +154,11 @@ class UploadTheme extends Themelet
 
     protected function build_upload_list(): HTMLElement
     {
-        global $config;
         $upload_list = emptyHTML();
-        $upload_count = $config->get_int(UploadConfig::COUNT);
-        $preview_enabled = $config->get_bool(UploadConfig::PREVIEW);
-        $split_view = $config->get_bool(UploadConfig::SPLITVIEW);
-        $tl_enabled = ($config->get_string(UploadConfig::TRANSLOAD_ENGINE, "none") !== "none");
+        $upload_count = Ctx::$config->req_int(UploadConfig::COUNT);
+        $preview_enabled = Ctx::$config->get_bool(UploadConfig::PREVIEW);
+        $split_view = Ctx::$config->get_bool(UploadConfig::SPLITVIEW);
+        $tl_enabled = (Ctx::$config->req_string(UploadConfig::TRANSLOAD_ENGINE) !== "none");
         $accept = $this->get_accept();
 
         $headers = emptyHTML();
@@ -268,14 +266,13 @@ class UploadTheme extends Themelet
 
     protected function build_bookmarklets(): HTMLElement
     {
-        global $config;
         $limits = get_upload_limits();
         $link = make_link("upload")->asAbsolute();
         $main_page = make_link()->asAbsolute();
-        $title = $config->get_string(SetupConfig::TITLE);
+        $title = Ctx::$config->req_string(SetupConfig::TITLE);
         $max_size = $limits['shm_filesize'];
         $max_kb = to_shorthand_int($max_size);
-        $delimiter = $config->get_bool(SetupConfig::NICE_URLS) ? '?' : '&amp;';
+        $delimiter = Ctx::$config->req_bool(SetupConfig::NICE_URLS) ? '?' : '&amp;';
 
         $js = 'javascript:(
             function() {
@@ -305,7 +302,7 @@ class UploadTheme extends Themelet
         // Bookmarklet checks if shimmie supports ext. If not, won't upload to site/shows alert saying not supported.
         $supported_ext = join(" ", DataHandlerExtension::get_all_supported_exts());
 
-        $title = "Booru to " . $config->get_string(SetupConfig::TITLE);
+        $title = "Booru to " . Ctx::$config->req_string(SetupConfig::TITLE);
         // CA=0: Ask to use current or new tags | CA=1: Always use current tags | CA=2: Always use new tags
         $js = '
             javascript:
@@ -328,7 +325,7 @@ class UploadTheme extends Themelet
      */
     public function display_upload_status(array $results): void
     {
-        global $user, $page;
+        $page = Ctx::$page;
 
         /** @var UploadSuccess[] */
         $successes = array_filter($results, fn ($r) => is_a($r, UploadSuccess::class));
@@ -347,20 +344,16 @@ class UploadTheme extends Themelet
             $this->display_navigation();
             $page->add_block(new Block("No images uploaded", emptyHTML("Upload attempted, but nothing succeeded and nothing failed?")));
         } elseif (count($successes) == 1) {
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("post/view/{$successes[0]->image_id}"));
             $page->add_http_header("X-Shimmie-Post-ID: " . $successes[0]->image_id);
         } else {
             $ids = join(",", array_reverse(array_map(fn ($s) => $s->image_id, $successes)));
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(search_link(["id={$ids}"]));
         }
     }
 
     protected function build_upload_block(): HTMLElement
     {
-        global $config;
-
         $limits = get_upload_limits();
 
         $accept = $this->get_accept();

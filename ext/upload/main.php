@@ -11,7 +11,7 @@ final class DataUploadEvent extends Event
 {
     /** @var hash-string */
     public string $hash;
-    public string $mime;
+    public MimeType $mime;
     public int $size;
 
     /** @var Image[] */
@@ -41,18 +41,14 @@ final class DataUploadEvent extends Event
         $this->set_tmpname($tmpname);
     }
 
-    public function set_tmpname(Path $tmpname, ?string $mime = null): void
+    public function set_tmpname(Path $tmpname, ?MimeType $mime = null): void
     {
         assert($tmpname->is_readable());
         $this->tmpname = $tmpname;
         $this->hash = $tmpname->md5();
         $this->size = $tmpname->filesize();
-        $mime = $mime ?? MimeType::get_for_file($tmpname->str(), pathinfo($this->filename)['extension'] ?? null);
-        if (empty($mime)) {
-            throw new UploadException("Could not determine mime type");
-        }
-
-        $this->mime = strtolower($mime);
+        $mime = $mime ?? MimeType::get_for_file($tmpname, pathinfo($this->filename)['extension'] ?? null);
+        $this->mime = $mime;
     }
 }
 
@@ -126,10 +122,8 @@ final class Upload extends Extension
 
     public function onInitExt(InitExtEvent $event): void
     {
-        global $config;
-
         $this->is_full = false;
-        $min_free_space = $config->get_int(UploadConfig::MIN_FREE_SPACE);
+        $min_free_space = Ctx::$config->get_int(UploadConfig::MIN_FREE_SPACE);
         if ($min_free_space > 0) {
             // SHIT: fucking PHP "security" measures -_-;;;
             $img_path = realpath("./images/");
@@ -144,8 +138,7 @@ final class Upload extends Extension
 
     public function onPageNavBuilding(PageNavBuildingEvent $event): void
     {
-        global $user;
-        if ($user->can(ImagePermission::CREATE_IMAGE)) {
+        if (Ctx::$user->can(ImagePermission::CREATE_IMAGE)) {
             $event->add_nav_link(make_link('upload'), "Upload", category: "upload");
         }
     }
@@ -161,13 +154,12 @@ final class Upload extends Extension
 
     public function onDataUpload(DataUploadEvent $event): void
     {
-        global $config;
         if ($this->is_full) {
             throw new UploadException("Upload failed; disk nearly full");
         }
-        if ($event->size > $config->get_int(UploadConfig::SIZE)) {
+        if ($event->size > Ctx::$config->req_int(UploadConfig::SIZE)) {
             $size = to_shorthand_int($event->size);
-            $limit = to_shorthand_int($config->get_int(UploadConfig::SIZE));
+            $limit = to_shorthand_int(Ctx::$config->req_int(UploadConfig::SIZE));
             throw new UploadException("File too large ($size > $limit)");
         }
     }
@@ -205,9 +197,7 @@ final class Upload extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $cache, $page, $user;
-
-        if ($user->can(ImagePermission::CREATE_IMAGE)) {
+        if (Ctx::$user->can(ImagePermission::CREATE_IMAGE)) {
             if ($this->is_full) {
                 $this->theme->display_full();
             } else {
@@ -246,14 +236,13 @@ final class Upload extends Extension
             $this->theme->display_upload_status($results);
         }
         if ($event->page_matches("upload_duplicate", method: "POST", authed: false)) {
-            $page->set_mode(PageMode::DATA);
             /** @var string $hash */
             $hash = $event->req_POST("md5");
             $image = Image::by_hash($hash); // @phpstan-ignore-line
             if ($image) {
-                $page->set_data(json_encode(["dup" => "1","id" => $image->id]));
+                Ctx::$page->set_data(MimeType::JSON, json_encode(["dup" => "1","id" => $image->id])); // @phpstan-ignore-line
             } else {
-                $page->set_data(json_encode(["dup" => "0"]));
+                Ctx::$page->set_data(MimeType::JSON, json_encode(["dup" => "0"])); // @phpstan-ignore-line
             }
         }
     }
@@ -268,24 +257,16 @@ final class Upload extends Extension
      */
     private function upload_error_message(int $error_code): string
     {
-        switch ($error_code) {
-            case UPLOAD_ERR_INI_SIZE:
-                return 'The uploaded file exceeds the upload_max_filesize directive in php.ini';
-            case UPLOAD_ERR_FORM_SIZE:
-                return 'The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form';
-            case UPLOAD_ERR_PARTIAL:
-                return 'The uploaded file was only partially uploaded';
-            case UPLOAD_ERR_NO_FILE:
-                return 'No file was uploaded';
-            case UPLOAD_ERR_NO_TMP_DIR:
-                return 'Missing a temporary folder';
-            case UPLOAD_ERR_CANT_WRITE:
-                return 'Failed to write file to disk';
-            case UPLOAD_ERR_EXTENSION:
-                return 'File upload stopped by extension';
-            default:
-                return 'Unknown upload error';
-        }
+        return match ($error_code) {
+            UPLOAD_ERR_INI_SIZE => 'The uploaded file exceeds the upload_max_filesize directive in php.ini',
+            UPLOAD_ERR_FORM_SIZE => 'The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form',
+            UPLOAD_ERR_PARTIAL => 'The uploaded file was only partially uploaded',
+            UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+            UPLOAD_ERR_NO_TMP_DIR => 'Missing a temporary folder',
+            UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+            UPLOAD_ERR_EXTENSION => 'File upload stopped by extension',
+            default => 'Unknown upload error',
+        };
     }
 
     /**
@@ -296,7 +277,7 @@ final class Upload extends Extension
      */
     private function try_upload(array $file, int $slot, array $metadata): array
     {
-        global $page, $config, $database;
+        global $database;
 
         // blank file boxes cause empty uploads, no need for error message
         if (empty($file['name'])) {
@@ -344,8 +325,6 @@ final class Upload extends Extension
      */
     private function try_transload(string $url, int $slot, array $metadata): array
     {
-        global $page, $config, $user, $database;
-
         $results = [];
         $tmp_filename = shm_tempnam("transload");
 
@@ -363,7 +342,7 @@ final class Upload extends Extension
             $h_filename = ($s_filename ? \Safe\preg_replace('/^.*filename\*?=(?:UTF-8\'\')?\"?([^\";]*)\"?$/i', '$1', $s_filename) : null);
             $filename = $h_filename ?: basename($url);
 
-            $new_images = $database->with_savepoint(function () use ($tmp_filename, $filename, $slot, $metadata) {
+            $new_images = Ctx::$database->with_savepoint(function () use ($tmp_filename, $filename, $slot, $metadata) {
                 $event = send_event(new DataUploadEvent($tmp_filename, $filename, $slot, $metadata));
                 if (count($event->images) == 0) {
                     throw new UploadException("File type not supported: " . $event->mime);

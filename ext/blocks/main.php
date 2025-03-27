@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+/**
+ * @phpstan-type BlockArray array{id:int,title:string,area:string,priority:int,userclass:string,pages:string,content:string}
+ */
 final class Blocks extends Extension
 {
     public const KEY = "blocks";
@@ -34,9 +37,8 @@ final class Blocks extends Extension
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
-        global $user;
         if ($event->parent === "system") {
-            if ($user->can(BlocksPermission::MANAGE_BLOCKS)) {
+            if (Ctx::$user->can(BlocksPermission::MANAGE_BLOCKS)) {
                 $event->add_nav_link(make_link('blocks/list'), "Blocks Editor");
             }
         }
@@ -44,15 +46,14 @@ final class Blocks extends Extension
 
     public function onUserBlockBuilding(UserBlockBuildingEvent $event): void
     {
-        global $user;
-        if ($user->can(BlocksPermission::MANAGE_BLOCKS)) {
+        if (Ctx::$user->can(BlocksPermission::MANAGE_BLOCKS)) {
             $event->add_link("Blocks Editor", make_link("blocks/list"));
         }
     }
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $cache, $database, $page, $user;
+        global $database, $page;
 
         $blocks = cache_get_or_set("blocks", fn () => $database->get_all("SELECT * FROM blocks"), 600);
         foreach ($blocks as $block) {
@@ -63,7 +64,7 @@ final class Blocks extends Extension
 
                 # Split by comma, trimming whitespaces, and not allowing empty elements.
                 $userclasses = preg_split('/\s*,+\s*/', strtolower($block['userclass'] ?? ""), 0, PREG_SPLIT_NO_EMPTY);
-                if (empty($userclasses) || in_array(strtolower($user->class->name), $userclasses)) {
+                if (empty($userclasses) || in_array(strtolower(Ctx::$user->class->name), $userclasses)) {
                     $page->add_block($b);
                 }
             }
@@ -75,8 +76,7 @@ final class Blocks extends Extension
                     VALUES (:pages, :title, :area, :priority, :content, :userclass)
                 ", ['pages' => $event->req_POST('pages'), 'title' => $event->req_POST('title'), 'area' => $event->req_POST('area'), 'priority' => (int)$event->req_POST('priority'), 'content' => $event->req_POST('content'), 'userclass' => $event->req_POST('userclass')]);
             Log::info("blocks", "Added Block #".($database->get_last_insert_id('blocks_id_seq'))." (".$event->req_POST('title').")");
-            $cache->delete("blocks");
-            $page->set_mode(PageMode::REDIRECT);
+            Ctx::$cache->delete("blocks");
             $page->set_redirect(make_link("blocks/list"));
         }
         if ($event->page_matches("blocks/update", method: "POST", permission: BlocksPermission::MANAGE_BLOCKS)) {
@@ -93,12 +93,13 @@ final class Blocks extends Extension
                     ", ['pages' => $event->req_POST('pages'), 'title' => $event->req_POST('title'), 'area' => $event->req_POST('area'), 'priority' => (int)$event->req_POST('priority'), 'content' => $event->req_POST('content'), 'userclass' => $event->req_POST('userclass'), 'id' => $event->req_POST('id')]);
                 Log::info("blocks", "Updated Block #".$event->req_POST('id')." (".$event->req_POST('title').")");
             }
-            $cache->delete("blocks");
-            $page->set_mode(PageMode::REDIRECT);
+            Ctx::$cache->delete("blocks");
             $page->set_redirect(make_link("blocks/list"));
         }
         if ($event->page_matches("blocks/list", permission: BlocksPermission::MANAGE_BLOCKS)) {
-            $this->theme->display_blocks($database->get_all("SELECT * FROM blocks ORDER BY area, priority"));
+            /** @var array<BlockArray> $bs */
+            $bs = $database->get_all("SELECT * FROM blocks ORDER BY area, priority");
+            $this->theme->display_blocks($bs);
         }
     }
 }

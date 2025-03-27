@@ -17,7 +17,6 @@ final class Statistics extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $config, $page;
         if ($event->page_matches("stats") || $event->page_matches("stats/100")) {
             $unlisted = "'".implode("','", $this->unlisted)."'";
 
@@ -96,9 +95,15 @@ final class Statistics extends Extension
      */
     private function get_tag_stats(array $unlisted): array
     {
-        global $database;
         // Returns the username and tags from each tag history entry. This includes Anonymous tag histories to prevent their tagging being ignored and credited to the next user to edit.
-        $tag_stats = $database->get_all("SELECT users.class,users.name,tag_histories.tags,tag_histories.image_id FROM tag_histories INNER JOIN users ON users.id = tag_histories.user_id WHERE 1=1 ORDER BY tag_histories.id;");
+        $tag_stats = Ctx::$database->get_all("
+            SELECT users.class,users.name,tag_histories.tags,tag_histories.image_id
+            FROM tag_histories
+            INNER JOIN users
+                ON users.id = tag_histories.user_id
+            WHERE 1=1
+            ORDER BY tag_histories.id
+        ");
 
         // Group tag history entries by image id
         $tag_histories = [];
@@ -110,13 +115,7 @@ final class Statistics extends Extension
 
         // Grab alias list so we can ignore those changes
         // While this strategy may discount some change made before those aliases were implemented, it is preferable over crediting the changes made by an alias to whoever edits the tags next.
-        $alias_db = $database->get_all(
-            "
-					SELECT *
-					FROM aliases
-					WHERE 1=1
-				"
-        );
+        $alias_db = Ctx::$database->get_all("SELECT * FROM aliases WHERE 1=1");
         $aliases = [];
         foreach ($alias_db as $alias) {
             $aliases[$alias['oldtag']] = $alias['newtag'];
@@ -154,9 +153,9 @@ final class Statistics extends Extension
      */
     private function get_upload_stats(string $unlisted): array
     {
-        global $database;
         // Returns the username of each post, as an array.
-        return $database->get_col("SELECT users.name FROM images INNER JOIN users ON users.id = images.owner_id WHERE users.class NOT IN ($unlisted) ORDER BY users.id;");
+        // @phpstan-ignore-next-line
+        return Ctx::$database->get_col("SELECT users.name FROM images INNER JOIN users ON users.id = images.owner_id WHERE users.class NOT IN ($unlisted) ORDER BY users.id;");
     }
 
     /**
@@ -164,9 +163,9 @@ final class Statistics extends Extension
      */
     private function get_comment_stats(string $unlisted): array
     {
-        global $database;
         // Returns the username of each comment, as an array.
-        return $database->get_col("SELECT users.name FROM comments INNER JOIN users ON users.id = comments.owner_id WHERE users.class NOT IN ($unlisted) ORDER BY users.id;");
+        // @phpstan-ignore-next-line
+        return Ctx::$database->get_col("SELECT users.name FROM comments INNER JOIN users ON users.id = comments.owner_id WHERE users.class NOT IN ($unlisted) ORDER BY users.id;");
     }
 
     /**
@@ -174,8 +173,8 @@ final class Statistics extends Extension
      */
     private function get_favorite_stats(string $unlisted): array
     {
-        global $database;
         // Returns the username of each favorite, as an array.
-        return $database->get_col("SELECT users.name FROM user_favorites INNER JOIN users ON users.id = user_favorites.user_id WHERE users.class NOT IN ($unlisted) ORDER BY users.id;");
+        // @phpstan-ignore-next-line
+        return Ctx::$database->get_col("SELECT users.name FROM user_favorites INNER JOIN users ON users.id = user_favorites.user_id WHERE users.class NOT IN ($unlisted) ORDER BY users.id;");
     }
 }

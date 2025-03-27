@@ -14,6 +14,10 @@ Todo:
 *Smiley filter, word filter, etc should work with our extension
 
 */
+/**
+ * @phpstan-type Thread array{id:int,title:string,sticky:bool,user_name:string,uptodate:string,response_count:int}
+ * @phpstan-type Post array{id:int,user_name:string,user_class:string,date:string,message:string}
+ */
 final class Forum extends Extension
 {
     public const KEY = "forum";
@@ -23,7 +27,7 @@ final class Forum extends Extension
 
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
-        global $config, $database;
+        global $database;
 
         // shortcut to latest
 
@@ -86,7 +90,8 @@ final class Forum extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page, $user;
+        $user = Ctx::$user;
+        $page = Ctx::$page;
         if ($event->page_matches("forum/index", paged: true)) {
             $pageNumber = $event->get_iarg('page_num', 1) - 1;
             $this->show_last_threads($pageNumber, $user->can(ForumPermission::FORUM_ADMIN));
@@ -111,43 +116,33 @@ final class Forum extends Extension
         }
         if ($event->page_matches("forum/create", permission: ForumPermission::FORUM_CREATE)) {
             $errors = $this->sanity_check_new_thread();
-
             if (count($errors) > 0) {
                 throw new InvalidInput(implode("<br>", $errors));
             }
-
             $newThreadID = $this->save_new_thread($user);
             $this->save_new_post($newThreadID, $user);
             $redirectTo = "forum/view/" . $newThreadID . "/1";
-
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link($redirectTo));
         }
         if ($event->page_matches("forum/delete/{threadID}/{postID}", permission: ForumPermission::FORUM_ADMIN)) {
             $threadID = $event->get_iarg('threadID');
             $postID = $event->get_iarg('postID');
             $this->delete_post($postID);
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("forum/view/" . $threadID));
         }
         if ($event->page_matches("forum/nuke/{threadID}", permission: ForumPermission::FORUM_ADMIN)) {
             $threadID = $event->get_iarg('threadID');
             $this->delete_thread($threadID);
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("forum/index"));
         }
         if ($event->page_matches("forum/answer", permission: ForumPermission::FORUM_CREATE)) {
             $threadID = int_escape($event->req_POST("threadID"));
             $total_pages = $this->get_total_pages_for_thread($threadID);
-
             $errors = $this->sanity_check_new_post();
-
             if (count($errors) > 0) {
                 throw new InvalidInput(implode("<br>", $errors));
             }
             $this->save_new_post($threadID, $user);
-
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("forum/view/" . $threadID . "/" . $total_pages));
         }
         if ($event->page_matches("forum/edit", permission: ForumPermission::FORUM_CREATE, method:"POST")) {
@@ -162,8 +157,7 @@ final class Forum extends Extension
             }
             $this->edit_post($threadID, $postID, $user);
 
-            $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(make_link("forum/view/" . $threadID . "/" . $total_pages));
+            $page->set_redirect(make_link("forum/view/$threadID/$total_pages"));
         }
     }
 
@@ -175,14 +169,13 @@ final class Forum extends Extension
 
     private function get_total_pages_for_thread(int $threadID): int
     {
-        global $database, $config;
-        $result = $database->get_row("
+        $count = Ctx::$database->get_one("
             SELECT COUNT(1) AS count
             FROM forum_posts
             WHERE thread_id = :thread_id
         ", ['thread_id' => $threadID]);
 
-        return (int) ceil($result["count"] / $config->get_int(ForumConfig::POSTS_PER_PAGE));
+        return (int) ceil($count / Ctx::$config->req_int(ForumConfig::POSTS_PER_PAGE));
     }
 
     /**
@@ -243,16 +236,16 @@ final class Forum extends Extension
 
     private function get_thread_title(int $threadID): string
     {
-        global $database;
-        return $database->get_one("SELECT t.title FROM forum_threads AS t WHERE t.id = :id ", ['id' => $threadID]);
+        return Ctx::$database->get_one("SELECT t.title FROM forum_threads AS t WHERE t.id = :id ", ['id' => $threadID]);
     }
 
     private function show_last_threads(int $pageNumber, bool $showAdminOptions = false): void
     {
-        global $config, $database;
-        $threadsPerPage = $config->get_int(ForumConfig::THREADS_PER_PAGE, 15);
+        $database = Ctx::$database;
+        $threadsPerPage = Ctx::$config->req_int(ForumConfig::THREADS_PER_PAGE);
         $totalPages = (int) ceil($database->get_one("SELECT COUNT(*) FROM forum_threads") / $threadsPerPage);
 
+        /** @var Thread[] $threads */
         $threads = $database->get_all(
             "SELECT f.id, f.sticky, f.title, f.date, f.uptodate, u.name AS user_name, u.email AS user_email, u.class AS user_class, sum(1) - 1 AS response_count " .
             "FROM forum_threads AS f " .
@@ -270,8 +263,8 @@ final class Forum extends Extension
 
     private function show_posts(int $threadID, int $pageNumber): void
     {
-        global $config, $database;
-        $postsPerPage = $config->get_int(ForumConfig::POSTS_PER_PAGE, 15);
+        global $database;
+        $postsPerPage = Ctx::$config->req_int(ForumConfig::POSTS_PER_PAGE);
         $totalPages = (int) ceil($database->get_one("SELECT COUNT(*) FROM forum_posts WHERE thread_id = :id", ['id' => $threadID]) / $postsPerPage);
         $threadTitle = $this->get_thread_title($threadID);
 
@@ -312,11 +305,10 @@ final class Forum extends Extension
 
     private function save_new_post(int $threadID, User $user): void
     {
-        global $config;
         $userID = $user->id;
         $message = $_POST["message"];
 
-        $max_characters = $config->get_int(ForumConfig::MAX_CHARS_PER_POST);
+        $max_characters = Ctx::$config->get_int(ForumConfig::MAX_CHARS_PER_POST);
         $message = substr($message, 0, $max_characters);
 
         global $database;
@@ -359,21 +351,18 @@ final class Forum extends Extension
 
     private function delete_thread(int $threadID): void
     {
-        global $database;
-        $database->execute("DELETE FROM forum_threads WHERE id = :id", ['id' => $threadID]);
-        $database->execute("DELETE FROM forum_posts WHERE thread_id = :thread_id", ['thread_id' => $threadID]);
+        Ctx::$database->execute("DELETE FROM forum_threads WHERE id = :id", ['id' => $threadID]);
+        Ctx::$database->execute("DELETE FROM forum_posts WHERE thread_id = :thread_id", ['thread_id' => $threadID]);
     }
 
     private function delete_post(int $postID): void
     {
-        global $database;
-        $database->execute("DELETE FROM forum_posts WHERE id = :id", ['id' => $postID]);
+        Ctx::$database->execute("DELETE FROM forum_posts WHERE id = :id", ['id' => $postID]);
     }
 
     private function threadExists(int $threadID): bool
     {
-        global $database;
-        $result = $database->get_one("SELECT EXISTS (SELECT * FROM forum_threads WHERE id=:id)", ['id' => $threadID]);
+        $result = Ctx::$database->get_one("SELECT EXISTS (SELECT * FROM forum_threads WHERE id=:id)", ['id' => $threadID]);
         return $result == 1;
     }
 }

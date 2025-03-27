@@ -35,9 +35,9 @@ if (file_exists("data/test-trace.json")) {
 }
 
 sanitize_php();
-global $cache, $config, $database, $user, $page;
+global $database, $user, $page;
 _set_up_shimmie_environment();
-$tracer_enabled = true;
+Ctx::$tracer_enabled = true;
 Ctx::setTracer(new \EventTracer());
 Ctx::$tracer->begin("bootstrap");
 _load_ext_files();
@@ -45,7 +45,7 @@ $cache = Ctx::setCache(load_cache(SysConfig::getCacheDsn()));
 $database = Ctx::setDatabase(new Database(SysConfig::getDatabaseDsn()));
 Installer::create_dirs();
 Installer::create_tables($database);
-$config = Ctx::setConfig(new DatabaseConfig($database, defaults: ConfigGroup::get_all_defaults()));
+$config = Ctx::setConfig(new DatabaseConfig($database));
 _load_theme_files();
 $page = Ctx::setPage(new Page());
 Ctx::setEventBus(new EventBus());
@@ -60,7 +60,7 @@ $config->set_bool(SetupConfig::NICE_URLS, true);
 // $config->set_int("upload_limit:anonymous", 100000);
 send_event(new DatabaseUpgradeEvent());
 send_event(new InitExtEvent());
-$user = Ctx::setUser(User::by_id($config->get_int(UserAccountsConfig::ANON_ID, 0)));
+$user = Ctx::setUser(User::by_id($config->req_int(UserAccountsConfig::ANON_ID)));
 $userPage = new UserPage();
 $userPage->onUserCreation(new UserCreationEvent("demo", "demo", "demo", "demo@demo.com", false));
 $userPage->onUserCreation(new UserCreationEvent("test", "test", "test", "test@test.com", false));

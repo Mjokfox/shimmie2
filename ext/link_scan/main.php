@@ -15,15 +15,12 @@ final class LinkScan extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $config, $page;
-
         $search = $event->get_GET('search') ?? $event->get_POST('search') ?? "";
         if ($event->page_matches("post/list") && !empty($search)) {
-            $trigger = $config->get_string("link_scan_trigger", "https?://");
+            $trigger = Ctx::$config->req_string(LinkScanConfig::TRIGGER);
             if (\Safe\preg_match("#.*{$trigger}.*#", $search)) {
                 $ids = $this->scan($search);
-                $page->set_mode(PageMode::REDIRECT);
-                $page->set_redirect(search_link(["id=".implode(",", $ids)]));
+                Ctx::$page->set_redirect(search_link(["id=".implode(",", $ids)]));
                 $event->stop_processing = true;
             }
         }

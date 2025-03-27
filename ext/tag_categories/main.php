@@ -38,8 +38,6 @@ final class TagCategories extends Extension
             );
 
             $this->set_version(2);
-
-            Log::info("tag_categories", "extension installed");
         }
         if ($this->get_version() < 2) {
             $database->execute("ALTER TABLE image_tag_categories RENAME COLUMN display_singular to upper_group;");
@@ -78,19 +76,17 @@ final class TagCategories extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $database, $page, $user;
-
         if ($event->page_matches("tags/categories", method: "GET")) {
-            $this->theme->show_tag_categories($database->get_all('SELECT * FROM image_tag_categories ORDER BY upload_page_priority IS NULL, upload_page_priority DESC;'));
+            /** @var array<array{category: string, upper_group: string, lower_group: string, color: string, upload_page_type: ?int, upload_page_priority: ?int}> $tcs */
+            $tcs = Ctx::$database->get_all('SELECT * FROM image_tag_categories ORDER BY upload_page_priority IS NULL, upload_page_priority DESC;');
+            $this->theme->show_tag_categories($tcs);
         } elseif ($event->page_matches("tags/categories", method: "POST", permission: TagCategoriesPermission::EDIT_TAG_CATEGORIES)) {
             $this->page_update();
-            $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(make_link("tags/categories"));
+            Ctx::$page->set_redirect(make_link("tags/categories"));
         } elseif ($event->page_matches("admin/count_categories_tags", method: "GET")) {
             $this->theme->show_count_tag_categories();
         } elseif ($event->page_matches("admin/count_categories_tags", method: "POST")) {
-            $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(make_link("admin/count_categories_tags"));
+            Ctx::$page->set_redirect(make_link("admin/count_categories_tags"));
         }
     }
 
@@ -270,7 +266,7 @@ final class TagCategories extends Extension
 
     public function page_update(): void
     {
-        global $user, $database;
+        global $database;
         if (isset($_POST['tc_status'])) {
             if (!isset($_POST['tc_status']) ||
             !isset($_POST['tc_category']) ||

@@ -32,8 +32,6 @@ class BlotterTheme extends Themelet
      */
     public function display_editor(array $entries): void
     {
-        global $page;
-
         $tbody = TBODY();
         foreach ($entries as $entry) {
             $tbody->appendChild(
@@ -73,6 +71,8 @@ class BlotterTheme extends Themelet
                 )
             ),
         );
+
+        $page = Ctx::$page;
         $page->set_title("Blotter Editor");
         $page->add_block(new Block("Blotter Editor", $html, "main", 10));
         $this->display_navigation();
@@ -83,9 +83,7 @@ class BlotterTheme extends Themelet
      */
     public function display_blotter_page(array $entries): void
     {
-        global $config, $page;
-
-        $i_color = $config->get_string(BlotterConfig::COLOR, "#FF0000");
+        $i_color = Ctx::$config->get_string(BlotterConfig::COLOR);
 
         $html = P();
         foreach ($entries as $entry) {
@@ -98,8 +96,8 @@ class BlotterTheme extends Themelet
             $html->appendChild(emptyHTML($msg, BR(), BR()));
         }
 
-        $page->set_title("Blotter");
-        $page->add_block(new Block("Blotter Entries", $html, "main", 10));
+        Ctx::$page->set_title("Blotter");
+        Ctx::$page->add_block(new Block("Blotter Entries", $html, "main", 10));
     }
 
     /**
@@ -107,10 +105,8 @@ class BlotterTheme extends Themelet
      */
     public function display_blotter(array $entries): void
     {
-        global $page, $config;
-
-        $i_color = $config->get_string(BlotterConfig::COLOR);
-        $position = $config->get_string(BlotterConfig::POSITION);
+        $i_color = Ctx::$config->get_string(BlotterConfig::COLOR);
+        $position = Ctx::$config->get_string(BlotterConfig::POSITION);
 
         $entries_list = UL();
         foreach ($entries as $entry) {
@@ -154,7 +150,7 @@ class BlotterTheme extends Themelet
             DIV(["id" => "blotter2", "class" => "shm-blotter2"], $in_text)
         );
 
-        $position = $config->get_string(BlotterConfig::POSITION, "subheading");
-        $page->add_block(new Block(null, $html, $position, 20));
+        $position = Ctx::$config->req_string(BlotterConfig::POSITION);
+        Ctx::$page->add_block(new Block(null, $html, $position, 20));
     }
 }

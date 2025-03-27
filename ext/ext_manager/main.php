@@ -25,18 +25,16 @@ final class ExtManager extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page, $user;
         if ($event->page_matches("ext_manager/set", method: "POST", permission: ExtManagerPermission::MANAGE_EXTENSION_LIST)) {
             if (is_writable("data/config")) {
                 $this->set_things($event->POST);
                 Log::warning("ext_manager", "Active extensions changed", "Active extensions changed");
-                $page->set_mode(PageMode::REDIRECT);
-                $page->set_redirect(make_link("ext_manager"));
+                Ctx::$page->set_redirect(make_link("ext_manager"));
             } else {
                 throw new ServerError("The config file (data/config/extensions.conf.php) isn't writable by the web server :(");
             }
         } elseif ($event->page_matches("ext_manager", method: "GET")) {
-            $is_admin = $user->can(ExtManagerPermission::MANAGE_EXTENSION_LIST);
+            $is_admin = Ctx::$user->can(ExtManagerPermission::MANAGE_EXTENSION_LIST);
             $this->theme->display_table($this->get_extensions($is_admin), $is_admin);
         }
 
@@ -61,9 +59,8 @@ final class ExtManager extends Extension
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
-        global $user;
         if ($event->parent === "system") {
-            if ($user->can(ExtManagerPermission::MANAGE_EXTENSION_LIST)) {
+            if (Ctx::$user->can(ExtManagerPermission::MANAGE_EXTENSION_LIST)) {
                 $event->add_nav_link(make_link('ext_manager'), "Extension Manager");
             } else {
                 $event->add_nav_link(make_link('ext_doc'), "Board Help");
@@ -73,8 +70,7 @@ final class ExtManager extends Extension
 
     public function onUserBlockBuilding(UserBlockBuildingEvent $event): void
     {
-        global $user;
-        if ($user->can(ExtManagerPermission::MANAGE_EXTENSION_LIST)) {
+        if (Ctx::$user->can(ExtManagerPermission::MANAGE_EXTENSION_LIST)) {
             $event->add_link("Extension Manager", make_link("ext_manager"));
         }
     }

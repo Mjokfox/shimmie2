@@ -36,6 +36,6 @@ class GitPull extends Extension
     {
         $command = new CommandBuilder("git");
         $command->add_flag("pull");
-        return $command->execute(true);
+        return $command->execute();
     }
 }

@@ -15,17 +15,13 @@ final class AutoComplete extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page;
-
         if ($event->page_matches("api/internal/autocomplete")) {
             $limit = (int)($event->get_GET("limit") ?? 1000);
             $s = $event->get_GET("s") ?? "";
 
             $res = $this->complete($s, $limit);
 
-            $page->set_mode(PageMode::DATA);
-            $page->set_mime(MimeType::JSON);
-            $page->set_data(\Safe\json_encode($res));
+            Ctx::$page->set_data(MimeType::JSON, \Safe\json_encode($res));
         }
     }
 
@@ -34,8 +30,6 @@ final class AutoComplete extends Extension
      */
     private function complete(string $search, int $limit): array
     {
-        global $cache, $database;
-
         $search = mb_strtolower($search);
         if (
             $search == '' ||
@@ -60,8 +54,8 @@ final class AutoComplete extends Extension
             $SQLarr['limit'] = $limit;
         }
 
-        return cache_get_or_set($cache_key, function () use ($database, $limitSQL, $SQLarr) {
-            $rows = $database->get_all(
+        return cache_get_or_set($cache_key, function () use ($limitSQL, $SQLarr) {
+            $rows = Ctx::$database->get_all(
                 "
                     -- (
                         SELECT tag, NULL AS newtag, count

@@ -67,9 +67,9 @@ final class Network
      * Get the currently active IP, masked to make it not change when the last
      * octet or two change, for use in session cookies and such
      */
-    public static function get_session_ip(Config $config): string
+    public static function get_session_ip(): string
     {
-        $mask = $config->get_string(UserAccountsConfig::SESSION_HASH_MASK);
+        $mask = Ctx::$config->get_string(UserAccountsConfig::SESSION_HASH_MASK);
         // even if the database says "null", the default setting should take effect
         assert($mask !== null);
         $addr = Network::get_real_ip();
@@ -87,7 +87,7 @@ final class Network
      */
     public static function fetch_url(string $url, Path $mfile): array
     {
-        if (Ctx::$config->get_string(UploadConfig::TRANSLOAD_ENGINE) === "curl" && function_exists("curl_init")) {
+        if (Ctx::$config->req_string(UploadConfig::TRANSLOAD_ENGINE) === "curl" && function_exists("curl_init")) {
             $ch = curl_init($url);
             assert($ch !== false);
             $fp = \Safe\fopen($mfile->str(), "w");
@@ -115,7 +115,7 @@ final class Network
             curl_close($ch);
             fwrite($fp, $body);
             fclose($fp);
-        } elseif (Ctx::$config->get_string(UploadConfig::TRANSLOAD_ENGINE) === "wget") {
+        } elseif (Ctx::$config->req_string(UploadConfig::TRANSLOAD_ENGINE) === "wget") {
             $s_url = escapeshellarg($url);
             $s_mfile = escapeshellarg($mfile->str());
             system("wget --no-check-certificate $s_url --output-document=$s_mfile");
@@ -123,14 +123,14 @@ final class Network
                 throw new FetchException("wget failed");
             }
             $headers = [];
-        } elseif (Ctx::$config->get_string(UploadConfig::TRANSLOAD_ENGINE) === "fopen") {
+        } elseif (Ctx::$config->req_string(UploadConfig::TRANSLOAD_ENGINE) === "fopen") {
             $fp_in = @fopen($url, "r");
             $fp_out = fopen($mfile->str(), "w");
             if (!$fp_in || !$fp_out) {
                 throw new FetchException("fopen failed");
             }
             $length = 0;
-            while (!feof($fp_in) && $length <= Ctx::$config->get_int(UploadConfig::SIZE)) {
+            while (!feof($fp_in) && $length <= Ctx::$config->req_int(UploadConfig::SIZE)) {
                 $data = \Safe\fread($fp_in, 8192);
                 $length += strlen($data);
                 fwrite($fp_out, $data);

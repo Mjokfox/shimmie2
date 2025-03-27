@@ -15,12 +15,10 @@ final class Ctx
     public static Page $page;
     public static \EventTracer $tracer;
     public static User $user;
-    public static bool $tracer_enabled;
+    public static bool $tracer_enabled = false;
 
     public static function setCache(CacheInterface $_cache): CacheInterface
     {
-        global $cache;
-        $cache = $_cache;
         self::$cache = $_cache;
         return $_cache;
     }

@@ -19,40 +19,35 @@ final class ImageIO extends Extension
 
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
-        global $config;
-
         if ($this->get_version() < 1) {
-            switch ($config->get_string("thumb_type")) {
+            switch (Ctx::$config->get_string("thumb_type")) {
                 case FileExtension::WEBP:
-                    $config->set_string(ThumbnailConfig::MIME, MimeType::WEBP);
+                    Ctx::$config->set_string(ThumbnailConfig::MIME, MimeType::WEBP);
                     break;
                 case FileExtension::JPEG:
-                    $config->set_string(ThumbnailConfig::MIME, MimeType::JPEG);
+                    Ctx::$config->set_string(ThumbnailConfig::MIME, MimeType::JPEG);
                     break;
             }
-            $config->delete("thumb_type");
+            Ctx::$config->delete("thumb_type");
             $this->set_version(1);
         }
     }
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $config, $page, $user;
-
-        $thumb_width = $config->get_int(ThumbnailConfig::WIDTH, 192);
-        $thumb_height = $config->get_int(ThumbnailConfig::HEIGHT, 192);
-        $page->add_html_header(STYLE(":root {--thumb-width: {$thumb_width}px; --thumb-height: {$thumb_height}px;}"));
+        $thumb_width = Ctx::$config->req_int(ThumbnailConfig::WIDTH);
+        $thumb_height = Ctx::$config->req_int(ThumbnailConfig::HEIGHT);
+        Ctx::$page->add_html_header(STYLE(":root {--thumb-width: {$thumb_width}px; --thumb-height: {$thumb_height}px;}"));
 
         if ($event->page_matches("image/delete", method: "POST")) {
             $image = Image::by_id_ex(int_escape($event->req_POST('image_id')));
-            if ($this->can_user_delete_image($user, $image)) {
+            if ($this->can_user_delete_image(Ctx::$user, $image)) {
                 send_event(new ImageDeletionEvent($image));
 
-                if ($config->get_string(ImageConfig::ON_DELETE) === 'next') {
+                if (Ctx::$config->get_string(ImageConfig::ON_DELETE) === 'next') {
                     $this->redirect_to_next_image($image, $event->get_GET('search'));
                 } else {
-                    $page->set_mode(PageMode::REDIRECT);
-                    $page->set_redirect(Url::referer_or(ignore: ['post/view']));
+                    Ctx::$page->set_redirect(Url::referer_or(ignore: ['post/view']));
                 }
             } else {
                 throw new PermissionDenied("You do not have permission to delete this image.");
@@ -68,9 +63,7 @@ final class ImageIO extends Extension
 
     public function onImageAdminBlockBuilding(ImageAdminBlockBuildingEvent $event): void
     {
-        global $user;
-
-        if ($user->can(ImagePermission::DELETE_IMAGE)) {
+        if (Ctx::$user->can(ImagePermission::DELETE_IMAGE)) {
             $event->add_part(SHM_FORM(
                 action: make_link("image/delete"),
                 id: "image_delete_form",
@@ -138,8 +131,6 @@ final class ImageIO extends Extension
 
     private function redirect_to_next_image(Image $image, ?string $search = null): void
     {
-        global $page;
-
         if (!is_null($search)) {
             $search_terms = Tag::explode($search);
             $fragment = "search=" . url_escape($search);
@@ -156,8 +147,7 @@ final class ImageIO extends Extension
             $redirect_target = make_link("post/view/{$target_image->id}", fragment: $fragment);
         }
 
-        $page->set_mode(PageMode::REDIRECT);
-        $page->set_redirect($redirect_target);
+        Ctx::$page->set_redirect($redirect_target);
     }
 
     private function can_user_delete_image(User $user, Image $image): bool
@@ -173,12 +163,11 @@ final class ImageIO extends Extension
      */
     private function send_file(int $image_id, string $type, array $params): void
     {
-        global $config, $page;
-
+        $page = Ctx::$page;
         $image = Image::by_id_ex($image_id);
 
         if ($type === "thumb") {
-            $mime = $config->get_string(ThumbnailConfig::MIME);
+            $mime = new MimeType(Ctx::$config->req_string(ThumbnailConfig::MIME));
             $file = $image->get_thumb_filename();
         } else {
             $mime = $image->get_mime();
@@ -189,9 +178,6 @@ final class ImageIO extends Extension
             die();
         }
 
-        $page->set_mime($mime);
-
-
         if (isset($_SERVER["HTTP_IF_MODIFIED_SINCE"])) {
             $if_modified_since = \Safe\preg_replace('/;.*$/', '', $_SERVER["HTTP_IF_MODIFIED_SINCE"]);
         } else {
@@ -200,20 +186,18 @@ final class ImageIO extends Extension
         $gmdate_mod = gmdate('D, d M Y H:i:s', $file->filemtime()) . ' GMT';
 
         if ($if_modified_since === $gmdate_mod) {
-            $page->set_mode(PageMode::DATA);
             $page->set_code(304);
-            $page->set_data("");
+            $page->set_data(MimeType::TEXT, "");
         } else {
-            $page->set_mode(PageMode::FILE);
             $page->add_http_header("Last-Modified: $gmdate_mod");
             if ($type !== "thumb") {
                 $page->set_filename($image->get_nice_image_name(), 'inline');
             }
 
-            $page->set_file($file);
+            $page->set_file($mime, $file);
 
-            if ($config->get_int(ImageConfig::EXPIRES)) {
-                $expires = date(DATE_RFC1123, time() + $config->get_int(ImageConfig::EXPIRES));
+            if (Ctx::$config->get_int(ImageConfig::EXPIRES)) {
+                $expires = date(DATE_RFC1123, time() + Ctx::$config->get_int(ImageConfig::EXPIRES));
             } else {
                 $expires = 'Fri, 2 Sep 2101 12:42:42 GMT'; // War was beginning
             }

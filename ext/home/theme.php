@@ -19,15 +19,13 @@ class HomeTheme extends Themelet
     public function display_page(string $sitename, HTMLElement $body): void
     {
         global $page;
-        $page->set_mode(PageMode::DATA);
         $page->add_auto_html_headers();
-
-        $page->set_data((string)$page->html_html(
+        $page->set_data(MimeType::HTML, (string)$page->html_html(
             emptyHTML(
                 TITLE($sitename),
                 META(["http-equiv" => "Content-Type", "content" => "text/html;charset=utf-8"]),
                 META(["name" => "viewport", "content" => "width=device-width, initial-scale=1"]),
-                $page->get_all_html_headers(),
+                ...$page->get_all_html_headers(),
             ),
             $body
         ));
@@ -112,9 +110,7 @@ class HomeTheme extends Themelet
 
     protected function build_counter(int $post_count): ?HTMLElement
     {
-        global $config;
-
-        $counter_dir = $config->get_string(HomeConfig::COUNTER, 'default');
+        $counter_dir = Ctx::$config->get_string(HomeConfig::COUNTER);
         if ($counter_dir === 'none' || $counter_dir === 'text-only') {
             return null;
         }

@@ -12,8 +12,6 @@ final class ReplaceFile extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $cache, $page, $user;
-
         if ($event->page_matches("replace/{image_id}", method: "GET", permission: ReplaceFilePermission::REPLACE_IMAGE)) {
             $image_id = $event->get_iarg('image_id');
             $image = Image::by_id_ex($image_id);
@@ -25,8 +23,7 @@ final class ReplaceFile extends Extension
             $image = Image::by_id_ex($image_id);
 
             if (empty($event->get_POST("url")) && count($_FILES) == 0) {
-                $page->set_mode(PageMode::REDIRECT);
-                $page->set_redirect(make_link("replace/$image_id"));
+                Ctx::$page->set_redirect(make_link("replace/$image_id"));
                 return;
             }
 
@@ -42,18 +39,15 @@ final class ReplaceFile extends Extension
             if ($event->get_POST("source")) {
                 send_event(new SourceSetEvent($image, $event->req_POST("source")));
             }
-            $cache->delete("thumb-block:{$image_id}");
-            $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(make_link("post/view/$image_id"));
+            Ctx::$cache->delete("thumb-block:{$image_id}");
+            Ctx::$page->set_redirect(make_link("post/view/$image_id"));
         }
     }
 
     public function onImageAdminBlockBuilding(ImageAdminBlockBuildingEvent $event): void
     {
-        global $user;
-
         /* In the future, could perhaps allow users to replace images that they own as well... */
-        if ($user->can(ReplaceFilePermission::REPLACE_IMAGE)) {
+        if (Ctx::$user->can(ReplaceFilePermission::REPLACE_IMAGE)) {
             $event->add_button("Replace", "replace/{$event->image->id}");
         }
     }
@@ -84,7 +78,7 @@ final class ReplaceFile extends Extension
             throw new ImageReplaceException("Replacement file size is zero");
         }
         $event->image->filesize = $filesize;
-        $event->image->set_mime(MimeType::get_for_file($target->str()));
+        $event->image->set_mime(MimeType::get_for_file($target));
         send_event(new MediaCheckPropertiesEvent($image));
 
         if (count($_FILES) > 0 && array_key_exists('data', $_FILES)) {

@@ -12,8 +12,6 @@ final class RandomImage extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page;
-
         if (
             $event->page_matches("random_image/{action}")
             || $event->page_matches("random_image/{action}/{search}")
@@ -26,23 +24,18 @@ final class RandomImage extends Extension
             }
             switch ($action) {
                 case "download":
-                    $page->set_mode(PageMode::REDIRECT);
-                    $page->set_redirect($image->get_image_link());
+                    Ctx::$page->set_redirect($image->get_image_link());
                     break;
                 case "view":
                     send_event(new DisplayingImageEvent($image));
                     break;
                 case "thumb":
-                    $page->set_mode(PageMode::REDIRECT);
-                    $page->set_redirect($image->get_thumb_link());
+                    Ctx::$page->set_redirect($image->get_thumb_link());
                     break;
                 case "widget":
-                    $page->set_mode(PageMode::DATA);
-                    $page->set_mime(MimeType::HTML);
-                    $page->set_data((string)$this->theme->build_thumb($image));
+                    Ctx::$page->set_data(MimeType::HTML, (string)$this->theme->build_thumb($image));
                     break;
                 default:
-                    $page->set_filename($image->filename, "inline");
                     send_event(new ImageDownloadingEvent($image, $image->get_image_filename(), $image->get_mime(), $event->GET));
             }
         }
@@ -50,8 +43,7 @@ final class RandomImage extends Extension
 
     public function onPostListBuilding(PostListBuildingEvent $event): void
     {
-        global $config, $page;
-        if ($config->get_bool(RandomImageConfig::SHOW_RANDOM_BLOCK)) {
+        if (Ctx::$config->get_bool(RandomImageConfig::SHOW_RANDOM_BLOCK)) {
             $image = Image::by_random($event->search_terms);
             if (!is_null($image)) {
                 $this->theme->display_random($image);

@@ -12,7 +12,7 @@ use MicroHTML\HTMLElement;
 
 function get_theme(): string
 {
-    $theme = Ctx::$config->get_string(SetupConfig::THEME, "default");
+    $theme = Ctx::$config->req_string(SetupConfig::THEME);
     if (!file_exists("themes/$theme")) {
         $theme = "default";
     }
@@ -99,16 +99,16 @@ function get_upload_limits(): array
     $sys_filesize = empty($ini_filesize) ? null : parse_shorthand_int($ini_filesize);
     $sys_post = empty($ini_post) ? null : parse_shorthand_int($ini_post);
 
-    $conf_files = Ctx::$config->get_int(UploadConfig::COUNT);
-    $conf_filesize = Ctx::$config->get_int(UploadConfig::SIZE);
-    $conf_post = ($conf_files ?? 0) * ($conf_filesize ?? 0);
+    $conf_files = Ctx::$config->req_int(UploadConfig::COUNT);
+    $conf_filesize = Ctx::$config->req_int(UploadConfig::SIZE);
+    $conf_post = $conf_files * $conf_filesize;
 
     $limits = [
         'files' => $sys_files,
         'filesize' => $sys_filesize,
         'post' => $sys_post,
-        'shm_files' => min($conf_files ?? PHP_INT_MAX, $sys_files ?? PHP_INT_MAX),
-        'shm_filesize' => min($conf_filesize ?? PHP_INT_MAX, $sys_filesize ?? PHP_INT_MAX),
+        'shm_files' => min($conf_files, $sys_files ?? PHP_INT_MAX),
+        'shm_filesize' => min($conf_filesize, $sys_filesize ?? PHP_INT_MAX),
         'shm_post' => min($conf_post, $sys_post ?? PHP_INT_MAX),
     ];
 
@@ -363,7 +363,7 @@ function _get_user(): User
         $my_user = User::by_session(Ctx::$page->get_cookie("user"), Ctx::$page->get_cookie("session"));
     }
     if (is_null($my_user)) {
-        $my_user = User::by_id(Ctx::$config->get_int(UserAccountsConfig::ANON_ID, 0));
+        $my_user = User::by_id(Ctx::$config->req_int(UserAccountsConfig::ANON_ID));
     }
 
     return $my_user;

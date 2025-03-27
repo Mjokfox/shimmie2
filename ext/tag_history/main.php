@@ -17,8 +17,6 @@ final class TagHistory extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page, $user;
-
         if ($event->page_matches("tag_history/revert", method: "POST", permission: PostTagsPermission::EDIT_IMAGE_TAG)) {
             // this is a request to revert to a previous version of the tags
             $this->process_revert_request((int)$event->req_POST('revert'));
@@ -46,7 +44,7 @@ final class TagHistory extends Extension
 
     public function onTagSet(TagSetEvent $event): void
     {
-        global $database, $config, $user;
+        global $database;
 
         $new_tags = Tag::implode($event->new_tags);
         $old_tags = Tag::implode($event->old_tags);
@@ -62,7 +60,7 @@ final class TagHistory extends Extension
             Log::debug("tag_history", "adding tag history: [$old_tags] -> [$new_tags]");
         }
 
-        $allowed = $config->get_int("history_limit", -1);
+        $allowed = Ctx::$config->get_int(TagHistoryConfig::MAX_HISTORY);
         if ($allowed == 0) {
             return;
         }
@@ -75,7 +73,7 @@ final class TagHistory extends Extension
                 "
 				INSERT INTO tag_histories(image_id, tags, user_id, user_ip, date_set)
 				VALUES (:image_id, :tags, :user_id, :user_ip, now())",
-                ["image_id" => $event->image->id, "tags" => $old_tags, "user_id" => $config->get_int(UserAccountsConfig::ANON_ID), "user_ip" => '127.0.0.1']
+                ["image_id" => $event->image->id, "tags" => $old_tags, "user_id" => Ctx::$config->req_int(UserAccountsConfig::ANON_ID), "user_ip" => '127.0.0.1']
             );
             $entries++;
         }
@@ -85,7 +83,7 @@ final class TagHistory extends Extension
             "
 				INSERT INTO tag_histories(image_id, tags, user_id, user_ip, date_set)
 				VALUES (:image_id, :tags, :user_id, :user_ip, now())",
-            ["image_id" => $event->image->id, "tags" => $new_tags, "user_id" => $user->id, "user_ip" => Network::get_real_ip()]
+            ["image_id" => $event->image->id, "tags" => $new_tags, "user_id" => Ctx::$user->id, "user_ip" => Network::get_real_ip()]
         );
         $entries++;
 
@@ -109,9 +107,8 @@ final class TagHistory extends Extension
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
-        global $user;
         if ($event->parent === "system") {
-            if ($user->can(BulkActionsPermission::BULK_EDIT_IMAGE_TAG)) {
+            if (Ctx::$user->can(BulkActionsPermission::BULK_EDIT_IMAGE_TAG)) {
                 $event->add_nav_link(make_link('tag_history/all/1'), "Tag Changes", ["tag_history"]);
             }
         }
@@ -120,8 +117,7 @@ final class TagHistory extends Extension
 
     public function onUserBlockBuilding(UserBlockBuildingEvent $event): void
     {
-        global $user;
-        if ($user->can(BulkActionsPermission::BULK_EDIT_IMAGE_TAG)) {
+        if (Ctx::$user->can(BulkActionsPermission::BULK_EDIT_IMAGE_TAG)) {
             $event->add_link("Tag Changes", make_link("tag_history/all/1"));
         }
     }
@@ -162,12 +158,9 @@ final class TagHistory extends Extension
      */
     private function process_revert_request(int $revert_id): void
     {
-        global $page;
-
         // check for the nothing case
         if ($revert_id < 1) {
-            $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(make_link());
+            Ctx::$page->set_redirect(make_link());
             return;
         }
 
@@ -192,8 +185,7 @@ final class TagHistory extends Extension
         send_event(new TagSetEvent($image, Tag::explode($stored_tags)));
 
         // all should be done now so redirect the user back to the image
-        $page->set_mode(PageMode::REDIRECT);
-        $page->set_redirect(make_link('post/view/'.$stored_image_id));
+        Ctx::$page->set_redirect(make_link('post/view/'.$stored_image_id));
     }
 
     private function process_bulk_revert_request(): void
@@ -346,7 +338,8 @@ final class TagHistory extends Extension
 
         foreach ($result as $image_id) {
             // Get the first tag history that was done before the given IP edit
-            $row = $database->get_row('
+            // @phpstan-ignore-next-line
+            $row = Ctx::$database->get_row('
 				SELECT id, tags
 				FROM tag_histories
 				WHERE image_id='.$image_id.'

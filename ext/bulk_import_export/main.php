@@ -14,10 +14,12 @@ final class BulkImportExport extends DataHandlerExtension
 
     public function onDataUpload(DataUploadEvent $event): void
     {
-        global $user, $database;
+        global $database;
 
-        if ($this->supported_mime($event->mime) &&
-            $user->can(BulkImportExportPermission::BULK_IMPORT)) {
+        if (
+            $this->supported_mime($event->mime)
+            && Ctx::$user->can(BulkImportExportPermission::BULK_IMPORT)
+        ) {
             $zip = new \ZipArchive();
 
             if ($zip->open($event->tmpname->str())) {
@@ -90,20 +92,16 @@ final class BulkImportExport extends DataHandlerExtension
 
     public function onBulkActionBlockBuilding(BulkActionBlockBuildingEvent $event): void
     {
-        global $user;
-
-        if ($user->can(BulkImportExportPermission::BULK_EXPORT)) {
+        if (Ctx::$user->can(BulkImportExportPermission::BULK_EXPORT)) {
             $event->add_action(self::EXPORT_ACTION_NAME, "Export");
         }
     }
 
     public function onBulkAction(BulkActionEvent $event): void
     {
-        global $user, $page;
-
-        if ($user->can(BulkImportExportPermission::BULK_EXPORT) &&
+        if (Ctx::$user->can(BulkImportExportPermission::BULK_EXPORT) &&
             ($event->action === self::EXPORT_ACTION_NAME)) {
-            $download_filename = $user->name . '-' . date('YmdHis') . '.zip';
+            $download_filename = Ctx::$user->name . '-' . date('YmdHis') . '.zip';
             $zip_filename = shm_tempnam("bulk_export");
             $zip = new \ZipArchive();
 
@@ -130,9 +128,8 @@ final class BulkImportExport extends DataHandlerExtension
 
                 $zip->close();
 
-                $page->set_mode(PageMode::FILE);
-                $page->set_file($zip_filename, true);
-                $page->set_filename($download_filename);
+                Ctx::$page->set_file(MimeType::ZIP, $zip_filename, true);
+                Ctx::$page->set_filename($download_filename);
 
                 $event->redirect = false;
             }

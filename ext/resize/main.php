@@ -29,17 +29,14 @@ final class ResizeImage extends Extension
 
     public function onImageAdminBlockBuilding(ImageAdminBlockBuildingEvent $event): void
     {
-        global $user, $config;
         if (
-            $user->can(ImagePermission::EDIT_FILES) &&
-            $config->get_bool(ResizeConfig::ENABLED) &&
+            Ctx::$user->can(ImagePermission::EDIT_FILES) &&
+            Ctx::$config->get_bool(ResizeConfig::ENABLED) &&
             $this->can_resize_mime($event->image->get_mime())
         ) {
             /* Add a link to resize the image */
-            global $config;
-
-            $default_width = $config->get_int(ResizeConfig::DEFAULT_WIDTH, $event->image->width);
-            $default_height = $config->get_int(ResizeConfig::DEFAULT_HEIGHT, $event->image->height);
+            $default_width = Ctx::$config->get_int(ResizeConfig::DEFAULT_WIDTH) ?? $event->image->width;
+            $default_height = Ctx::$config->get_int(ResizeConfig::DEFAULT_HEIGHT) ?? $event->image->height;
 
             $event->add_part(SHM_SIMPLE_FORM(
                 make_link("resize/{$event->image->id}"),
@@ -63,14 +60,12 @@ final class ResizeImage extends Extension
 
     public function onDataUpload(DataUploadEvent $event): void
     {
-        global $config, $page;
-
-        if ($config->get_bool(ResizeConfig::UPLOAD) == true
+        if (Ctx::$config->get_bool(ResizeConfig::UPLOAD)
                 && $this->can_resize_mime($event->mime)) {
             $image_obj = $event->images[0];
 
-            $width = $config->get_int(ResizeConfig::DEFAULT_WIDTH);
-            $height = $config->get_int(ResizeConfig::DEFAULT_HEIGHT);
+            $width = Ctx::$config->req_int(ResizeConfig::DEFAULT_WIDTH);
+            $height = Ctx::$config->req_int(ResizeConfig::DEFAULT_HEIGHT);
             $isanigif = 0;
             if ($image_obj->get_mime() == MimeType::GIF) {
                 $image_filename = Filesystem::warehouse_path(Image::IMAGE_DIR, $image_obj->hash);
@@ -78,7 +73,7 @@ final class ResizeImage extends Extension
                 //check if gif is animated (via https://www.php.net/manual/en/function.imagecreatefromgif.php#104473)
                 while (!feof($fh) && $isanigif < 2) {
                     $chunk = \Safe\fread($fh, 1024 * 100);
-                    $isanigif += \Safe\preg_match_all('#\x00\x21\xF9\x04.{4}\x00[\x2C\x21]#s', $chunk, $matches);
+                    $isanigif += \Safe\preg_match_all('#\x00\x21\xF9\x04.{4}\x00[\x2C\x21]#s', $chunk);
                 }
             }
             if ($isanigif == 0) {
@@ -97,8 +92,6 @@ final class ResizeImage extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page, $user;
-
         if ($event->page_matches("resize/{image_id}", method: "POST", permission: ImagePermission::EDIT_FILES)) {
             // Try to get the image ID
             $image_id = $event->get_iarg('image_id');
@@ -108,18 +101,15 @@ final class ResizeImage extends Extension
             $height = int_escape($event->get_POST('resize_height'));
             if ($width || $height) {
                 $this->resize_image($image, $width, $height);
-                $page->set_mode(PageMode::REDIRECT);
-                $page->set_redirect(make_link("post/view/".$image_id));
+                Ctx::$page->set_redirect(make_link("post/view/".$image_id));
             }
         }
     }
 
     public function onImageDownloading(ImageDownloadingEvent $event): void
     {
-        global $config, $user;
-
-        if ($config->get_bool(ResizeConfig::GET_ENABLED) &&
-            $user->can(ImagePermission::EDIT_FILES) &&
+        if (Ctx::$config->get_bool(ResizeConfig::GET_ENABLED) &&
+            Ctx::$user->can(ImagePermission::EDIT_FILES) &&
             $this->can_resize_mime($event->image->get_mime())
         ) {
             $image_width = $event->image->width;
@@ -146,7 +136,7 @@ final class ResizeImage extends Extension
                 $tmp_filename = shm_tempnam('resize');
 
                 send_event(new MediaResizeEvent(
-                    $config->get_string(ResizeConfig::ENGINE),
+                    MediaEngine::from(Ctx::$config->req_string(ResizeConfig::ENGINE)),
                     $event->path,
                     $event->mime,
                     $tmp_filename,
@@ -165,10 +155,9 @@ final class ResizeImage extends Extension
         }
     }
 
-    private function can_resize_mime(string $mime): bool
+    private function can_resize_mime(MimeType $mime): bool
     {
-        global $config;
-        $engine = $config->get_string(ResizeConfig::ENGINE);
+        $engine = MediaEngine::from(Ctx::$config->req_string(ResizeConfig::ENGINE));
         return MediaEngine::is_input_supported($engine, $mime)
                 && MediaEngine::is_output_supported($engine, $mime);
     }
@@ -178,17 +167,14 @@ final class ResizeImage extends Extension
     /* ----------------------------- */
     private function resize_image(Image $image_obj, int $width, int $height): void
     {
-        global $config;
-
         if (($height <= 0) && ($width <= 0)) {
             throw new ImageResizeException("Invalid options for height and width. ($width x $height)");
         }
 
-        $engine = $config->get_string(ResizeConfig::ENGINE);
-
+        $engine = MediaEngine::from(Ctx::$config->req_string(ResizeConfig::ENGINE));
 
         if (!$this->can_resize_mime($image_obj->get_mime())) {
-            throw new ImageResizeException("Engine $engine cannot resize selected image");
+            throw new ImageResizeException("Engine {$engine->value} cannot resize selected image");
         }
 
         $hash = $image_obj->hash;

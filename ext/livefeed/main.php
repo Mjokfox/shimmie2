@@ -15,10 +15,9 @@ final class LiveFeed extends Extension
 
     public function onImageAddition(ImageAdditionEvent $event): void
     {
-        global $user;
         $this->msg(
             make_link("post/view/".$event->image->id)->asAbsolute(). " - ".
-            "new post by ".$user->name
+            "new post by ".Ctx::$user->name
         );
     }
 
@@ -32,10 +31,9 @@ final class LiveFeed extends Extension
 
     public function onCommentPosting(CommentPostingEvent $event): void
     {
-        global $user;
         $this->msg(
             make_link("post/view/".$event->image_id)->asAbsolute(). " - ".
-            $user->name . ": " . str_replace("\n", " ", $event->comment)
+            Ctx::$user->name . ": " . str_replace("\n", " ", $event->comment)
         );
     }
 
@@ -46,10 +44,7 @@ final class LiveFeed extends Extension
 
     private function msg(string $data): void
     {
-        global $config;
-
-        $host = $config->get_string(LiveFeedConfig::HOST, "127.0.0.1:25252");
-
+        $host = Ctx::$config->get_string(LiveFeedConfig::HOST);
         if (!$host) {
             return;
         }
@@ -58,7 +53,7 @@ final class LiveFeed extends Extension
             $parts = explode(":", $host);
             $host = $parts[0];
             $port = (int)$parts[1];
-            $fp = fsockopen("udp://$host", $port, $errno, $errstr);
+            $fp = fsockopen("udp://$host", $port);
             if (!$fp) {
                 return;
             }

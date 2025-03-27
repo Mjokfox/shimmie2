@@ -52,9 +52,9 @@ final class VideoFileHandler extends DataHandlerExtension
                     $event->image->video = $video;
                     $event->image->video_codec = $video_codec;
                     $event->image->audio = $audio;
-                    if ($event->image->get_mime() === MimeType::MKV &&
+                    if ($event->image->get_mime()->base === MimeType::MKV &&
                         $event->image->video_codec !== null &&
-                        VideoContainers::is_video_codec_supported(VideoContainers::WEBM, $event->image->video_codec)) {
+                        VideoContainer::is_video_codec_supported(VideoContainer::WEBM, $event->image->video_codec)) {
                         // WEBMs are MKVs with the VP9 or VP8 codec
                         // For browser-friendliness, we'll just change the mime type
                         $event->image->set_mime(MimeType::WEBM);
@@ -72,12 +72,9 @@ final class VideoFileHandler extends DataHandlerExtension
         }
     }
 
-    protected function supported_mime(string $mime): bool
+    protected function supported_mime(MimeType $mime): bool
     {
-        global $config;
-
-        $enabled_formats = $config->get_array(VideoFileHandlerConfig::ENABLED_FORMATS);
-
+        $enabled_formats = Ctx::$config->req_array(VideoFileHandlerConfig::ENABLED_FORMATS);
         return MimeType::matches_array($mime, $enabled_formats, true);
     }
 
@@ -88,12 +85,10 @@ final class VideoFileHandler extends DataHandlerExtension
 
     protected function check_contents(Path $tmpname): bool
     {
-        global $config;
-
         if ($tmpname->exists()) {
-            $mime = MimeType::get_for_file($tmpname->str());
+            $mime = MimeType::get_for_file($tmpname);
 
-            $enabled_formats = $config->get_array(VideoFileHandlerConfig::ENABLED_FORMATS);
+            $enabled_formats = Ctx::$config->req_array(VideoFileHandlerConfig::ENABLED_FORMATS);
             if (MimeType::matches_array($mime, $enabled_formats)) {
                 return true;
             }

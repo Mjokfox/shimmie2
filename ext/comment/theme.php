@@ -34,8 +34,7 @@ class CommentListTheme extends Themelet
      */
     public function display_comment_list(array $images, int $page_number, int $total_pages, bool $can_post): void
     {
-        global $config, $page, $user;
-
+        $page = Ctx::$page;
         $page->set_title("Comments");
         $this->display_navigation([
             make_link('comment/list/'.($page_number - 1)),
@@ -47,8 +46,8 @@ class CommentListTheme extends Themelet
         // parts for each image
         $position = 10;
 
-        $comment_limit = $config->get_int(CommentConfig::LIST_COUNT, 10);
-        $comment_captcha = $config->get_bool(CommentConfig::CAPTCHA);
+        $comment_limit = Ctx::$config->req_int(CommentConfig::LIST_COUNT);
+        $comment_captcha = Ctx::$config->req_bool(CommentConfig::CAPTCHA);
 
         foreach ($images as $pair) {
             $image = $pair[0];
@@ -68,7 +67,7 @@ class CommentListTheme extends Themelet
             foreach ($comments as $comment) {
                 $comment_html->appendChild($this->comment_to_html($comment));
             }
-            if (!$user->is_anonymous()) {
+            if (!Ctx::$user->is_anonymous()) {
                 if ($can_post) {
                     $comment_html->appendChild($this->build_postbox($image->id));
                 }
@@ -95,8 +94,6 @@ class CommentListTheme extends Themelet
 
     public function display_admin_block(): void
     {
-        global $page;
-
         $html = DIV(
             "Delete comments by IP.",
             BR(),
@@ -115,7 +112,7 @@ class CommentListTheme extends Themelet
                 )
             )
         );
-        $page->add_block(new Block("Mass Comment Delete", $html));
+        Ctx::$page->add_block(new Block("Mass Comment Delete", $html));
     }
 
     /**
@@ -179,8 +176,6 @@ class CommentListTheme extends Themelet
      */
     public function display_all_user_comments(array $comments, int $page_number, int $total_pages, User $user): void
     {
-        global $page;
-
         $html = emptyHTML();
         foreach ($comments as $comment) {
             $html->appendChild($this->comment_to_html($comment, true));
@@ -188,9 +183,8 @@ class CommentListTheme extends Themelet
         if (count($comments) === 0) {
             $html->appendChild(P("No comments by this user."));
         }
-        $page->add_block(new Block("Comments", $html, "main", 70, "comment-list-user"));
-
-        $page->set_title("{$user->name}'s comments");
+        Ctx::$page->add_block(new Block("Comments", $html, "main", 70, "comment-list-user"));
+        Ctx::$page->set_title("{$user->name}'s comments");
         $this->display_navigation([
             ($page_number <= 1) ? null : make_link("comment/beta-search/{$user->name}/" . ($page_number - 1)),
             make_link(),
@@ -201,9 +195,7 @@ class CommentListTheme extends Themelet
 
     protected function comment_to_html(Comment $comment, bool $trim = false): HTMLElement
     {
-        global $config, $user;
-
-        if ($comment->owner_id === $config->get_int(UserAccountsConfig::ANON_ID)) {
+        if ($comment->owner_id === Ctx::$config->req_int(UserAccountsConfig::ANON_ID)) {
             $anoncode = "";
             $anoncode2 = "";
             if ($this->show_anon_id) {
@@ -211,9 +203,9 @@ class CommentListTheme extends Themelet
                 if (!array_key_exists($comment->poster_ip, $this->anon_map)) {
                     $this->anon_map[$comment->poster_ip] = $this->anon_id;
                 }
-                #if($user->can(UserAbilities::VIEW_IP)) {
+                #if(Ctx::$user->can(UserAbilities::VIEW_IP)) {
                 #$style = " style='color: ".$this->get_anon_colour($comment->poster_ip).";'";
-                if ($user->can(IPBanPermission::VIEW_IP) || $config->get_bool(CommentConfig::SHOW_REPEAT_ANONS, false)) {
+                if (Ctx::$user->can(IPBanPermission::VIEW_IP) || Ctx::$config->req_bool(CommentConfig::SHOW_REPEAT_ANONS)) {
                     if ($this->anon_map[$comment->poster_ip] !== $this->anon_id) {
                         $anoncode2 = SUP("(" . $this->anon_map[$comment->poster_ip] . ")");
                     }
@@ -250,8 +242,8 @@ class CommentListTheme extends Themelet
                         A(["href" => "javascript:replyTo({$comment->image_id}, {$comment->comment_id}, '{$comment->owner_name}')"], "Reply"),
                     ),
                     emptyHTML(
-                        $user->can(IPBanPermission::VIEW_IP) ? emptyHTML(BR(), SHM_IP($comment->poster_ip, "Comment posted {$comment->posted}")) : null,
-                        $user->can(CommentPermission::DELETE_COMMENT) ? emptyHTML(" - ", $this->delete_link($comment->comment_id, $comment->image_id, $comment->owner_name, $tfe->stripped)) : null,
+                        Ctx::$user->can(IPBanPermission::VIEW_IP) ? emptyHTML(BR(), SHM_IP($comment->poster_ip, "Comment posted {$comment->posted}")) : null,
+                        Ctx::$user->can(CommentPermission::DELETE_COMMENT) ? emptyHTML(" - ", $this->delete_link($comment->comment_id, $comment->image_id, $comment->owner_name, $tfe->stripped)) : null,
                     ),
                 ),
                 $userlink,
@@ -274,8 +266,6 @@ class CommentListTheme extends Themelet
 
     protected function build_postbox(int $image_id): HTMLElement
     {
-        global $config;
-
         return DIV(
             ["class" => "comment comment_add"],
             SHM_SIMPLE_FORM(
@@ -283,7 +273,7 @@ class CommentListTheme extends Themelet
                 INPUT(["type" => "hidden", "name" => "image_id", "value" => $image_id]),
                 INPUT(["type" => "hidden", "name" => "hash", "value" => CommentList::get_hash()]),
                 TEXTAREA(["id" => "comment_on_$image_id", "name" => "comment", "rows" => 5, "cols" => 50]),
-                $config->get_bool(CommentConfig::CAPTCHA) ? Captcha::get_html() : null,
+                Ctx::$config->req_bool(CommentConfig::CAPTCHA) ? Captcha::get_html() : null,
                 BR(),
                 INPUT(["type" => "submit", "value" => "Post Comment"])
             ),

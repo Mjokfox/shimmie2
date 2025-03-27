@@ -8,17 +8,15 @@ final class WordFilterTest extends ShimmiePHPUnitTestCase
 {
     public function setUp(): void
     {
-        global $config;
         parent::setUp();
-        $config->set_string("word_filter", "whore,nice lady\na duck,a kitten\n white ,\tspace\ninvalid");
+        Ctx::$config->set_string("word_filter", "whore,nice lady\na duck,a kitten\n white ,\tspace\ninvalid");
     }
 
     public function _doThings(string $in, string $out): void
     {
-        global $user;
         self::log_in_as_user();
         $image_id = $this->post_image("tests/pbx_screenshot.jpg", "pbx computer screenshot");
-        send_event(new CommentPostingEvent($image_id, $user, $in));
+        send_event(new CommentPostingEvent($image_id, Ctx::$user, $in));
         self::get_page("post/view/$image_id");
         self::assert_text($out);
     }

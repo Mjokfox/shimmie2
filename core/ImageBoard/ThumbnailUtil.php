@@ -18,7 +18,7 @@ final class ThumbnailUtil
      */
     public static function get_thumbnail_size(int $orig_width, int $orig_height, bool $use_dpi_scaling = false): array
     {
-        $fit = Ctx::$config->get_string(ThumbnailConfig::FIT);
+        $fit = Ctx::$config->req_string(ThumbnailConfig::FIT);
         $conf_width = Ctx::$config->req_int(ThumbnailConfig::WIDTH);
         $conf_height = Ctx::$config->req_int(ThumbnailConfig::HEIGHT);
         assert($conf_width > 0 && $conf_height > 0);
@@ -56,7 +56,7 @@ final class ThumbnailUtil
 
         list($width, $height, $scale) = self::get_scaled_by_aspect_ratio($orig_width, $orig_height, $max_width, $max_height);
 
-        if ($scale > 1 && Ctx::$config->get_bool(ThumbnailConfig::UPSCALE)) {
+        if ($scale > 1 && Ctx::$config->req_bool(ThumbnailConfig::UPSCALE)) {
             return [$orig_width, $orig_height];
         } else {
             return [$width, $height];
@@ -100,7 +100,7 @@ final class ThumbnailUtil
         return [$max_width, $max_height];
     }
 
-    public static function create_image_thumb(Image $image, ?string $engine = null): void
+    public static function create_image_thumb(Image $image, ?MediaEngine $engine = null): void
     {
         self::create_scaled_image(
             $image->get_image_filename(),
@@ -108,7 +108,7 @@ final class ThumbnailUtil
             self::get_thumbnail_max_size_scaled(),
             $image->get_mime(),
             $engine,
-            Ctx::$config->get_string(ThumbnailConfig::FIT)
+            Ctx::$config->req_string(ThumbnailConfig::FIT)
         );
     }
 
@@ -119,13 +119,13 @@ final class ThumbnailUtil
         Path $inname,
         Path $outname,
         array $tsize,
-        string $mime,
-        ?string $engine = null,
+        MimeType $mime,
+        ?MediaEngine $engine = null,
         ?string $resize_type = null
     ): void {
-        $engine ??= Ctx::$config->req_string(ThumbnailConfig::ENGINE);
+        $engine ??= MediaEngine::from(Ctx::$config->req_string(ThumbnailConfig::ENGINE));
         $resize_type ??= Ctx::$config->req_string(ThumbnailConfig::FIT);
-        $output_mime = Ctx::$config->req_string(ThumbnailConfig::MIME);
+        $output_mime = new MimeType(Ctx::$config->req_string(ThumbnailConfig::MIME));
 
         send_event(new MediaResizeEvent(
             $engine,

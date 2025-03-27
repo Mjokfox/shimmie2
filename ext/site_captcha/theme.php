@@ -11,12 +11,11 @@ class SiteCaptchaTheme extends Themelet
     public function display_page(): void
     {
         global $page;
-        $page->set_mode(PageMode::DATA);
         $page->add_http_header("Refresh: 3");
         $data_href = Url::base();
         $time = time(); // add a 'random' string behind the image urls to avoid caching
 
-        $page->set_data((string)$page->html_html(
+        $page->set_data(MimeType::HTML, (string)$page->html_html(
             emptyHTML(
                 TITLE("captcha verification"),
                 META(["http-equiv" => "Content-Type", "content" => "text/html;charset=utf-8"]),
@@ -58,7 +57,7 @@ class SiteCaptchaTheme extends Themelet
             '/'
         );
         $page->set_mode(PageMode::MANUAL);
-        $page->set_mime("image/jpg");
+        $page->add_http_header("Content-Type: image/jpeg");
         $page->add_http_header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 86400) . ' GMT');
         $page->send_headers();
         print "1";

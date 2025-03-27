@@ -122,11 +122,9 @@ final class PostTags extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $user, $page;
         if ($event->page_matches("tag_edit/replace", method: "POST", permission: PostTagsPermission::MASS_TAG_EDIT)) {
             $this->mass_tag_edit($event->req_POST('search'), $event->req_POST('replace'), true);
-            $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(make_link("admin"));
+            Ctx::$page->set_redirect(make_link("admin"));
         }
     }
 
@@ -147,9 +145,9 @@ final class PostTags extends Extension
 
     public function onImageInfoSet(ImageInfoSetEvent $event): void
     {
-        global $page, $user;
+        global $page;
         if (
-            $user->can(PostTagsPermission::EDIT_IMAGE_TAG) && (
+            Ctx::$user->can(PostTagsPermission::EDIT_IMAGE_TAG) && (
                 isset($event->params['tags'])
                 || isset($event->params["tags{$event->slot}"])
             )
@@ -172,8 +170,6 @@ final class PostTags extends Extension
 
     public function onSearchTermParse(SearchTermParseEvent $event): void
     {
-        global $database;
-
         if ($matches = $event->matches("/^tags([:]?<|[:]?>|[:]?<=|[:]?>=|[:|=])(\d+)$/i")) {
             $cmp = ltrim($matches[1], ":") ?: "=";
             $count = $matches[2];
@@ -192,8 +188,7 @@ final class PostTags extends Extension
 
     public function onTagSet(TagSetEvent $event): void
     {
-        global $user;
-        if ($user->can(PostTagsPermission::EDIT_IMAGE_TAG) && (!$event->image->is_locked() || $user->can(PostLockPermission::EDIT_IMAGE_LOCK))) {
+        if (Ctx::$user->can(PostTagsPermission::EDIT_IMAGE_TAG) && (!$event->image->is_locked() || Ctx::$user->can(PostLockPermission::EDIT_IMAGE_LOCK))) {
             $event->image->set_tags($event->new_tags);
         }
         foreach ($event->metatags as $tag) {

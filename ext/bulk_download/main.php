@@ -11,24 +11,22 @@ final class BulkDownload extends Extension
 
     public function onBulkActionBlockBuilding(BulkActionBlockBuildingEvent $event): void
     {
-        global $user;
-
-        if ($user->can(BulkDownloadPermission::BULK_DOWNLOAD)) {
+        if (Ctx::$user->can(BulkDownloadPermission::BULK_DOWNLOAD)) {
             $event->add_action(BulkDownload::DOWNLOAD_ACTION_NAME, "Download ZIP");
         }
     }
 
     public function onBulkAction(BulkActionEvent $event): void
     {
-        global $user, $page, $config;
-
-        if ($user->can(BulkDownloadPermission::BULK_DOWNLOAD) &&
-            ($event->action == BulkDownload::DOWNLOAD_ACTION_NAME)) {
-            $download_filename = $user->name . '-' . date('YmdHis') . '.zip';
+        if (
+            Ctx::$user->can(BulkDownloadPermission::BULK_DOWNLOAD)
+            && ($event->action == BulkDownload::DOWNLOAD_ACTION_NAME)
+        ) {
+            $download_filename = Ctx::$user->name . '-' . date('YmdHis') . '.zip';
             $zip_filename = shm_tempnam("bulk_download");
             $zip = new \ZipArchive();
             $size_total = 0;
-            $max_size = $config->get_int(BulkDownloadConfig::SIZE_LIMIT);
+            $max_size = Ctx::$config->req_int(BulkDownloadConfig::SIZE_LIMIT);
 
             if ($zip->open($zip_filename->str(), \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
                 foreach ($event->items as $image) {
@@ -45,9 +43,8 @@ final class BulkDownload extends Extension
 
                 $zip->close();
 
-                $page->set_mode(PageMode::FILE);
-                $page->set_file($zip_filename, true);
-                $page->set_filename($download_filename);
+                Ctx::$page->set_file(MimeType::ZIP, $zip_filename, true);
+                Ctx::$page->set_filename($download_filename);
 
                 $event->redirect = false;
             }

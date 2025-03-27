@@ -27,8 +27,7 @@ final class RatingsTest extends ShimmiePHPUnitTestCase
 
     public function testRatingExplicit(): void
     {
-        global $config;
-        $config->set_array("ext_rating_anonymous_privs", ["s", "q"]);
+        Ctx::$config->set_array("ext_rating_anonymous_privs", ["s", "q"]);
         self::log_in_as_user();
         $image_id = $this->post_image("tests/pbx_screenshot.jpg", "pbx");
         $image = Image::by_id_ex($image_id);
@@ -41,8 +40,6 @@ final class RatingsTest extends ShimmiePHPUnitTestCase
 
     public function testUserConfig(): void
     {
-        global $config, $user;
-
         // post a safe image and an explicit image
         self::log_in_as_user();
         $image_id_e = $this->post_image("tests/bedroom_workshop.jpg", "pbx");
@@ -53,10 +50,10 @@ final class RatingsTest extends ShimmiePHPUnitTestCase
         send_event(new RatingSetEvent($image_s, "s"));
 
         // user is allowed to see all
-        $config->set_array("ext_rating_user_privs", ["s", "q", "e"]);
+        Ctx::$config->set_array("ext_rating_user_privs", ["s", "q", "e"]);
 
         // user prefers safe-only by default
-        $user->get_config()->set_array(RatingsUserConfig::DEFAULTS, ["s"]);
+        Ctx::$user->get_config()->set_array(RatingsUserConfig::DEFAULTS, ["s"]);
 
         // search with no tags should return only safe image
         self::assert_search_results([], [$image_id_s]);
@@ -67,7 +64,7 @@ final class RatingsTest extends ShimmiePHPUnitTestCase
 
         // If user prefers to see all images, going to the safe image
         // and clicking next should show the explicit image
-        $user->get_config()->set_array(RatingsUserConfig::DEFAULTS, ["s", "q", "e"]);
+        Ctx::$user->get_config()->set_array(RatingsUserConfig::DEFAULTS, ["s", "q", "e"]);
         $next = $image_s->get_next();
         self::assertNotNull($next);
         self::assertEquals($next->id, $image_id_e);
@@ -75,14 +72,12 @@ final class RatingsTest extends ShimmiePHPUnitTestCase
         // If the user prefers to see only safe images by default, then
         // going to the safe image and clicking next should not show
         // the explicit image (See bug #984)
-        $user->get_config()->set_array(RatingsUserConfig::DEFAULTS, ["s"]);
+        Ctx::$user->get_config()->set_array(RatingsUserConfig::DEFAULTS, ["s"]);
         self::assertEquals($image_s->get_next(), null);
     }
 
     public function testCountImages(): void
     {
-        global $config, $user;
-
         self::log_in_as_user();
 
         $image_id_s = $this->post_image("tests/pbx_screenshot.jpg", "pbx");
@@ -95,8 +90,8 @@ final class RatingsTest extends ShimmiePHPUnitTestCase
         $image_e = Image::by_id_ex($image_id_e);
         send_event(new RatingSetEvent($image_e, "e"));
 
-        $config->set_array("ext_rating_user_privs", ["s", "q"]);
-        $user->get_config()->set_array(RatingsUserConfig::DEFAULTS, ["s"]);
+        Ctx::$config->set_array("ext_rating_user_privs", ["s", "q"]);
+        Ctx::$user->get_config()->set_array(RatingsUserConfig::DEFAULTS, ["s"]);
 
         self::assertEquals(1, Search::count_images(["rating=s"]), "UserClass has access to safe, show safe");
         self::assertEquals(2, Search::count_images(["rating=*"]), "UserClass has access to s/q - if user asks for everything, show those two but hide e");
@@ -107,11 +102,8 @@ final class RatingsTest extends ShimmiePHPUnitTestCase
     // that it doesn't mess with other unrelated tests
     public function tearDown(): void
     {
-        global $user;
-
         self::log_in_as_user();
-        $user->get_config()->set_array(RatingsUserConfig::DEFAULTS, ["?", "s", "q", "e"]);
-
+        Ctx::$user->get_config()->set_array(RatingsUserConfig::DEFAULTS, ["?", "s", "q", "e"]);
         parent::tearDown();
     }
 }

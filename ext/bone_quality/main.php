@@ -14,19 +14,18 @@ final class BoneQuality extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $config, $page;
         if ($event->page_matches("bone_quality")) {
             $boned = false;
             $results = emptyHTML();
 
             // count how many of each chore searches is above the chore search threshold
-            $chore_threshold = $config->get_int(BoneQualityConfig::CHORE_THRESHOLD);
+            $chore_threshold = Ctx::$config->req_int(BoneQualityConfig::CHORE_THRESHOLD);
             // split on any line break (\n, \r, \r\n) because browsers can theoretically send any of them
-            $chore_searches = preg_split("/\R/", $config->get_string(BoneQualityConfig::CHORE_SEARCHES));
+            $chore_searches = preg_split("/\R/", Ctx::$config->req_string(BoneQualityConfig::CHORE_SEARCHES));
             if ($chore_searches) {
                 foreach ($chore_searches as $search) {
                     $search_boned = false;
-                    $search_count = Search::count_images(explode(' ', $search));
+                    $search_count = Search::count_images(Tag::explode($search));
                     if ($search_count >= $chore_threshold) {
                         $boned = true;
                         $search_boned = true;
@@ -35,16 +34,15 @@ final class BoneQuality extends Extension
                 }
             }
 
-            $failure_string = $config->get_string(BoneQualityConfig::FAILURE_STRING);
+            $failure_string = Ctx::$config->req_string(BoneQualityConfig::FAILURE_STRING);
             $this->theme->display_page($failure_string, $boned, $results);
         }
     }
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
-        global $config;
         if ($event->parent == "stats") {
-            $failure_string = $config->get_string(BoneQualityConfig::FAILURE_STRING);
+            $failure_string = Ctx::$config->req_string(BoneQualityConfig::FAILURE_STRING);
             $event->add_nav_link(make_link('bone_quality'), "how $failure_string are we?");
         }
     }

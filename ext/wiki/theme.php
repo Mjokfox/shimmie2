@@ -18,8 +18,6 @@ class WikiTheme extends Themelet
      */
     public function display_page(WikiPage $wiki_page, ?WikiPage $nav_page = null): void
     {
-        global $user, $page;
-
         if (is_null($nav_page)) {
             $nav_page = new WikiPage();
             $nav_page->body = "";
@@ -28,7 +26,7 @@ class WikiTheme extends Themelet
         $body_html = format_text($nav_page->body);
 
         // only the admin can edit the sidebar
-        if ($user->can(WikiPermission::ADMIN)) {
+        if (Ctx::$user->can(WikiPermission::ADMIN)) {
             $link = A(["href" => make_link("wiki/wiki:sidebar/edit")], "Edit");
             $body_html = emptyHTML(
                 $body_html,
@@ -36,10 +34,10 @@ class WikiTheme extends Themelet
             );
         }
 
+        $page = Ctx::$page;
         if (!$wiki_page->exists) {
             $page->set_code(404);
         }
-
         $page->set_title($wiki_page->title);
         $this->display_navigation();
         $page->add_block(new Block("Wiki Index", $body_html, "left", 20));
@@ -96,9 +94,7 @@ class WikiTheme extends Themelet
 
     protected function create_edit_html(WikiPage $page): HTMLElement
     {
-        global $user;
-
-        $lock = $user->can(WikiPermission::ADMIN) ?
+        $lock = Ctx::$user->can(WikiPermission::ADMIN) ?
             emptyHTML(
                 BR(),
                 "Lock page: ",
@@ -119,14 +115,14 @@ class WikiTheme extends Themelet
 
     protected function format_wiki_page(WikiPage $page): HTMLElement
     {
-        global $database, $config;
+        global $database;
 
         $text = "{body}";
 
         // if this is a tag page, add tag info
         $tag = $database->get_one("SELECT tag FROM tags WHERE tag = :tag", ["tag" => $page->title]);
         if (!is_null($tag)) {
-            $text = $config->get_string(WikiConfig::TAG_PAGE_TEMPLATE);
+            $text = Ctx::$config->req_string(WikiConfig::TAG_PAGE_TEMPLATE);
 
             if (AliasEditorInfo::is_enabled()) {
                 $aliases = $database->get_col("
@@ -139,7 +135,7 @@ class WikiTheme extends Themelet
                 if (!empty($aliases)) {
                     $text = str_replace("{aliases}", implode(", ", $aliases), $text);
                 } else {
-                    $text = str_replace("{aliases}", $config->get_string(WikiConfig::EMPTY_TAGINFO), $text);
+                    $text = str_replace("{aliases}", Ctx::$config->req_string(WikiConfig::EMPTY_TAGINFO), $text);
                 }
             }
 
@@ -153,7 +149,7 @@ class WikiTheme extends Themelet
                 if (!empty($auto_tags)) {
                     $text = str_replace("{autotags}", $auto_tags, $text);
                 } else {
-                    $text = str_replace("{autotags}", $config->get_string(WikiConfig::EMPTY_TAGINFO), $text);
+                    $text = str_replace("{autotags}", Ctx::$config->req_string(WikiConfig::EMPTY_TAGINFO), $text);
                 }
             }
         }
@@ -165,22 +161,20 @@ class WikiTheme extends Themelet
 
     protected function create_display_html(WikiPage $page): HTMLElement
     {
-        global $user;
-
         $u_title = url_escape($page->title);
         $owner = $page->get_owner();
 
         $formatted_body = self::format_wiki_page($page);
 
         $edit = TR();
-        if (Wiki::can_edit($user, $page)) {
+        if (Wiki::can_edit(Ctx::$user, $page)) {
             $edit->appendChild(TD(SHM_SIMPLE_FORM(
                 make_link("wiki/$u_title/edit"),
                 INPUT(["type" => "hidden", "name" => "revision", "value" => $page->revision]),
                 INPUT(["type" => "submit", "value" => "Edit"])
             )));
         }
-        if ($user->can(WikiPermission::ADMIN)) {
+        if (Ctx::$user->can(WikiPermission::ADMIN)) {
             $edit->appendChild(
                 TD(SHM_SIMPLE_FORM(
                     make_link("wiki/$u_title/delete_revision"),

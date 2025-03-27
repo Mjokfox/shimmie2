@@ -89,7 +89,6 @@ final class LoginResult
     #[Mutation]
     public static function login(string $username, string $password): LoginResult
     {
-        global $config;
         try {
             $duser = User::by_name_and_pass($username, $password);
             return new LoginResult(
@@ -99,7 +98,7 @@ final class LoginResult
             );
         } catch (UserNotFound $ex) {
             return new LoginResult(
-                User::by_id($config->get_int(UserAccountsConfig::ANON_ID, 0)),
+                User::by_id(Ctx::$config->req_int(UserAccountsConfig::ANON_ID)),
                 null,
                 "No user found"
             );
@@ -109,7 +108,6 @@ final class LoginResult
     #[Mutation]
     public static function create_user(string $username, string $password1, string $password2, string $email): LoginResult
     {
-        global $config;
         try {
             $uce = send_event(new UserCreationEvent($username, $password1, $password2, $email, true));
             return new LoginResult(
@@ -119,7 +117,7 @@ final class LoginResult
             );
         } catch (UserCreationException $ex) {
             return new LoginResult(
-                User::by_id($config->get_int(UserAccountsConfig::ANON_ID, 0)),
+                User::by_id(Ctx::$config->req_int(UserAccountsConfig::ANON_ID)),
                 null,
                 $ex->getMessage()
             );
@@ -140,7 +138,9 @@ final class UserPage extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $config, $database, $page, $user;
+        global $database;
+        $user = Ctx::$user;
+        $page = Ctx::$page;
 
         $this->show_user_info();
 
@@ -154,16 +154,15 @@ final class UserPage extends Extension
             $this->page_recover($event->req_POST('username'));
         }
         if ($event->page_matches("user_admin/create", method: "GET", permission: UserAccountsPermission::CREATE_USER)) {
-            global $config, $page, $user;
-            if (!$config->get_bool(UserAccountsConfig::SIGNUP_ENABLED)) {
+            global $page;
+            if (!Ctx::$config->req_bool(UserAccountsConfig::SIGNUP_ENABLED)) {
                 $this->theme->display_signups_disabled();
                 return;
             }
             $this->theme->display_signup_page();
         }
         if ($event->page_matches("user_admin/create", method: "POST", authed: false, permission: UserAccountsPermission::CREATE_USER)) {
-            global $config, $page, $user;
-            if (!$config->get_bool(UserAccountsConfig::SIGNUP_ENABLED)) {
+            if (!Ctx::$config->req_bool(UserAccountsConfig::SIGNUP_ENABLED)) {
                 $this->theme->display_signups_disabled();
                 return;
             }
@@ -178,8 +177,7 @@ final class UserPage extends Extension
                     )
                 );
                 $uce->get_user()->set_login_cookie();
-                $page->set_mode(PageMode::REDIRECT);
-                $page->set_redirect(make_link("user"));
+                Ctx::$page->set_redirect(make_link("user"));
             } catch (UserCreationException $ex) {
                 throw new InvalidInput($ex->getMessage());
             }
@@ -194,7 +192,6 @@ final class UserPage extends Extension
                     false
                 )
             );
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("admin"));
             $page->flash("Created new user");
         }
@@ -285,26 +282,23 @@ final class UserPage extends Extension
 
         if ($event->page_matches("user/{name}")) {
             $display_user = User::by_name($event->get_arg('name'));
-            if ($display_user->id == $config->get_int(UserAccountsConfig::ANON_ID)) {
+            if ($display_user->id == Ctx::$config->req_int(UserAccountsConfig::ANON_ID)) {
                 throw new UserNotFound("No such user");
             }
             $e = send_event(new UserPageBuildingEvent($display_user));
             $this->display_stats($e);
         } elseif ($event->page_matches("user")) {
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("user/" . $user->name));
         }
     }
 
     public function onUserPageBuilding(UserPageBuildingEvent $event): void
     {
-        global $user, $config;
-
         $duser = $event->display_user;
         $class = $duser->class;
 
         $event->add_part(emptyHTML("Joined: ", SHM_DATE($duser->join_date)), 10);
-        if ($user->name == $duser->name) {
+        if (Ctx::$user->name == $duser->name) {
             $event->add_part(emptyHTML("Current IP: " . Network::get_real_ip()), 80);
         }
         $event->add_part(emptyHTML("Class: {$class->name}"), 90);
@@ -314,7 +308,7 @@ final class UserPage extends Extension
         $av = $avatar_e->html;
         if ($av) {
             $event->add_part($av, 0);
-        } elseif ($duser->id == $user->id) {
+        } elseif ($duser->id == Ctx::$user->id) {
             if (AvatarPostInfo::is_enabled() || AvatarGravatarInfo::is_enabled()) {
                 $part = emptyHTML(P("No avatar?"));
                 if (AvatarPostInfo::is_enabled()) {
@@ -338,8 +332,7 @@ final class UserPage extends Extension
 
     public function onPageNavBuilding(PageNavBuildingEvent $event): void
     {
-        global $user;
-        if ($user->is_anonymous()) {
+        if (Ctx::$user->is_anonymous()) {
             $event->add_nav_link(make_link('user_admin/login'), "Account", category: "user", order: 10);
         } else {
             $event->add_nav_link(make_link('user'), "Account", ["user"], "user", 10);
@@ -348,14 +341,14 @@ final class UserPage extends Extension
 
     private function display_stats(UserPageBuildingEvent $event): void
     {
-        global $user, $page, $config;
+        $user = Ctx::$user;
 
         $this->theme->display_user_page($event->display_user, $event->get_parts());
 
         if (!$user->is_anonymous()) {
             if ($user->id == $event->display_user->id || $user->can("edit_user_info")) {
                 $uobe = send_event(new UserOperationsBuildingEvent($event->display_user, $event->display_user->get_config()));
-                $page->add_block(new Block("Operations", $this->theme->build_operations($event->display_user, $uobe), "main", 60));
+                Ctx::$page->add_block(new Block("Operations", $this->theme->build_operations($event->display_user, $uobe), "main", 60));
             }
         }
 
@@ -368,7 +361,7 @@ final class UserPage extends Extension
                 $user->can(IPBanPermission::VIEW_IP) ||  # user can view all IPS
                 ($user->id === $event->display_user->id)  # or user is viewing themselves
             ) &&
-            ($event->display_user->id !== $config->get_int(UserAccountsConfig::ANON_ID)) # don't show anon's IP list, it is le huge
+            ($event->display_user->id !== Ctx::$config->req_int(UserAccountsConfig::ANON_ID)) # don't show anon's IP list, it is le huge
         ) {
             $this->theme->display_ip_list(
                 $this->count_upload_ips($event->display_user),
@@ -380,23 +373,21 @@ final class UserPage extends Extension
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
-        global $user;
         if ($event->parent === "system") {
-            if ($user->can(UserAccountsPermission::EDIT_USER_PASSWORD)) {
+            if (Ctx::$user->can(UserAccountsPermission::EDIT_USER_PASSWORD)) {
                 $event->add_nav_link(make_link('user_admin/list'), "User List", ["user_admin"]);
             }
         }
 
-        if ($event->parent === "user" && !$user->is_anonymous()) {
+        if ($event->parent === "user" && !Ctx::$user->is_anonymous()) {
             $event->add_nav_link(make_link('user_admin/logout'), "Log Out", order: 90);
         }
     }
 
     public function onUserBlockBuilding(UserBlockBuildingEvent $event): void
     {
-        global $user;
         $event->add_link("My Profile", make_link("user"), 0);
-        if ($user->can(UserAccountsPermission::EDIT_USER_PASSWORD)) {
+        if (Ctx::$user->can(UserAccountsPermission::EDIT_USER_PASSWORD)) {
             $event->add_link("User List", make_link("user_admin/list"), 87);
         }
         $event->add_link("Log Out", make_link("user_admin/logout"), 99);
@@ -404,24 +395,21 @@ final class UserPage extends Extension
 
     public function onAdminBuilding(AdminBuildingEvent $event): void
     {
-        global $user;
-        if ($user->can(UserAccountsPermission::CREATE_OTHER_USER)) {
+        if (Ctx::$user->can(UserAccountsPermission::CREATE_OTHER_USER)) {
             $this->theme->display_user_creator();
         }
     }
 
     public function onUserCreation(UserCreationEvent $event): void
     {
-        global $config, $database, $page, $user;
-
         $name = $event->username;
         //$pass = $event->password;
         //$email = $event->email;
 
-        if (!$user->can(UserAccountsPermission::CREATE_USER)) {
+        if (!Ctx::$user->can(UserAccountsPermission::CREATE_USER)) {
             throw new UserCreationException("Account creation is currently disabled");
         }
-        if (!$config->get_bool(UserAccountsConfig::SIGNUP_ENABLED) && !$user->can(UserAccountsPermission::CREATE_OTHER_USER)) {
+        if (!Ctx::$config->req_bool(UserAccountsConfig::SIGNUP_ENABLED) && !Ctx::$user->can(UserAccountsPermission::CREATE_OTHER_USER)) {
             throw new UserCreationException("Account creation is currently disabled");
         }
         if (strlen($name) < 1) {
@@ -448,8 +436,8 @@ final class UserPage extends Extension
         if (
             // Users who can create other users (ie, admins) are exempt
             // from the email requirement
-            !$user->can(UserAccountsPermission::CREATE_OTHER_USER) &&
-            ($config->get_bool(UserAccountsConfig::USER_EMAIL_REQUIRED) && empty($event->email))
+            !Ctx::$user->can(UserAccountsPermission::CREATE_OTHER_USER) &&
+            (Ctx::$config->get_bool(UserAccountsConfig::USER_EMAIL_REQUIRED) && empty($event->email))
         ) {
             throw new UserCreationException("Email address is required");
         }
@@ -457,10 +445,10 @@ final class UserPage extends Extension
         $email = (!empty($event->email)) ? $event->email : null;
 
         // if there are currently no admins, the new user should be one
-        $need_admin = ($database->get_one("SELECT COUNT(*) FROM users WHERE class='admin'") == 0);
+        $need_admin = (Ctx::$database->get_one("SELECT COUNT(*) FROM users WHERE class='admin'") == 0);
         $class = $need_admin ? 'admin' : 'user';
 
-        $database->execute(
+        Ctx::$database->execute(
             "INSERT INTO users (name, pass, joindate, email, class) VALUES (:username, :hash, now(), :email, :class)",
             ["username" => $event->username, "hash" => '', "email" => $email, "class" => $class]
         );
@@ -504,7 +492,7 @@ final class UserPage extends Extension
         } elseif ($matches = $event->matches(self::USER_ID_SEARCH_REGEX)) {
             $user_id = int_escape($matches[2]);
             $event->add_querylet(new Querylet("images.owner_id {$matches[1]}= $user_id"));
-        } elseif ($user->can(IPBanPermission::VIEW_IP) && $matches = $event->matches("/^(?:poster|user)_ip[=|:]([0-9\.]+)$/i")) {
+        } elseif (Ctx::$user->can(IPBanPermission::VIEW_IP) && $matches = $event->matches("/^(?:poster|user)_ip[=|:]([0-9\.]+)$/i")) {
             $user_ip = $matches[1]; // FIXME: ip_escape?
             $event->add_querylet(new Querylet("images.owner_ip = '$user_ip'"));
         }
@@ -519,44 +507,38 @@ final class UserPage extends Extension
 
     private function show_user_info(): void
     {
-        global $user, $page;
         // user info is shown on all pages
-        if ($user->is_anonymous()) {
+        if (Ctx::$user->is_anonymous()) {
             $this->theme->display_login_block();
         } else {
             $ubbe = send_event(new UserBlockBuildingEvent());
-            $this->theme->display_user_block($user, $ubbe->get_parts());
+            $this->theme->display_user_block(Ctx::$user, $ubbe->get_parts());
         }
     }
 
     private function page_login(string $name, string $pass): void
     {
-        global $config, $page;
-
         $duser = User::by_name_and_pass($name, $pass);
         send_event(new UserLoginEvent($duser));
         $duser->set_login_cookie();
-        $page->set_mode(PageMode::REDIRECT);
 
-        if ($config->get_string(UserAccountsConfig::LOGIN_REDIRECT, "previous") === "previous") {
-            $page->set_redirect(Url::referer_or(ignore: ["user/"]));
+        if (Ctx::$config->get_string(UserAccountsConfig::LOGIN_REDIRECT) === "previous") {
+            Ctx::$page->set_redirect(Url::referer_or(ignore: ["user/"]));
         } else {
-            $page->set_redirect(make_link("user"));
+            Ctx::$page->set_redirect(make_link("user"));
         }
     }
 
     private function page_logout(): void
     {
-        global $page, $config;
-        $page->add_cookie("session", "", time() + 60 * 60 * 24 * $config->get_int(UserAccountsConfig::LOGIN_MEMORY), "/");
-        if ($config->get_bool(UserAccountsConfig::PURGE_COOKIE)) {
+        Ctx::$page->add_cookie("session", "", time() + 60 * 60 * 24 * Ctx::$config->req_int(UserAccountsConfig::LOGIN_MEMORY), "/");
+        if (Ctx::$config->req_bool(UserAccountsConfig::PURGE_COOKIE)) {
             # to keep as few versions of content as possible,
             # make cookies all-or-nothing
-            $page->add_cookie("user", "", time() + 60 * 60 * 24 * $config->get_int(UserAccountsConfig::LOGIN_MEMORY), "/");
+            Ctx::$page->add_cookie("user", "", time() + 60 * 60 * 24 * Ctx::$config->req_int(UserAccountsConfig::LOGIN_MEMORY), "/");
         }
         Log::info("user", "Logged out");
-        $page->set_mode(PageMode::REDIRECT);
-        $page->set_redirect(make_link());
+        Ctx::$page->set_redirect(make_link());
     }
 
     private function page_recover(string $username): void
@@ -588,14 +570,10 @@ final class UserPage extends Extension
 
     private function redirect_to_user(User $duser): void
     {
-        global $page, $user;
-
-        if ($user->id === $duser->id) {
-            $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(make_link("user"));
+        if (Ctx::$user->id === $duser->id) {
+            Ctx::$page->set_redirect(make_link("user"));
         } else {
-            $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(make_link("user/{$duser->name}"));
+            Ctx::$page->set_redirect(make_link("user/{$duser->name}"));
         }
     }
 
@@ -652,7 +630,7 @@ final class UserPage extends Extension
 
     private function delete_user(int $uid, bool $with_images = false, bool $with_comments = false): void
     {
-        global $user, $config, $database, $page;
+        global $database;
 
         $duser = User::by_id($uid);
         Log::warning("user", "Deleting user #{$uid} (@{$duser->name})");
@@ -669,7 +647,7 @@ final class UserPage extends Extension
         } else {
             $database->execute(
                 "UPDATE images SET owner_id = :new_owner_id WHERE owner_id = :old_owner_id",
-                ["new_owner_id" => $config->get_int(UserAccountsConfig::ANON_ID), "old_owner_id" => $uid]
+                ["new_owner_id" => Ctx::$config->req_int(UserAccountsConfig::ANON_ID), "old_owner_id" => $uid]
             );
         }
 
@@ -679,7 +657,7 @@ final class UserPage extends Extension
         } else {
             $database->execute(
                 "UPDATE comments SET owner_id = :new_owner_id WHERE owner_id = :old_owner_id",
-                ["new_owner_id" => $config->get_int(UserAccountsConfig::ANON_ID), "old_owner_id" => $uid]
+                ["new_owner_id" => Ctx::$config->req_int(UserAccountsConfig::ANON_ID), "old_owner_id" => $uid]
             );
         }
 
@@ -690,7 +668,6 @@ final class UserPage extends Extension
             ["id" => $uid]
         );
 
-        $page->set_mode(PageMode::REDIRECT);
-        $page->set_redirect(make_link());
+        Ctx::$page->set_redirect(make_link());
     }
 }

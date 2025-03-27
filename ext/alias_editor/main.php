@@ -61,36 +61,32 @@ final class AliasEditor extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $config, $database, $page, $user;
+        global $database, $page;
 
         if ($event->page_matches("alias/add", method: "POST", permission: AliasEditorPermission::MANAGE_ALIAS_LIST)) {
             $input = validate_input(["c_oldtag" => "string", "c_newtag" => "string"]);
             send_event(new AddAliasEvent($input['c_oldtag'], $input['c_newtag']));
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("alias/list"));
         }
         if ($event->page_matches("alias/remove", method: "POST", permission: AliasEditorPermission::MANAGE_ALIAS_LIST)) {
             $input = validate_input(["d_oldtag" => "string"]);
             send_event(new DeleteAliasEvent($input['d_oldtag']));
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("alias/list"));
         }
         if ($event->page_matches("alias/list")) {
             $t = new AliasTable($database->raw_db());
-            $t->token = $user->get_auth_token();
+            $t->token = Ctx::$user->get_auth_token();
             $t->inputs = $event->GET;
             $t->size = 100;
-            if ($user->can(AliasEditorPermission::MANAGE_ALIAS_LIST)) {
+            if (Ctx::$user->can(AliasEditorPermission::MANAGE_ALIAS_LIST)) {
                 $t->create_url = make_link("alias/add");
                 $t->delete_url = make_link("alias/remove");
             }
             $this->theme->display_aliases($t->table($t->query()), $t->paginator());
         }
         if ($event->page_matches("alias/export/aliases.csv")) {
-            $page->set_mode(PageMode::DATA);
-            $page->set_mime(MimeType::CSV);
             $page->set_filename("aliases.csv");
-            $page->set_data($this->get_alias_csv($database));
+            $page->set_data(MimeType::CSV, $this->get_alias_csv($database));
         }
         if ($event->page_matches("alias/import", method: "POST", permission: AliasEditorPermission::MANAGE_ALIAS_LIST)) {
             if (count($_FILES) > 0) {
@@ -98,7 +94,6 @@ final class AliasEditor extends Extension
                 $contents = \Safe\file_get_contents($tmp);
                 $this->add_alias_csv($contents);
                 Log::info("alias_editor", "Imported aliases from file", "Imported aliases"); # FIXME: how many?
-                $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(make_link("alias/list"));
             } else {
                 throw new InvalidInput("No File Specified");
@@ -149,8 +144,7 @@ final class AliasEditor extends Extension
 
     public function onUserBlockBuilding(UserBlockBuildingEvent $event): void
     {
-        global $user;
-        if ($user->can(AliasEditorPermission::MANAGE_ALIAS_LIST)) {
+        if (Ctx::$user->can(AliasEditorPermission::MANAGE_ALIAS_LIST)) {
             $event->add_link("Alias Editor", make_link("alias/list"));
         }
     }

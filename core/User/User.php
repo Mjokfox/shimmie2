@@ -59,12 +59,9 @@ final class User
     public function get_config(): Config
     {
         if (is_null($this->config)) {
-            $this->config = new DatabaseConfig(
+            $this->config = new DatabaseUserConfig(
                 Ctx::$database,
-                "user_config",
-                "user_id",
-                "{$this->id}",
-                defaults: UserConfigGroup::get_all_defaults()
+                $this->id
             );
         }
         return $this->config;
@@ -101,7 +98,7 @@ final class User
                 $user = $user_by_name;
             }
             // For 2.12, check old session IDs and convert to new IDs
-            if (md5($user_by_name->passhash . Network::get_session_ip(Ctx::$config)) === $session) {
+            if (md5($user_by_name->passhash . Network::get_session_ip()) === $session) {
                 $user = $user_by_name;
                 $user->set_login_cookie();
             }
@@ -198,7 +195,7 @@ final class User
 
     public function is_anonymous(): bool
     {
-        return ($this->id === Ctx::$config->get_int(UserAccountsConfig::ANON_ID));
+        return ($this->id === Ctx::$config->req_int(UserAccountsConfig::ANON_ID));
     }
 
     public function set_class(string $class): void
@@ -246,14 +243,13 @@ final class User
      */
     public function get_auth_token(): string
     {
-        global $config;
         return hash("sha3-256", $this->passhash . SysConfig::getSecret());
     }
 
 
     public function get_session_id(): string
     {
-        return hash("sha3-256", $this->passhash . Network::get_session_ip(Ctx::$config) . SysConfig::getSecret());
+        return hash("sha3-256", $this->passhash . Network::get_session_ip() . SysConfig::getSecret());
     }
 
     public function set_login_cookie(): void

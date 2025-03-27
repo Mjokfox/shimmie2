@@ -21,8 +21,6 @@ final class XMLSitemap extends Extension
     public function onPageRequest(PageRequestEvent $event): void
     {
         if ($event->page_matches("sitemap.xml")) {
-            global $config, $page;
-
             $cache_path = Filesystem::data_path("cache/sitemap.xml");
 
             if ($this->new_sitemap_needed($cache_path)) {
@@ -31,22 +29,20 @@ final class XMLSitemap extends Extension
             }
 
             $xml = $cache_path->get_contents();
-            $page->set_mode(PageMode::DATA);
-            $page->set_mime(MimeType::XML_APPLICATION);
-            $page->set_data($xml);
+            Ctx::$page->set_data(MimeType::XML_APPLICATION, $xml);
         }
     }
 
     // Full sitemap
     private function handle_full_sitemap(): string
     {
-        global $database, $config;
+        global $database;
 
         $urls = [];
 
         // add index
         $urls[] = new XMLSitemapURL(
-            make_link($config->get_string(SetupConfig::FRONT_PAGE)),
+            make_link(Ctx::$config->req_string(SetupConfig::FRONT_PAGE)),
             "weekly",
             "1",
             date("Y-m-d")

@@ -25,8 +25,7 @@ final class RotateImage extends Extension
 
     public function onImageAdminBlockBuilding(ImageAdminBlockBuildingEvent $event): void
     {
-        global $user, $config;
-        if ($user->can(ImagePermission::EDIT_FILES)
+        if (Ctx::$user->can(ImagePermission::EDIT_FILES)
                 && MimeType::matches_array($event->image->get_mime(), self::SUPPORTED_MIME)) {
             /* Add a link to rotate the image */
             $event->add_part(SHM_SIMPLE_FORM(
@@ -39,19 +38,16 @@ final class RotateImage extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page, $user;
-
         if ($event->page_matches("rotate/{image_id}", method: "POST", permission: ImagePermission::EDIT_FILES)) {
             // Try to get the image ID
             $image_id = $event->get_iarg('image_id');
-            $image = Image::by_id_ex($image_id);
+            Image::by_id_ex($image_id);
             /* Check if options were given to rotate an image. */
             $deg = int_escape($event->req_POST('rotate_deg'));
 
             /* Attempt to rotate the image */
             $this->rotate_image($image_id, $deg);
-            $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(make_link("post/view/".$image_id));
+            Ctx::$page->set_redirect(make_link("post/view/".$image_id));
         }
     }
 
@@ -109,25 +105,14 @@ final class RotateImage extends Extension
         $tmp_filename = shm_tempnam('rotate');
 
         /* Output to the same format as the original image */
-        switch ($info[2]) {
-            case IMAGETYPE_GIF:
-                $result = imagegif($image_rotated, $tmp_filename->str());
-                break;
-            case IMAGETYPE_JPEG:
-                $result = imagejpeg($image_rotated, $tmp_filename->str());
-                break;
-            case IMAGETYPE_PNG:
-                $result = imagepng($image_rotated, $tmp_filename->str(), 9);
-                break;
-            case IMAGETYPE_WEBP:
-                $result = imagewebp($image_rotated, $tmp_filename->str());
-                break;
-            case IMAGETYPE_BMP:
-                $result = imagebmp($image_rotated, $tmp_filename->str(), true);
-                break;
-            default:
-                throw new ImageRotateException("Unsupported image type.");
-        }
+        $result = match ($info[2]) {
+            IMAGETYPE_GIF => imagegif($image_rotated, $tmp_filename->str()),
+            IMAGETYPE_JPEG => imagejpeg($image_rotated, $tmp_filename->str()),
+            IMAGETYPE_PNG => imagepng($image_rotated, $tmp_filename->str(), 9),
+            IMAGETYPE_WEBP => imagewebp($image_rotated, $tmp_filename->str()),
+            IMAGETYPE_BMP => imagebmp($image_rotated, $tmp_filename->str(), true),
+            default => throw new ImageRotateException("Unsupported image type."),
+        };
 
         if ($result === false) {
             throw new ImageRotateException("Could not save image: ".$tmp_filename->str());

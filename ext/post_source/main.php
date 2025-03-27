@@ -23,22 +23,19 @@ final class PostSource extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $user, $page;
         if ($event->page_matches("tag_edit/mass_source_set", method: "POST", permission: PostTagsPermission::MASS_TAG_EDIT)) {
             $this->mass_source_edit($event->req_POST('tags'), $event->req_POST('source'));
-            $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(search_link());
+            Ctx::$page->set_redirect(search_link());
         }
     }
 
     public function onImageInfoSet(ImageInfoSetEvent $event): void
     {
-        global $config, $page, $user;
         $source = $event->get_param('source');
-        if (is_null($source) && $config->get_bool(UploadConfig::TLSOURCE)) {
+        if (is_null($source) && Ctx::$config->get_bool(UploadConfig::TLSOURCE)) {
             $source = $event->get_param('url');
         }
-        if ($user->can(PostSourcePermission::EDIT_IMAGE_SOURCE) && !is_null($source)) {
+        if (Ctx::$user->can(PostSourcePermission::EDIT_IMAGE_SOURCE) && !is_null($source)) {
             if (isset($event->params['tags']) ? !\Safe\preg_match('/source[=|:]/', $event->params["tags"]) : true) {
                 send_event(new SourceSetEvent($event->image, $source));
             }
@@ -47,8 +44,7 @@ final class PostSource extends Extension
 
     public function onSourceSet(SourceSetEvent $event): void
     {
-        global $user;
-        if ($user->can(PostSourcePermission::EDIT_IMAGE_SOURCE)) {
+        if (Ctx::$user->can(PostSourcePermission::EDIT_IMAGE_SOURCE)) {
             $event->image->set_source($event->source);
         }
     }
@@ -60,8 +56,6 @@ final class PostSource extends Extension
 
     public function onSearchTermParse(SearchTermParseEvent $event): void
     {
-        global $database;
-
         if ($matches = $event->matches("/^(source)[=|:](.*)$/i")) {
             $source = strtolower($matches[2]);
             $source = \Safe\preg_replace('/^https?:/', '', $source);

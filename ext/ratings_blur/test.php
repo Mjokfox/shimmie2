@@ -30,10 +30,8 @@ final class RatingsBlurTest extends ShimmiePHPUnitTestCase
 
     public function testRatingBlurGlobalConfig(): void
     {
-        global $config;
-
         // change global setting: don't blur explict, only blur safe
-        $config->set_array(RatingsBlurConfig::GLOBAL_DEFAULTS, ["s"]);
+        Ctx::$config->set_array(RatingsBlurConfig::GLOBAL_DEFAULTS, ["s"]);
         // create a new user to simulate inheriting the global default without manually setting the user default
         $this->create_test_user($this->username);
 
@@ -54,7 +52,7 @@ final class RatingsBlurTest extends ShimmiePHPUnitTestCase
         self::assert_text("blur");
 
         // change global setting: don't blur any
-        $config->set_array(RatingsBlurConfig::GLOBAL_DEFAULTS, [RatingsBlur::NULL_OPTION]);
+        Ctx::$config->set_array(RatingsBlurConfig::GLOBAL_DEFAULTS, [RatingsBlur::NULL_OPTION]);
         // create a new user to simulate inheriting the global default without manually setting the user default
         $this->delete_test_user($this->username);
         $this->create_test_user($this->username);
@@ -67,14 +65,13 @@ final class RatingsBlurTest extends ShimmiePHPUnitTestCase
 
     public function testRatingBlurUserConfig(): void
     {
-        global $config, $user;
         // set global default to blur all, so we can test it is overriden
-        $config->set_array(RatingsBlurConfig::GLOBAL_DEFAULTS, array_keys(ImageRating::$known_ratings));
+        Ctx::$config->set_array(RatingsBlurConfig::GLOBAL_DEFAULTS, array_keys(ImageRating::$known_ratings));
 
         self::log_in_as_user();
 
         // don't blur explict, blur safe
-        $user->get_config()->set_array(RatingsBlurUserConfig::USER_DEFAULTS, ["s"]);
+        Ctx::$user->get_config()->set_array(RatingsBlurUserConfig::USER_DEFAULTS, ["s"]);
 
         $image_id_e = $this->post_image("tests/bedroom_workshop.jpg", "bedroom");
         $image_e = Image::by_id_ex($image_id_e);
@@ -93,7 +90,7 @@ final class RatingsBlurTest extends ShimmiePHPUnitTestCase
         self::assert_text("blur");
 
         // don't blur any
-        $user->get_config()->set_array(RatingsBlurUserConfig::USER_DEFAULTS, [RatingsBlur::NULL_OPTION]);
+        Ctx::$user->get_config()->set_array(RatingsBlurUserConfig::USER_DEFAULTS, [RatingsBlur::NULL_OPTION]);
 
         self::get_page("post/list");
         self::assert_no_text("blur");
@@ -122,11 +119,8 @@ final class RatingsBlurTest extends ShimmiePHPUnitTestCase
     // that it doesn't mess with other unrelated tests
     public function tearDown(): void
     {
-        global $user;
-
         self::log_in_as_user();
-        $user->get_config()->set_array(RatingsBlurUserConfig::USER_DEFAULTS, ['e']);
-
+        Ctx::$user->get_config()->set_array(RatingsBlurUserConfig::USER_DEFAULTS, ['e']);
         parent::tearDown();
     }
 }

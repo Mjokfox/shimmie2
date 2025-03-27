@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-require_once "mime_map.php";
-require_once "file_extension.php";
-require_once "mime_type.php";
-
 final class MimeSystem extends Extension
 {
     public const KEY = "mime";
@@ -17,7 +13,7 @@ final class MimeSystem extends Extension
     public function onParseLinkTemplate(ParseLinkTemplateEvent $event): void
     {
         $event->replace('$ext', $event->image->get_ext());
-        $event->replace('$mime', $event->image->get_mime());
+        $event->replace('$mime', (string)$event->image->get_mime());
     }
 
 
@@ -36,12 +32,13 @@ final class MimeSystem extends Extension
             }
             $database->set_timeout(null); // These updates can take a little bit
 
-            $extensions = $database->get_col_iterable("SELECT DISTINCT ext FROM images");
+            /** @var string[] $extensions */
+            $extensions = $database->get_col("SELECT DISTINCT ext FROM images");
 
             foreach ($extensions as $ext) {
                 $mime = MimeType::get_for_extension($ext);
 
-                if (empty($mime) || $mime === MimeType::OCTET_STREAM) {
+                if (is_null($mime) || $mime->base === MimeType::OCTET_STREAM) {
                     throw new UserError("Unknown extension: $ext");
                 }
 
@@ -49,7 +46,7 @@ final class MimeSystem extends Extension
 
                 $database->execute(
                     "UPDATE images SET mime = :mime, ext = :new_ext WHERE ext = :ext AND (mime IS NULL OR mime != :mime OR ext != :new_ext)",
-                    ["mime" => $mime, "new_ext" => $normalized_extension, "ext" => $ext]
+                    ["mime" => (string)$mime, "new_ext" => $normalized_extension, "ext" => $ext]
                 );
             }
 

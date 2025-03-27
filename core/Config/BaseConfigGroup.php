@@ -21,17 +21,13 @@ abstract class BaseConfigGroup extends Enablable
     {
         $fields = [];
         $refl_config = new \ReflectionClass($this);
-        foreach ($refl_config->getConstants() as $const => $key) {
-            $refl_const = $refl_config->getReflectionConstant($const);
-            if (!$refl_const) {
-                continue;
-            }
-            $attributes = $refl_const->getAttributes(ConfigMeta::class);
-            if (count($attributes) === 0) {
+        foreach ($refl_config->getReflectionConstants() as $const) {
+            $attributes = $const->getAttributes(ConfigMeta::class);
+            if (count($attributes) !== 1) {
                 continue;
             }
             $meta = $attributes[0]->newInstance();
-            $fields[$key] = $meta;
+            $fields[$const->getValue()] = $meta;
         }
         return $fields;
     }
@@ -65,19 +61,14 @@ abstract class BaseConfigGroup extends Enablable
     {
         $defaults = [];
         foreach (self::get_subclasses() as $class) {
-            $group = $class->newInstance();
-            foreach ($class->getConstants() as $const => $value) {
-                $refl_const = $class->getReflectionConstant($const);
-                if (!$refl_const) {
-                    continue;
-                }
-                $attributes = $refl_const->getAttributes(ConfigMeta::class);
-                if (count($attributes) === 0) {
+            foreach ($class->getReflectionConstants() as $const) {
+                $attributes = $const->getAttributes(ConfigMeta::class);
+                if (count($attributes) !== 1) {
                     continue;
                 }
                 $meta = $attributes[0]->newInstance();
                 if ($meta->default !== null) {
-                    $defaults[$value] = match ($meta->type) {
+                    $defaults[$const->getValue()] = match ($meta->type) {
                         ConfigType::BOOL => $meta->default ? "true" : "false",
                         // phpstan doesn't know that if type=X then default=Y
                         // @phpstan-ignore-next-line

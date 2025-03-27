@@ -70,20 +70,18 @@ final class NumericScoreVote
     #[Field(extends: "Post", type: "Int!")]
     public static function my_vote(Image $post): int
     {
-        global $database, $user;
-        return $database->get_one(
+        return Ctx::$database->get_one(
             "SELECT score FROM numeric_score_votes WHERE image_id=:image_id AND user_id=:user_id",
-            ['image_id' => $post->id, "user_id" => $user->id]
+            ['image_id' => $post->id, "user_id" => Ctx::$user->id]
         ) ?? 0;
     }
 
     #[Mutation]
     public static function create_vote(int $post_id, int $score): bool
     {
-        global $user;
-        if ($user->can(NumericScorePermission::CREATE_VOTE)) {
+        if (Ctx::$user->can(NumericScorePermission::CREATE_VOTE)) {
             assert($score === -1 || $score === 1);
-            send_event(new NumericScoreSetEvent($post_id, $user, $score));
+            send_event(new NumericScoreSetEvent($post_id, Ctx::$user, $score));
             return true;
         }
         return false;
@@ -115,16 +113,14 @@ final class NumericScore extends Extension
 
     public function onDisplayingImage(DisplayingImageEvent $event): void
     {
-        global $user;
-        if ($user->can(NumericScorePermission::CREATE_VOTE)) {
+        if (Ctx::$user->can(NumericScorePermission::CREATE_VOTE)) {
             $this->theme->get_voter($event->image);
         }
     }
 
     public function onUserPageBuilding(UserPageBuildingEvent $event): void
     {
-        global $user;
-        if ($user->can(NumericScorePermission::EDIT_OTHER_VOTE)) {
+        if (Ctx::$user->can(NumericScorePermission::EDIT_OTHER_VOTE)) {
             $this->theme->get_nuller($event->display_user);
         }
 
@@ -141,7 +137,9 @@ final class NumericScore extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $config, $database, $user, $page;
+        global $database;
+        $user = Ctx::$user;
+        $page = Ctx::$page;
 
         if ($event->page_matches("numeric_score/votes/{image_id}")) {
             $image_id = $event->get_iarg('image_id');
@@ -170,11 +168,9 @@ final class NumericScore extends Extension
                 throw new InvalidInput("Invalid score");
             }
             if ($_SERVER['HTTP_USER_AGENT'] === "shimmie-js") {
-                $page->set_mode(PageMode::DATA);
-                $page->set_data((string)$NSSE->new_score);
+                Ctx::$page->set_data(MimeType::TEXT, (string)$NSSE->new_score);
             } else {
-                $page->set_mode(PageMode::REDIRECT);
-                $page->set_redirect(make_link("post/view/$image_id"));
+                Ctx::$page->set_redirect(make_link("post/view/$image_id"));
             }
 
         } elseif ($event->page_matches("numeric_score/remove_votes_on", method: "POST", permission: NumericScorePermission::EDIT_OTHER_VOTE)) {
@@ -187,11 +183,9 @@ final class NumericScore extends Extension
                 "UPDATE images SET numeric_score=0 WHERE id=:id",
                 ['id' => $image_id]
             );
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("post/view/$image_id"));
         } elseif ($event->page_matches("numeric_score/remove_votes_by", method: "POST", permission: NumericScorePermission::EDIT_OTHER_VOTE)) {
             $this->delete_votes_by(int_escape($event->req_POST('user_id')));
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link());
         } elseif ($event->page_matches("popular_by_day") || $event->page_matches("popular_by_month") || $event->page_matches("popular_by_year")) {
             //FIXME: popular_by isn't linked from anywhere
@@ -219,7 +213,7 @@ final class NumericScore extends Extension
             } else {
                 $sql = "SELECT id FROM images WHERE EXTRACT(YEAR FROM posted) = :year";
             }
-            $args = ["limit" => $config->get_int(IndexConfig::IMAGES), "year" => $year];
+            $args = ["limit" => Ctx::$config->req_int(IndexConfig::IMAGES), "year" => $year];
 
             if ($event->page_matches("popular_by_day")) {
                 if ($database->get_driver_id() === DatabaseDriverID::SQLITE) {
@@ -284,8 +278,7 @@ final class NumericScore extends Extension
 
     public function onImageDeletion(ImageDeletionEvent $event): void
     {
-        global $database;
-        $database->execute("DELETE FROM numeric_score_votes WHERE image_id=:id", ["id" => $event->image->id]);
+        Ctx::$database->execute("DELETE FROM numeric_score_votes WHERE image_id=:id", ["id" => $event->image->id]);
     }
 
     public function onUserDeletion(UserDeletionEvent $event): void
@@ -295,9 +288,7 @@ final class NumericScore extends Extension
 
     public function delete_votes_by(int $user_id): void
     {
-        global $database;
-
-        $image_ids = $database->get_col("SELECT image_id FROM numeric_score_votes WHERE user_id=:user_id", ['user_id' => $user_id]);
+        $image_ids = Ctx::$database->get_col("SELECT image_id FROM numeric_score_votes WHERE user_id=:user_id", ['user_id' => $user_id]);
 
         if (count($image_ids) === 0) {
             return;
@@ -308,11 +299,13 @@ final class NumericScore extends Extension
         Ctx::$event_bus->set_timeout(null);
         foreach (array_chunk($image_ids, 100) as $chunk) {
             $id_list = implode(",", $chunk);
-            $database->execute(
+            Ctx::$database->execute(
+                // @phpstan-ignore-next-line
                 "DELETE FROM numeric_score_votes WHERE user_id=:user_id AND image_id IN (".$id_list.")",
                 ['user_id' => $user_id]
             );
-            $database->execute("
+            // @phpstan-ignore-next-line
+            Ctx::$database->execute("
 				UPDATE images
 				SET numeric_score=COALESCE(
 					(
@@ -384,12 +377,10 @@ final class NumericScore extends Extension
 
     public function onTagTermParse(TagTermParseEvent $event): void
     {
-        global $user;
-
         if ($matches = $event->matches("/^vote[=|:](up|down|remove)$/")) {
             $score = ($matches[1] === "up" ? 1 : ($matches[1] === "down" ? -1 : 0));
-            if ($user->can(NumericScorePermission::CREATE_VOTE)) {
-                send_event(new NumericScoreSetEvent($event->image_id, $user, $score));
+            if (Ctx::$user->can(NumericScorePermission::CREATE_VOTE)) {
+                send_event(new NumericScoreSetEvent($event->image_id, Ctx::$user, $score));
             }
         }
     }

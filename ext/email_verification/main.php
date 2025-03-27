@@ -79,7 +79,6 @@ class EmailVerification extends Extension
                 } else {
                     $page->flash("no email set, cannot send verification email");
                 }
-                $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(make_link("user"));
             }
         } elseif ($event->page_matches("user_admin/change_email", method: "POST")) {

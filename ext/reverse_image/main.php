@@ -57,7 +57,6 @@ class ReverseImage extends Extension
             global $database;
             $get_search = $event->get_GET('search');
             if ($get_search || !($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageUserConfig::USER_SEARCH_ENABLE))) {
-                $page->set_mode(PageMode::REDIRECT);
                 if (empty($get_search)) {
                     $page->set_redirect(make_link("post/list"));
                 } else {
@@ -67,14 +66,12 @@ class ReverseImage extends Extension
             }
             $search = $event->get_arg('search', "");
             if (empty($search)) {
-                $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(make_link("post/list"));
                 return;
             }
 
             $feat = $this->get_search_features($search);
             if (!$feat) {
-                $page->set_mode(PageMode::REDIRECT);
                 $page->flash("something went wrong");
                 $page->set_redirect(make_link("post/list"));
                 return;
@@ -107,7 +104,6 @@ class ReverseImage extends Extension
 
         } elseif ($event->page_matches("reverse_image_search_fromupload", method: "POST", authed: false)) {
             $ids = $this->reverse_image_search_post();
-            $page->set_mode(PageMode::DATA);
             if (count($ids) > 0) {
                 $threshold = $config->get_int(ReverseImageConfig::SIMILARITY_DUPLICATE) / 100;
                 $first = array_key_first($ids);
@@ -126,10 +122,10 @@ class ReverseImage extends Extension
                 }
                 $tag_n = $this->tags_from_features_id($ids);
                 $json_input = ["tags" => $tag_n,"closest" => $closest];
-                $page->set_data(json_encode($json_input));
+                $page->set_data(MimeType::JSON, json_encode($json_input));
                 $page->set_filename('tag_occurrences.json', 'Content-Type: application/json');
             } else {
-                $page->set_data(json_encode(["No similar images found, either the file was not uploaded properly or no url given"]));
+                $page->set_data(MimeType::JSON, json_encode(["No similar images found, either the file was not uploaded properly or no url given"]));
                 $page->set_filename('failed.json', 'Content-Type: application/json');
             }
         } elseif ($event->page_matches("upload", method: "GET", permission: ImagePermission::CREATE_IMAGE)) {
@@ -164,7 +160,6 @@ class ReverseImage extends Extension
                 $this->theme->display_page($_POST["reverse_image_limit"] ?? null);
                 $this->theme->display_results($ids);
             } else {
-                $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(make_link("reverse_image_search"));
                 $page->flash("Something broke in the backed or no file or url given");
             }

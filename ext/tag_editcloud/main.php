@@ -14,10 +14,9 @@ use function MicroHTML\emptyHTML;
 final class TagEditCloud extends Extension
 {
     public const KEY = "tag_editcloud";
+
     public function onImageInfoBoxBuilding(ImageInfoBoxBuildingEvent $event): void
     {
-        global $config;
-
         if ($this->can_tag($event->image)) {
             $html = $this->build_tag_map($event->image);
             if (!is_null($html)) {
@@ -28,14 +27,14 @@ final class TagEditCloud extends Extension
 
     private function build_tag_map(Image $image): ?HTMLElement
     {
-        global $database, $config;
+        global $database;
 
-        $sort_method = $config->get_string(TagEditCloudConfig::SORT);
-        $tags_min = $config->get_int(TagEditCloudConfig::MIN_USAGE);
-        $used_first = $config->get_bool(TagEditCloudConfig::USED_FIRST);
-        $max_count = $config->get_int(TagEditCloudConfig::MAX_COUNT);
-        $def_count = $config->get_int(TagEditCloudConfig::DEF_COUNT);
-        $ignore_tags = Tag::explode($config->get_string(TagEditCloudConfig::IGNORE_TAGS));
+        $sort_method = Ctx::$config->req_string(TagEditCloudConfig::SORT);
+        $tags_min = Ctx::$config->req_int(TagEditCloudConfig::MIN_USAGE);
+        $used_first = Ctx::$config->req_bool(TagEditCloudConfig::USED_FIRST);
+        $max_count = Ctx::$config->req_int(TagEditCloudConfig::MAX_COUNT);
+        $def_count = Ctx::$config->req_int(TagEditCloudConfig::DEF_COUNT);
+        $ignore_tags = Tag::explode(Ctx::$config->req_string(TagEditCloudConfig::IGNORE_TAGS));
 
         $cat_color = [];
         if (TagCategoriesInfo::is_enabled()) {
@@ -53,7 +52,8 @@ final class TagEditCloud extends Extension
                 }
                 $relevant_tag_ids = implode(',', array_map(fn ($t) => Tag::get_or_create_id($t), $relevant_tags));
 
-                $tag_data = $database->get_all(
+                $tag_data = Ctx::$database->get_all(
+                    // @phpstan-ignore-next-line
                     "
 					SELECT t2.tag AS tag, COUNT(image_id) AS count, FLOOR(LN(LN(COUNT(image_id) - :tag_min1 + 1)+1)*150)/200 AS scaled
 					FROM image_tags it1
@@ -204,12 +204,11 @@ final class TagEditCloud extends Extension
 
     private function can_tag(Image $image): bool
     {
-        global $user;
         return (
-            $user->can(PostTagsPermission::EDIT_IMAGE_TAG)
+            Ctx::$user->can(PostTagsPermission::EDIT_IMAGE_TAG)
             && (
                 !$image->is_locked()
-                || $user->can(PostLockPermission::EDIT_IMAGE_LOCK)
+                || Ctx::$user->can(PostLockPermission::EDIT_IMAGE_LOCK)
             )
         );
     }

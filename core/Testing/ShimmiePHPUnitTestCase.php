@@ -215,7 +215,7 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @param list<string> $tags
+     * @param list<tag-string> $tags
      * @param int[] $results
      */
     protected function assert_search_results(array $tags, array $results, string $message = ''): void
@@ -257,7 +257,7 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
 
     protected static function log_out(): void
     {
-        send_event(new UserLoginEvent(User::by_id(Ctx::$config->get_int(UserAccountsConfig::ANON_ID, 0))));
+        send_event(new UserLoginEvent(User::by_id(Ctx::$config->req_int(UserAccountsConfig::ANON_ID))));
     }
 
     // post things

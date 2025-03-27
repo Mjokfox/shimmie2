@@ -16,7 +16,6 @@ final class BulkAddCSV extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $user;
         if ($event->page_matches("bulk_add_csv", method: "POST", permission: BulkAddPermission::BULK_ADD)) {
             $csv = $event->req_POST('csv');
             Ctx::$event_bus->set_timeout(null);
@@ -31,8 +30,7 @@ final class BulkAddCSV extends Extension
             ->addArgument('path-to-csv', InputArgument::REQUIRED)
             ->setDescription('Import posts from a given CSV file')
             ->setCode(function (InputInterface $input, OutputInterface $output): int {
-                global $user;
-                if (!$user->can(BulkAddPermission::BULK_ADD)) {
+                if (!Ctx::$user->can(BulkAddPermission::BULK_ADD)) {
                     $output->writeln("Not running as an admin, which can cause problems.");
                     $output->writeln("Please add the parameter: -u admin_username");
                     return Command::FAILURE;

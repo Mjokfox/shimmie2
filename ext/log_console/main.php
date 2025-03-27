@@ -10,10 +10,8 @@ final class LogConsole extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $config, $page;
-
         if (
-            $config->get_bool(LogConsoleConfig::LOG_ACCESS) &&
+            Ctx::$config->req_bool(LogConsoleConfig::LOG_ACCESS) &&
             isset($_SERVER['REQUEST_URI'])
         ) {
             $this->log(new LogEvent(
@@ -28,16 +26,14 @@ final class LogConsole extends Extension
             Log::debug("log_console", "Hello debug!");
             Log::info("log_console", "Hello info!");
             Log::warning("log_console", "Hello warning!");
-            $page->set_mode(PageMode::DATA);
-            $page->set_data("You should see something in the log\n");
+            $page->set_data(MimeType::TEXT, "You should see something in the log\n");
         }
         */
     }
 
     public function onLog(LogEvent $event): void
     {
-        global $config;
-        if ($event->priority >= $config->get_int(LogConsoleConfig::LEVEL)) {
+        if ($event->priority >= Ctx::$config->get_int(LogConsoleConfig::LEVEL)) {
             $this->log($event);
         }
     }
@@ -48,8 +44,7 @@ final class LogConsole extends Extension
             return;
         }
 
-        global $config, $user;
-        $username = ($user && $user->name) ? $user->name : "Anonymous";
+        $username = isset(Ctx::$user) ? Ctx::$user->name : "Anonymous";
 
         $levelName = "[unknown]";
         $color = "\033[0;35m"; # purple for unknown levels
@@ -78,7 +73,7 @@ final class LogConsole extends Extension
             $event->message
         ]);
 
-        if (strlen($color) > 0 && $config->get_bool(LogConsoleConfig::COLOUR)) {
+        if (strlen($color) > 0 && Ctx::$config->get_bool(LogConsoleConfig::COLOUR)) {
             $str = "$color$str\033[0m\n";
         } else {
             $str = "$str\n";

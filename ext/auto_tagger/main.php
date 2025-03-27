@@ -67,36 +67,31 @@ final class AutoTagger extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $config, $database, $page, $user;
-
+        $page = Ctx::$page;
         if ($event->page_matches("auto_tag/add", method: "POST", permission: AutoTaggerPermission::MANAGE_AUTO_TAG)) {
             $input = validate_input(["c_tag" => "string", "c_additional_tags" => "string"]);
             send_event(new AddAutoTagEvent($input['c_tag'], $input['c_additional_tags']));
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("auto_tag/list"));
         }
         if ($event->page_matches("auto_tag/remove", method: "POST", permission: AutoTaggerPermission::MANAGE_AUTO_TAG)) {
             $input = validate_input(["d_tag" => "string"]);
             send_event(new DeleteAutoTagEvent($input['d_tag']));
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(make_link("auto_tag/list"));
         }
         if ($event->page_matches("auto_tag/list")) {
-            $t = new AutoTaggerTable($database->raw_db());
-            $t->token = $user->get_auth_token();
+            $t = new AutoTaggerTable(Ctx::$database->raw_db());
+            $t->token = Ctx::$user->get_auth_token();
             $t->inputs = $event->GET;
-            $t->size = $config->get_int(AutoTaggerConfig::ITEMS_PER_PAGE, 30);
-            if ($user->can(AutoTaggerPermission::MANAGE_AUTO_TAG)) {
+            $t->size = Ctx::$config->req_int(AutoTaggerConfig::ITEMS_PER_PAGE);
+            if (Ctx::$user->can(AutoTaggerPermission::MANAGE_AUTO_TAG)) {
                 $t->create_url = make_link("auto_tag/add");
                 $t->delete_url = make_link("auto_tag/remove");
             }
             $this->theme->display_auto_tagtable($t->table($t->query()), $t->paginator());
         }
         if ($event->page_matches("auto_tag/export/auto_tag.csv")) {
-            $page->set_mode(PageMode::DATA);
-            $page->set_mime(MimeType::CSV);
             $page->set_filename("auto_tag.csv");
-            $page->set_data($this->get_auto_tag_csv($database));
+            $page->set_data(MimeType::CSV, $this->get_auto_tag_csv(Ctx::$database));
         }
         if ($event->page_matches("auto_tag/import", method: "POST", permission: AutoTaggerPermission::MANAGE_AUTO_TAG)) {
             if (count($_FILES) > 0) {
@@ -104,7 +99,6 @@ final class AutoTagger extends Extension
                 $contents = \Safe\file_get_contents($tmp);
                 $count = $this->add_auto_tag_csv($contents);
                 Log::info(AutoTaggerInfo::KEY, "Imported $count auto-tag definitions from file from file", "Imported $count auto-tag definitions");
-                $page->set_mode(PageMode::REDIRECT);
                 $page->set_redirect(make_link("auto_tag/list"));
             } else {
                 throw new InvalidInput("No File Specified");
@@ -134,8 +128,6 @@ final class AutoTagger extends Extension
                 $database->execute('CREATE INDEX auto_tag_lower_tag_idx ON auto_tag ((lower(tag)))');
             }
             $this->set_version(1);
-
-            Log::info(AutoTaggerInfo::KEY, "extension installed");
         }
     }
 
@@ -161,8 +153,7 @@ final class AutoTagger extends Extension
 
     public function onUserBlockBuilding(UserBlockBuildingEvent $event): void
     {
-        global $user;
-        if ($user->can(AutoTaggerPermission::MANAGE_AUTO_TAG)) {
+        if (Ctx::$user->can(AutoTaggerPermission::MANAGE_AUTO_TAG)) {
             $event->add_link("Auto-Tag Editor", make_link("auto_tag/list"));
         }
     }

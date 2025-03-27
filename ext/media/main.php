@@ -8,21 +8,6 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\{InputInterface,InputArgument};
 use Symfony\Component\Console\Output\OutputInterface;
 
-require_once "events.php";
-require_once "media_engine.php";
-require_once "video_codecs.php";
-
-/*
-* This is used by the media code when there is an error
-*/
-final class MediaException extends SCoreException
-{
-}
-
-final class InsufficientMemoryException extends ServerError
-{
-}
-
 final class Media extends Extension
 {
     public const KEY = "media";
@@ -67,42 +52,35 @@ final class Media extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page, $user;
-
         if ($event->page_matches("media_rescan/{image_id}", method: "POST", permission: MediaPermission::RESCAN_MEDIA)) {
             $image = Image::by_id_ex($event->get_iarg('image_id'));
 
             send_event(new MediaCheckPropertiesEvent($image));
             $image->save_to_db();
 
-            $page->set_mode(PageMode::REDIRECT);
-            $page->set_redirect(make_link("post/view/$image->id"));
+            Ctx::$page->set_redirect(make_link("post/view/$image->id"));
         }
     }
 
     public function onImageAdminBlockBuilding(ImageAdminBlockBuildingEvent $event): void
     {
-        global $user;
-        if ($user->can(ImagePermission::DELETE_IMAGE)) {
+        if (Ctx::$user->can(ImagePermission::DELETE_IMAGE)) {
             $event->add_button("Scan Media Properties", "media_rescan/{$event->image->id}");
         }
     }
 
     public function onBulkActionBlockBuilding(BulkActionBlockBuildingEvent $event): void
     {
-        global $user;
-        if ($user->can(MediaPermission::RESCAN_MEDIA)) {
+        if (Ctx::$user->can(MediaPermission::RESCAN_MEDIA)) {
             $event->add_action("bulk_media_rescan", "Scan Media Properties");
         }
     }
 
     public function onBulkAction(BulkActionEvent $event): void
     {
-        global $page, $user;
-
         switch ($event->action) {
             case "bulk_media_rescan":
-                if ($user->can(MediaPermission::RESCAN_MEDIA)) {
+                if (Ctx::$user->can(MediaPermission::RESCAN_MEDIA)) {
                     $total = 0;
                     $failed = 0;
                     foreach ($event->items as $image) {
@@ -115,7 +93,7 @@ final class Media extends Extension
                             $failed++;
                         }
                     }
-                    $page->flash("Scanned media properties for $total items, failed for $failed");
+                    $event->log_action("Scanned media properties for $total items, failed for $failed");
                 }
                 break;
         }
@@ -146,9 +124,9 @@ final class Media extends Extension
     {
         if (!in_array(
             $event->resize_type,
-            MediaEngine::RESIZE_TYPE_SUPPORT[$event->engine]
+            MediaEngine::RESIZE_TYPE_SUPPORT[$event->engine->value]
         )) {
-            throw new MediaException("Resize type $event->resize_type not supported by selected media engine $event->engine");
+            throw new MediaException("Resize type $event->resize_type not supported by selected media engine {$event->engine->value}");
         }
 
         switch ($event->engine) {
@@ -194,11 +172,11 @@ final class Media extends Extension
                 $event->input_path->copy($event->output_path);
                 break;
             default:
-                throw new MediaException("Engine not supported for resize: " . $event->engine);
+                throw new MediaException("Engine not supported for resize: " . $event->engine->value);
         }
 
         // TODO: Get output optimization tools working better
-        //        if ($config->get_bool("thumb_optim", false)) {
+        //        if ($config->get_bool("thumb_optim")) {
         //            exec("jpegoptim $outname", $output, $ret);
         //        }
     }
@@ -292,9 +270,7 @@ final class Media extends Extension
      */
     public static function create_thumbnail_ffmpeg(Image $image): bool
     {
-        global $config;
-
-        $ffmpeg = $config->get_string(MediaConfig::FFMPEG_PATH);
+        $ffmpeg = Ctx::$config->get_string(MediaConfig::FFMPEG_PATH);
         if (empty($ffmpeg)) {
             throw new MediaException("ffmpeg command not configured");
         }
@@ -308,29 +284,23 @@ final class Media extends Extension
             $orig_size = self::video_size($inname);
             $scaled_size = ThumbnailUtil::get_thumbnail_size($orig_size[0], $orig_size[1], true);
 
-            $args = [
-                escapeshellarg($ffmpeg),
-                "-y", "-i", escapeshellarg($inname->str()),
-                "-vf", "scale=$scaled_size[0]:$scaled_size[1],thumbnail",
-                "-f", "image2",
-                "-vframes", "1",
-                "-c:v", "png",
-                escapeshellarg($tmpname->str()),
-            ];
+            $command = new CommandBuilder($ffmpeg);
+            $command->add_flag("-y");
+            $command->add_flag("-i");
+            $command->add_escaped_arg($inname->str());
+            $command->add_flag("-vf");
+            $command->add_escaped_arg("scale=$scaled_size[0]:$scaled_size[1],thumbnail");
+            $command->add_flag("-f");
+            $command->add_escaped_arg("image2");
+            $command->add_flag("-vframes");
+            $command->add_escaped_arg("1");
+            $command->add_flag("-c:v");
+            $command->add_escaped_arg("png");
+            $command->add_escaped_arg($tmpname->str());
+            $command->execute();
 
-            $cmd = escapeshellcmd(implode(" ", $args));
-
-            Log::debug('media', "Generating thumbnail with command `$cmd`...");
-
-            exec($cmd, $output, $ret);
-
-            if ($ret === 0) {
-                Log::debug('media', "Generating thumbnail with command `$cmd`, returns $ret");
-                ThumbnailUtil::create_scaled_image($tmpname, $outname, $scaled_size, MimeType::PNG);
-                $ok = true;
-            } else {
-                Log::error('media', "Generating thumbnail with command `$cmd`, returns $ret");
-            }
+            ThumbnailUtil::create_scaled_image($tmpname, $outname, $scaled_size, new MimeType(MimeType::PNG));
+            $ok = true;
         } finally {
             @$tmpname->unlink();
         }
@@ -342,9 +312,7 @@ final class Media extends Extension
      */
     public static function get_ffprobe_data(string $filename): array
     {
-        global $config;
-
-        $ffprobe = $config->get_string(MediaConfig::FFPROBE_PATH);
+        $ffprobe = Ctx::$config->get_string(MediaConfig::FFPROBE_PATH);
         if (empty($ffprobe)) {
             throw new MediaException("ffprobe command not configured");
         }
@@ -372,7 +340,7 @@ final class Media extends Extension
         }
     }
 
-    public static function determine_ext(string $mime): string
+    public static function determine_ext(MimeType $mime): string
     {
         $ext = FileExtension::get_for_mime($mime);
         if (empty($ext)) {
@@ -381,152 +349,36 @@ final class Media extends Extension
         return $ext;
     }
 
-    //    private static function image_save_imagick(Imagick $image, string $path, string $format, int $output_quality = 80, bool $minimize): void
-    //    {
-    //        switch ($format) {
-    //            case FileExtension::PNG:
-    //                $result = $image->setOption('png:compression-level', 9);
-    //                if ($result !== true) {
-    //                    throw new GraphicsException("Could not set png compression option");
-    //                }
-    //                break;
-    //            case Graphics::WEBP_LOSSLESS:
-    //                $result = $image->setOption('webp:lossless', true);
-    //                if ($result !== true) {
-    //                    throw new GraphicsException("Could not set lossless webp option");
-    //                }
-    //                break;
-    //            default:
-    //                $result = $image->setImageCompressionQuality($output_quality);
-    //                if ($result !== true) {
-    //                    throw new GraphicsException("Could not set compression quality for $path to $output_quality");
-    //                }
-    //                break;
-    //        }
-    //
-    //        if (self::supports_alpha($format)) {
-    //            $result = $image->setImageBackgroundColor(new \ImagickPixel('transparent'));
-    //        } else {
-    //            $result = $image->setImageBackgroundColor(new \ImagickPixel('black'));
-    //        }
-    //        if ($result !== true) {
-    //            throw new GraphicsException("Could not set background color");
-    //        }
-    //
-    //
-    //        if ($minimize) {
-    //            $profiles = $image->getImageProfiles("icc", true);
-    //            $result = $image->stripImage();
-    //            if ($result !== true) {
-    //                throw new GraphicsException("Could not strip information from image");
-    //            }
-    //            if (!empty($profiles)) {
-    //                $image->profileImage("icc", $profiles['icc']);
-    //            }
-    //        }
-    //
-    //        $ext = self::determine_ext($format);
-    //
-    //        $result = $image->writeImage($ext . ":" . $path);
-    //        if ($result !== true) {
-    //            throw new GraphicsException("Could not write image to $path");
-    //        }
-    //    }
-
-    //    public static function image_resize_imagick(
-    //        string $input_path,
-    //        string $input_type,
-    //        int $new_width,
-    //        int $new_height,
-    //        string $output_filename,
-    //        string $output_type = null,
-    //        bool $ignore_aspect_ratio = false,
-    //        int $output_quality = 80,
-    //        bool $minimize = false,
-    //        bool $allow_upscale = true
-    //    ): void
-    //    {
-    //        global $config;
-    //
-    //        if (!empty($input_type)) {
-    //            $input_type = self::determine_ext($input_type);
-    //        }
-    //
-    //        try {
-    //            $image = new Imagick($input_type . ":" . $input_path);
-    //            try {
-    //                $result = $image->flattenImages();
-    //                if ($result !== true) {
-    //                    throw new GraphicsException("Could not flatten image $input_path");
-    //                }
-    //
-    //                $height = $image->getImageHeight();
-    //                $width = $image->getImageWidth();
-    //                if (!$allow_upscale &&
-    //                    ($new_width > $width || $new_height > $height)) {
-    //                    $new_height = $height;
-    //                    $new_width = $width;
-    //                }
-    //
-    //                $result = $image->resizeImage($new_width, $new_width, Imagick::FILTER_LANCZOS, 0, !$ignore_aspect_ratio);
-    //                if ($result !== true) {
-    //                    throw new GraphicsException("Could not perform image resize on $input_path");
-    //                }
-    //
-    //
-    //                if (empty($output_type)) {
-    //                    $output_type = $input_type;
-    //                }
-    //
-    //                self::image_save_imagick($image, $output_filename, $output_type, $output_quality);
-    //
-    //            } finally {
-    //                $image->destroy();
-    //            }
-    //        } catch (ImagickException $e) {
-    //            throw new GraphicsException("Error while resizing with Imagick: " . $e->getMessage(), $e->getCode(), $e);
-    //        }
-    //    }
-
-    public static function is_lossless(Path $filename, string $mime): bool
+    public static function is_lossless(Path $filename, MimeType $mime): bool
     {
-        if (in_array($mime, self::LOSSLESS_FORMATS)) {
+        if (in_array((string)$mime, self::LOSSLESS_FORMATS)) {
             return true;
         }
-        switch ($mime) {
-            case MimeType::WEBP:
-                return MimeType::is_lossless_webp($filename);
+        if ($mime->base === MimeType::WEBP) {
+            return MimeType::is_lossless_webp($filename);
         }
         return false;
     }
 
     public static function image_resize_convert(
         Path $input_path,
-        string $input_mime,
+        MimeType $input_mime,
         int $new_width,
         int $new_height,
         Path $output_filename,
-        ?string $output_mime = null,
+        ?MimeType $output_mime = null,
         string $alpha_color = Media::DEFAULT_ALPHA_CONVERSION_COLOR,
         string $resize_type = self::RESIZE_TYPE_FIT,
         int $output_quality = 80,
         bool $minimize = false,
         bool $allow_upscale = true
     ): void {
-        global $config;
-
-        $convert = $config->get_string(MediaConfig::CONVERT_PATH);
-
-        if (empty($convert)) {
-            throw new MediaException("convert command not configured");
-        }
-
         if (empty($output_mime)) {
             $output_mime = $input_mime;
         }
 
-        if ($output_mime === MimeType::WEBP && self::is_lossless($input_path, $input_mime)) {
-            $output_mime = MimeType::WEBP_LOSSLESS;
+        if ($output_mime->base === MimeType::WEBP && self::is_lossless($input_path, $input_mime)) {
+            $output_mime = new MimeType(MimeType::WEBP_LOSSLESS);
         }
 
         $bg = "\"$alpha_color\"";
@@ -576,19 +428,17 @@ final class Media extends Extension
                 break;
         }
 
-        switch ($output_mime) {
-            case MimeType::WEBP_LOSSLESS:
-                $args .= ' -define webp:lossless=true';
-                break;
-            case MimeType::PNG:
-                $args .= ' -define png:compression-level=9';
-                break;
+        if ($output_mime->base === MimeType::PNG) {
+            $args .= ' -define png:compression-level=9';
+        } elseif ($output_mime->base == MimeType::WEBP && $output_mime->parameters == MimeType::LOSSLESS_PARAMETER) {
+            $args .= ' -define webp:lossless=true -quality 100 ';
+        } else {
+            $args .= ' -quality '.$output_quality;
         }
 
-        $args .= " -quality {$output_quality} ";
         $output_ext = self::determine_ext($output_mime);
 
-        $command = new CommandBuilder(executable: $convert);
+        $command = new CommandBuilder(Ctx::$config->req_string(MediaConfig::CONVERT_PATH));
         $command->add_escaped_arg("{$input_ext}:\"{$input_path->str()}[0]\"");
         $command->add_flag($args);
         $command->add_escaped_arg("$output_ext:{$output_filename->str()}");
@@ -603,7 +453,7 @@ final class Media extends Extension
      * @param positive-int $new_width
      * @param positive-int $new_height
      * @param Path $output_filename
-     * @param ?string $output_mime If set to null, the output file type will be automatically determined via the $info parameter. Otherwise an exception will be thrown.
+     * @param ?MimeType $output_mime If set to null, the output file type will be automatically determined via the $info parameter. Otherwise an exception will be thrown.
      * @param int $output_quality Defaults to 80.
      */
     public static function image_resize_gd(
@@ -612,7 +462,7 @@ final class Media extends Extension
         int $new_width,
         int $new_height,
         Path $output_filename,
-        ?string $output_mime = null,
+        ?MimeType $output_mime = null,
         string $alpha_color = Media::DEFAULT_ALPHA_CONVERSION_COLOR,
         string $resize_type = self::RESIZE_TYPE_FIT,
         int $output_quality = 80,
@@ -624,25 +474,14 @@ final class Media extends Extension
 
         if ($output_mime === null) {
             /* If not specified, output to the same format as the original image */
-            switch ($info[2]) {
-                case IMAGETYPE_GIF:
-                    $output_mime = MimeType::GIF;
-                    break;
-                case IMAGETYPE_JPEG:
-                    $output_mime = MimeType::JPEG;
-                    break;
-                case IMAGETYPE_PNG:
-                    $output_mime = MimeType::PNG;
-                    break;
-                case IMAGETYPE_WEBP:
-                    $output_mime = MimeType::WEBP;
-                    break;
-                case IMAGETYPE_BMP:
-                    $output_mime = MimeType::BMP;
-                    break;
-                default:
-                    throw new MediaException("Failed to save the new image - Unsupported MIME type.");
-            }
+            $output_mime = new MimeType(match($info[2]) {
+                IMAGETYPE_GIF => MimeType::GIF,
+                IMAGETYPE_JPEG => MimeType::JPEG,
+                IMAGETYPE_PNG => MimeType::PNG,
+                IMAGETYPE_WEBP => MimeType::WEBP,
+                IMAGETYPE_BMP => MimeType::BMP,
+                default => throw new MediaException("Failed to save the new image - Unsupported MIME type."),
+            });
         }
 
         $memory_use = self::calc_memory_use($info);
@@ -734,7 +573,7 @@ final class Media extends Extension
                 throw new MediaException("Unable to copy resized image data to new image");
             }
 
-            switch ($output_mime) {
+            switch ($output_mime->base) {
                 case MimeType::BMP:
                 case MimeType::JPEG:
                     // In case of alpha channels
@@ -758,25 +597,14 @@ final class Media extends Extension
                     break;
             }
 
-            switch ($output_mime) {
-                case MimeType::BMP:
-                    $result = imagebmp($image_resized, $output_filename->str(), true);
-                    break;
-                case MimeType::WEBP:
-                    $result = imagewebp($image_resized, $output_filename->str(), $output_quality);
-                    break;
-                case MimeType::JPEG:
-                    $result = imagejpeg($image_resized, $output_filename->str(), $output_quality);
-                    break;
-                case MimeType::PNG:
-                    $result = imagepng($image_resized, $output_filename->str(), 9);
-                    break;
-                case MimeType::GIF:
-                    $result = imagegif($image_resized, $output_filename->str());
-                    break;
-                default:
-                    throw new MediaException("Failed to save the new image - Unsupported image type: $output_mime");
-            }
+            $result = match ($output_mime->base) {
+                MimeType::BMP => imagebmp($image_resized, $output_filename->str(), true),
+                MimeType::WEBP => imagewebp($image_resized, $output_filename->str(), $output_quality),
+                MimeType::JPEG => imagejpeg($image_resized, $output_filename->str(), $output_quality),
+                MimeType::PNG => imagepng($image_resized, $output_filename->str(), 9),
+                MimeType::GIF => imagegif($image_resized, $output_filename->str()),
+                default => throw new MediaException("Failed to save the new image - Unsupported image type: $output_mime"),
+            };
             if ($result === false) {
                 throw new MediaException("Failed to save the new image, function returned false when saving type: $output_mime");
             }
@@ -787,7 +615,7 @@ final class Media extends Extension
     }
 
 
-    public static function supports_alpha(string $mime): bool
+    public static function supports_alpha(MimeType $mime): bool
     {
         return MimeType::matches_array($mime, self::ALPHA_FORMATS, true);
     }
@@ -800,8 +628,7 @@ final class Media extends Extension
      */
     public static function video_size(Path $filename): array
     {
-        global $config;
-        $ffmpeg = $config->get_string(MediaConfig::FFMPEG_PATH);
+        $ffmpeg = Ctx::$config->req_string(MediaConfig::FFMPEG_PATH);
         $cmd = escapeshellcmd(implode(" ", [
             escapeshellarg($ffmpeg),
             "-y", "-i", escapeshellarg($filename->str()),
@@ -833,7 +660,7 @@ final class Media extends Extension
 
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
-        global $config, $database;
+        $database = Ctx::$database;
         if ($this->get_version() < 1) {
             // The stuff that was here got refactored out of existence
             $this->set_version(1);

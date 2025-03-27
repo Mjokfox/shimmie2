@@ -17,7 +17,7 @@ use function MicroHTML\{emptyHTML, HTML, HEAD, BODY, TITLE, LINK, META, SCRIPT, 
 class Page
 {
     public PageMode $mode = PageMode::PAGE;
-    private string $mime;
+    private MimeType $mime;
 
     /**
      * Set what this page should do; "page", "data", or "redirect".
@@ -30,14 +30,17 @@ class Page
     /**
      * Set the page's MIME type.
      */
-    public function set_mime(string $mime): void
+    protected function set_mime(MimeType|string $mime): void
     {
+        if (is_string($mime)) {
+            $mime = new MimeType($mime);
+        }
         $this->mime = $mime;
     }
 
     public function __construct()
     {
-        $this->mime = MimeType::add_parameters(MimeType::HTML, MimeType::CHARSET_UTF8);
+        $this->mime = new MimeType(MimeType::HTML . "; " . MimeType::CHARSET_UTF8);
         if (@$_GET["flash"]) {
             $this->flash[] = $_GET['flash'];
             unset($_GET["flash"]);
@@ -55,13 +58,17 @@ class Page
     /**
      * Set the raw data to be sent.
      */
-    public function set_data(string $data): void
+    public function set_data(MimeType|string $mime, string $data): void
     {
+        $this->mode = PageMode::DATA;
+        $this->set_mime($mime);
         $this->data = $data;
     }
 
-    public function set_file(Path $file, bool $delete = false): void
+    public function set_file(MimeType|string $mime, Path $file, bool $delete = false): void
     {
+        $this->mode = PageMode::FILE;
+        $this->set_mime($mime);
         $this->file = $file;
         $this->file_delete = $delete;
     }
@@ -91,6 +98,7 @@ class Page
      */
     public function set_redirect(Url $redirect): void
     {
+        $this->mode = PageMode::REDIRECT;
         $this->redirect = (string)$redirect;
     }
 
@@ -197,14 +205,13 @@ class Page
     }
 
     /**
-     * Get all the HTML headers that are currently set and return as a string.
+     * Get all the HTML headers that are currently set.
+     * @return HTMLElement[]
      */
-    public function get_all_html_headers(): HTMLElement
+    public function get_all_html_headers(): array
     {
         ksort($this->html_headers);
-        return emptyHTML(
-            ...$this->html_headers
-        );
+        return $this->html_headers;
     }
 
     /**
@@ -556,10 +563,11 @@ class Page
      */
     public function render(): void
     {
-        print (string)$this->html_html(
+        $struct = $this->html_html(
             $this->head_html(),
             $this->body_html()
         );
+        print (string)$struct;
     }
 
     public function html_html(HTMLElement $head, HTMLElement $body): HTMLElement
@@ -568,11 +576,8 @@ class Page
             \MicroHTML\rawHTML("<!doctype html>"),
             HTML(
                 ["lang" => "en"],
-                "\n",
                 $head,
-                "\n",
                 $body,
-                "\n",
             )
         );
     }
@@ -581,7 +586,7 @@ class Page
     {
         return HEAD(
             TITLE($this->title),
-            $this->get_all_html_headers(),
+            ...$this->get_all_html_headers(),
         );
     }
 
@@ -651,7 +656,7 @@ class Page
         if (!empty($block->body)) {
             $html->appendChild(DIV(['class' => "blockbody"], $block->body));
         }
-        return emptyHTML("\n", $html);
+        return $html;
     }
 
     protected function flash_html(): HTMLElement

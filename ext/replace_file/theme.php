@@ -18,11 +18,10 @@ class ReplaceFileTheme extends Themelet
      */
     public function display_replace_page(int $image_id): void
     {
-        global $config, $page;
-        $tl_enabled = ($config->get_string(UploadConfig::TRANSLOAD_ENGINE, "none") !== "none");
+        $tl_enabled = (Ctx::$config->req_string(UploadConfig::TRANSLOAD_ENGINE) !== "none");
         $accept = $this->get_accept();
 
-        $max_size = $config->get_int(UploadConfig::SIZE);
+        $max_size = Ctx::$config->req_int(UploadConfig::SIZE);
         $max_kb = to_shorthand_int($max_size);
 
         $image = Image::by_id_ex($image_id);
@@ -57,9 +56,9 @@ class ReplaceFileTheme extends Themelet
             $max_size > 0 ? SMALL("(Max file size is $max_kb)") : null,
         );
 
-        $page->set_title("Replace File");
+        Ctx::$page->set_title("Replace File");
         $this->display_navigation();
-        $page->add_block(new Block("Upload Replacement File", $html, "main", 20));
+        Ctx::$page->add_block(new Block("Upload Replacement File", $html, "main", 20));
     }
 
     protected function get_accept(): string

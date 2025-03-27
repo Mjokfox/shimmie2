@@ -84,15 +84,14 @@ final class Setup extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $config, $page, $user;
+        $config = Ctx::$config;
+        $page = Ctx::$page;
 
         if ($event->page_starts_with("nicedebug")) {
-            $page->set_mode(PageMode::DATA);
-            $page->set_mime(MimeType::JSON);
-            $page->set_data(\Safe\json_encode([
+            $page->set_data(MimeType::JSON, \Safe\json_encode([
                 "args" => $event->args,
                 "theme" => get_theme(),
-                "nice_urls" => $config->get_bool(SetupConfig::NICE_URLS, false),
+                "nice_urls" => $config->req_bool(SetupConfig::NICE_URLS),
                 "base" => (string)Url::base(),
                 "absolute_base" => (string)Url::base()->asAbsolute(),
                 "base_link" => (string)make_link(""),
@@ -101,8 +100,7 @@ final class Setup extends Extension
         }
 
         if ($event->page_matches("nicetest")) {
-            $page->set_mode(PageMode::DATA);
-            $page->set_data("ok");
+            $page->set_data(MimeType::TEXT, "ok");
         }
 
         if ($event->page_matches("setup", method: "GET", permission: SetupPermission::CHANGE_SETTING)) {
@@ -120,7 +118,6 @@ final class Setup extends Extension
         } elseif ($event->page_matches("setup/save", method: "POST", permission: SetupPermission::CHANGE_SETTING)) {
             send_event(new ConfigSaveEvent($config, ConfigSaveEvent::postToSettings($event->POST)));
             $page->flash("Config saved");
-            $page->set_mode(PageMode::REDIRECT);
             $page->set_redirect(Url::referer_or(make_link("setup")));
         }
     }
@@ -179,8 +176,7 @@ final class Setup extends Extension
             ->addArgument('key', InputArgument::REQUIRED)
             ->setDescription('Get a config value')
             ->setCode(function (InputInterface $input, OutputInterface $output): int {
-                global $config;
-                $output->writeln($config->get_string($input->getArgument('key')));
+                $output->writeln(Ctx::$config->req_string($input->getArgument('key')));
                 return Command::SUCCESS;
             });
         $event->app->register('config:set')
@@ -188,18 +184,16 @@ final class Setup extends Extension
             ->addArgument('value', InputArgument::REQUIRED)
             ->setDescription('Set a config value')
             ->setCode(function (InputInterface $input, OutputInterface $output): int {
-                global $cache, $config;
-                $config->set_string($input->getArgument('key'), $input->getArgument('value'));
-                $cache->delete("config");
+                Ctx::$config->set_string($input->getArgument('key'), $input->getArgument('value'));
+                Ctx::$cache->delete("config");
                 return Command::SUCCESS;
             });
     }
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
-        global $user;
         if ($event->parent === "system") {
-            if ($user->can(SetupPermission::CHANGE_SETTING)) {
+            if (Ctx::$user->can(SetupPermission::CHANGE_SETTING)) {
                 $event->add_nav_link(make_link('setup'), "Board Config", order: 0);
             }
         }
@@ -207,16 +201,13 @@ final class Setup extends Extension
 
     public function onUserBlockBuilding(UserBlockBuildingEvent $event): void
     {
-        global $user;
-        if ($user->can(SetupPermission::CHANGE_SETTING)) {
+        if (Ctx::$user->can(SetupPermission::CHANGE_SETTING)) {
             $event->add_link("Board Config", make_link("setup"));
         }
     }
 
     public function onParseLinkTemplate(ParseLinkTemplateEvent $event): void
     {
-        global $config;
-        $event->replace('$base', $config->get_string('base_href'));
-        $event->replace('$title', $config->get_string(SetupConfig::TITLE));
+        $event->replace('$title', Ctx::$config->req_string(SetupConfig::TITLE));
     }
 }
