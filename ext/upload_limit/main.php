@@ -31,7 +31,7 @@
 //     {
 //         global $config;
 //         $event->user_config->set_default_int("last_upload", 0);
-//         $event->user_config->set_default_int("left_upload", $config->get_int("upload_limit:".$event->user->class->name, 20));
+//         $event->user_config->set_default_int("left_upload", $config->get("upload_limit:".$event->user->class->name, 20));
 //     }
 
 //     public function onSetupBuilding(SetupBuildingEvent $event): void
@@ -69,10 +69,10 @@
 //             $formatted_time = "0";
 //         } elseif ($event->display_user->can(Permissions::CREATE_IMAGE)) {
 //             $duser_config = $event->display_user->get_config();
-//             $uploads_left = $duser_config->get_int("left_upload");
+//             $uploads_left = $duser_config->get("left_upload");
 //             $unixT = (int)date("U");
-//             $deltaT = $unixT - $duser_config->get_int("last_upload");
-//             $refresh_interval = $config->get_int("upload_refresh");
+//             $deltaT = $unixT - $duser_config->get("last_upload");
+//             $refresh_interval = $config->get("upload_refresh");
 //             if ($deltaT > $refresh_interval) {
 //                 $formatted_time = "0";
 //             } else {
@@ -103,7 +103,7 @@
 //             // code shamelessly stolen from extension.php, need to do this check to not decrement the counter on an otherwise failed upload
 //             $existing = Image::by_hash(\Safe\md5_file($event->tmpname));
 //             if (!is_null($existing)) {
-//                 if ($config->get_string(ImageConfig::UPLOAD_COLLISION_HANDLER) == ImageConfig::COLLISION_MERGE) {
+//                 if ($config->get(ImageConfig::UPLOAD_COLLISION_HANDLER) == ImageConfig::COLLISION_MERGE) {
 //                     // Right now tags are the only thing that get merged, so
 //                     // we can just send a TagSetEvent - in the future we might
 //                     // want a dedicated MergeEvent?
@@ -119,15 +119,15 @@
 //             }
 //             if (!$user->can(Permissions::BULK_IMPORT)) {
 //                 $unixT = (int)date("U");
-//                 $deltaT = $unixT - $user_config->get_int("last_upload");
-//                 $refresh_interval = $config->get_int("upload_refresh");
+//                 $deltaT = $unixT - $user_config->get("last_upload");
+//                 $refresh_interval = $config->get("upload_refresh");
 //                 if ($deltaT > $refresh_interval) {
 //                     $user_config->set_int("last_upload", $unixT);
 //                     $name = $user->class->name;
-//                     $uploads_left = $config->get_int("upload_limit:$name");
+//                     $uploads_left = $config->get("upload_limit:$name");
 //                     $user_config->set_int("left_upload", $uploads_left);
 //                 } else {
-//                     $uploads_left = $user_config->get_int("left_upload");
+//                     $uploads_left = $user_config->get("left_upload");
 //                 }
 //                 if ($uploads_left < 1) {
 //                     $seconds = $refresh_interval - $deltaT;

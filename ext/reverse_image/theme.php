@@ -49,8 +49,8 @@ class ReverseImageTheme extends Themelet
     public function display_page(string|null $r_i_l = null): void
     {
         global $page, $config;
-        $max_reverse_result_limit = $config->get_int(ReverseImageConfig::CONF_MAX_LIMIT);
-        $default_reverse_result_limit = $config->get_int(ReverseImageConfig::CONF_DEFAULT_AMOUNT);
+        $max_reverse_result_limit = $config->get(ReverseImageConfig::CONF_MAX_LIMIT);
+        $default_reverse_result_limit = $config->get(ReverseImageConfig::CONF_DEFAULT_AMOUNT);
         $url = $_POST["url"] ?? "";
         $html = SHM_FORM(make_link("reverse_image_search"), multipart: true, id: "reverse_image_search");
         $html->appendChild(

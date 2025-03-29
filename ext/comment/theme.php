@@ -46,8 +46,8 @@ class CommentListTheme extends Themelet
         // parts for each image
         $position = 10;
 
-        $comment_limit = Ctx::$config->req_int(CommentConfig::LIST_COUNT);
-        $comment_captcha = Ctx::$config->req_bool(CommentConfig::CAPTCHA);
+        $comment_limit = Ctx::$config->req(CommentConfig::LIST_COUNT);
+        $comment_captcha = Ctx::$config->req(CommentConfig::CAPTCHA);
 
         foreach ($images as $pair) {
             $image = $pair[0];
@@ -122,14 +122,13 @@ class CommentListTheme extends Themelet
      */
     public function display_recent_comments(array $comments): void
     {
-        global $page;
         $this->show_anon_id = false;
         $html = emptyHTML();
         foreach ($comments as $comment) {
             $html->appendChild($this->comment_to_html($comment, true));
         }
         $html->appendChild(A(["class" => "more", "href" => make_link("comment/list")], "Full List"));
-        $page->add_block(new Block("Comments", $html, "left", 70, "comment-list-recent"));
+        Ctx::$page->add_block(new Block("Comments", $html, "left", 70, "comment-list-recent"));
     }
 
     /**
@@ -139,7 +138,6 @@ class CommentListTheme extends Themelet
      */
     public function display_image_comments(Image $image, array $comments, bool $postbox): void
     {
-        global $page;
         $this->show_anon_id = true;
         $html = emptyHTML();
         foreach ($comments as $comment) {
@@ -148,7 +146,7 @@ class CommentListTheme extends Themelet
         if ($postbox) {
             $html->appendChild($this->build_postbox($image->id));
         }
-        $page->add_block(new Block("Comments", $html, "main", 30, "comment-list-image"));
+        Ctx::$page->add_block(new Block("Comments", $html, "main", 30, "comment-list-image"));
     }
 
     /**
@@ -158,7 +156,6 @@ class CommentListTheme extends Themelet
      */
     public function display_recent_user_comments(array $comments, User $user): void
     {
-        global $page;
         $html = emptyHTML();
         foreach ($comments as $comment) {
             $html->appendChild($this->comment_to_html($comment, true));
@@ -168,7 +165,7 @@ class CommentListTheme extends Themelet
         } else {
             $html->appendChild(P(A(["href" => make_link("comment/beta-search/{$user->name}/1")], "More")));
         }
-        $page->add_block(new Block("Comments", $html, "left", 70, "comment-list-user"));
+        Ctx::$page->add_block(new Block("Comments", $html, "left", 70, "comment-list-user"));
     }
 
     /**
@@ -195,7 +192,7 @@ class CommentListTheme extends Themelet
 
     protected function comment_to_html(Comment $comment, bool $trim = false): HTMLElement
     {
-        if ($comment->owner_id === Ctx::$config->req_int(UserAccountsConfig::ANON_ID)) {
+        if ($comment->owner_id === Ctx::$config->req(UserAccountsConfig::ANON_ID)) {
             $anoncode = "";
             $anoncode2 = "";
             if ($this->show_anon_id) {
@@ -205,7 +202,7 @@ class CommentListTheme extends Themelet
                 }
                 #if(Ctx::$user->can(UserAbilities::VIEW_IP)) {
                 #$style = " style='color: ".$this->get_anon_colour($comment->poster_ip).";'";
-                if (Ctx::$user->can(IPBanPermission::VIEW_IP) || Ctx::$config->req_bool(CommentConfig::SHOW_REPEAT_ANONS)) {
+                if (Ctx::$user->can(IPBanPermission::VIEW_IP) || Ctx::$config->req(CommentConfig::SHOW_REPEAT_ANONS)) {
                     if ($this->anon_map[$comment->poster_ip] !== $this->anon_id) {
                         $anoncode2 = SUP("(" . $this->anon_map[$comment->poster_ip] . ")");
                     }
@@ -273,7 +270,7 @@ class CommentListTheme extends Themelet
                 INPUT(["type" => "hidden", "name" => "image_id", "value" => $image_id]),
                 INPUT(["type" => "hidden", "name" => "hash", "value" => CommentList::get_hash()]),
                 TEXTAREA(["id" => "comment_on_$image_id", "name" => "comment", "rows" => 5, "cols" => 50]),
-                Ctx::$config->req_bool(CommentConfig::CAPTCHA) ? Captcha::get_html() : null,
+                Ctx::$config->req(CommentConfig::CAPTCHA) ? Captcha::get_html() : null,
                 BR(),
                 INPUT(["type" => "submit", "value" => "Post Comment"])
             ),

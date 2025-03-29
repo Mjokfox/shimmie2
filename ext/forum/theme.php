@@ -19,22 +19,20 @@ class ForumTheme extends Themelet
      */
     public function display_thread_list(array $threads, bool $showAdminOptions, int $pageNumber, int $totalPages): void
     {
-        global $page;
         if (count($threads) == 0) {
             $html = emptyHTML("There are no threads to show.");
         } else {
             $html = $this->make_thread_list($threads, $showAdminOptions);
         }
 
-        $page->set_title("Forum");
-        $page->add_block(new Block("Forum", $html, "main", 10));
+        Ctx::$page->set_title("Forum");
+        Ctx::$page->add_block(new Block("Forum", $html, "main", 10));
         $this->display_paginator("forum/index", null, $pageNumber, $totalPages);
     }
 
     public function display_new_thread_composer(?string $threadText = null, ?string $threadTitle = null): void
     {
-        global $page;
-        $max_characters = Ctx::$config->get_int(ForumConfig::MAX_CHARS_PER_POST);
+        $max_characters = Ctx::$config->get(ForumConfig::MAX_CHARS_PER_POST);
 
         $html = SHM_SIMPLE_FORM(
             make_link("forum/create"),
@@ -72,13 +70,13 @@ class ForumTheme extends Themelet
         );
 
         $blockTitle = "Write a new thread";
-        $page->set_title($blockTitle);
-        $page->add_block(new Block($blockTitle, $html, "main", 120));
+        Ctx::$page->set_title($blockTitle);
+        Ctx::$page->add_block(new Block($blockTitle, $html, "main", 120));
     }
 
     public function display_new_post_composer(int $threadID): void
     {
-        $max_characters = Ctx::$config->get_int(ForumConfig::MAX_CHARS_PER_POST);
+        $max_characters = Ctx::$config->get(ForumConfig::MAX_CHARS_PER_POST);
 
         $html = SHM_SIMPLE_FORM(
             make_link("forum/answer"),
@@ -111,7 +109,7 @@ class ForumTheme extends Themelet
      */
     public function display_thread(array $posts, string $threadTitle, int $threadID, int $pageNumber, int $totalPages): void
     {
-        $posts_per_page = Ctx::$config->req_int(ForumConfig::POSTS_PER_PAGE);
+        $posts_per_page = Ctx::$config->req(ForumConfig::POSTS_PER_PAGE);
 
         $current_post = 0;
 
@@ -223,7 +221,7 @@ class ForumTheme extends Themelet
         );
 
         foreach ($threads as $thread) {
-            $titleSubString = Ctx::$config->req_int(ForumConfig::TITLE_SUBSTRING);
+            $titleSubString = Ctx::$config->req(ForumConfig::TITLE_SUBSTRING);
             $title = truncate($thread["title"], $titleSubString);
 
             $tbody->appendChild(

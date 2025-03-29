@@ -39,7 +39,9 @@ final readonly class Url
         private array $query = [],
         private ?string $fragment = null
     ) {
-        assert($page === null || $path === null);
+        if ($page !== null && $path !== null) {
+            throw new \InvalidArgumentException("Url(page: $page, path: $path): page and path cannot be used together");
+        }
         if ($page !== null && str_starts_with($page, "/")) {
             throw new \InvalidArgumentException("Url(page: $page): page cannot start with a slash");
         }
@@ -158,7 +160,7 @@ final readonly class Url
              * "/v2/index.php?q=foo/bar" (uglyurls)
              */
             $install_dir = (string)Url::base();
-            if (Ctx::$config->req_bool(SetupConfig::NICE_URLS)) {
+            if (Url::are_niceurls_enabled()) {
                 $path = "$install_dir/{$this->page}";
             } else {
                 $path = "$install_dir/index.php";
@@ -191,7 +193,7 @@ final readonly class Url
         $path     = $this->getPath();
 
         $query = $this->query;
-        if ($this->page !== null && !Ctx::$config->req_bool(SetupConfig::NICE_URLS)) {
+        if ($this->page !== null && !Url::are_niceurls_enabled()) {
             //$query["q"] = $this->page;
             $query = array_merge(["q" => $this->page], $query);
         }
@@ -265,5 +267,10 @@ final readonly class Url
             $_SERVER['HTTPS'] = 'on';
         }
         return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+    }
+
+    public static function are_niceurls_enabled(): bool
+    {
+        return SysConfig::getNiceUrls() || Ctx::$config->req(SetupConfig::NICE_URLS);
     }
 }

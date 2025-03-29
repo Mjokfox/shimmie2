@@ -25,7 +25,7 @@ class CustomhomeTheme extends HomeTheme
                 ]
             )
         );
-        if (ReverseImageInfo::is_enabled() && $config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
+        if (ReverseImageInfo::is_enabled() && $config->get(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
             $search_html->appendChild(A(["href" => "#", "onclick" => "$(\".search-bar\").toggle();"], "Or describe an image"));
             $search_html = emptyHTML(
                 $search_html,

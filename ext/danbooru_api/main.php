@@ -78,7 +78,7 @@ final class DanbooruApi extends Extension
                 $pass = $event->req_POST('password');
                 Ctx::$user = User::by_name_and_pass($name, $pass);
             } catch (UserNotFound $e) {
-                Ctx::$user = User::by_id(Ctx::$config->req_int(UserAccountsConfig::ANON_ID));
+                Ctx::$user = User::by_id(Ctx::$config->req(UserAccountsConfig::ANON_ID));
             }
             send_event(new UserLoginEvent(Ctx::$user));
         }
@@ -272,7 +272,8 @@ final class DanbooruApi extends Extension
      */
     private function api_add_post(PageRequestEvent $event): void
     {
-        global $database, $page;
+        global $database;
+        $page = Ctx::$page;
 
         // Check first if a login was supplied, if it wasn't check if the user is logged in via cookie
         // If all that fails, it's an anonymous upload

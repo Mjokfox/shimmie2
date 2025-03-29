@@ -272,7 +272,10 @@ function urlInput(url_input) {
 
 function fileSize(size) {
     var i = Math.floor(Math.log(size) / Math.log(1024));
-    return (size / Math.pow(1024, i)).toFixed(2) * 1 + ['B', 'kB', 'MB', 'GB', 'TB'][i];
+    return (
+        (size / Math.pow(1024, i)).toFixed(2) * 1 +
+        ["B", "kB", "MB", "GB", "TB"][i]
+    );
 }
 
 async function onFileChange(e) {
@@ -356,12 +359,12 @@ function updateTracker(e) {
         tracker.innerText = fileSize(size);
         if (window.shm_max_total_size > 0 && size > window.shm_max_total_size) {
             lockbtn = true;
-            tracker.style = 'color:red';
+            tracker.style = "color:red";
         } else {
             tracker.style = 'color:inherit';
         }
     } else {
-        tracker.innerText = '0MB';
+        tracker.innerText = "0MB";
     }
     upbtn.disabled = lockbtn;
 }
@@ -376,19 +379,15 @@ function clearFiles(){
 function create_flash(text) {
     const section = document.getElementById("Uploadmain")
     let flash = document.getElementById("flash")
+    text = `<b class="blink"><span style="float:left;"onclick=document.getElementById("flash").remove();>x</span>${text}</b>`
     if (flash) {
-        flash.innerHTML = text;
-        // sick interactive flash
-        flash.style["transition"] = "background-color 0s";
-        flash.style["background-color"] = "#FFF6";
-        void flash.offsetWidth;
-        flash.style["transition"] = "background-color 1s";
-        flash.style["background-color"] = "revert-layer"
+        const newflash = flash.cloneNode(true);
+        newflash.innerHTML = text;
+        flash.parentElement.replaceChild(newflash,flash)
     }
     else if (section){
-        flash = document.createElement("b");
+        flash = document.createElement("div");
         flash.id = "flash";
-        text = "<span style=\"float:left;\"onclick=document.getElementById(\"flash\").remove();>x</span>" + text
         flash.innerHTML = text
         section.parentNode.insertBefore(flash,section)
     }

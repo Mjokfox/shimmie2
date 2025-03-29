@@ -230,7 +230,8 @@ final class CommentList extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $database, $page;
+        global $database;
+        $page = Ctx::$page;
         if ($event->page_matches("comment/add", method: "POST", permission: CommentPermission::CREATE_COMMENT)) {
             $i_iid = int_escape($event->req_POST('image_id'));
             send_event(new CommentPostingEvent($i_iid, Ctx::$user, $event->req_POST('comment')));
@@ -263,7 +264,7 @@ final class CommentList extends Extension
         } elseif ($event->page_matches("comment/list", paged: true)) {
             $threads_per_page = 10;
 
-            $where = Ctx::$config->req_bool(CommentConfig::RECENT_COMMENTS)
+            $where = Ctx::$config->req(CommentConfig::RECENT_COMMENTS)
                 ? "WHERE posted > now() - interval '24 hours'"
                 : "";
 
@@ -346,7 +347,7 @@ final class CommentList extends Extension
 
     public function onPostListBuilding(PostListBuildingEvent $event): void
     {
-        $cc = Ctx::$config->get_int(CommentConfig::COUNT);
+        $cc = Ctx::$config->get(CommentConfig::COUNT);
         if ($cc > 0) {
             $recent = cache_get_or_set("recent_comments", fn () => self::get_recent_comments($cc), 60);
             if (count($recent) > 0) {
@@ -495,8 +496,8 @@ final class CommentList extends Extension
             return false;
         }
 
-        $window = Ctx::$config->get_int(CommentConfig::WINDOW);
-        $max = Ctx::$config->get_int(CommentConfig::LIMIT);
+        $window = Ctx::$config->get(CommentConfig::WINDOW);
+        $max = Ctx::$config->get(CommentConfig::LIMIT);
 
         if (Ctx::$database->get_driver_id() === DatabaseDriverID::MYSQL) {
             $window_sql = "interval $window minute";
@@ -529,7 +530,7 @@ final class CommentList extends Extension
 
     private function is_spam_akismet(string $text): bool
     {
-        $key = Ctx::$config->get_string(CommentConfig::WORDPRESS_KEY);
+        $key = Ctx::$config->get(CommentConfig::WORDPRESS_KEY);
         if (!is_null($key) && strlen($key) > 0) {
             $comment = [
                 'author'       => Ctx::$user->name,
@@ -544,11 +545,9 @@ final class CommentList extends Extension
             // @phpstan-ignore-next-line
             $akismet = new \Akismet($_SERVER['SERVER_NAME'], $key, $comment);
 
-            // @phpstan-ignore-next-line
             if ($akismet->errorsExist()) {
                 return false;
             } else {
-                // @phpstan-ignore-next-line
                 return $akismet->isSpam();
             }
         }
@@ -653,7 +652,7 @@ final class CommentList extends Extension
         }
 
         // rate-limited external service checks last
-        elseif (Ctx::$config->req_bool(CommentConfig::CAPTCHA) && !Captcha::check()) {
+        elseif (Ctx::$config->req(CommentConfig::CAPTCHA) && !Captcha::check()) {
             throw new CommentPostingException("Error in captcha");
         } elseif (Ctx::$user->is_anonymous() && $this->is_spam_akismet($comment)) {
             throw new CommentPostingException("Akismet thinks that your comment is spam. Try rewriting the comment, or logging in.");

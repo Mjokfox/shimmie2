@@ -10,6 +10,6 @@ class EmailVerificationConfig extends ConfigGroup
     #[ConfigMeta("Sender email", ConfigType::STRING)]
     public const EMAIL_SENDER = "email_verification_sender";
 
-    #[ConfigMeta("Message for users who did not set an email", ConfigType::STRING, input: "longtext")]
+    #[ConfigMeta("Message for users who did not set an email", ConfigType::STRING, input: ConfigInput::TEXTAREA)]
     public const DEFAULT_MESSAGE = "email_verification_def_mess";
 }

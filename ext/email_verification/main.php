@@ -99,7 +99,7 @@ class EmailVerification extends Extension
     public function onUserCreation(UserCreationEvent $event): void
     {
         global $page, $config;
-        $title = $config->get_string(SetupConfig::TITLE);
+        $title = $config->get(SetupConfig::TITLE);
         $page->flash("Welcome to $title, {$event->username}!");
         $this->send_verification_mail($this->get_email_token($event->get_user(), $event->email), $event->email);
     }
@@ -128,14 +128,14 @@ class EmailVerification extends Extension
     {
         global $page, $config;
         if ($email === "") {
-            $page->flash($config->get_string(EmailVerificationConfig::DEFAULT_MESSAGE, ""));
+            $page->flash($config->get(EmailVerificationConfig::DEFAULT_MESSAGE));
             return;
         }
         if ($token === "") {
             $page->flash("verification email failed to send, to verify please try again by clicking the button in the account panel to become verified user");
             return;
         }
-        $sender = $config->get_string(EmailVerificationConfig::EMAIL_SENDER);
+        $sender = $config->get(EmailVerificationConfig::EMAIL_SENDER);
         if (is_null($sender)) {
             $page->flash("Email verification not setup by site owner");
             return;

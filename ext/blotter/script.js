@@ -28,5 +28,4 @@ document.addEventListener('DOMContentLoaded', () => {
 			$("#blotter, .blotter").remove()
 		}
 	}
-	
 });

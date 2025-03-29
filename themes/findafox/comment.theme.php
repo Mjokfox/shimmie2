@@ -30,8 +30,8 @@ class CustomCommentListTheme extends CommentListTheme
         // parts for each image
         $position = 10;
 
-        $comment_captcha = $config->get_bool(CommentConfig::CAPTCHA);
-        $comment_limit = $config->get_int(CommentConfig::LIST_COUNT, 10);
+        $comment_captcha = $config->get(CommentConfig::CAPTCHA);
+        $comment_limit = $config->get(CommentConfig::LIST_COUNT);
 
         foreach ($images as $pair) {
             $image = $pair[0];
@@ -153,7 +153,7 @@ class CustomCommentListTheme extends CommentListTheme
         global $config;
 
         $hash = CommentList::get_hash();
-        $h_captcha = $config->get_bool(CommentConfig::CAPTCHA) ? Captcha::get_html() : "";
+        $h_captcha = $config->get(CommentConfig::CAPTCHA) ? Captcha::get_html() : "";
         return DIV(
             ["class" => "comment comment_add", "id" => "cadd$image_id"],
             SHM_SIMPLE_FORM(

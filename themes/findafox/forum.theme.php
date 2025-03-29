@@ -104,7 +104,7 @@ class CustomForumTheme extends ForumTheme
     protected function build_postbox(int $threadID): HTMLElement
     {
         global $config;
-        $max_characters = $config->get_int(ForumConfig::MAX_CHARS_PER_POST);
+        $max_characters = $config->get(ForumConfig::MAX_CHARS_PER_POST);
         return DIV(
             ["class" => "comment comment_add", "id" => "cadd$threadID"],
             SHM_SIMPLE_FORM(

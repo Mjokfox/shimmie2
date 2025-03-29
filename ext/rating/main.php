@@ -150,7 +150,6 @@ final class Ratings extends Extension
 
     public function onImageInfoSet(ImageInfoSetEvent $event): void
     {
-        global $page;
         if (
             Ctx::$user->can(RatingsPermission::EDIT_IMAGE_RATING) && (
                 isset($event->params['rating'])
@@ -165,9 +164,9 @@ final class Ratings extends Extension
                     send_event(new RatingSetEvent($event->image, $rating));
                 } catch (RatingSetException $e) {
                     if ($e->redirect) {
-                        $page->flash("{$e->getMessage()}, please see {$e->redirect}");
+                        Ctx::$page->flash("{$e->getMessage()}, please see {$e->redirect}");
                     } else {
-                        $page->flash($e->getMessage());
+                        Ctx::$page->flash($e->getMessage());
                     }
                     throw $e;
                 }
@@ -376,7 +375,9 @@ final class Ratings extends Extension
      */
     public static function get_user_class_privs(User $user): array
     {
-        return Ctx::$config->get_array("ext_rating_".$user->class->name."_privs") ?? array_keys(ImageRating::$known_ratings);
+        $val = Ctx::$config->get("ext_rating_".$user->class->name."_privs", ConfigType::ARRAY)
+            ?? array_keys(ImageRating::$known_ratings);
+        return $val;
     }
 
     /**
@@ -388,7 +389,7 @@ final class Ratings extends Extension
     public static function get_user_default_ratings(): array
     {
         $available = self::get_user_class_privs(Ctx::$user);
-        $selected = Ctx::$user->get_config()->get_array(RatingsUserConfig::DEFAULTS) ?? $available;
+        $selected = Ctx::$user->get_config()->get(RatingsUserConfig::DEFAULTS) ?? $available;
 
         return array_intersect($available, $selected);
     }
@@ -464,17 +465,17 @@ final class Ratings extends Extension
         }
 
         if ($this->get_version() < 4) {
-            $value = Ctx::$config->get_string("ext_rating_anon_privs");
-            if (!empty($value)) {
-                Ctx::$config->set_array("ext_rating_anonymous_privs", str_split($value));
+            $value = Ctx::$config->get("ext_rating_anon_privs");
+            if (is_string($value)) {
+                Ctx::$config->set("ext_rating_anonymous_privs", str_split($value));
             }
-            $value = Ctx::$config->get_string("ext_rating_user_privs");
-            if (!empty($value)) {
-                Ctx::$config->set_array("ext_rating_user_privs", str_split($value));
+            $value = Ctx::$config->get("ext_rating_user_privs");
+            if (is_string($value)) {
+                Ctx::$config->set("ext_rating_user_privs", str_split($value));
             }
-            $value = Ctx::$config->get_string("ext_rating_admin_privs");
-            if (!empty($value)) {
-                Ctx::$config->set_array("ext_rating_admin_privs", str_split($value));
+            $value = Ctx::$config->get("ext_rating_admin_privs");
+            if (is_string($value)) {
+                Ctx::$config->set("ext_rating_admin_privs", str_split($value));
             }
 
             switch ($database->get_driver_id()) {

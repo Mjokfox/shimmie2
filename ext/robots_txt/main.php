@@ -28,14 +28,14 @@ final class RobotsTxt extends Extension
         if ($event->page_matches("robots.txt")) {
             $rbe = send_event(new RobotsBuildingEvent());
             $data = [
-                Ctx::$config->get_string(RobotsTxtConfig::ROBOTS_BEFORE),
+                Ctx::$config->get(RobotsTxtConfig::ROBOTS_BEFORE),
                 join("\n", $rbe->parts)
             ];
-            $after = Ctx::$config->get_string(RobotsTxtConfig::ROBOTS_AFTER);
+            $after = Ctx::$config->get(RobotsTxtConfig::ROBOTS_AFTER);
             if ($after) {
                 $data[] = $after;
             }
-            $data[] = "Crawl-delay: " . Ctx::$config->get_int(RobotsTxtConfig::ROBOTS_DELAY);
+            $data[] = "Crawl-delay: " . Ctx::$config->get(RobotsTxtConfig::ROBOTS_DELAY);
             Ctx::$page->set_data(MimeType::TEXT, join("\n", $data));
         }
     }
@@ -43,7 +43,7 @@ final class RobotsTxt extends Extension
 
     public function onRobotsBuilding(RobotsBuildingEvent $event): void
     {
-        $domain = Ctx::$config->get_string(RobotsTxtConfig::CANONICAL_DOMAIN);
+        $domain = Ctx::$config->get(RobotsTxtConfig::CANONICAL_DOMAIN);
         if (!empty($domain) && $_SERVER['HTTP_HOST'] !== $domain) {
             $event->add_disallow("");
         }

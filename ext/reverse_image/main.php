@@ -44,11 +44,11 @@ class ReverseImage extends Extension
         global $user, $page, $config, $user;
         if ($event->page_matches("post/list", paged: true)
             || $event->page_matches("post/list/{search}", paged: true)) {
-            if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
+            if ($config->get(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
                 $this->theme->list_search();
             }
         } elseif ($event->page_matches("post/view/{id}")) {
-            if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
+            if ($config->get(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
                 $this->theme->view_search($event->get_GET('search') ?? "");
             }
         } elseif ($event->page_matches("post/search", paged: true)
@@ -56,7 +56,7 @@ class ReverseImage extends Extension
         ) {
             global $database;
             $get_search = $event->get_GET('search');
-            if ($get_search || !($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageUserConfig::USER_SEARCH_ENABLE))) {
+            if ($get_search || !($config->get(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get(ReverseImageUserConfig::USER_SEARCH_ENABLE))) {
                 if (empty($get_search)) {
                     $page->set_redirect(make_link("post/list"));
                 } else {
@@ -77,7 +77,7 @@ class ReverseImage extends Extension
                 return;
             }
             $page_number = $event->get_iarg('page_num', 1);
-            $page_size = $config->get_int(IndexConfig::IMAGES);
+            $page_size = $config->get(IndexConfig::IMAGES);
 
             $image_ids = $this->reverse_image_compare($feat, $page_size, ($page_number - 1) * $page_size);
             $in = implode(",", array_keys($image_ids));
@@ -105,7 +105,7 @@ class ReverseImage extends Extension
         } elseif ($event->page_matches("reverse_image_search_fromupload", method: "POST", authed: false)) {
             $ids = $this->reverse_image_search_post();
             if (count($ids) > 0) {
-                $threshold = $config->get_int(ReverseImageConfig::SIMILARITY_DUPLICATE) / 100;
+                $threshold = $config->get(ReverseImageConfig::SIMILARITY_DUPLICATE) / 100;
                 $first = array_key_first($ids);
                 $image = Image::by_id((int)$first);
                 if (!is_null($image)) {
@@ -131,10 +131,10 @@ class ReverseImage extends Extension
         } elseif ($event->page_matches("upload", method: "GET", permission: ImagePermission::CREATE_IMAGE)) {
             global $config, $user;
             $user_config = $user->get_config();
-            $default_reverse_result_limit = $config->get_int(ReverseImageConfig::CONF_DEFAULT_AMOUNT);
-            $enable_auto_pre = $user_config->get_bool(ReverseImageUserConfig::USER_ENABLE_AUTO);
-            $enable_auto_tag = $user_config->get_bool(ReverseImageUserConfig::USER_ENABLE_AUTO_SELECT);
-            $predict_threshold = $user_config->get_int(ReverseImageUserConfig::USER_TAG_THRESHOLD);
+            $default_reverse_result_limit = $config->get(ReverseImageConfig::CONF_DEFAULT_AMOUNT);
+            $enable_auto_pre = $user_config->get(ReverseImageUserConfig::USER_ENABLE_AUTO);
+            $enable_auto_tag = $user_config->get(ReverseImageUserConfig::USER_ENABLE_AUTO_SELECT);
+            $predict_threshold = $user_config->get(ReverseImageUserConfig::USER_TAG_THRESHOLD);
             $html = "";
             if ($enable_auto_tag) {
                 $r = 127 * (1 - ($predict_threshold / 100));
@@ -307,9 +307,9 @@ class ReverseImage extends Extension
         if (!$features) {
             return [];
         }
-        $limit = isset($_POST["reverse_image_limit"]) ? $_POST["reverse_image_limit"] : $config->get_int(ReverseImageConfig::CONF_DEFAULT_AMOUNT);
-        if ($limit > $config->get_int(ReverseImageConfig::CONF_MAX_LIMIT)) {
-            $limit = $config->get_int(ReverseImageConfig::CONF_MAX_LIMIT);
+        $limit = isset($_POST["reverse_image_limit"]) ? $_POST["reverse_image_limit"] : $config->get(ReverseImageConfig::CONF_DEFAULT_AMOUNT);
+        if ($limit > $config->get(ReverseImageConfig::CONF_MAX_LIMIT)) {
+            $limit = $config->get(ReverseImageConfig::CONF_MAX_LIMIT);
         }
         return $this->reverse_image_compare($features, $limit);
     }
@@ -331,7 +331,7 @@ class ReverseImage extends Extension
     public function get_image_features(string $path): array|false
     {
         global $config;
-        $uri = $config->get_string(ReverseImageConfig::CONF_URL);
+        $uri = $config->get(ReverseImageConfig::CONF_URL);
         $url = "$uri/extract_features";
         $ch = curl_init($url);
         assert($ch !== false);
@@ -367,7 +367,7 @@ class ReverseImage extends Extension
     public function get_search_features(string $search): array|false
     {
         global $config;
-        $uri = $config->get_string(ReverseImageConfig::CONF_URL);
+        $uri = $config->get(ReverseImageConfig::CONF_URL);
         $url = "$uri/search_features";
         $ch = curl_init($url);
         assert($ch !== false);

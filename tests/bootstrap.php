@@ -35,22 +35,21 @@ if (file_exists("data/test-trace.json")) {
 }
 
 sanitize_php();
-global $database, $user, $page;
 _set_up_shimmie_environment();
 Ctx::$tracer_enabled = true;
 Ctx::setTracer(new \EventTracer());
 Ctx::$tracer->begin("bootstrap");
 _load_ext_files();
-$cache = Ctx::setCache(load_cache(SysConfig::getCacheDsn()));
-$database = Ctx::setDatabase(new Database(SysConfig::getDatabaseDsn()));
+Ctx::setCache(load_cache(SysConfig::getCacheDsn()));
+Ctx::setDatabase(new Database(SysConfig::getDatabaseDsn()));
 Installer::create_dirs();
-Installer::create_tables($database);
-$config = Ctx::setConfig(new DatabaseConfig($database));
+Installer::create_tables(Ctx::$database);
+Ctx::setConfig(new DatabaseConfig(Ctx::$database));
+Ctx::$config->set(ThumbnailConfig::ENGINE, "static");
+Ctx::$config->set(SetupConfig::NICE_URLS, true);
 _load_theme_files();
-$page = Ctx::setPage(new Page());
+Ctx::setPage(new Page());
 Ctx::setEventBus(new EventBus());
-$config->set_string(ThumbnailConfig::ENGINE, "static");
-$config->set_bool(SetupConfig::NICE_URLS, true);
 // foreach (UserClass::$known_classes as $name => $value) {
 //     if ($name == "hellbanned" || !$value->can(Permissions::CREATE_IMAGE) || $value->can(Permissions::BULK_IMPORT)) {
 //         continue;
@@ -60,14 +59,14 @@ $config->set_bool(SetupConfig::NICE_URLS, true);
 // $config->set_int("upload_limit:anonymous", 100000);
 send_event(new DatabaseUpgradeEvent());
 send_event(new InitExtEvent());
-$user = Ctx::setUser(User::by_id($config->req_int(UserAccountsConfig::ANON_ID)));
+Ctx::setUser(User::by_id(Ctx::$config->req(UserAccountsConfig::ANON_ID)));
 $userPage = new UserPage();
 $userPage->onUserCreation(new UserCreationEvent("demo", "demo", "demo", "demo@demo.com", false));
 $userPage->onUserCreation(new UserCreationEvent("test", "test", "test", "test@test.com", false));
 // in mysql, CREATE TABLE commits transactions, so after the database
 // upgrade we may or may not be inside a transaction depending on if
 // any tables were created.
-if ($database->is_transaction_open()) {
-    $database->commit();
+if (Ctx::$database->is_transaction_open()) {
+    Ctx::$database->commit();
 }
 Ctx::$tracer->end();

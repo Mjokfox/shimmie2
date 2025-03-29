@@ -175,7 +175,7 @@ final class Forum extends Extension
             WHERE thread_id = :thread_id
         ", ['thread_id' => $threadID]);
 
-        return (int) ceil($count / Ctx::$config->req_int(ForumConfig::POSTS_PER_PAGE));
+        return (int) ceil($count / Ctx::$config->req(ForumConfig::POSTS_PER_PAGE));
     }
 
     /**
@@ -242,7 +242,7 @@ final class Forum extends Extension
     private function show_last_threads(int $pageNumber, bool $showAdminOptions = false): void
     {
         $database = Ctx::$database;
-        $threadsPerPage = Ctx::$config->req_int(ForumConfig::THREADS_PER_PAGE);
+        $threadsPerPage = Ctx::$config->req(ForumConfig::THREADS_PER_PAGE);
         $totalPages = (int) ceil($database->get_one("SELECT COUNT(*) FROM forum_threads") / $threadsPerPage);
 
         /** @var Thread[] $threads */
@@ -264,7 +264,7 @@ final class Forum extends Extension
     private function show_posts(int $threadID, int $pageNumber): void
     {
         global $database;
-        $postsPerPage = Ctx::$config->req_int(ForumConfig::POSTS_PER_PAGE);
+        $postsPerPage = Ctx::$config->req(ForumConfig::POSTS_PER_PAGE);
         $totalPages = (int) ceil($database->get_one("SELECT COUNT(*) FROM forum_posts WHERE thread_id = :id", ['id' => $threadID]) / $postsPerPage);
         $threadTitle = $this->get_thread_title($threadID);
 
@@ -308,7 +308,7 @@ final class Forum extends Extension
         $userID = $user->id;
         $message = $_POST["message"];
 
-        $max_characters = Ctx::$config->get_int(ForumConfig::MAX_CHARS_PER_POST);
+        $max_characters = Ctx::$config->get(ForumConfig::MAX_CHARS_PER_POST);
         $message = substr($message, 0, $max_characters);
 
         global $database;
@@ -329,7 +329,7 @@ final class Forum extends Extension
         global $config, $database;
         $message = $_POST["message"];
 
-        $max_characters = $config->get_int(ForumConfig::MAX_CHARS_PER_POST);
+        $max_characters = $config->get(ForumConfig::MAX_CHARS_PER_POST);
         $message = substr($message, 0, $max_characters);
         $query = "UPDATE forum_posts
             SET message = :message

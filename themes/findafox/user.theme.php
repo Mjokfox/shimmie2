@@ -40,7 +40,7 @@ class CustomUserPageTheme extends UserPageTheme
                 )
             )
         );
-        if ($config->get_bool(UserAccountsConfig::SIGNUP_ENABLED)) {
+        if ($config->get(UserAccountsConfig::SIGNUP_ENABLED)) {
             $html->appendChild(SMALL(A(["href" => make_link("user_admin/create")], "Create Account")));
         }
         $page->add_block(new Block("Login", $html, "main", 90));

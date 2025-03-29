@@ -37,8 +37,7 @@ class DowntimeTheme extends Themelet
      */
     public function display_message(string $message): void
     {
-        global $page;
-        $theme_name = Ctx::$config->req_string(SetupConfig::THEME);
+        $theme_name = Ctx::$config->req(SetupConfig::THEME);
 
         $head = emptyHTML(
             TITLE("Downtime"),
@@ -76,7 +75,7 @@ class DowntimeTheme extends Themelet
             )
         );
 
-        $page->set_code(503);
-        $page->set_data(MimeType::HTML, (string)$page->html_html($head, $body));
+        Ctx::$page->set_code(503);
+        Ctx::$page->set_data(MimeType::HTML, (string)Ctx::$page->html_html($head, $body));
     }
 }

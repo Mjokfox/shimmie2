@@ -103,7 +103,7 @@ final class Tips extends Extension
         $images = array_map(fn ($p) => $p->basename()->str(), $images);
 
         // theme HAX
-        $theme_name = $config->get_string(SetupConfig::THEME);
+        $theme_name = $config->get(SetupConfig::THEME);
         $theme_images = Filesystem::get_dir_contents(new Path("themes/$theme_name/static/"));
         if (count($theme_images) > 0) {
             $theme_images = array_map(fn ($p) => $p->basename()->str(), $theme_images);

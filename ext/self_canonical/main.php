@@ -18,7 +18,7 @@ class SelfCanonical extends Extension
     {
         global $page,$config;
         $page->add_html_header(rawHTML(
-            '<link rel="canonical" href="'.$config->get_string(SelfCanonicalConfig::DOMAIN).''.$event->path.'" >'
+            '<link rel="canonical" href="'.$config->get(SelfCanonicalConfig::DOMAIN).''.$event->path.'" >'
         ));
     }
 }

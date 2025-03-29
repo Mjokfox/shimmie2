@@ -32,7 +32,7 @@ class Dmca extends Extension
             !isset($_POST['dmca_input'])) {
             return false;
         }
-        $to = $config->get_string(DmcaConfig::EMAIL);
+        $to = $config->get(DmcaConfig::EMAIL);
         if (empty($to)) {
             $page->flash("The administrator of this site has not set an email to send to, please try to contact them in some way.");
             return false;

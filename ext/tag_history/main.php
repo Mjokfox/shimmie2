@@ -60,7 +60,7 @@ final class TagHistory extends Extension
             Log::debug("tag_history", "adding tag history: [$old_tags] -> [$new_tags]");
         }
 
-        $allowed = Ctx::$config->get_int(TagHistoryConfig::MAX_HISTORY);
+        $allowed = Ctx::$config->get(TagHistoryConfig::MAX_HISTORY);
         if ($allowed == 0) {
             return;
         }
@@ -73,7 +73,7 @@ final class TagHistory extends Extension
                 "
 				INSERT INTO tag_histories(image_id, tags, user_id, user_ip, date_set)
 				VALUES (:image_id, :tags, :user_id, :user_ip, now())",
-                ["image_id" => $event->image->id, "tags" => $old_tags, "user_id" => Ctx::$config->req_int(UserAccountsConfig::ANON_ID), "user_ip" => '127.0.0.1']
+                ["image_id" => $event->image->id, "tags" => $old_tags, "user_id" => Ctx::$config->req(UserAccountsConfig::ANON_ID), "user_ip" => '127.0.0.1']
             );
             $entries++;
         }
@@ -354,8 +354,7 @@ final class TagHistory extends Extension
                 if (empty($result)) {
                     // there is no history entry with that id so either the image was deleted
                     // while the user was viewing the history,  or something messed up
-                    /* calling die() is probably not a good idea, we should throw an Exception */
-                    die('Error: No tag history with specified id ('.$revert_id.') was found in the database.'."\n\n".
+                    throw new ObjectNotFound('Error: No tag history with specified id ('.$revert_id.') was found in the database.'."\n\n".
                         'Perhaps the image was deleted while processing this request.');
                 }
 

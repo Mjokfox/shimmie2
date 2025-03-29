@@ -88,8 +88,8 @@ class CommonElementsTheme extends Themelet
             $tsize = ThumbnailUtil::get_thumbnail_size($image->width, $image->height);
         } else {
             //Use max thumbnail size if using thumbless filetype
-            $config_width = Ctx::$config->req_int(ThumbnailConfig::WIDTH);
-            $config_height = Ctx::$config->req_int(ThumbnailConfig::HEIGHT);
+            $config_width = Ctx::$config->req(ThumbnailConfig::WIDTH);
+            $config_height = Ctx::$config->req(ThumbnailConfig::HEIGHT);
             assert($config_width >= 0 && $config_height >= 0);
             $tsize = ThumbnailUtil::get_thumbnail_size($config_width, $config_height);
         }
@@ -245,20 +245,20 @@ class CommonElementsTheme extends Themelet
             $row = TR(["class" => $meta->advanced ? "advanced" : ""]);
             $row->appendChild(TH(LABEL(["for" => $key], $meta->label)));
             switch ($meta->input) {
-                case "bool":
-                    $val = $config->get_bool($key);
+                case ConfigInput::CHECKBOX:
+                    $val = $config->get($key, ConfigType::BOOL);
                     $input = INPUT(["type" => "checkbox", "id" => $key, "name" => "_config_$key", "checked" => $val]);
                     break;
-                case "int":
-                    $val = $config->get_int($key);
+                case ConfigInput::NUMBER:
+                    $val = $config->get($key, ConfigType::INT);
                     $input = INPUT(["type" => "number", "id" => $key, "name" => "_config_$key", "value" => $val, "size" => 4, "step" => 1]);
                     break;
-                case "shorthand_int":
-                    $val = to_shorthand_int($config->get_int($key) ?? 0);
+                case ConfigInput::BYTES:
+                    $val = to_shorthand_int($config->get($key, ConfigType::INT) ?? 0);
                     $input = INPUT(["type" => "text", "id" => $key, "name" => "_config_$key", "value" => $val, "size" => 6]);
                     break;
-                case "text":
-                    $val = $config->get_string($key);
+                case ConfigInput::TEXT:
+                    $val = $config->get($key, ConfigType::STRING);
                     if ($meta->options) {
                         $options = $meta->options;
                         if (is_callable($options)) {
@@ -272,17 +272,17 @@ class CommonElementsTheme extends Themelet
                         $input = INPUT(["type" => "text", "id" => $key, "name" => "_config_$key", "value" => $val]);
                     }
                     break;
-                case "longtext":
-                    $val = $config->get_string($key) ?? "";
+                case ConfigInput::TEXTAREA:
+                    $val = $config->get($key, ConfigType::STRING) ?? "";
                     $rows = max(3, min(10, count(explode("\n", $val))));
                     $input = TEXTAREA(["rows" => $rows, "id" => $key, "name" => "_config_$key"], $val);
                     break;
-                case "color":
-                    $val = $config->get_string($key);
+                case ConfigInput::COLOR:
+                    $val = $config->get($key, ConfigType::STRING);
                     $input = INPUT(["type" => "color", "id" => $key, "name" => "_config_$key", "value" => $val]);
                     break;
-                case "multichoice":
-                    $val = $config->get_array($key) ?? [];
+                case ConfigInput::MULTICHOICE:
+                    $val = $config->get($key, ConfigType::ARRAY) ?? [];
                     $input = SELECT(["id" => $key, "name" => "_config_{$key}[]", "multiple" => true, "size" => 5]);
                     $options = $meta->options;
                     if (is_callable($options)) {

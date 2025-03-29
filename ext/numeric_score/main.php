@@ -158,7 +158,7 @@ final class NumericScore extends Extension
                 $html .= $vote['score'];
                 $html .= "</td></tr>";
             }
-            die($html);
+            $page->set_data(MimeType::HTML, $html);
         } elseif ($event->page_matches("numeric_score/vote", method: "POST", permission: NumericScorePermission::CREATE_VOTE)) {
             $image_id = int_escape($event->req_POST("image_id"));
             $score = int_escape($event->req_POST("vote"));
@@ -213,7 +213,7 @@ final class NumericScore extends Extension
             } else {
                 $sql = "SELECT id FROM images WHERE EXTRACT(YEAR FROM posted) = :year";
             }
-            $args = ["limit" => Ctx::$config->req_int(IndexConfig::IMAGES), "year" => $year];
+            $args = ["limit" => Ctx::$config->req(IndexConfig::IMAGES), "year" => $year];
 
             if ($event->page_matches("popular_by_day")) {
                 if ($database->get_driver_id() === DatabaseDriverID::SQLITE) {

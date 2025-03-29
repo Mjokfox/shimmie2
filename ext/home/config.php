@@ -10,10 +10,11 @@ final class HomeConfig extends ConfigGroup
     public ?string $title = "Home Page";
     #[ConfigMeta("title", ConfigType::STRING)]
     public const TITLE = 'home_title';
-    #[ConfigMeta("Page links", ConfigType::STRING, input: "longtext", help: "Use BBCode, leave blank for defaults")]
+
+    #[ConfigMeta("Page links", ConfigType::STRING, input: ConfigInput::TEXTAREA, help: "Use BBCode, leave blank for defaults")]
     public const LINKS = 'home_links';
 
-    #[ConfigMeta("Page text", ConfigType::STRING, input: "longtext")]
+    #[ConfigMeta("Page text", ConfigType::STRING, input: ConfigInput::TEXTAREA)]
     public const TEXT = 'home_text';
 
     #[ConfigMeta("Counter", ConfigType::STRING, default: "default", options: "Shimmie2\HomeConfig::get_counter_options")]

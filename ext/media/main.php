@@ -30,13 +30,6 @@ final class Media extends Extension
         MimeType::PNG,
     ];
 
-    public const RESIZE_TYPE_FIT = "Fit";
-    public const RESIZE_TYPE_FIT_BLUR = "Fit Blur";
-    public const RESIZE_TYPE_FIT_BLUR_PORTRAIT = "Fit Blur Tall, Fill Wide";
-    public const RESIZE_TYPE_FILL =  "Fill";
-    public const RESIZE_TYPE_STRETCH =  "Stretch";
-    public const DEFAULT_ALPHA_CONVERSION_COLOR = "#00000000";
-
     public static function imagick_available(): bool
     {
         return extension_loaded("imagick");
@@ -176,7 +169,7 @@ final class Media extends Extension
         }
 
         // TODO: Get output optimization tools working better
-        //        if ($config->get_bool("thumb_optim")) {
+        //        if ($config->get("thumb_optim")) {
         //            exec("jpegoptim $outname", $output, $ret);
         //        }
     }
@@ -270,7 +263,7 @@ final class Media extends Extension
      */
     public static function create_thumbnail_ffmpeg(Image $image): bool
     {
-        $ffmpeg = Ctx::$config->get_string(MediaConfig::FFMPEG_PATH);
+        $ffmpeg = Ctx::$config->get(MediaConfig::FFMPEG_PATH);
         if (empty($ffmpeg)) {
             throw new MediaException("ffmpeg command not configured");
         }
@@ -312,7 +305,7 @@ final class Media extends Extension
      */
     public static function get_ffprobe_data(string $filename): array
     {
-        $ffprobe = Ctx::$config->get_string(MediaConfig::FFPROBE_PATH);
+        $ffprobe = Ctx::$config->get(MediaConfig::FFPROBE_PATH);
         if (empty($ffprobe)) {
             throw new MediaException("ffprobe command not configured");
         }
@@ -367,14 +360,17 @@ final class Media extends Extension
         int $new_height,
         Path $output_filename,
         ?MimeType $output_mime = null,
-        string $alpha_color = Media::DEFAULT_ALPHA_CONVERSION_COLOR,
-        string $resize_type = self::RESIZE_TYPE_FIT,
+        ?string $alpha_color = null,
+        ResizeType $resize_type = ResizeType::FIT,
         int $output_quality = 80,
         bool $minimize = false,
         bool $allow_upscale = true
     ): void {
-        if (empty($output_mime)) {
+        if (is_null($output_mime)) {
             $output_mime = $input_mime;
+        }
+        if (is_null($alpha_color)) {
+            $alpha_color = Ctx::$config->req(ThumbnailConfig::ALPHA_COLOR);
         }
 
         if ($output_mime->base === MimeType::WEBP && self::is_lossless($input_path, $input_mime)) {
@@ -390,7 +386,7 @@ final class Media extends Extension
         if (!$allow_upscale) {
             $resize_suffix .= "\>";
         }
-        if ($resize_type === Media::RESIZE_TYPE_STRETCH) {
+        if ($resize_type === ResizeType::STRETCH) {
             $resize_suffix .= "\!";
         }
 
@@ -403,23 +399,23 @@ final class Media extends Extension
 
         $input_ext = self::determine_ext($input_mime);
 
-        if ($resize_type === Media::RESIZE_TYPE_FIT_BLUR_PORTRAIT) {
+        if ($resize_type === ResizeType::FIT_BLUR_PORTRAIT) {
             if ($new_height > $new_width) {
-                $resize_type = Media::RESIZE_TYPE_FIT_BLUR;
+                $resize_type = ResizeType::FIT_BLUR;
             } else {
-                $resize_type = Media::RESIZE_TYPE_FILL;
+                $resize_type = ResizeType::FILL;
             }
         }
 
         switch ($resize_type) {
-            case Media::RESIZE_TYPE_FIT:
-            case Media::RESIZE_TYPE_STRETCH:
+            case ResizeType::FIT:
+            case ResizeType::STRETCH:
                 $args .= "{$resize_arg} {$new_width}x{$new_height}{$resize_suffix} -background {$bg} -flatten ";
                 break;
-            case Media::RESIZE_TYPE_FILL:
+            case ResizeType::FILL:
                 $args .= "{$resize_arg} {$new_width}x{$new_height}\^ -background {$bg} -flatten -gravity center -extent {$new_width}x{$new_height} ";
                 break;
-            case Media::RESIZE_TYPE_FIT_BLUR:
+            case ResizeType::FIT_BLUR:
                 $blur_size = max(ceil(max($new_width, $new_height) / 25), 5);
                 $args .= " ".
                     "\( -clone 0 -auto-orient -resize {$new_width}x{$new_height}\^ -background {$bg} -flatten -gravity center -fill black -colorize 50% -extent {$new_width}x{$new_height} -blur 0x{$blur_size} \) ".
@@ -438,7 +434,7 @@ final class Media extends Extension
 
         $output_ext = self::determine_ext($output_mime);
 
-        $command = new CommandBuilder(Ctx::$config->req_string(MediaConfig::CONVERT_PATH));
+        $command = new CommandBuilder(Ctx::$config->req(MediaConfig::CONVERT_PATH));
         $command->add_escaped_arg("{$input_ext}:\"{$input_path->str()}[0]\"");
         $command->add_flag($args);
         $command->add_escaped_arg("$output_ext:{$output_filename->str()}");
@@ -463,8 +459,8 @@ final class Media extends Extension
         int $new_height,
         Path $output_filename,
         ?MimeType $output_mime = null,
-        string $alpha_color = Media::DEFAULT_ALPHA_CONVERSION_COLOR,
-        string $resize_type = self::RESIZE_TYPE_FIT,
+        ?string $alpha_color = null,
+        ResizeType $resize_type = ResizeType::FIT,
         int $output_quality = 80,
         bool $allow_upscale = true
     ): void {
@@ -472,7 +468,7 @@ final class Media extends Extension
         $height = $info[1];
         assert($width > 0 && $height > 0);
 
-        if ($output_mime === null) {
+        if (is_null($output_mime)) {
             /* If not specified, output to the same format as the original image */
             $output_mime = new MimeType(match($info[2]) {
                 IMAGETYPE_GIF => MimeType::GIF,
@@ -483,6 +479,9 @@ final class Media extends Extension
                 default => throw new MediaException("Failed to save the new image - Unsupported MIME type."),
             });
         }
+        if (is_null($alpha_color)) {
+            $alpha_color = Ctx::$config->req(ThumbnailConfig::ALPHA_COLOR);
+        }
 
         $memory_use = self::calc_memory_use($info);
         $memory_limit = get_memory_limit();
@@ -490,7 +489,7 @@ final class Media extends Extension
             throw new InsufficientMemoryException("The image is too large to resize given the memory limits. ($memory_use > $memory_limit)");
         }
 
-        if ($resize_type === Media::RESIZE_TYPE_FIT) {
+        if ($resize_type === ResizeType::FIT) {
             list($new_width, $new_height) = ThumbnailUtil::get_scaled_by_aspect_ratio($width, $height, $new_width, $new_height);
         }
         if (!$allow_upscale &&
@@ -628,7 +627,7 @@ final class Media extends Extension
      */
     public static function video_size(Path $filename): array
     {
-        $ffmpeg = Ctx::$config->req_string(MediaConfig::FFMPEG_PATH);
+        $ffmpeg = Ctx::$config->req(MediaConfig::FFMPEG_PATH);
         $cmd = escapeshellcmd(implode(" ", [
             escapeshellarg($ffmpeg),
             "-y", "-i", escapeshellarg($filename->str()),

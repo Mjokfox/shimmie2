@@ -15,7 +15,7 @@ class TagCategoriesTheme extends Themelet
      */
     public function show_tag_categories(array $tc_dict): void
     {
-        global $page, $database;
+        global $database;
         $tc_block_index = 0;
         $html = [];
 
@@ -208,9 +208,9 @@ class TagCategoriesTheme extends Themelet
         );
 
         // add html to stuffs
-        $page->set_title("Tag Categories");
+        Ctx::$page->set_title("Tag Categories");
         $this->display_navigation();
-        $page->add_block(new Block("Editing", joinHTML("\n", $html), "main", 10));
+        Ctx::$page->add_block(new Block("Editing", joinHTML("\n", $html), "main", 10));
     }
 
     public function get_help_html(): HTMLElement

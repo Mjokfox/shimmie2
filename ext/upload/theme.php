@@ -28,26 +28,22 @@ class UploadTheme extends Themelet
 {
     public function display_block(): void
     {
-        global $page;
-        $b = new Block("Upload", $this->build_upload_block(), "left", 20);
-        $b->is_content = false;
-        $page->add_block($b);
+        Ctx::$page->add_block(new Block("Upload", $this->build_upload_block(), "left", 20, is_content: false));
     }
 
     public function display_full(): void
     {
-        global $page;
-        $page->add_block(new Block("Upload", emptyHTML("Disk nearly full, uploads disabled"), "left", 20));
+        Ctx::$page->add_block(new Block("Upload", emptyHTML("Disk nearly full, uploads disabled"), "left", 20));
     }
 
     public function display_page(): void
     {
         $limits = get_upload_limits();
 
-        $tl_enabled = (Ctx::$config->req_string(UploadConfig::TRANSLOAD_ENGINE) !== "none");
+        $tl_enabled = (Ctx::$config->req(UploadConfig::TRANSLOAD_ENGINE) !== "none");
         $max_size = $limits['shm_filesize'];
-        $split_view = Ctx::$config->get_bool(UploadConfig::SPLITVIEW);
-        $preview_enabled = Ctx::$config->get_bool(UploadConfig::PREVIEW);
+        $split_view = Ctx::$config->get(UploadConfig::SPLITVIEW);
+        $preview_enabled = Ctx::$config->get(UploadConfig::PREVIEW);
         $max_kb = to_shorthand_int($max_size);
         $max_total_size = $limits['shm_post'];
         $max_total_kb = to_shorthand_int($max_total_size);
@@ -155,10 +151,10 @@ class UploadTheme extends Themelet
     protected function build_upload_list(): HTMLElement
     {
         $upload_list = emptyHTML();
-        $upload_count = Ctx::$config->req_int(UploadConfig::COUNT);
-        $preview_enabled = Ctx::$config->get_bool(UploadConfig::PREVIEW);
-        $split_view = Ctx::$config->get_bool(UploadConfig::SPLITVIEW);
-        $tl_enabled = (Ctx::$config->req_string(UploadConfig::TRANSLOAD_ENGINE) !== "none");
+        $upload_count = Ctx::$config->req(UploadConfig::COUNT);
+        $preview_enabled = Ctx::$config->get(UploadConfig::PREVIEW);
+        $split_view = Ctx::$config->get(UploadConfig::SPLITVIEW);
+        $tl_enabled = Ctx::$config->req(UploadConfig::TRANSLOAD_ENGINE) !== "none";
         $accept = $this->get_accept();
 
         $headers = emptyHTML();
@@ -269,10 +265,10 @@ class UploadTheme extends Themelet
         $limits = get_upload_limits();
         $link = make_link("upload")->asAbsolute();
         $main_page = make_link()->asAbsolute();
-        $title = Ctx::$config->req_string(SetupConfig::TITLE);
+        $title = Ctx::$config->req(SetupConfig::TITLE);
         $max_size = $limits['shm_filesize'];
         $max_kb = to_shorthand_int($max_size);
-        $delimiter = Ctx::$config->req_bool(SetupConfig::NICE_URLS) ? '?' : '&amp;';
+        $delimiter = Url::are_niceurls_enabled() ? '?' : '&amp;';
 
         $js = 'javascript:(
             function() {
@@ -302,7 +298,7 @@ class UploadTheme extends Themelet
         // Bookmarklet checks if shimmie supports ext. If not, won't upload to site/shows alert saying not supported.
         $supported_ext = join(" ", DataHandlerExtension::get_all_supported_exts());
 
-        $title = "Booru to " . Ctx::$config->req_string(SetupConfig::TITLE);
+        $title = "Booru to " . Ctx::$config->req(SetupConfig::TITLE);
         // CA=0: Ask to use current or new tags | CA=1: Always use current tags | CA=2: Always use new tags
         $js = '
             javascript:

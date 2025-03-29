@@ -56,7 +56,7 @@ class ReportImageTheme extends Themelet
             ["id" => "reportedImage", "class" => "zebra"],
             THEAD(
                 TR(
-                    TD(["width" => Ctx::$config->req_int(ThumbnailConfig::WIDTH)], "Post"),
+                    TD(["width" => Ctx::$config->req(ThumbnailConfig::WIDTH)], "Post"),
                     TD("Reason"),
                     TD(["width" => "128"], "Action")
                 )
@@ -75,7 +75,7 @@ class ReportImageTheme extends Themelet
     public function display_image_banner(Image $image, array $reports): void
     {
         $html = emptyHTML();
-        $public = Ctx::$config->get_string(ReportImageConfig::SHOW_INFO);
+        $public = Ctx::$config->get(ReportImageConfig::SHOW_INFO);
         if ($public !== "none" && count($reports) > 0) {
             $html->appendChild(P(B("Current reports:")));
             foreach ($reports as $report) {
@@ -102,12 +102,11 @@ class ReportImageTheme extends Themelet
 
     public function get_nuller(User $duser): void
     {
-        global $page;
         $html = SHM_SIMPLE_FORM(
             make_link("image_report/remove_reports_by"),
             INPUT(["type" => 'hidden', "name" => 'user_id', "value" => $duser->id]),
             SHM_SUBMIT('Delete all reports by this user')
         );
-        $page->add_block(new Block("Reports", $html, "main", 80));
+        Ctx::$page->add_block(new Block("Reports", $html, "main", 80));
     }
 }

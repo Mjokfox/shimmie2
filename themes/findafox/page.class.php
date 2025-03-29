@@ -97,8 +97,8 @@ class customPage extends Page
             $subheading = DIV(["id" => "subtitle"], $this->subheading);
         }
 
-        $site_name = $config->get_string(SetupConfig::TITLE); // bzchan: change from normal default to get title for top of page
-        $main_page = $config->get_string(SetupConfig::MAIN_PAGE); // bzchan: change from normal default to get main page for top of page
+        $site_name = $config->get(SetupConfig::TITLE); // bzchan: change from normal default to get title for top of page
+        $main_page = $config->get(SetupConfig::MAIN_PAGE); // bzchan: change from normal default to get main page for top of page
 
         $custom_links = emptyHTML();
         foreach ($nav_links as $nav_link) {
@@ -165,7 +165,7 @@ class customPage extends Page
         global $config;
         $debug = get_debug_info();
         $contact_link = contact_link() ?? "";
-        $footer_html = $config->get_string(SetupConfig::FOOTER_HTML, "");
+        $footer_html = $config->get(SetupConfig::FOOTER_HTML);
         if (!($footer_html == "" || $footer_html == null)) {
             $footer_html = str_replace('%d', $debug, $footer_html);
             $footer_html = str_replace('%c', $contact_link, $footer_html);

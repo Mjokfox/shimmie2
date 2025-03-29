@@ -21,24 +21,23 @@ final class AvatarPost extends AvatarExtension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page;
         if ($event->page_matches("set_avatar/{image_id}", method: "POST", permission: UserAccountsPermission::CHANGE_USER_SETTING)) {
             $image_id = int_escape($event->get_arg('image_id'));
-            $page->set_redirect(make_link("set_avatar/$image_id"));
+            Ctx::$page->set_redirect(make_link("set_avatar/$image_id"));
         } elseif ($event->page_matches("set_avatar/{image_id}", method: "GET", permission: UserAccountsPermission::CHANGE_USER_SETTING)) {
             $image_id = int_escape($event->get_arg('image_id'));
             $this->theme->display_avatar_edit_page($image_id);
         } elseif ($event->page_matches("save_avatar", method: "POST", permission: UserAccountsPermission::CHANGE_USER_SETTING)) {
             $c = Ctx::$user->get_config();
-            $c->set_int(AvatarPostUserConfig::AVATAR_ID, (int)$event->req_POST("id"));
-            $c->set_int(AvatarPostUserConfig::AVATAR_SCALE, (int)$event->req_POST("scale"));
-            $c->set_int(AvatarPostUserConfig::AVATAR_X, (int)$event->req_POST("x"));
-            $c->set_int(AvatarPostUserConfig::AVATAR_Y, (int)$event->req_POST("y"));
-            $page->flash("Image set as avatar");
-            $page->set_redirect(Url::referer_or(make_link("user_config")));
+            $c->set(AvatarPostUserConfig::AVATAR_ID, (int)$event->req_POST("id"));
+            $c->set(AvatarPostUserConfig::AVATAR_SCALE, (int)$event->req_POST("scale"));
+            $c->set(AvatarPostUserConfig::AVATAR_X, (int)$event->req_POST("x"));
+            $c->set(AvatarPostUserConfig::AVATAR_Y, (int)$event->req_POST("y"));
+            Ctx::$page->flash("Image set as avatar");
+            Ctx::$page->set_redirect(Url::referer_or(make_link("user_config")));
         } else {
-            $s = Ctx::$config->get_int(SetupConfig::AVATAR_SIZE);
-            $page->add_html_header(STYLE(
+            $s = Ctx::$config->get(SetupConfig::AVATAR_SIZE);
+            Ctx::$page->add_html_header(STYLE(
                 ".avatar{max-height:{$s}px;max-width:{$s}px;}"
             ));
         }
@@ -66,7 +65,7 @@ final class AvatarPost extends AvatarExtension
     public function get_avatar_html(User $user): HTMLElement|null
     {
         $user_config = $user->get_config();
-        $id = $user_config->get_int(AvatarPostUserConfig::AVATAR_ID);
+        $id = $user_config->get(AvatarPostUserConfig::AVATAR_ID);
         if ($id === null) {
             return null;
         }
@@ -76,14 +75,14 @@ final class AvatarPost extends AvatarExtension
             return null;
         }
 
-        $scale = $user_config->req_int(AvatarPostUserConfig::AVATAR_SCALE) / 100;
-        $x = $user_config->req_int(AvatarPostUserConfig::AVATAR_X);
-        $y = $user_config->req_int(AvatarPostUserConfig::AVATAR_Y);
+        $scale = $user_config->req(AvatarPostUserConfig::AVATAR_SCALE) / 100;
+        $x = $user_config->req(AvatarPostUserConfig::AVATAR_X);
+        $y = $user_config->req(AvatarPostUserConfig::AVATAR_Y);
 
         $ar = $image->width / $image->height;
 
-        $thumb_height = Ctx::$config->req_int(SetupConfig::AVATAR_SIZE);
-        $thumb_width = Ctx::$config->req_int(SetupConfig::AVATAR_SIZE);
+        $thumb_height = Ctx::$config->req(SetupConfig::AVATAR_SIZE);
+        $thumb_width = Ctx::$config->req(SetupConfig::AVATAR_SIZE);
         $h = min(ceil(abs($thumb_height * $scale / $ar)), $thumb_height);
         $w = min(ceil(abs($thumb_width * $scale * $ar)), $thumb_width);
 

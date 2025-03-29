@@ -261,7 +261,7 @@ class Page
      */
     public function display(): void
     {
-        Ctx::$tracer->begin("Display ({$this->mode->value})");
+        Ctx::$tracer->begin("Display ({$this->mode->name})");
         match($this->mode) {
             PageMode::MANUAL => null,
             PageMode::PAGE => $this->display_page(),
@@ -662,7 +662,7 @@ class Page
     protected function flash_html(): HTMLElement
     {
         if ($this->flash) {
-            return B(["id" => "flash"], joinHTML(BR(), $this->flash));
+            return DIV(["id" => "flash"], B(["class" => "blink"], joinHTML(BR(), $this->flash)));
         }
         return emptyHTML();
     }

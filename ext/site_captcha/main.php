@@ -49,7 +49,7 @@ class SiteCaptcha extends Extension
         $ips = $cache->get("captcha_whitelist_ips");
         $networks = $cache->get("captcha_whitelist_networks");
         if (is_null($ips) || is_null($networks)) {
-            $rows = explode(",", $config->get_string(SiteCaptchaConfig::ALLOWED_IPS, ""));
+            $rows = explode(",", $config->get(SiteCaptchaConfig::ALLOWED_IPS));
 
             $ips = []; # "0.0.0.0" => 123;
             $networks = []; # "0.0.0.0/32" => 456;

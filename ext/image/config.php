@@ -63,13 +63,13 @@ final class ThumbnailConfig extends ConfigGroup
     #[ConfigMeta("Quality", ConfigType::INT, default: 75, advanced: true)]
     public const QUALITY = 'thumb_quality';
 
-    #[ConfigMeta("Resize type", ConfigType::STRING, default: Media::RESIZE_TYPE_FIT, options: "Shimmie2\ThumbnailConfig::get_fit_options")]
+    #[ConfigMeta("Resize type", ConfigType::STRING, default: ResizeType::FIT->value, options: "Shimmie2\ThumbnailConfig::get_fit_options")]
     public const FIT = 'thumb_fit';
 
     #[ConfigMeta("Allow upscaling", ConfigType::BOOL, advanced: true)]
     public const UPSCALE = 'thumb_upscale';
 
-    #[ConfigMeta("Background color", ConfigType::STRING, default: Media::DEFAULT_ALPHA_CONVERSION_COLOR, input: "color")]
+    #[ConfigMeta("Background color", ConfigType::STRING, default: "#00000000", input: ConfigInput::COLOR)]
     public const ALPHA_COLOR = 'thumb_alpha_color';
 
     /**
@@ -78,8 +78,8 @@ final class ThumbnailConfig extends ConfigGroup
     public static function get_fit_options(): array
     {
         $options = [];
-        foreach (MediaEngine::RESIZE_TYPE_SUPPORT[Ctx::$config->req_string(ThumbnailConfig::ENGINE)] as $type) {
-            $options[$type] = $type;
+        foreach (MediaEngine::RESIZE_TYPE_SUPPORT[Ctx::$config->req(ThumbnailConfig::ENGINE)] as $type) {
+            $options[$type->value] = $type->value;
         }
         return $options;
     }

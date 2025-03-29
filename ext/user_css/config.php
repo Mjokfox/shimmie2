@@ -8,6 +8,6 @@ class UserCSSUserConfig extends UserConfigGroup
 {
     public const KEY = "user_css";
 
-    #[ConfigMeta("Custom CSS", ConfigType::STRING, input: "longtext")]
+    #[ConfigMeta("Custom CSS", ConfigType::STRING, input: ConfigInput::TEXTAREA)]
     public const CSS = 'user_css';
 }

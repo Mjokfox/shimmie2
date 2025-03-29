@@ -27,10 +27,10 @@ class CustomUploadTheme extends UploadTheme
     {
         global $config;
         $upload_list = emptyHTML();
-        $upload_count = $config->get_int(UploadConfig::COUNT);
-        $preview_enabled = $config->get_bool(UploadConfig::PREVIEW);
-        $split_view = $config->get_bool(UploadConfig::SPLITVIEW);
-        $tl_enabled = ($config->get_string(UploadConfig::TRANSLOAD_ENGINE, "none") != "none");
+        $upload_count = $config->get(UploadConfig::COUNT);
+        $preview_enabled = $config->get(UploadConfig::PREVIEW);
+        $split_view = $config->get(UploadConfig::SPLITVIEW);
+        $tl_enabled = ($config->get(UploadConfig::TRANSLOAD_ENGINE) != "none");
         $accept = $this->get_accept();
 
         $headers = emptyHTML();
@@ -280,7 +280,7 @@ function get_categories_html(string $suffix): HTMLElement
             )
         );
     }
-    $upload_count = $config->get_int(UploadConfig::COUNT) - 1;
+    $upload_count = $config->get(UploadConfig::COUNT) - 1;
     $output = emptyHTML();
     $output->appendChild(DIV(
         ["class" => "dont-offset"],

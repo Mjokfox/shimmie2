@@ -82,7 +82,7 @@ final class AutoTagger extends Extension
             $t = new AutoTaggerTable(Ctx::$database->raw_db());
             $t->token = Ctx::$user->get_auth_token();
             $t->inputs = $event->GET;
-            $t->size = Ctx::$config->req_int(AutoTaggerConfig::ITEMS_PER_PAGE);
+            $t->size = Ctx::$config->req(AutoTaggerConfig::ITEMS_PER_PAGE);
             if (Ctx::$user->can(AutoTaggerPermission::MANAGE_AUTO_TAG)) {
                 $t->create_url = make_link("auto_tag/add");
                 $t->delete_url = make_link("auto_tag/remove");
@@ -141,9 +141,8 @@ final class AutoTagger extends Extension
 
     public function onAddAutoTag(AddAutoTagEvent $event): void
     {
-        global $page;
         $this->add_auto_tag($event->tag, $event->additional_tags);
-        $page->flash("Added Auto-Tag");
+        Ctx::$page->flash("Added Auto-Tag");
     }
 
     public function onDeleteAutoTag(DeleteAutoTagEvent $event): void

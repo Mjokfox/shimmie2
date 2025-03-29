@@ -55,8 +55,8 @@ class CustomBlotterTheme extends BlotterTheme
             </div>
 		    ";
         } else {
-            $i_color = $config->get_string(BlotterConfig::COLOR, "#FF0000");
-            $position = $config->get_string(BlotterConfig::POSITION, "subheading");
+            $i_color = $config->get(BlotterConfig::COLOR);
+            $position = $config->get(BlotterConfig::POSITION);
             $entries_list = "";
             foreach ($entries as $entry) {
                 /**

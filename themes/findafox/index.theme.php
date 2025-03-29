@@ -25,7 +25,7 @@ class CustomIndexTheme extends IndexTheme
             /** @var array{0: string, 1: string} $matches */
             $path = $matches[1];
         }
-        if ($config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
+        if ($config->get(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
             $pos = "main";
             $id = "search-bar-right";
             $class = "full-width";

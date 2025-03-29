@@ -13,8 +13,8 @@ class TagListTheme extends Themelet
 {
     protected function get_tag_list_preamble(): HTMLElement
     {
-        $tag_info_link_is_visible = !empty(Ctx::$config->get_string(TagListConfig::INFO_LINK));
-        $tag_count_is_visible = Ctx::$config->get_bool(TagListConfig::SHOW_NUMBERS);
+        $tag_info_link_is_visible = !empty(Ctx::$config->get(TagListConfig::INFO_LINK));
+        $tag_count_is_visible = Ctx::$config->get(TagListConfig::SHOW_NUMBERS);
 
         return TABLE(
             ["class" => "tag_list"],
@@ -55,11 +55,9 @@ class TagListTheme extends Themelet
      */
     public function display_split_related_block(array $tag_infos): void
     {
-        global $config, $page;
-
         $search = array_key_exists("search", $_GET) ? explode(" ", $_GET["search"]) : [""];
 
-        if (Ctx::$config->get_string(TagListConfig::RELATED_SORT) == TagListConfig::SORT_ALPHABETICAL) {
+        if (Ctx::$config->get(TagListConfig::RELATED_SORT) == TagListConfig::SORT_ALPHABETICAL) {
             usort($tag_infos, fn ($a, $b) => strcasecmp($a['tag'], $b['tag']));
         }
 
@@ -124,7 +122,7 @@ class TagListTheme extends Themelet
     {
         $main_html = $this->get_tag_list_html(
             $tag_infos,
-            Ctx::$config->req_string(TagListConfig::RELATED_SORT)
+            Ctx::$config->req(TagListConfig::RELATED_SORT)
         );
 
         Ctx::$page->add_block(new Block($block_name, $main_html, "left", 10));
@@ -138,7 +136,7 @@ class TagListTheme extends Themelet
         $main_html = emptyHTML(
             $this->get_tag_list_html(
                 $tag_infos,
-                Ctx::$config->req_string(TagListConfig::POPULAR_SORT)
+                Ctx::$config->req(TagListConfig::POPULAR_SORT)
             ),
             " ",
             BR(),
@@ -156,7 +154,7 @@ class TagListTheme extends Themelet
         $main_html = emptyHTML(
             $this->get_tag_list_html(
                 $tag_infos,
-                Ctx::$config->req_string(TagListConfig::POPULAR_SORT),
+                Ctx::$config->req(TagListConfig::POPULAR_SORT),
                 $search
             ),
             " ",
@@ -185,7 +183,7 @@ class TagListTheme extends Themelet
         }
         $tr = TR($props);
 
-        $info_link_template = Ctx::$config->get_string(TagListConfig::INFO_LINK);
+        $info_link_template = Ctx::$config->get(TagListConfig::INFO_LINK);
         if (!empty($info_link_template)) {
             $tr->appendChild(TD(
                 ["class" => "tag_info_link_cell"],
@@ -208,7 +206,7 @@ class TagListTheme extends Themelet
             )
         ));
 
-        if (Ctx::$config->get_bool(TagListConfig::SHOW_NUMBERS)) {
+        if (Ctx::$config->get(TagListConfig::SHOW_NUMBERS)) {
             $tr->appendChild(TD(
                 ["class" => "tag_count_cell"],
                 SPAN(["class" => "tag_count"], $row['count'])

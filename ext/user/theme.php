@@ -27,10 +27,9 @@ class UserPageTheme extends Themelet
 {
     public function display_login_page(): void
     {
-        global $page;
-        $page->set_title("Login");
+        Ctx::$page->set_title("Login");
         $this->display_navigation();
-        $page->add_block(new Block(
+        Ctx::$page->add_block(new Block(
             "Login There",
             emptyHTML("There should be a login box to the left")
         ));
@@ -49,27 +48,24 @@ class UserPageTheme extends Themelet
      */
     public function display_user_block(User $user, array $parts): void
     {
-        global $page;
         $html = emptyHTML('Logged in as ', $user->name);
         foreach ($parts as $part) {
             $html->appendChild(BR());
             $html->appendChild(A(["href" => (string)$part["link"]], $part["name"]));
         }
-        $b = new Block("User Links", $html, "left", 90);
-        $b->is_content = false;
-        $page->add_block($b);
+        Ctx::$page->add_block(new Block("User Links", $html, "left", 90, is_content: false));
     }
 
     public function display_signup_page(): void
     {
-        $tac = Ctx::$config->get_string(UserAccountsConfig::LOGIN_TAC) ?? "";
+        $tac = Ctx::$config->get(UserAccountsConfig::LOGIN_TAC) ?? "";
 
-        if (Ctx::$config->get_bool(UserAccountsConfig::LOGIN_TAC_BBCODE)) {
+        if (Ctx::$config->get(UserAccountsConfig::LOGIN_TAC_BBCODE)) {
             $tac = format_text($tac);
         }
 
         $email_required = (
-            Ctx::$config->get_bool(UserAccountsConfig::USER_EMAIL_REQUIRED) &&
+            Ctx::$config->get(UserAccountsConfig::USER_EMAIL_REQUIRED) &&
             !Ctx::$user->can(UserAccountsPermission::CREATE_OTHER_USER)
         );
 
@@ -155,7 +151,7 @@ class UserPageTheme extends Themelet
         $this->display_navigation();
         Ctx::$page->add_block(new Block(
             "Signups Disabled",
-            format_text(Ctx::$config->req_string(UserAccountsConfig::SIGNUP_DISABLED_MESSAGE)),
+            format_text(Ctx::$config->req(UserAccountsConfig::SIGNUP_DISABLED_MESSAGE)),
         ));
     }
 
@@ -188,7 +184,7 @@ class UserPageTheme extends Themelet
 
         $html = emptyHTML();
         $html->appendChild($form);
-        if (Ctx::$config->req_bool(UserAccountsConfig::SIGNUP_ENABLED) && Ctx::$user->can(UserAccountsPermission::CREATE_USER)) {
+        if (Ctx::$config->req(UserAccountsConfig::SIGNUP_ENABLED) && Ctx::$user->can(UserAccountsPermission::CREATE_USER)) {
             $html->appendChild(SMALL(A(["href" => make_link("user_admin/create")], "Create Account")));
         }
 
@@ -241,12 +237,11 @@ class UserPageTheme extends Themelet
      */
     public function display_user_page(User $duser, array $stats): void
     {
-        global $page;
         $stats[] = emptyHTML('User ID: '.$duser->id);
 
-        $page->set_title("{$duser->name}'s Page");
+        Ctx::$page->set_title("{$duser->name}'s Page");
         $this->display_navigation();
-        $page->add_block(new Block("Stats", joinHTML(BR(), $stats), "main", 10));
+        Ctx::$page->add_block(new Block("Stats", joinHTML(BR(), $stats), "main", 10));
     }
 
 
@@ -255,7 +250,7 @@ class UserPageTheme extends Themelet
         $html = emptyHTML();
 
         // just a fool-admin protection so they dont mess around with anon users.
-        if ($duser->id !== Ctx::$config->req_int(UserAccountsConfig::ANON_ID)) {
+        if ($duser->id !== Ctx::$config->req(UserAccountsConfig::ANON_ID)) {
             if (Ctx::$user->can(UserAccountsPermission::EDIT_USER_NAME)) {
                 $html->appendChild(SHM_USER_FORM(
                     $duser,

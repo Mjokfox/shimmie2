@@ -18,14 +18,13 @@ class HomeTheme extends Themelet
 {
     public function display_page(string $sitename, HTMLElement $body): void
     {
-        global $page;
-        $page->add_auto_html_headers();
-        $page->set_data(MimeType::HTML, (string)$page->html_html(
+        Ctx::$page->add_auto_html_headers();
+        Ctx::$page->set_data(MimeType::HTML, (string)Ctx::$page->html_html(
             emptyHTML(
                 TITLE($sitename),
                 META(["http-equiv" => "Content-Type", "content" => "text/html;charset=utf-8"]),
                 META(["name" => "viewport", "content" => "width=device-width, initial-scale=1"]),
-                ...$page->get_all_html_headers(),
+                ...Ctx::$page->get_all_html_headers(),
             ),
             $body
         ));
@@ -38,7 +37,7 @@ class HomeTheme extends Themelet
         ?string $contact_link,
         int $post_count,
     ): HTMLElement {
-        global $page;
+        $page = Ctx::$page;
         $page->set_layout("front-page");
 
         return BODY(
@@ -83,7 +82,7 @@ class HomeTheme extends Themelet
                 ]
             )
         ));
-        if (ReverseImageInfo::is_enabled() && $config->get_bool(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get_bool(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
+        if (ReverseImageInfo::is_enabled() && $config->get(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
             $search_html->appendChild(DIV(
                 ["class" => "space", "id" => "text-search"],
                 SHM_FORM(
@@ -110,7 +109,7 @@ class HomeTheme extends Themelet
 
     protected function build_counter(int $post_count): ?HTMLElement
     {
-        $counter_dir = Ctx::$config->get_string(HomeConfig::COUNTER);
+        $counter_dir = Ctx::$config->get(HomeConfig::COUNTER);
         if ($counter_dir === 'none' || $counter_dir === 'text-only') {
             return null;
         }

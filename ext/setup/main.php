@@ -91,7 +91,7 @@ final class Setup extends Extension
             $page->set_data(MimeType::JSON, \Safe\json_encode([
                 "args" => $event->args,
                 "theme" => get_theme(),
-                "nice_urls" => $config->req_bool(SetupConfig::NICE_URLS),
+                "nice_urls" => Url::are_niceurls_enabled(),
                 "base" => (string)Url::base(),
                 "absolute_base" => (string)Url::base()->asAbsolute(),
                 "base_link" => (string)make_link(""),
@@ -128,34 +128,36 @@ final class Setup extends Extension
         $changes = [];
         foreach ($event->values as $key => $value) {
             if (is_null($value)) {
-                if (!is_null($config->get_string($key))) {
+                if (!is_null($config->get($key))) {
                     $changes[] = "$key set to null";
                 }
                 $config->delete($key);
             } elseif (is_string($value)) {
-                $old = $config->get_string($key);
+                /** @var string $old */
+                $old = $config->get($key);
                 if ($old !== $value) {
                     $changes[] = "$key changed from ($old) to ($value)";
                 }
-                $config->set_string($key, $value);
+                $config->set($key, $value);
             } elseif (is_int($value)) {
-                $old = $config->get_int($key);
+                /** @var int $old */
+                $old = $config->get($key);
                 if ($old !== $value) {
                     $changes[] = "$key changed from ($old) to ($value)";
                 }
-                $config->set_int($key, $value);
+                $config->set($key, $value);
             } elseif (is_bool($value)) {
-                $old = $config->get_bool($key);
+                $old = $config->get($key);
                 if ($old !== $value) {
                     $changes[] = "$key changed from (".($old ? "true" : "false").") to (".($value ? "true" : "false").")";
                 }
-                $config->set_bool($key, $value);
+                $config->set($key, $value);
             } elseif (is_array($value)) {
-                $old = $config->get_array($key);
+                $old = $config->get($key);
                 if ($old !== $value) {
                     $changes[] = "$key changed from ([".(is_array($old) ? implode(",", $old) : "")."]) to ([".implode(",", $value)."])";
                 }
-                $config->set_array($key, $value);
+                $config->set($key, $value);
             }
         }
         $message = count($changes) > 0 ? implode(",\r\n", $changes) : "nothing changed";
@@ -167,8 +169,8 @@ final class Setup extends Extension
         $event->app->register('config:defaults')
             ->setDescription('Show defaults')
             ->setCode(function (InputInterface $input, OutputInterface $output): int {
-                foreach (ConfigGroup::get_all_defaults() as $key => $value) {
-                    $output->writeln("$key: " . var_export($value, true));
+                foreach (ConfigGroup::get_all_metas() as $key => $meta) {
+                    $output->writeln("$key: " . var_export($meta->default, true));
                 }
                 return Command::SUCCESS;
             });
@@ -176,7 +178,7 @@ final class Setup extends Extension
             ->addArgument('key', InputArgument::REQUIRED)
             ->setDescription('Get a config value')
             ->setCode(function (InputInterface $input, OutputInterface $output): int {
-                $output->writeln(Ctx::$config->req_string($input->getArgument('key')));
+                $output->writeln(\Safe\json_encode(Ctx::$config->req($input->getArgument('key'))));
                 return Command::SUCCESS;
             });
         $event->app->register('config:set')
@@ -184,7 +186,7 @@ final class Setup extends Extension
             ->addArgument('value', InputArgument::REQUIRED)
             ->setDescription('Set a config value')
             ->setCode(function (InputInterface $input, OutputInterface $output): int {
-                Ctx::$config->set_string($input->getArgument('key'), $input->getArgument('value'));
+                Ctx::$config->set($input->getArgument('key'), $input->getArgument('value'));
                 Ctx::$cache->delete("config");
                 return Command::SUCCESS;
             });
@@ -208,6 +210,6 @@ final class Setup extends Extension
 
     public function onParseLinkTemplate(ParseLinkTemplateEvent $event): void
     {
-        $event->replace('$title', Ctx::$config->req_string(SetupConfig::TITLE));
+        $event->replace('$title', Ctx::$config->req(SetupConfig::TITLE));
     }
 }

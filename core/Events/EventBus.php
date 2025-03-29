@@ -19,7 +19,7 @@ function send_event(Event $event): Event
 final class EventBus
 {
     /** @var array<string, list<Extension>> $event_listeners */
-    private array $event_listeners = [];
+    private readonly array $event_listeners;
     public int $event_count = 0;
     private ?float $deadline = null;
 
@@ -30,7 +30,7 @@ final class EventBus
         $ver = \Safe\preg_replace("/[^a-zA-Z0-9\.]/", "_", SysConfig::getVersion());
         $key = md5(Extension::get_enabled_extensions_as_string());
 
-        $speed_hax = (Ctx::$config->get_bool(SetupConfig::CACHE_EVENT_LISTENERS));
+        $speed_hax = (Ctx::$config->get(SetupConfig::CACHE_EVENT_LISTENERS));
         $cache_path = Filesystem::data_path("cache/event_listeners/el.$ver.$key.php");
         if ($speed_hax && $cache_path->exists()) {
             $this->event_listeners = require_once($cache_path->str());

@@ -13,7 +13,7 @@ class UserCSS extends Extension
     {
         global $page,$user;
         $page->add_html_header(STYLE(
-            rawHTML(htmlentities($user->get_config()->get_string(UserCSSUserConfig::CSS) ?? "", ENT_NOQUOTES, "UTF-8"))
+            rawHTML(htmlentities($user->get_config()->get(UserCSSUserConfig::CSS) ?? "", ENT_NOQUOTES, "UTF-8"))
         ));
     }
 }

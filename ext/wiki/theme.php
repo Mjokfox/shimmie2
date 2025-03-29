@@ -46,7 +46,7 @@ class WikiTheme extends Themelet
 
     public function display_list_page(?WikiPage $nav_page = null): void
     {
-        global $database, $page;
+        global $database;
         if (is_null($nav_page)) {
             $nav_page = new WikiPage();
             $nav_page->body = "";
@@ -61,9 +61,9 @@ class WikiTheme extends Themelet
         foreach ($titles as $title) {
             $html->appendChild(A(["href" => make_link("wiki/$title")], $title));
         }
-        $page->set_title("Wiki page list");
-        $page->add_block(new Block("Wiki Index", $body_html, "left", 20));
-        $page->add_block(new Block("All Wiki Pages", $html));
+        Ctx::$page->set_title("Wiki page list");
+        Ctx::$page->add_block(new Block("Wiki Index", $body_html, "left", 20));
+        Ctx::$page->add_block(new Block("All Wiki Pages", $html));
     }
 
     /**
@@ -71,7 +71,6 @@ class WikiTheme extends Themelet
      */
     public function display_page_history(string $title, array $history): void
     {
-        global $page;
         $html = TABLE(["class" => "zebra"]);
         foreach ($history as $row) {
             $html->appendChild(TR(
@@ -79,17 +78,16 @@ class WikiTheme extends Themelet
                 TD($row['date'])
             ));
         }
-        $page->set_title($title);
+        Ctx::$page->set_title($title);
         $this->display_navigation();
-        $page->add_block(new Block($title, $html));
+        Ctx::$page->add_block(new Block($title, $html));
     }
 
     public function display_page_editor(WikiPage $wiki_page): void
     {
-        global $page;
-        $page->set_title($wiki_page->title);
+        Ctx::$page->set_title($wiki_page->title);
         $this->display_navigation();
-        $page->add_block(new Block("Editor", $this->create_edit_html($wiki_page)));
+        Ctx::$page->add_block(new Block("Editor", $this->create_edit_html($wiki_page)));
     }
 
     protected function create_edit_html(WikiPage $page): HTMLElement
@@ -122,7 +120,7 @@ class WikiTheme extends Themelet
         // if this is a tag page, add tag info
         $tag = $database->get_one("SELECT tag FROM tags WHERE tag = :tag", ["tag" => $page->title]);
         if (!is_null($tag)) {
-            $text = Ctx::$config->req_string(WikiConfig::TAG_PAGE_TEMPLATE);
+            $text = Ctx::$config->req(WikiConfig::TAG_PAGE_TEMPLATE);
 
             if (AliasEditorInfo::is_enabled()) {
                 $aliases = $database->get_col("
@@ -135,7 +133,7 @@ class WikiTheme extends Themelet
                 if (!empty($aliases)) {
                     $text = str_replace("{aliases}", implode(", ", $aliases), $text);
                 } else {
-                    $text = str_replace("{aliases}", Ctx::$config->req_string(WikiConfig::EMPTY_TAGINFO), $text);
+                    $text = str_replace("{aliases}", Ctx::$config->req(WikiConfig::EMPTY_TAGINFO), $text);
                 }
             }
 
@@ -149,7 +147,7 @@ class WikiTheme extends Themelet
                 if (!empty($auto_tags)) {
                     $text = str_replace("{autotags}", $auto_tags, $text);
                 } else {
-                    $text = str_replace("{autotags}", Ctx::$config->req_string(WikiConfig::EMPTY_TAGINFO), $text);
+                    $text = str_replace("{autotags}", Ctx::$config->req(WikiConfig::EMPTY_TAGINFO), $text);
                 }
             }
         }
