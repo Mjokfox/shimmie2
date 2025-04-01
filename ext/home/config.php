@@ -8,7 +8,7 @@ final class HomeConfig extends ConfigGroup
 {
     public const KEY = "home";
     public ?string $title = "Home Page";
-    #[ConfigMeta("title", ConfigType::STRING)]
+    #[ConfigMeta("title", ConfigType::STRING, default: "")]
     public const TITLE = 'home_title';
 
     #[ConfigMeta("Page links", ConfigType::STRING, input: ConfigInput::TEXTAREA, help: "Use BBCode, leave blank for defaults")]
