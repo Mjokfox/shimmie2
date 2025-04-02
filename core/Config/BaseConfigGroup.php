@@ -6,8 +6,19 @@ namespace Shimmie2;
 
 abstract class BaseConfigGroup extends Enablable
 {
-    public ?string $title = null;
+    protected ?string $title = null;
     public ?int $position = null;
+
+    public function get_title(): string
+    {
+        return $this->title ?? implode(
+            " ",
+            array_filter(\Safe\preg_split(
+                '/(?=[A-Z])/',
+                \Safe\preg_replace("/^Shimmie2.(.*?)(User)?Config/", "\$1", get_class($this))
+            ), fn ($x) => strlen($x) > 0)
+        );
+    }
 
     /**
      * Get all config fields from this config group.
@@ -51,11 +62,9 @@ abstract class BaseConfigGroup extends Enablable
         foreach (self::get_subclasses(true) as $class) {
             foreach ($class->getReflectionConstants() as $const) {
                 $attributes = $const->getAttributes(ConfigMeta::class);
-                if (count($attributes) !== 1) {
-                    continue;
+                if (count($attributes) === 1) {
+                    $metas[$const->getValue()] = $attributes[0]->newInstance();
                 }
-                $meta = $attributes[0]->newInstance();
-                $metas[$const->getValue()] = $meta;
             }
         }
         return $metas;

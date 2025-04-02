@@ -167,11 +167,6 @@ final class Media extends Extension
             default:
                 throw new MediaException("Engine not supported for resize: " . $event->engine->value);
         }
-
-        // TODO: Get output optimization tools working better
-        //        if ($config->get("thumb_optim")) {
-        //            exec("jpegoptim $outname", $output, $ret);
-        //        }
     }
 
     public function onSearchTermParse(SearchTermParseEvent $event): void
@@ -263,10 +258,7 @@ final class Media extends Extension
      */
     public static function create_thumbnail_ffmpeg(Image $image): bool
     {
-        $ffmpeg = Ctx::$config->get(MediaConfig::FFMPEG_PATH);
-        if (empty($ffmpeg)) {
-            throw new MediaException("ffmpeg command not configured");
-        }
+        $ffmpeg = Ctx::$config->req(MediaConfig::FFMPEG_PATH);
 
         $ok = false;
         $inname = $image->get_image_filename();
@@ -301,36 +293,52 @@ final class Media extends Extension
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{
+     *     streams: array<array{
+     *         codec_type: "audio",
+     *         codec_name: string,
+     *         codec_tag_string: string,
+     *         tags?: array<string, string>
+     *     }|array{
+     *         codec_type: "video",
+     *         codec_name: string,
+     *         codec_tag_string: string,
+     *         width: int,
+     *         height: int,
+     *         coded_width: int,
+     *         coded_height: int,
+     *         pix_fmt: string,
+     *         tags?: array<string, string>
+     *     }>,
+     *     format: array{
+     *         filename: string,
+     *         nb_streams: int,
+     *         nb_programs: int,
+     *         nb_stream_groups: int,
+     *         format_name: string,
+     *         format_long_name: string,
+     *         start_time: string,
+     *         duration: string,
+     *         size: string,
+     *         bit_rate: string,
+     *         probe_score: int,
+     *         tags?: array<string, string>
+     *     }
+     * }
      */
-    public static function get_ffprobe_data(string $filename): array
+    public static function get_ffprobe_data(Path $filename): array
     {
-        $ffprobe = Ctx::$config->get(MediaConfig::FFPROBE_PATH);
-        if (empty($ffprobe)) {
-            throw new MediaException("ffprobe command not configured");
-        }
-
-        $args = [
-            escapeshellarg($ffprobe),
-            "-print_format", "json",
-            "-v", "quiet",
-            "-show_format",
-            "-show_streams",
-            escapeshellarg($filename),
-        ];
-
-        $cmd = escapeshellcmd(implode(" ", $args));
-
-        exec($cmd, $output, $ret);
-
-        if ($ret === 0) {
-            Log::debug('media', "Getting media data `$cmd`, returns $ret");
-            $output = implode($output);
-            return json_decode($output, true);
-        } else {
-            Log::error('media', "Getting media data `$cmd`, returns $ret");
-            return [];
-        }
+        $command = new CommandBuilder(Ctx::$config->req(MediaConfig::FFPROBE_PATH));
+        $command->add_flag("-print_format");
+        $command->add_flag("json");
+        $command->add_flag("-v");
+        $command->add_flag("quiet");
+        $command->add_flag("-show_format");
+        $command->add_flag("-show_streams");
+        $command->add_escaped_arg($filename->str());
+        $command->execute();
+        $output = $command->get_output();
+        return json_decode($output, true);
     }
 
     public static function determine_ext(MimeType $mime): string
@@ -377,28 +385,19 @@ final class Media extends Extension
             $output_mime = new MimeType(MimeType::WEBP_LOSSLESS);
         }
 
-        $bg = "\"$alpha_color\"";
-        if (self::supports_alpha($output_mime)) {
-            $bg = "none";
-        }
+        $command = new CommandBuilder(Ctx::$config->req(MediaConfig::CONVERT_PATH));
 
-        $resize_suffix = "";
-        if (!$allow_upscale) {
-            $resize_suffix .= "\>";
-        }
-        if ($resize_type === ResizeType::STRETCH) {
-            $resize_suffix .= "\!";
-        }
-
-        $args = " -auto-orient ";
-        $resize_arg = "-resize";
-        if ($minimize) {
-            $args .= "-strip ";
-            $resize_arg = "-thumbnail";
-        }
-
+        // read input
         $input_ext = self::determine_ext($input_mime);
+        $command->add_escaped_arg("{$input_ext}:{$input_path->str()}[0]");
 
+        // strip data
+        $command->add_flag("-auto-orient");
+        if ($minimize) {
+            $command->add_flag("-strip");
+        }
+
+        $resize_arg = $minimize ? "-thumbnail" : "-resize";
         if ($resize_type === ResizeType::FIT_BLUR_PORTRAIT) {
             if ($new_height > $new_width) {
                 $resize_type = ResizeType::FIT_BLUR;
@@ -407,37 +406,97 @@ final class Media extends Extension
             }
         }
 
+        $bg = self::supports_alpha($output_mime) ? "none" : $alpha_color;
         switch ($resize_type) {
             case ResizeType::FIT:
             case ResizeType::STRETCH:
-                $args .= "{$resize_arg} {$new_width}x{$new_height}{$resize_suffix} -background {$bg} -flatten ";
+                $resize_suffix = "";
+                if (!$allow_upscale) {
+                    $resize_suffix .= ">";
+                }
+                if ($resize_type === ResizeType::STRETCH) {
+                    $resize_suffix .= "!";
+                }
+                $command->add_flag($resize_arg);
+                $command->add_escaped_arg("{$new_width}x{$new_height}{$resize_suffix}");
+                $command->add_flag("-background");
+                $command->add_escaped_arg($bg);
+                $command->add_flag("-flatten");
                 break;
             case ResizeType::FILL:
-                $args .= "{$resize_arg} {$new_width}x{$new_height}\^ -background {$bg} -flatten -gravity center -extent {$new_width}x{$new_height} ";
+                $command->add_flag($resize_arg);
+                $command->add_escaped_arg("{$new_width}x{$new_height}^");
+                $command->add_flag("-background");
+                $command->add_escaped_arg($bg);
+                $command->add_flag("-flatten");
+                $command->add_flag("-gravity");
+                $command->add_escaped_arg("center");
+                $command->add_flag("-extent");
+                $command->add_escaped_arg("{$new_width}x{$new_height}");
                 break;
             case ResizeType::FIT_BLUR:
                 $blur_size = max(ceil(max($new_width, $new_height) / 25), 5);
-                $args .= " ".
-                    "\( -clone 0 -auto-orient -resize {$new_width}x{$new_height}\^ -background {$bg} -flatten -gravity center -fill black -colorize 50% -extent {$new_width}x{$new_height} -blur 0x{$blur_size} \) ".
-                    "\( -clone 0 -auto-orient -resize {$new_width}x{$new_height} \) ".
-                    "-delete 0 -gravity center -compose over -composite";
+                // add blurred background
+                $command->add_flag("(");
+                $command->add_flag("-clone");
+                $command->add_escaped_arg("0");
+                $command->add_flag("-auto-orient");
+                $command->add_flag("-resize");
+                $command->add_escaped_arg("{$new_width}x{$new_height}^");
+                $command->add_flag("-background");
+                $command->add_escaped_arg($bg);
+                $command->add_flag("-flatten");
+                $command->add_flag("-gravity");
+                $command->add_escaped_arg("center");
+                $command->add_flag("-fill");
+                $command->add_escaped_arg("black");
+                $command->add_flag("-colorize");
+                $command->add_escaped_arg("50%");
+                $command->add_flag("-extent");
+                $command->add_escaped_arg("{$new_width}x{$new_height}");
+                $command->add_flag("-blur");
+                $command->add_escaped_arg("0x{$blur_size}");
+                $command->add_flag(")");
+
+                // add main image
+                $command->add_flag("(");
+                $command->add_flag("-clone");
+                $command->add_escaped_arg("0");
+                $command->add_flag("-auto-orient");
+                $command->add_flag("-resize");
+                $command->add_escaped_arg("{$new_width}x{$new_height}");
+                $command->add_flag(")");
+
+                // compose
+                $command->add_flag("-delete");
+                $command->add_escaped_arg("0");
+                $command->add_flag("-gravity");
+                $command->add_escaped_arg("center");
+                $command->add_flag("-compose");
+                $command->add_escaped_arg("over");
+                $command->add_flag("-composite");
                 break;
         }
 
+        // format-specific compression options
         if ($output_mime->base === MimeType::PNG) {
-            $args .= ' -define png:compression-level=9';
+            $command->add_flag("-define");
+            $command->add_escaped_arg("png:compression-level=9");
         } elseif ($output_mime->base == MimeType::WEBP && $output_mime->parameters == MimeType::LOSSLESS_PARAMETER) {
-            $args .= ' -define webp:lossless=true -quality 100 ';
+            $command->add_flag("-define");
+            $command->add_escaped_arg("webp:lossless=true");
+            $command->add_flag("-quality");
+            $command->add_escaped_arg("100");
         } else {
-            $args .= ' -quality '.$output_quality;
+            $command->add_flag("-quality");
+            $command->add_escaped_arg((string)Ctx::$config->req(TranscodeImageConfig::QUALITY));
         }
 
+        // write output
         $output_ext = self::determine_ext($output_mime);
-
-        $command = new CommandBuilder(Ctx::$config->req(MediaConfig::CONVERT_PATH));
-        $command->add_escaped_arg("{$input_ext}:\"{$input_path->str()}[0]\"");
-        $command->add_flag($args);
         $command->add_escaped_arg("$output_ext:{$output_filename->str()}");
+
+        // go
         $command->execute();
     }
 
@@ -627,34 +686,18 @@ final class Media extends Extension
      */
     public static function video_size(Path $filename): array
     {
-        $ffmpeg = Ctx::$config->req(MediaConfig::FFMPEG_PATH);
-        $cmd = escapeshellcmd(implode(" ", [
-            escapeshellarg($ffmpeg),
-            "-y", "-i", escapeshellarg($filename->str()),
-            "-vstats"
-        ]));
-        // \Safe\shell_exec is a little broken
-        // https://github.com/thecodingmachine/safe/issues/281
-        $output = shell_exec($cmd . " 2>&1");
-        if (is_null($output) || $output === false) {
-            throw new MediaException("Failed to execute command: $cmd");
-        }
-        // error_log("Getting size with `$cmd`");
+        $data = Media::get_ffprobe_data($filename);
 
-        if (\Safe\preg_match("/Video: .* ([0-9]{1,4})x([0-9]{1,4})/", $output, $regs)) {
-            $x = (int)$regs[1];
-            $y = (int)$regs[2];
-            assert($x > 0 && $y > 0);
-            if (\Safe\preg_match("/displaymatrix: rotation of (90|270).00 degrees/", $output)) {
-                $size = [$y, $x];
-            } else {
-                $size = [$x, $y];
+        $width = 1;
+        $height = 1;
+        foreach ($data["streams"] as $stream) {
+            if ($stream["codec_type"] == "video") {
+                $width = max($width, $stream["width"]);
+                $height = max($height, $stream["height"]);
             }
-        } else {
-            $size = [1, 1];
         }
-        Log::debug('media', "Getting video size with `$cmd`, returns $output -- $size[0], $size[1]");
-        return $size;
+
+        return [$width, $height];
     }
 
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void

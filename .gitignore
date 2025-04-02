@@ -6,8 +6,11 @@ data
 .sl
 .vscode/*
 __pycache__
+*.phar
+.phpactor.json
+.zed
+
 #Composer
-composer.phar
 /vendor/
 
 # Created by http://www.gitignore.io
