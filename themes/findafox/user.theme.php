@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use MicroHTML\HTMLElement;
-
 use function MicroHTML\{A, BR, INPUT, LABEL, SMALL, TABLE, TD, TR, joinHTML};
+
+use MicroHTML\HTMLElement;
 
 class CustomUserPageTheme extends UserPageTheme
 {

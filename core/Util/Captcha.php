@@ -8,10 +8,9 @@ namespace Shimmie2;
 * CAPTCHA abstraction                                                       *
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-use MicroHTML\HTMLElement;
-
 use function MicroHTML\{DIV, SCRIPT, emptyHTML};
 
+use MicroHTML\HTMLElement;
 use ReCaptcha\ReCaptcha;
 
 final readonly class Captcha

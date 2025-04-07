@@ -8,9 +8,10 @@ require_once "events.php";
 
 use GQLA\{Field, Mutation, Type};
 use MicroCRUD\{ActionColumn, DateColumn, EnumColumn, IntegerColumn, Table, TextColumn};
-use MicroHTML\HTMLElement;
 
 use function MicroHTML\{A, P, emptyHTML};
+
+use MicroHTML\HTMLElement;
 
 final class UserNameColumn extends TextColumn
 {

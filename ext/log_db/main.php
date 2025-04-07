@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Shimmie2;
 
 use MicroCRUD\{ActionColumn, Column, Table, TextColumn};
-use MicroHTML\HTMLElement;
 
 use function MicroHTML\{A, BR, INPUT, OPTION, SELECT, SPAN, emptyHTML};
+
+use MicroHTML\HTMLElement;
 
 final class ActorColumn extends Column
 {

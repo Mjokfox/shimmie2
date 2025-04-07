@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use MicroHTML\HTMLElement;
-
 use function MicroHTML\{BR, LABEL};
 use function MicroHTML\{DIV, INPUT};
 use function MicroHTML\{emptyHTML,joinHTML};
+
+use MicroHTML\HTMLElement;
 
 class BulkActionsTheme extends Themelet
 {

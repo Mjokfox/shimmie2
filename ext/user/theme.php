@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use MicroHTML\HTMLElement;
-
 use function MicroHTML\{A, BR, INPUT, LABEL, OPTION, P, SELECT, SMALL, TABLE, TBODY, TD, TFOOT, TH, TR, emptyHTML, joinHTML};
+
+use MicroHTML\HTMLElement;
 
 class UserPageTheme extends Themelet
 {

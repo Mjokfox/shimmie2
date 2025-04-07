@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use MicroHTML\HTMLElement;
-
 use function MicroHTML\{B, DIV, INPUT, LABEL, OPTION, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR, emptyHTML};
+
+use MicroHTML\HTMLElement;
 
 class CustomUploadTheme extends UploadTheme
 {

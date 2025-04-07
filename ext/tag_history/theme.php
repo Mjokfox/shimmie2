@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use MicroHTML\HTMLElement;
-
 use function MicroHTML\{A, B, BR, DIV, INPUT, LABEL, LI, P, SPAN, TABLE, TD, TH, TR, UL, emptyHTML};
+
+use MicroHTML\HTMLElement;
 
 /**
  * @phpstan-type HistoryEntry array{image_id:int,id:int,tags:string,date_set:string,user_id:string,user_ip:string,name:string}

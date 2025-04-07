@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+use function MicroHTML\{A, BR, HR, P, SPAN, emptyHTML, joinHTML};
+
 use MicroHTML\HTMLElement;
 
 use function MicroHTML\SUB;
-use function MicroHTML\{A, BR, HR, P, SPAN, emptyHTML, joinHTML};
 
 class TagMapTheme extends Themelet
 {

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use MicroHTML\HTMLElement;
-
 use function MicroHTML\{A, FIELDSET, INPUT, LABEL, LEGEND, TABLE, TD, TR};
+
+use MicroHTML\HTMLElement;
 
 class LinkImageTheme extends Themelet
 {

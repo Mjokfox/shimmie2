@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use MicroHTML\HTMLElement;
-
 use function MicroHTML\{A, H1, IMG, SMALL, SPAN, joinHTML};
 use function MicroHTML\{BODY, DIV, INPUT, META, TITLE, emptyHTML};
+
+use MicroHTML\HTMLElement;
 
 class HomeTheme extends Themelet
 {

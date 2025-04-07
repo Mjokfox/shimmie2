@@ -268,8 +268,7 @@ final class TagCategories extends Extension
     {
         global $database;
         if (isset($_POST['tc_status'])) {
-            if (!isset($_POST['tc_status']) ||
-            !isset($_POST['tc_category']) ||
+            if (!isset($_POST['tc_category']) ||
             !isset($_POST['tc_up_group']) ||
             !isset($_POST['tc_lo_group']) ||
             !isset($_POST['tc_tag_list']) ||

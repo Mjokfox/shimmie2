@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use MicroHTML\HTMLElement;
-
 use function MicroHTML\{DIV, H3, INPUT, SECTION, TABLE, TD, TH, TR};
+
+use MicroHTML\HTMLElement;
 
 class UserConfigTheme extends Themelet
 {

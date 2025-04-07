@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use MicroHTML\HTMLElement;
-
 use function MicroHTML\{A, BR, INPUT, emptyHTML, rawHTML};
+
+use MicroHTML\HTMLElement;
 
 class CustomPostOwnerTheme extends PostOwnerTheme
 {

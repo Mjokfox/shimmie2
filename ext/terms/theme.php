@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use MicroHTML\HTMLElement;
-
 use function MicroHTML\{BUTTON, DIALOG, DIV, H1, SPAN};
+
+use MicroHTML\HTMLElement;
 
 class TermsTheme extends Themelet
 {

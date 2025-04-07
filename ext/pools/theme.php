@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+use function MicroHTML\{A,BR,DIV,INPUT,P,SPAN,TABLE,TBODY,TD,TEXTAREA,TH,THEAD,TR};
 use function MicroHTML\emptyHTML;
 
 use MicroHTML\HTMLElement;
-
-use function MicroHTML\{A,BR,DIV,INPUT,P,SPAN,TABLE,TBODY,TD,TEXTAREA,TH,THEAD,TR};
 
 /**
  * @phpstan-type PoolHistory array{id:int,pool_id:int,title:string,user_name:string,action:int,images:string,count:int,date:string}

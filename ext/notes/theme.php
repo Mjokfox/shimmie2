@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use MicroHTML\HTMLElement;
-
 use function MicroHTML\{A, P, TABLE, TBODY, TD, TH, THEAD, TR, emptyHTML, joinHTML};
 use function MicroHTML\{FORM, INPUT, SCRIPT};
+
+use MicroHTML\HTMLElement;
 
 /**
  * @phpstan-type NoteHistory array{image_id:int,note_id:int,review_id:int,user_name:string,note:string,date:string}

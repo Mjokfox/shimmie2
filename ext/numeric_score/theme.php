@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use MicroHTML\HTMLElement;
-
 use function MicroHTML\{A, BR, DIV, H3, INPUT, P, emptyHTML, joinHTML};
+
+use MicroHTML\HTMLElement;
 
 class NumericScoreTheme extends Themelet
 {

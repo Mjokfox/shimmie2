@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+use function MicroHTML\{BUTTON,P};
 use function MicroHTML\emptyHTML;
 
 use MicroHTML\HTMLElement;
-
-use function MicroHTML\{BUTTON,P};
 
 class ApprovalTheme extends Themelet
 {

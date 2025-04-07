@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+use function MicroHTML\{A, B, DIV, emptyHTML};
+
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{A, B, DIV, emptyHTML};
 use function MicroHTML\{TABLE, TBODY, TD, TH, THEAD, TR};
 
 class StatisticsTheme extends Themelet

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use MicroHTML\HTMLElement;
-
 use function MicroHTML\{A, BR, DIV, INPUT, P, SPAN, SUP, TABLE, TD, TEXTAREA, TH, TR, emptyHTML};
+
+use MicroHTML\HTMLElement;
 
 class CommentListTheme extends Themelet
 {

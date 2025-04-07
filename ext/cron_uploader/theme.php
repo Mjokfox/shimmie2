@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use MicroHTML\HTMLElement;
-
 use function MicroHTML\{A, B, BR, CODE, DIV, INPUT, LABEL, LI, OPTION, SELECT, TABLE, TBODY, TD, TFOOT, TH, TR, UL, emptyHTML};
+
+use MicroHTML\HTMLElement;
 
 class CronUploaderTheme extends Themelet
 {

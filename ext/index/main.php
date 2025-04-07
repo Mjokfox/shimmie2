@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Shimmie2;
 
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\{InputArgument, InputInterface};
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 require_once "events.php";

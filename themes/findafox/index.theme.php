@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use MicroHTML\HTMLElement;
-
 use function MicroHTML\{DIV, FORM, INPUT, LINK, META};
+
+use MicroHTML\HTMLElement;
 
 class CustomIndexTheme extends IndexTheme
 {
@@ -22,7 +22,6 @@ class CustomIndexTheme extends IndexTheme
         $this->display_page_header($images);
         $path = "list";
         if (\Safe\preg_match("/^\/post\/(list|search)\//", $_SERVER['REQUEST_URI'], $matches)) {
-            /** @var array{0: string, 1: string} $matches */
             $path = $matches[1];
         }
         if ($config->get(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
@@ -92,7 +91,6 @@ class CustomIndexTheme extends IndexTheme
         global $page;
         $path = "list";
         if (\Safe\preg_match("/^\/post\/(list|search)\//", $_SERVER['REQUEST_URI'], $matches)) {
-            /** @var array{0: string, 1: string} $matches */
             $path = $matches[1];
         }
         if (count($this->search_terms) > 0) {
