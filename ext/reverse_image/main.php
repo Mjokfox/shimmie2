@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{rawHTML, INPUT};
+use function MicroHTML\{INPUT, rawHTML};
 
 require_once "config.php";
 
@@ -49,13 +49,13 @@ class ReverseImage extends Extension
             }
         } elseif ($event->page_matches("post/view/{id}")) {
             if ($config->get(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
-                $this->theme->view_search($event->get_GET('search') ?? "");
+                $this->theme->view_search($event->GET->get('search') ?? "");
             }
         } elseif ($event->page_matches("post/search", paged: true)
             || $event->page_matches("post/search/{search}", paged: true)
         ) {
             global $database;
-            $get_search = $event->get_GET('search');
+            $get_search = $event->GET->get('search');
             if ($get_search || !($config->get(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get(ReverseImageUserConfig::USER_SEARCH_ENABLE))) {
                 if (empty($get_search)) {
                     $page->set_redirect(make_link("post/list"));
@@ -202,7 +202,7 @@ class ReverseImage extends Extension
                 AND a.image = TRUE
                 AND a.id > :id
                 LIMIT :limit;";
-                $images = $database->get_all($query, ["id" => $event->params['reverse_image_start_id'] | "0","limit" => $event->params['reverse_image_limit'] | "0"]);
+                $images = $database->get_all($query, ["id" => $event->params['reverse_image_start_id'] ?: "0","limit" => $event->params['reverse_image_limit'] ?: "0"]);
                 $i = 0;
                 $j = [];
                 foreach ($images as $image) {

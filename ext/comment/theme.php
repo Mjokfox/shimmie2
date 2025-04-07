@@ -6,19 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\A;
-use function MicroHTML\BR;
-use function MicroHTML\DIV;
-use function MicroHTML\INPUT;
-use function MicroHTML\P;
-use function MicroHTML\SPAN;
-use function MicroHTML\SUP;
-use function MicroHTML\TABLE;
-use function MicroHTML\TD;
-use function MicroHTML\TEXTAREA;
-use function MicroHTML\TH;
-use function MicroHTML\TR;
-use function MicroHTML\emptyHTML;
+use function MicroHTML\{A, BR, DIV, INPUT, P, SPAN, SUP, TABLE, TD, TEXTAREA, TH, TR, emptyHTML};
 
 class CommentListTheme extends Themelet
 {

@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\emptyHTML;
-use function MicroHTML\SPAN;
+use function MicroHTML\{SPAN, emptyHTML};
 
 final class Statistics extends Extension
 {

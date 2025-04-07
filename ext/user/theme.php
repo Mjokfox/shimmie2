@@ -6,22 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\emptyHTML;
-use function MicroHTML\joinHTML;
-use function MicroHTML\TABLE;
-use function MicroHTML\TBODY;
-use function MicroHTML\TFOOT;
-use function MicroHTML\TR;
-use function MicroHTML\TH;
-use function MicroHTML\TD;
-use function MicroHTML\LABEL;
-use function MicroHTML\INPUT;
-use function MicroHTML\SMALL;
-use function MicroHTML\A;
-use function MicroHTML\BR;
-use function MicroHTML\P;
-use function MicroHTML\SELECT;
-use function MicroHTML\OPTION;
+use function MicroHTML\{A, BR, INPUT, LABEL, OPTION, P, SELECT, SMALL, TABLE, TBODY, TD, TFOOT, TH, TR, emptyHTML, joinHTML};
 
 class UserPageTheme extends Themelet
 {

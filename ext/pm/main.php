@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use GQLA\Type;
-use GQLA\Field;
-use GQLA\Mutation;
+use GQLA\{Field, Mutation, Type};
 
-use function MicroHTML\{emptyHTML, SPAN};
+use function MicroHTML\{SPAN, emptyHTML};
 
 final class SendPMEvent extends Event
 {
@@ -71,7 +69,16 @@ final class PM
     }
 
     /**
-     * @param array<string, mixed> $row
+     * @param array{
+     *     id: string|int,
+     *     from_id: string|int,
+     *     from_ip: string,
+     *     to_id: string|int,
+     *     subject: string,
+     *     message: string,
+     *     is_read: string|bool,
+     *     sent_date: string
+     * } $row
      */
     public static function from_row(array $row): PM
     {
@@ -398,7 +405,7 @@ final class PrivMsg extends Extension
                 throw new PermissionDenied("You are not allowed to see others' archives");
             }
         } elseif ($event->page_matches("pm/archive", method: "POST", permission: PrivMsgPermission::READ_PM)) {
-            $pm_id = int_escape($event->req_POST("pm_id"));
+            $pm_id = int_escape($event->POST->req("pm_id"));
             $pm = $database->get_row("SELECT * FROM private_message WHERE id = :id", ["id" => $pm_id]);
             if (is_null($pm)) {
                 throw new ObjectNotFound("No such PM");
@@ -419,7 +426,7 @@ final class PrivMsg extends Extension
                 $page->set_redirect(Url::referer_or(make_link()));
             }
         } elseif ($event->page_matches("pm/delete", method: "POST", permission: PrivMsgPermission::READ_PM)) {
-            $pm_id = int_escape($event->req_POST("pm_id"));
+            $pm_id = int_escape($event->POST->req("pm_id"));
             $pm = $database->get_row("SELECT * FROM private_message WHERE id = :id", ["id" => $pm_id]);
             if (is_null($pm)) {
                 throw new ObjectNotFound("No such PM");
@@ -434,10 +441,10 @@ final class PrivMsg extends Extension
                 $page->set_redirect(Url::referer_or());
             }
         } elseif ($event->page_matches("pm/send", method: "POST", permission: PrivMsgPermission::SEND_PM)) {
-            $to_id = int_escape($event->req_POST("to_id"));
+            $to_id = int_escape($event->POST->req("to_id"));
             $from_id = $user->id;
-            $subject = $event->req_POST("subject");
-            $message = $event->req_POST("message");
+            $subject = $event->POST->req("subject");
+            $message = $event->POST->req("message");
             /** @var SendPMEvent $PMe */
             $PMe = send_event(new SendPMEvent(new PM($from_id, Network::get_real_ip(), $to_id, $subject, $message)));
 
@@ -463,14 +470,14 @@ final class PrivMsg extends Extension
                 throw new PermissionDenied("You do not have permission to edit this PM");
             }
         } elseif ($event->page_matches("pm/edit", method: "POST", permission: PrivMsgPermission::SEND_PM)) {
-            $pm_id = int_escape($event->req_POST("to_id"));
+            $pm_id = int_escape($event->POST->req("to_id"));
             $pm = $database->get_row("SELECT * FROM private_message WHERE id = :id", ["id" => $pm_id]);
             if (is_null($pm)) {
                 throw new ObjectNotFound("No such PM");
             } elseif ($pm["from_id"] == $user->id) {
                 $pmo = PM::from_row($pm);
-                $pmo->subject = $event->req_POST("subject");
-                $pmo->message = $event->req_POST("message");
+                $pmo->subject = $event->POST->req("subject");
+                $pmo->message = $event->POST->req("message");
                 $pmo->from_ip = Network::get_real_ip();
                 send_event(new EditPMEvent($pmo));
                 $page->flash("PM edited");

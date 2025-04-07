@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use GQLA\Type;
-use GQLA\Field;
-use GQLA\Mutation;
+use GQLA\{Field, Mutation, Type};
 
 use function MicroHTML\emptyHTML;
 
@@ -77,7 +75,18 @@ final class Comment
     public bool $edited;
 
     /**
-     * @param array<string,mixed> $row
+     * @param array{
+     *     user_id: string|int,
+     *     user_name: string,
+     *     user_email: ?string,
+     *     user_class: string,
+     *     comment: string,
+     *     comment_id: string|int,
+     *     image_id: string|int,
+     *     poster_ip: string,
+     *     posted: string,
+     *     edited: string|bool,
+     * } $row
      */
     public function __construct(array $row)
     {
@@ -233,8 +242,8 @@ final class CommentList extends Extension
         global $database;
         $page = Ctx::$page;
         if ($event->page_matches("comment/add", method: "POST", permission: CommentPermission::CREATE_COMMENT)) {
-            $i_iid = int_escape($event->req_POST('image_id'));
-            send_event(new CommentPostingEvent($i_iid, Ctx::$user, $event->req_POST('comment')));
+            $i_iid = int_escape($event->POST->req('image_id'));
+            send_event(new CommentPostingEvent($i_iid, Ctx::$user, $event->POST->req('comment')));
             $page->set_redirect(make_link("post/view/$i_iid", null, "comment_on_$i_iid"));
         } elseif ($event->page_matches("comment/delete/{comment_id}/{image_id}")) {
             $comment = Comment::by_id($event->get_iarg('comment_id'));
@@ -247,7 +256,7 @@ final class CommentList extends Extension
                 throw new PermissionDenied("Permission Denied: You cant just go around and delete others' comments.");
             }
         } elseif ($event->page_matches("comment/bulk_delete", method: "POST", permission: CommentPermission::DELETE_COMMENT)) {
-            $ip = $event->req_POST('ip');
+            $ip = $event->POST->req('ip');
 
             $comment_ids = $database->get_col("
                 SELECT id
@@ -311,11 +320,11 @@ final class CommentList extends Extension
 
             $this->theme->display_comment_list($images, $current_page + 1, $total_pages, Ctx::$user->can(CommentPermission::CREATE_COMMENT));
         } elseif ($event->page_matches("comment/edit", method: "POST", permission: CommentPermission::CREATE_COMMENT)) {
-            $cid = int_escape($event->req_POST('comment_id'));
+            $cid = int_escape($event->POST->req('comment_id'));
             $comment = Comment::by_id($cid);
             if (!is_null($comment) && (Ctx::$user->can(CommentPermission::DELETE_COMMENT) || $comment->owner_id === Ctx::$user->id)) {
-                $i_iid = int_escape($event->req_POST('image_id'));
-                send_event(new CommentEditingEvent($i_iid, $cid, Ctx::$user, $event->req_POST('comment')));
+                $i_iid = int_escape($event->POST->req('image_id'));
+                send_event(new CommentEditingEvent($i_iid, $cid, Ctx::$user, $event->POST->req('comment')));
                 $page->set_redirect(make_link("post/view/$i_iid", null, "c$cid"));
 
             } else {
@@ -426,11 +435,8 @@ final class CommentList extends Extension
     private static function get_generic_comments(string $query, array $args): array
     {
         $rows = Ctx::$database->get_all($query, $args);
-        $comments = [];
-        foreach ($rows as $row) {
-            $comments[] = new Comment($row);
-        }
-        return $comments;
+        // @phpstan-ignore-next-line
+        return array_map(fn (array $row) => new Comment($row), $rows);
     }
 
     /**

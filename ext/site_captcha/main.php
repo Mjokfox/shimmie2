@@ -45,11 +45,10 @@ class SiteCaptcha extends Extension
 
     public function is_ip_whitelisted(): bool
     {
-        global $cache, $config;
-        $ips = $cache->get("captcha_whitelist_ips");
-        $networks = $cache->get("captcha_whitelist_networks");
+        $ips = Ctx::$cache->get("captcha_whitelist_ips");
+        $networks = Ctx::$cache->get("captcha_whitelist_networks");
         if (is_null($ips) || is_null($networks)) {
-            $rows = explode(",", $config->get(SiteCaptchaConfig::ALLOWED_IPS));
+            $rows = explode(",", Ctx::$config->get(SiteCaptchaConfig::ALLOWED_IPS) ?: "");
 
             $ips = []; # "0.0.0.0" => 123;
             $networks = []; # "0.0.0.0/32" => 456;
@@ -62,8 +61,8 @@ class SiteCaptcha extends Extension
                 }
             }
 
-            $cache->set("captcha_whitelist_ips", $ips, 60);
-            $cache->set("captcha_whitelist_networks", $networks, 60);
+            Ctx::$cache->set("captcha_whitelist_ips", $ips, 60);
+            Ctx::$cache->set("captcha_whitelist_networks", $networks, 60);
         }
         $ip = Network::get_real_ip();
         if (in_array($ip, $ips)) {

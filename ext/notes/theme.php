@@ -6,17 +6,8 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{INPUT,SCRIPT,FORM};
-use function MicroHTML\A;
-use function MicroHTML\P;
-use function MicroHTML\TABLE;
-use function MicroHTML\TBODY;
-use function MicroHTML\TD;
-use function MicroHTML\TH;
-use function MicroHTML\THEAD;
-use function MicroHTML\TR;
-use function MicroHTML\emptyHTML;
-use function MicroHTML\joinHTML;
+use function MicroHTML\{A, P, TABLE, TBODY, TD, TH, THEAD, TR, emptyHTML, joinHTML};
+use function MicroHTML\{FORM, INPUT, SCRIPT};
 
 /**
  * @phpstan-type NoteHistory array{image_id:int,note_id:int,review_id:int,user_name:string,note:string,date:string}

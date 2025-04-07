@@ -6,11 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\A;
-use function MicroHTML\DIV;
-use function MicroHTML\H3;
-use function MicroHTML\INPUT;
-use function MicroHTML\SECTION;
+use function MicroHTML\{A, DIV, H3, INPUT, SECTION};
 
 class SetupTheme extends Themelet
 {

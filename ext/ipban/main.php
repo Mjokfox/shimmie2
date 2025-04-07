@@ -4,12 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use MicroCRUD\ActionColumn;
-use MicroCRUD\InetColumn;
-use MicroCRUD\StringColumn;
-use MicroCRUD\DateColumn;
-use MicroCRUD\EnumColumn;
-use MicroCRUD\Table;
+use MicroCRUD\{ActionColumn, DateColumn, EnumColumn, InetColumn, StringColumn, Table};
 
 final class IPBanTable extends Table
 {
@@ -177,7 +172,7 @@ final class IPBan extends Extension
             $event->GET['c_added'] = date('Y-m-d');
             $t = new IPBanTable(Ctx::$database->raw_db());
             $t->token = Ctx::$user->get_auth_token();
-            $t->inputs = $event->GET;
+            $t->inputs = $event->GET->toArray();
             $this->theme->display_bans($t->table($t->query()), $t->paginator());
         }
     }

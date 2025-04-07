@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\emptyHTML;
-use function MicroHTML\rawHTML;
+use function MicroHTML\{emptyHTML, rawHTML};
 
 class EmailVerification extends Extension
 {
@@ -73,7 +72,7 @@ class EmailVerification extends Extension
             }
         } elseif ($event->page_matches("user_admin/send_verification_mail", method:"POST")) {
             $user = User::by_id($user->id);
-            if ($event->req_POST('id') == $user->id) {
+            if ($event->POST->req('id') == $user->id) {
                 if ($user->email) {
                     $this->send_verification_mail($this->get_email_token($user, $user->email), $user->email);
                 } else {

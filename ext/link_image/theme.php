@@ -6,14 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\A;
-use function MicroHTML\FIELDSET;
-use function MicroHTML\INPUT;
-use function MicroHTML\LABEL;
-use function MicroHTML\LEGEND;
-use function MicroHTML\TABLE;
-use function MicroHTML\TD;
-use function MicroHTML\TR;
+use function MicroHTML\{A, FIELDSET, INPUT, LABEL, LEGEND, TABLE, TD, TR};
 
 class LinkImageTheme extends Themelet
 {

@@ -143,7 +143,7 @@ final class TranscodeImage extends Extension
         if ($event->page_matches("transcode/{image_id}", method: "POST", permission: ImagePermission::EDIT_FILES)) {
             $image_id = $event->get_iarg('image_id');
             $image_obj = Image::by_id_ex($image_id);
-            $this->transcode_and_replace_image($image_obj, new MimeType($event->req_POST('transcode_mime')));
+            $this->transcode_and_replace_image($image_obj, new MimeType($event->POST->req('transcode_mime')));
             Ctx::$page->set_redirect(make_link("post/view/".$image_id));
         }
     }
@@ -202,7 +202,7 @@ final class TranscodeImage extends Extension
                     return;
                 }
                 if (Ctx::$user->can(ImagePermission::EDIT_FILES)) {
-                    $mime = $event->params['transcode_mime'];
+                    $mime = new MimeType($event->params['transcode_mime']);
                     $total = 0;
                     $size_difference = 0;
                     foreach ($event->items as $image) {
@@ -341,35 +341,31 @@ final class TranscodeImage extends Extension
 
         // load file
         $source_type = FileExtension::get_for_mime($source_mime);
-        $command->add_escaped_arg("$source_type:{$source_name->str()}");
+        $command->add_args("$source_type:{$source_name->str()}");
 
         // flatten with optional solid background color
-        $command->add_flag("-background");
-        $command->add_escaped_arg(
+        $command->add_args(
+            "-background",
             Media::supports_alpha($target_mime)
                 ? "none"
                 : Ctx::$config->req(TranscodeImageConfig::ALPHA_COLOR)
         );
-        $command->add_flag("-flatten");
+        $command->add_args("-flatten");
 
         // format-specific compression options
         if ($target_mime->base === MimeType::PNG) {
-            $command->add_flag("-define");
-            $command->add_escaped_arg("png:compression-level=9");
+            $command->add_args("-define", "png:compression-level=9");
         } elseif ($target_mime->base == MimeType::WEBP && $target_mime->parameters == MimeType::LOSSLESS_PARAMETER) {
-            $command->add_flag("-define");
-            $command->add_escaped_arg("webp:lossless=true");
-            $command->add_flag("-quality");
-            $command->add_escaped_arg("100");
+            $command->add_args("-define", "webp:lossless=true");
+            $command->add_args("-quality", "100");
         } else {
-            $command->add_flag("-quality");
-            $command->add_escaped_arg((string)Ctx::$config->req(TranscodeImageConfig::QUALITY));
+            $command->add_args("-quality", (string)Ctx::$config->req(TranscodeImageConfig::QUALITY));
         }
 
         // write file
         $tmp_name = shm_tempnam("transcode");
         $ext = Media::determine_ext($target_mime);
-        $command->add_escaped_arg("$ext:{$tmp_name->str()}");
+        $command->add_args("$ext:{$tmp_name->str()}");
 
         // go
         $command->execute();

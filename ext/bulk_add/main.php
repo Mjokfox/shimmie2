@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Shimmie2;
 
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\{InputInterface,InputArgument};
+use Symfony\Component\Console\Input\{InputArgument, InputInterface};
 use Symfony\Component\Console\Output\OutputInterface;
 
 final class BulkAddEvent extends Event
@@ -31,7 +31,7 @@ final class BulkAdd extends Extension
     public function onPageRequest(PageRequestEvent $event): void
     {
         if ($event->page_matches("bulk_add", method: "POST", permission: BulkAddPermission::BULK_ADD)) {
-            $dir = $event->req_POST('dir');
+            $dir = $event->POST->req('dir');
             assert(!empty($dir), "Directory cannot be empty");
             Ctx::$event_bus->set_timeout(null);
             $bae = send_event(new BulkAddEvent(new Path($dir)));

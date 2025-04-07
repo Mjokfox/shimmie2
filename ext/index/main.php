@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Shimmie2;
 
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\{InputInterface,InputArgument};
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Input\{InputArgument, InputInterface};
 use Symfony\Component\Console\Output\OutputInterface;
 
 require_once "events.php";
@@ -23,8 +23,8 @@ final class Index extends Extension
             $event->page_matches("post/list", paged: true)
             || $event->page_matches("post/list/{search}", paged: true)
         ) {
-            if ($event->get_GET('search')) {
-                Ctx::$page->set_redirect(search_link(Tag::explode($event->get_GET('search'), false)));
+            if ($event->GET->get('search')) {
+                Ctx::$page->set_redirect(search_link(Tag::explode($event->GET->get('search'), false)));
                 return;
             }
 

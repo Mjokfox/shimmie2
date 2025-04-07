@@ -6,16 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\A;
-use function MicroHTML\B;
-use function MicroHTML\BR;
-use function MicroHTML\P;
-use function MicroHTML\SPAN;
-use function MicroHTML\TABLE;
-use function MicroHTML\TD;
-use function MicroHTML\TR;
-use function MicroHTML\emptyHTML;
-use function MicroHTML\joinHTML;
+use function MicroHTML\{A, B, BR, P, SPAN, TABLE, TD, TR, emptyHTML, joinHTML};
 
 class Danbooru2CommentListTheme extends CommentListTheme
 {

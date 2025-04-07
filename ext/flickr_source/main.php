@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{B,TABLE,TR,TD,INPUT, rawHTML};
+use function MicroHTML\{B, INPUT, TABLE, TD, TR, rawHTML};
 
 class FlickrSource extends Extension
 {
@@ -64,7 +64,7 @@ class FlickrSource extends Extension
                 AND mime LIKE 'image/%'
                 AND id > :id_offset
                 LIMIT :limit;";
-                $files = $database->get_all($query, ["id_offset" => $event->params['id_offset'] | "0","limit" => $event->params['limit'] | "0"]);
+                $files = $database->get_all($query, ["id_offset" => $event->params['id_offset'] ?: "0","limit" => $event->params['limit'] ?: "0"]);
                 $i = 0;
                 $j = [];
                 $k = 0;

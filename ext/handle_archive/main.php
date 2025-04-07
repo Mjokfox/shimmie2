@@ -21,16 +21,16 @@ final class ArchiveFileHandler extends DataHandlerExtension
             $command = new CommandBuilder($parts[0]);
             foreach (array_splice($parts, 1) as $part) {
                 match($part) {
-                    "%f" => $command->add_escaped_arg($event->tmpname->str()),
-                    "%d" => $command->add_escaped_arg($tmpdir->str()),
-                    default => $command->add_flag($part),
+                    "%f" => $command->add_args($event->tmpname->str()),
+                    "%d" => $command->add_args($tmpdir->str()),
+                    default => $command->add_args($part),
                 };
             }
             $command->execute();
 
             if ($tmpdir->exists()) {
                 try {
-                    $results = send_event(new DirectoryUploadEvent($tmpdir, Tag::explode($event->metadata['tags'])))->results;
+                    $results = send_event(new DirectoryUploadEvent($tmpdir, Tag::explode($event->metadata->req('tags'))))->results;
                     foreach ($results as $r) {
                         if (is_a($r, UploadError::class)) {
                             Ctx::$page->flash($r->name." failed: ".$r->error);

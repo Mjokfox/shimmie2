@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{H2, B, LABEL, DIV, TABLE, TR, TD, INPUT, emptyHTML, IMG, FORM};
+use function MicroHTML\{B, DIV, FORM, H2, IMG, INPUT, LABEL, TABLE, TD, TR, emptyHTML};
 
 class ReverseImageTheme extends Themelet
 {

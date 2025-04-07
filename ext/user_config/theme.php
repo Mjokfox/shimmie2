@@ -6,14 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\DIV;
-use function MicroHTML\H3;
-use function MicroHTML\INPUT;
-use function MicroHTML\SECTION;
-use function MicroHTML\TABLE;
-use function MicroHTML\TD;
-use function MicroHTML\TH;
-use function MicroHTML\TR;
+use function MicroHTML\{DIV, H3, INPUT, SECTION, TABLE, TD, TH, TR};
 
 class UserConfigTheme extends Themelet
 {

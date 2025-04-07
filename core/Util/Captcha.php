@@ -9,11 +9,10 @@ namespace Shimmie2;
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 use MicroHTML\HTMLElement;
-use ReCaptcha\ReCaptcha;
 
-use function MicroHTML\DIV;
-use function MicroHTML\SCRIPT;
-use function MicroHTML\emptyHTML;
+use function MicroHTML\{DIV, SCRIPT, emptyHTML};
+
+use ReCaptcha\ReCaptcha;
 
 final readonly class Captcha
 {

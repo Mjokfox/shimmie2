@@ -6,8 +6,8 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{A, BR, emptyHTML, joinHTML, P, HR, SPAN};
 use function MicroHTML\SUB;
+use function MicroHTML\{A, BR, HR, P, SPAN, emptyHTML, joinHTML};
 
 class TagMapTheme extends Themelet
 {

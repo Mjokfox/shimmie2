@@ -26,7 +26,7 @@ final class DataUploadEvent extends Event
      * @param Path $tmpname The name of a physical file on the local hard drive.
      * @param string $filename The name of the file as it was uploaded.
      * @param int $slot The slot number of the upload.
-     * @param array<string, string> $metadata Key-value pairs of metadata, the
+     * @param QueryArray $metadata Key-value pairs of metadata, the
      *    upload form can contain both common and slot-specific fields such as
      *    "source" and "source12", in which case the slot-specific field will
      *    override the common one.
@@ -35,7 +35,7 @@ final class DataUploadEvent extends Event
         public Path $tmpname,
         public string $filename,
         public int $slot,
-        public array $metadata,
+        public QueryArray $metadata,
     ) {
         parent::__construct();
         $this->set_tmpname($tmpname);
@@ -176,10 +176,10 @@ final class Upload extends Extension
             $tags = array_merge(Filesystem::path_to_tags($short_path), $event->extra_tags);
             try {
                 $more_results = $database->with_savepoint(function () use ($full_path, $filename, $tags) {
-                    $dae = send_event(new DataUploadEvent($full_path, $filename, 0, [
+                    $dae = send_event(new DataUploadEvent($full_path, $filename, 0, new QueryArray([
                         'filename' => pathinfo($filename, PATHINFO_BASENAME),
                         'tags' => Tag::implode($tags),
-                    ]));
+                    ])));
                     $results = [];
                     foreach ($dae->images as $image) {
                         $results[] = new UploadSuccess($filename, $image->id);
@@ -222,22 +222,22 @@ final class Upload extends Extension
             });
             foreach ($files as $name => $file) {
                 $slot = int_escape(substr($name, 4));
-                $results = array_merge($results, $this->try_upload($file, $slot, only_strings($event->POST)));
+                $results = array_merge($results, $this->try_upload($file, $slot, $event->POST));
             }
 
-            $urls = array_filter($event->POST, function ($value, $key) {
+            $urls = array_filter($event->POST->toArray(), function ($value, $key) {
                 return str_starts_with($key, "url") && is_string($value) && strlen($value) > 0;
             }, ARRAY_FILTER_USE_BOTH);
             foreach ($urls as $name => $value) {
                 $slot = int_escape(substr($name, 3));
-                $results = array_merge($results, $this->try_transload($value, $slot, only_strings($event->POST)));
+                $results = array_merge($results, $this->try_transload($value, $slot, $event->POST));
             }
 
             $this->theme->display_upload_status($results);
         }
         if ($event->page_matches("upload_duplicate", method: "POST", authed: false)) {
             /** @var string $hash */
-            $hash = $event->req_POST("md5");
+            $hash = $event->POST->req("md5");
             $image = Image::by_hash($hash); // @phpstan-ignore-line
             if ($image) {
                 Ctx::$page->set_data(MimeType::JSON, json_encode(["dup" => "1","id" => $image->id])); // @phpstan-ignore-line
@@ -272,10 +272,9 @@ final class Upload extends Extension
     /**
      * Handle an upload.
      * @param mixed[] $file
-     * @param array<string, string> $metadata
      * @return UploadResult[]
      */
-    private function try_upload(array $file, int $slot, array $metadata): array
+    private function try_upload(array $file, int $slot, QueryArray $metadata): array
     {
         global $database;
 
@@ -320,10 +319,9 @@ final class Upload extends Extension
 
     /**
      * @param non-empty-string $url
-     * @param array<string, string> $metadata
      * @return UploadResult[]
      */
-    private function try_transload(string $url, int $slot, array $metadata): array
+    private function try_transload(string $url, int $slot, QueryArray $metadata): array
     {
         $results = [];
         $tmp_filename = shm_tempnam("transload");

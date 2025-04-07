@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{INPUT, DIV, LINK, META, FORM};
+use function MicroHTML\{DIV, FORM, INPUT, LINK, META};
 
 class CustomIndexTheme extends IndexTheme
 {

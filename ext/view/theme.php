@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+use function MicroHTML\BR;
+
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{A, P, joinHTML, TABLE, TR, TD, INPUT, emptyHTML, DIV, META, LINK};
-use function MicroHTML\BR;
+use function MicroHTML\{A, DIV, INPUT, LINK, META, P, TABLE, TD, TR, emptyHTML, joinHTML};
 
 class ViewPostTheme extends Themelet
 {
@@ -58,13 +59,10 @@ class ViewPostTheme extends Themelet
         }
     }
 
-    /**
-     * @return array<string, string>|null
-     */
-    protected function get_query(): ?array
+    protected function get_query(): ?QueryArray
     {
         if (isset($_GET['search'])) {
-            $query = ["search" => $_GET['search']];
+            $query = new QueryArray(["search" => $_GET['search']]);
         } else {
             $query = null;
         }

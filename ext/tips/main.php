@@ -62,9 +62,9 @@ final class Tips extends Extension
             $this->getAll();
         } elseif ($event->page_matches("tips/save", method: "POST", permission: TipsPermission::ADMIN)) {
             send_event(new CreateTipEvent(
-                $event->get_POST("enable") == "Y",
-                $event->req_POST("image"),
-                $event->req_POST("text")
+                $event->POST->get("enable") == "on",
+                $event->POST->req("image"),
+                $event->POST->req("text")
             ));
             Ctx::$page->set_redirect(make_link("tips/list"));
         } elseif ($event->page_matches("tips/status/{tipID}", permission: TipsPermission::ADMIN)) {

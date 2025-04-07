@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{TR, TD, TEXTAREA};
+use function MicroHTML\{TD, TEXTAREA, TR};
 
 class PostDescriptionTheme extends Themelet
 {

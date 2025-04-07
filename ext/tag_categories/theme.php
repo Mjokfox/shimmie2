@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{BUTTON,DIV,INPUT,H2,P,SPAN,TABLE,THEAD,TH,TBODY,TR,TD,TEXTAREA,emptyHTML,joinHTML,SELECT,OPTION};
+use function MicroHTML\{BUTTON, DIV, H2, INPUT, OPTION, P, SELECT, SPAN, TABLE, TBODY, TD, TEXTAREA, TH, THEAD, TR, emptyHTML, joinHTML};
 
 class TagCategoriesTheme extends Themelet
 {

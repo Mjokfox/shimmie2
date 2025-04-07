@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use GQLA\Type;
-use GQLA\Field;
-use GQLA\Query;
+use GQLA\{Field, Query, Type};
 
 /**
  * Class Image
@@ -374,11 +372,16 @@ final class Image implements \ArrayAccess
     /**
      * Get the URL for the full size image
      */
-    #[Field(name: "image_link")]
     public function get_image_link(): Url
     {
         // return $this->get_link(ImageConfig::ILINK, '_images/$hash/$id%20-%20$tags.$ext', 'image/$id/$id%20-%20$tags.$ext');
         return $this->get_link(ImageConfig::ILINK, 'images/$hash/$idF_$filename.$ext', 'image/$id/$idF_$filename.$ext');
+    }
+
+    #[Field(name: "image_link")]
+    public function graphql_image_link(): string
+    {
+        return (string)$this->get_image_link();
     }
 
     /**
@@ -393,12 +396,17 @@ final class Image implements \ArrayAccess
     /**
      * Get the URL for the thumbnail
      */
-    #[Field(name: "thumb_link")]
     public function get_thumb_link(): Url
     {
         $mime = new MimeType(Ctx::$config->req(ThumbnailConfig::MIME));
         $ext = FileExtension::get_for_mime($mime);
         return $this->get_link(ImageConfig::TLINK, 'thumbs/$hash/thumb.'.$ext, 'thumb/$id/thumb.'.$ext);
+    }
+
+    #[Field(name: "thumb_link")]
+    public function graphql_thumb_link(): string
+    {
+        return (string)$this->get_thumb_link();
     }
 
     /**

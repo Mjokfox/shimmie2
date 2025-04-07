@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use GQLA\Type;
-use GQLA\Field;
-
 /**
  * A fairly standard URL class with a couple of Shimmie-specific helpers:
  *
@@ -15,7 +12,6 @@ use GQLA\Field;
  *   /index.php?q=post/list as appropriate.
  * - forming a URL with a page _and_ a path at the same time is invalid
  */
-#[Type(name: "Url")]
 final readonly class Url
 {
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
@@ -25,7 +21,6 @@ final readonly class Url
     /**
      * @param ?url-string $path
      * @param ?page-string $page
-     * @param query-array $query
      * @param ?fragment-string $fragment
      */
     public function __construct(
@@ -36,7 +31,7 @@ final readonly class Url
         private ?int $port = null,
         private ?string $page = null,
         private ?string $path = null,
-        private array $query = [],
+        private QueryArray $query = new QueryArray([]),
         private ?string $fragment = null
     ) {
         if ($page !== null && $path !== null) {
@@ -57,7 +52,7 @@ final readonly class Url
             parse_str($parsed['query'], $query_array);
         }
 
-        /** @var query-array $query_array */
+        /** @var array<string, string> $query_array */
 
         return new Url(
             scheme: $parsed['scheme'] ?? null,
@@ -66,7 +61,7 @@ final readonly class Url
             host: $parsed['host'] ?? null,
             port: $parsed['port'] ?? null,
             path: $parsed['path'] ?? null,
-            query: $query_array,
+            query: new QueryArray($query_array),
             fragment: $parsed['fragment'] ?? null
         );
     }
@@ -173,15 +168,12 @@ final readonly class Url
 
     /**
      * Get the query parameters as an array.
-     *
-     * @return query-array The query parameters.
      */
-    public function getQueryArray(): array
+    public function getQueryArray(): QueryArray
     {
-        return $this->query ?? [];
+        return $this->query;
     }
 
-    #[Field(name: "url")]
     public function __toString(): string
     {
         $scheme   = !is_null($this->scheme) ? $this->scheme . '://' : '';
@@ -195,10 +187,10 @@ final readonly class Url
         $query = $this->query;
         if ($this->page !== null && !Url::are_niceurls_enabled()) {
             //$query["q"] = $this->page;
-            $query = array_merge(["q" => $this->page], $query);
+            $query->set("q", $this->page);
         }
-        if (!empty($query)) {
-            $query = "?" . http_build_query($query);
+        if (!empty($query->toArray())) {
+            $query = "?" . http_build_query($query->toArray());
         } else {
             $query = '';
         }

@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{emptyHTML, rawHTML,INPUT, A, BR};
+use function MicroHTML\{A, BR, INPUT, emptyHTML, rawHTML};
 
 class CustomPostOwnerTheme extends PostOwnerTheme
 {

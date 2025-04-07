@@ -6,13 +6,8 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{BODY, emptyHTML, TITLE, META, DIV, INPUT};
-use function MicroHTML\A;
-use function MicroHTML\H1;
-use function MicroHTML\IMG;
-use function MicroHTML\SMALL;
-use function MicroHTML\SPAN;
-use function MicroHTML\joinHTML;
+use function MicroHTML\{A, H1, IMG, SMALL, SPAN, joinHTML};
+use function MicroHTML\{BODY, DIV, INPUT, META, TITLE, emptyHTML};
 
 class HomeTheme extends Themelet
 {

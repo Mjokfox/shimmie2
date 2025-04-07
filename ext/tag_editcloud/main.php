@@ -6,10 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\BR;
-use function MicroHTML\DIV;
-use function MicroHTML\SPAN;
-use function MicroHTML\emptyHTML;
+use function MicroHTML\{BR, DIV, SPAN, emptyHTML};
 
 final class TagEditCloud extends Extension
 {

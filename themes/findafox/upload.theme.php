@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{ emptyHTML, DIV, SPAN, TEXTAREA, TABLE, TR, TH, TD, INPUT, LABEL, B, SELECT, OPTION};
+use function MicroHTML\{B, DIV, INPUT, LABEL, OPTION, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR, emptyHTML};
 
 class CustomUploadTheme extends UploadTheme
 {

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{H2, BR, DIV, INPUT, TEXTAREA};
+use function MicroHTML\{BR, DIV, H2, INPUT, TEXTAREA};
 
 class DmcaTheme extends Themelet
 {

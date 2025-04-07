@@ -35,7 +35,7 @@ class GitPull extends Extension
     private function execGitPull(): string
     {
         $command = new CommandBuilder("git");
-        $command->add_flag("pull");
+        $command->add_args("pull");
         return $command->execute();
     }
 }

@@ -4,19 +4,10 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+use MicroCRUD\{ActionColumn, Column, Table, TextColumn};
 use MicroHTML\HTMLElement;
-use MicroCRUD\ActionColumn;
-use MicroCRUD\Column;
-use MicroCRUD\TextColumn;
-use MicroCRUD\Table;
 
-use function MicroHTML\A;
-use function MicroHTML\SPAN;
-use function MicroHTML\emptyHTML;
-use function MicroHTML\INPUT;
-use function MicroHTML\BR;
-use function MicroHTML\SELECT;
-use function MicroHTML\OPTION;
+use function MicroHTML\{A, BR, INPUT, OPTION, SELECT, SPAN, emptyHTML};
 
 final class ActorColumn extends Column
 {
@@ -230,7 +221,7 @@ final class LogDatabase extends Extension
         $page = Ctx::$page;
         if ($event->page_matches("log/view", permission: LogDatabasePermission::VIEW_EVENTLOG)) {
             $t = new LogTable($database->raw_db());
-            $t->inputs = $event->GET;
+            $t->inputs = $event->GET->toArray();
             $page->set_title("Event Log");
             $this->theme->display_navigation();
             $page->add_block(new Block(null, emptyHTML($t->table($t->query()), $t->paginator())));

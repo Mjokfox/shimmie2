@@ -6,10 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\A;
-use function MicroHTML\BR;
-use function MicroHTML\P;
-use function MicroHTML\emptyHTML;
+use function MicroHTML\{A, BR, P, emptyHTML};
 
 class FavoritesTheme extends Themelet
 {

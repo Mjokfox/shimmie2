@@ -6,18 +6,9 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
+use function MicroHTML\{A, CODE, DIV, FORM, INPUT, OPTION, P, SELECT, SPAN, TIME};
 use function MicroHTML\{emptyHTML};
-use function MicroHTML\A;
-use function MicroHTML\CODE;
-use function MicroHTML\TIME;
-use function MicroHTML\DIV;
-use function MicroHTML\FORM;
-use function MicroHTML\INPUT;
-use function MicroHTML\OPTION;
-use function MicroHTML\P;
-use function MicroHTML\SELECT;
-use function MicroHTML\SPAN;
-use function MicroHTML\{TABLE,THEAD,TFOOT,TR,TH,TD};
+use function MicroHTML\{TABLE, TD, TFOOT, TH, THEAD, TR};
 
 /**
  * Turn a date into a time, a date, an "X minutes ago...", etc
@@ -81,7 +72,7 @@ function SHM_FORM(Url $action, bool $multipart = false, string $id = "", string 
 /**
  * For when you just want a <form> with default settings and some children
  *
- * @param array<string|HTMLElement|null> $children
+ * @param string|HTMLElement|null $children
  */
 function SHM_SIMPLE_FORM(Url $action, ...$children): HTMLElement
 {

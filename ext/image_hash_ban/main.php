@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use MicroCRUD\ActionColumn;
-use MicroCRUD\StringColumn;
-use MicroCRUD\DateColumn;
-use MicroCRUD\Table;
+use MicroCRUD\{ActionColumn, DateColumn, StringColumn, Table};
 
 use function MicroHTML\{INPUT,emptyHTML};
 
@@ -112,7 +109,7 @@ final class ImageBan extends Extension
         if ($event->page_matches("image_hash_ban/list", permission: ImageHashBanPermission::BAN_IMAGE)) {
             $t = new HashBanTable(Ctx::$database->raw_db());
             $t->token = Ctx::$user->get_auth_token();
-            $t->inputs = $event->GET;
+            $t->inputs = $event->GET->toArray();
             $page->set_title("Post Bans");
             $this->theme->display_navigation();
             $page->add_block(new Block(null, emptyHTML($t->table($t->query()), $t->paginator())));

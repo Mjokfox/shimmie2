@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{emptyHTML, HTML, HEAD, BODY, TITLE, LINK, META, SCRIPT, A, B, joinHTML, BR, H1, HEADER as HTML_HEADER, NAV, ARTICLE, FOOTER, SECTION, H3, DIV};
+use function MicroHTML\{A, ARTICLE, B, BODY, BR, DIV, FOOTER, H1, H3, HEAD, HEADER as HTML_HEADER, HTML, LINK, META, NAV, SCRIPT, SECTION, TITLE, emptyHTML, joinHTML};
 
 /**
  * A data structure for holding all the bits of data that make up a page.
@@ -307,7 +307,7 @@ class Page
         header("Content-Length: " . $size);
         header('Accept-Ranges: bytes');
 
-        if (isset($_SERVER['HTTP_RANGE'])) {
+        if (isset($_SERVER['HTTP_RANGE']) && is_string($_SERVER['HTTP_RANGE'])) {
             list(, $range) = explode('=', $_SERVER['HTTP_RANGE'], 2);
             if (str_contains($range, ',')) {
                 header('HTTP/1.1 416 Requested Range Not Satisfiable');

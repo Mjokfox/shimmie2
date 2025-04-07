@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{emptyHTML, A};
+use function MicroHTML\{A, emptyHTML};
 
 class IPBanTheme extends Themelet
 {

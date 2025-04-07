@@ -6,9 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\DIV;
-use function MicroHTML\A;
-use function MicroHTML\IMG;
+use function MicroHTML\{A, DIV, IMG};
 
 class RandomImageTheme extends Themelet
 {

@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{BODY, A, TD, SMALL, DIV, ARTICLE, FOOTER, HEADER, H1, NAV};
+use function MicroHTML\{A, ARTICLE, BODY, DIV, FOOTER, H1, HEADER, NAV, SMALL, TD};
 
 class WarmPage extends Page
 {

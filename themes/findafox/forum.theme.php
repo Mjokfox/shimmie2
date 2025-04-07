@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{H3, H1, TR, TABLE, TH, TBODY, TD, THEAD, DIV, A, BR, emptyHTML, INPUT, TEXTAREA};
+use function MicroHTML\{A, BR, DIV, H1, H3, INPUT, TABLE, TBODY, TD, TEXTAREA, TH, THEAD, TR, emptyHTML};
 
 /**
  * @phpstan-type Thread array{id:int,title:string,sticky:bool,user_name:string,uptodate:string,response_count:int}

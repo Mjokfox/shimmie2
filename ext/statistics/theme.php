@@ -6,11 +6,8 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{TABLE,THEAD,TBODY,TR,TH,TD};
-use function MicroHTML\A;
-use function MicroHTML\B;
-use function MicroHTML\DIV;
-use function MicroHTML\emptyHTML;
+use function MicroHTML\{A, B, DIV, emptyHTML};
+use function MicroHTML\{TABLE, TBODY, TD, TH, THEAD, TR};
 
 class StatisticsTheme extends Themelet
 {

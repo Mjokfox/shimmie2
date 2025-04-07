@@ -6,14 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\A;
-use function MicroHTML\DIV;
-use function MicroHTML\HR;
-use function MicroHTML\P;
-use function MicroHTML\TABLE;
-use function MicroHTML\TD;
-use function MicroHTML\TR;
-use function MicroHTML\emptyHTML;
+use function MicroHTML\{A, DIV, HR, P, TABLE, TD, TR, emptyHTML};
 
 class FutabaCommentListTheme extends CommentListTheme
 {

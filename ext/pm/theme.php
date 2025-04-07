@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{emptyHTML,A,B,INPUT,TABLE,THEAD,TH,TBODY,TR,TD,TEXTAREA,DIV,BUTTON,H2,HR,BR};
+use function MicroHTML\{A, B, BR, BUTTON, DIV, H2, HR, INPUT, TABLE, TBODY, TD, TEXTAREA, TH, THEAD, TR, emptyHTML};
 
 class PrivMsgTheme extends Themelet
 {

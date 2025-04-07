@@ -94,7 +94,12 @@ function main(): int
                 Ctx::$tracer->flush($app->traceFile);
             }
         } else {
-            send_event(new PageRequestEvent($_SERVER['REQUEST_METHOD'], _get_query(), $_GET, $_POST));
+            send_event(new PageRequestEvent(
+                $_SERVER['REQUEST_METHOD'],
+                _get_query(),
+                new QueryArray($_GET),
+                new QueryArray($_POST)
+            ));
             Ctx::$page->display();
         }
 
@@ -123,17 +128,17 @@ function main(): int
         $exit_code = 1;
     } finally {
         Ctx::$tracer->end();
-        if (!is_null(SysConfig::getTraceFile())) {
-            if (
-                empty($_SERVER["REQUEST_URI"])
-                || (@$_GET["trace"] === "on")
-                || (
-                    (ftime() - $_shm_load_start) > SysConfig::getTraceThreshold()
-                    && ($_SERVER["REQUEST_URI"] ?? "") !== "/upload"
-                )
-            ) {
-                Ctx::$tracer->flush(SysConfig::getTraceFile());
-            }
+        if (
+            PHP_SAPI !== 'cli'
+            && PHP_SAPI !== 'phpdbg'
+            && SysConfig::getTraceFile() !== null
+            && (
+                @$_GET["trace"] === "on"
+                || (ftime() - $_shm_load_start) > SysConfig::getTraceThreshold()
+            )
+            && ($_SERVER["REQUEST_URI"] ?? "") !== "/upload"
+        ) {
+            Ctx::$tracer->flush(SysConfig::getTraceFile());
         }
     }
     return $exit_code;

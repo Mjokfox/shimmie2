@@ -6,8 +6,8 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{A, BR, emptyHTML, DIV, H3, TABLE, COLGROUP, COL, THEAD, TH, TR, TD, SPAN};
 use function MicroHTML\joinHTML;
+use function MicroHTML\{A, BR, COL, COLGROUP, DIV, H3, SPAN, TABLE, TD, TH, THEAD, TR, emptyHTML};
 
 class TagListTheme extends Themelet
 {

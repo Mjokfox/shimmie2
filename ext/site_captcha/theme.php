@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{BODY, emptyHTML, TITLE, META, H1, SCRIPT, NOSCRIPT, IMG, DIV};
+use function MicroHTML\{BODY, DIV, H1, IMG, META, NOSCRIPT, SCRIPT, TITLE, emptyHTML};
 
 class SiteCaptchaTheme extends Themelet
 {

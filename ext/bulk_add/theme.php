@@ -4,15 +4,8 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{UL, LI};
-use function MicroHTML\BR;
-use function MicroHTML\INPUT;
-use function MicroHTML\P;
-use function MicroHTML\TABLE;
-use function MicroHTML\TD;
-use function MicroHTML\TH;
-use function MicroHTML\TR;
-use function MicroHTML\emptyHTML;
+use function MicroHTML\{BR, INPUT, P, TABLE, TD, TH, TR, emptyHTML};
+use function MicroHTML\{LI, UL};
 
 class BulkAddTheme extends Themelet
 {
@@ -55,8 +48,8 @@ class BulkAddTheme extends Themelet
                 make_link("bulk_add"),
                 TABLE(
                     ["class" => "form"],
-                    TR([TH("Folder"), TD(INPUT(["type" => "text", "name" => "dir", "size" => "40"]))]),
-                    TR([TD(["colspan" => 2], INPUT(["type" => "submit", "value" => "Add"]))])
+                    TR(TH("Folder"), TD(INPUT(["type" => "text", "name" => "dir", "size" => "40"]))),
+                    TR(TD(["colspan" => 2], INPUT(["type" => "submit", "value" => "Add"])))
                 )
             )
         );

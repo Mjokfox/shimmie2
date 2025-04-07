@@ -6,23 +6,14 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
+use function MicroHTML\{A, LABEL, TABLE, TBODY, TD, TEXTAREA, TH, THEAD, TR, joinHTML};
 use function MicroHTML\{INPUT,P,emptyHTML};
-use function MicroHTML\A;
-use function MicroHTML\LABEL;
-use function MicroHTML\TABLE;
-use function MicroHTML\TBODY;
-use function MicroHTML\TD;
-use function MicroHTML\TEXTAREA;
-use function MicroHTML\TH;
-use function MicroHTML\THEAD;
-use function MicroHTML\TR;
-use function MicroHTML\joinHTML;
 
 /**
- * @phpstan-type ArtistArtist array{id:int,artist_id:int,user_name:string,name:string,notes:string,type:string,posts:int}
- * @phpstan-type ArtistAlias array{id:int,alias_id:int,alias_name:string,alias:string}
- * @phpstan-type ArtistMember array{id:int,name:string}
- * @phpstan-type ArtistUrl array{id:int,url:string}
+ * @phpstan-import-type ArtistArtist from Artists
+ * @phpstan-import-type ArtistAlias from Artists
+ * @phpstan-import-type ArtistMember from Artists
+ * @phpstan-import-type ArtistUrl from Artists
  */
 class ArtistsTheme extends Themelet
 {
@@ -100,8 +91,8 @@ class ArtistsTheme extends Themelet
         $aliasesString = "";
         $aliasesIDsString = "";
         foreach ($aliases as $alias) {
-            $aliasesString .= $alias["alias_name"]." ";
-            $aliasesIDsString .= $alias["alias_id"]." ";
+            $aliasesString .= $alias["alias"]." ";
+            $aliasesIDsString .= $alias["id"]." ";
         }
         $aliasesString = rtrim($aliasesString);
         $aliasesIDsString = rtrim($aliasesIDsString);
@@ -241,14 +232,14 @@ class ArtistsTheme extends Themelet
             $edit_link = A(["href" => make_link($editionLinkActionArray[$artist['type']].$artist['id'])], "Edit");
             $del_link = A(["href" => make_link($deletionLinkActionArray[$artist['type']].$artist['id'])], "Delete");
 
-            $tbody->appendChild(TR([
+            $tbody->appendChild(TR(
                 TD(["class" => "left"], $elementLink),
                 TD($typeTextArray[$artist['type']]),
                 TD($user_link),
                 TD($artist['posts']),
                 Ctx::$user->is_anonymous() ? null : TD($edit_link),
                 Ctx::$user->can(ArtistsPermission::ADMIN) ? TD($del_link) : null,
-            ]));
+            ));
         }
 
         $html = TABLE(
@@ -409,9 +400,9 @@ class ArtistsTheme extends Themelet
     {
         $html = "";
         if (count($aliases) > 0) {
-            $aliasViewLink = str_replace("_", " ", $aliases[0]['alias_name']); // no link anymore
-            $aliasEditLink = "<a href='" . make_link("artist/alias/edit/" . $aliases[0]['alias_id']) . "'>Edit</a>";
-            $aliasDeleteLink = "<a href='" . make_link("artist/alias/delete/" . $aliases[0]['alias_id']) . "'>Delete</a>";
+            $aliasViewLink = str_replace("_", " ", $aliases[0]['alias']); // no link anymore
+            $aliasEditLink = "<a href='" . make_link("artist/alias/edit/" . $aliases[0]['id']) . "'>Edit</a>";
+            $aliasDeleteLink = "<a href='" . make_link("artist/alias/delete/" . $aliases[0]['id']) . "'>Delete</a>";
 
             $html .= "<tr>
 							  <td class='left'>Aliases:</td>
@@ -430,9 +421,9 @@ class ArtistsTheme extends Themelet
             if (count($aliases) > 1) {
                 $ac = count($aliases);
                 for ($i = 1; $i < $ac; $i++) {
-                    $aliasViewLink = str_replace("_", " ", $aliases[$i]['alias_name']); // no link anymore
-                    $aliasEditLink = "<a href='" . make_link("artist/alias/edit/" . $aliases[$i]['alias_id']) . "'>Edit</a>";
-                    $aliasDeleteLink = "<a href='" . make_link("artist/alias/delete/" . $aliases[$i]['alias_id']) . "'>Delete</a>";
+                    $aliasViewLink = str_replace("_", " ", $aliases[$i]['alias']); // no link anymore
+                    $aliasEditLink = "<a href='" . make_link("artist/alias/edit/" . $aliases[$i]['id']) . "'>Edit</a>";
+                    $aliasDeleteLink = "<a href='" . make_link("artist/alias/delete/" . $aliases[$i]['id']) . "'>Delete</a>";
 
                     $html .= "<tr>
 									  <td class='left'></td>

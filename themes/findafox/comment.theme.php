@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{A,B,BR,EM,P,SPAN,DIV,INPUT,TABLE,TR,TD,TEXTAREA,emptyHTML,joinHTML};
+use function MicroHTML\{A, B, BR, DIV, EM, INPUT, P, SPAN, TABLE, TD, TEXTAREA, TR, emptyHTML, joinHTML};
 
 class CustomCommentListTheme extends CommentListTheme
 {

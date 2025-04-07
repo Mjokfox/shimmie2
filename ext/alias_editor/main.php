@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use MicroCRUD\ActionColumn;
-use MicroCRUD\Table;
+use MicroCRUD\{ActionColumn, Table};
 
 final class AliasTable extends Table
 {
@@ -77,7 +76,7 @@ final class AliasEditor extends Extension
         if ($event->page_matches("alias/list")) {
             $t = new AliasTable($database->raw_db());
             $t->token = Ctx::$user->get_auth_token();
-            $t->inputs = $event->GET;
+            $t->inputs = $event->GET->toArray();
             $t->size = 100;
             if (Ctx::$user->can(AliasEditorPermission::MANAGE_ALIAS_LIST)) {
                 $t->create_url = make_link("alias/add");

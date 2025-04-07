@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Shimmie2;
 
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\{InputInterface,InputArgument};
+use Symfony\Component\Console\Input\{InputArgument, InputInterface};
 use Symfony\Component\Console\Output\OutputInterface;
 
 final class TagSetException extends UserError
@@ -123,7 +123,7 @@ final class PostTags extends Extension
     public function onPageRequest(PageRequestEvent $event): void
     {
         if ($event->page_matches("tag_edit/replace", method: "POST", permission: PostTagsPermission::MASS_TAG_EDIT)) {
-            $this->mass_tag_edit($event->req_POST('search'), $event->req_POST('replace'), true);
+            $this->mass_tag_edit($event->POST->req('search'), $event->POST->req('replace'), true);
             Ctx::$page->set_redirect(make_link("admin"));
         }
     }

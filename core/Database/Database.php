@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use FFSPHP\PDO;
-use FFSPHP\PDOStatement;
+use FFSPHP\{PDO, PDOStatement};
 
 /**
  * A class for controlled database access
@@ -232,7 +231,7 @@ class Database
      *
      * @param literal-string $query
      * @param sql-params-array $args
-     * @return array<string, mixed>
+     * @return array<string, mixed>|null
      */
     public function get_row(string $query, array $args = []): ?array
     {

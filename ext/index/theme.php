@@ -6,7 +6,8 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{A,H2,SUP,BR,H3,HR,P,META,DIV,emptyHTML,INPUT};
+use function MicroHTML\{A, H2, SUP};
+use function MicroHTML\{BR, DIV, H3, HR, INPUT, META, P, emptyHTML};
 
 class IndexTheme extends Themelet
 {
@@ -89,7 +90,7 @@ class IndexTheme extends Themelet
     protected function build_table(array $images, ?string $query): HTMLElement
     {
         $thumbs = array_map(fn ($image) => $this->build_thumb($image), $images);
-        return DIV(["class" => "shm-image-list", "data-query", $query], ...$thumbs);
+        return DIV(["class" => "shm-image-list", "data-query" => $query], ...$thumbs);
     }
 
     protected function display_shortwiki(): void

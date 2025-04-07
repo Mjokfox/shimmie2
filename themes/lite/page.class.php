@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{BODY, HEADER, FOOTER, DIV, SCRIPT, A, B, IMG, NAV, ARTICLE, SECTION};
+use function MicroHTML\{A, ARTICLE, B, BODY, DIV, FOOTER, HEADER, IMG, NAV, SCRIPT, SECTION};
 
 /**
  * Name: Lite Theme

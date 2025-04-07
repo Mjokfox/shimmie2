@@ -56,7 +56,16 @@ final class Pool
     public int $posts;
 
     /**
-     * @param array<string,mixed> $row
+     * @param array{
+     *     id: string|int,
+     *     user_id: string|int,
+     *     user_name: ?string,
+     *     public: string|bool,
+     *     title: string,
+     *     description: string,
+     *     date: string,
+     *     posts: string|int,
+     * } $row
      */
     public function __construct(array $row)
     {
@@ -68,14 +77,6 @@ final class Pool
         $this->description = $row['description'];
         $this->date = $row['date'];
         $this->posts = (int) $row['posts'];
-    }
-
-    /**
-     * @param array<string,mixed> $row
-     */
-    public static function makePool(array $row): Pool
-    {
-        return new Pool($row);
     }
 
     public static function get_pool_id_by_title(string $poolTitle): ?int
@@ -185,8 +186,8 @@ final class Pools extends Extension
             $event->page_matches("pool/list", paged: true)
             || $event->page_matches("pool/list/{search}", paged: true)
         ) { //index
-            if ($event->get_GET('search')) {
-                $page->set_redirect(make_link('pool/list/'. url_escape($event->get_GET('search')) . "/{$event->page_num}"));
+            if ($event->GET->get('search')) {
+                $page->set_redirect(make_link('pool/list/'. url_escape($event->GET->get('search')) . "/{$event->page_num}"));
                 return;
             }
             $search = $event->get_arg('search', "");
@@ -199,10 +200,10 @@ final class Pools extends Extension
         if ($event->page_matches("pool/create", method: "POST", permission: PoolsPermission::CREATE)) {
             $pce = send_event(
                 new PoolCreationEvent(
-                    $event->req_POST("title"),
+                    $event->POST->req("title"),
                     $user,
-                    bool_escape($event->req_POST("public")),
-                    $event->req_POST("description")
+                    bool_escape($event->POST->req("public")),
+                    $event->POST->req("description")
                 )
             );
             $page->set_redirect(make_link("pool/view/" . $pce->new_id));
@@ -245,7 +246,7 @@ final class Pools extends Extension
             $pool = $this->get_single_pool($pool_id);
             self::assert_permission($user, $pool);
 
-            foreach ($event->POST as $key => $value) {
+            foreach ($event->POST->toArray() as $key => $value) {
                 if (str_starts_with($key, "order_")) {
                     $imageID = (int) substr($key, 6);
                     $database->execute(
@@ -291,13 +292,13 @@ final class Pools extends Extension
 
             $images = Search::find_images(
                 limit: Ctx::$config->get(PoolsConfig::MAX_IMPORT_RESULTS),
-                tags: Tag::explode($event->req_POST("pool_tag"))
+                tags: Tag::explode($event->POST->req("pool_tag"))
             );
             $this->theme->pool_result($images, $pool);
         }
         if ($event->page_matches("pool/add_post", method: "POST")) {
-            $pool_id = int_escape($event->req_POST("pool_id"));
-            $image_id = int_escape($event->req_POST("image_id"));
+            $pool_id = int_escape($event->POST->req("pool_id"));
+            $image_id = int_escape($event->POST->req("image_id"));
             $pool = $this->get_single_pool($pool_id);
             self::assert_permission($user, $pool);
 
@@ -310,7 +311,7 @@ final class Pools extends Extension
             $pool = $this->get_single_pool($pool_id);
             self::assert_permission($user, $pool);
 
-            $image_ids = array_map(intval(...), $event->req_POST_array('check'));
+            $image_ids = array_map(intval(...), $event->POST->getAll('check'));
             send_event(new PoolAddPostsEvent($pool_id, $image_ids));
             $page->set_redirect(make_link("pool/view/" . $pool_id));
         }
@@ -320,7 +321,7 @@ final class Pools extends Extension
             self::assert_permission($user, $pool);
 
             $images = "";
-            foreach ($event->req_POST_array('check') as $imageID) {
+            foreach ($event->POST->getAll('check') as $imageID) {
                 $database->execute(
                     "DELETE FROM pool_images WHERE pool_id = :pid AND image_id = :iid",
                     ["pid" => $pool_id, "iid" => $imageID]
@@ -341,7 +342,7 @@ final class Pools extends Extension
 
             $database->execute(
                 "UPDATE pools SET description=:dsc,lastupdated=CURRENT_TIMESTAMP WHERE id=:pid",
-                ["dsc" => $event->req_POST('description'), "pid" => $pool_id]
+                ["dsc" => $event->POST->req('description'), "pid" => $pool_id]
             );
             $page->set_redirect(make_link("pool/view/" . $pool_id));
         }
@@ -502,7 +503,7 @@ final class Pools extends Extension
                 }
                 break;
             case "bulk_pool_add_new":
-                $new_pool_title = $event->params['bulk_pool_new'];
+                $new_pool_title = $event->params->req('bulk_pool_new');
                 $pce = send_event(new PoolCreationEvent($new_pool_title));
                 send_event(new PoolAddPostsEvent($pce->new_id, iterator_map_to_array(_image_to_id(...), $event->items)));
                 break;
@@ -556,7 +557,7 @@ final class Pools extends Extension
         $where_clause = "WHERE LOWER(title) like '%" . strtolower($search) . "%'";
 
         // @phpstan-ignore-next-line
-        $pools = array_map([Pool::class, "makePool"], Ctx::$database->get_all("
+        $pools = array_map(fn ($row) => new Pool($row), Ctx::$database->get_all("
 			SELECT p.*, u.name as user_name
 			FROM pools AS p
 			INNER JOIN users AS u
@@ -573,8 +574,6 @@ final class Pools extends Extension
 
     public function onPoolCreation(PoolCreationEvent $event): void
     {
-        global $database;
-
         if (!Ctx::$user->can(PoolsPermission::UPDATE)) {
             throw new PermissionDenied("You must be registered and logged in to add a image.");
         }
@@ -585,14 +584,14 @@ final class Pools extends Extension
             throw new InvalidInput("A pool using this title already exists.");
         }
 
-        $database->execute(
+        Ctx::$database->execute(
             "
 				INSERT INTO pools (user_id, public, title, description, date)
 				VALUES (:uid, :public, :title, :desc, now())",
             ["uid" => $event->user->id, "public" => $event->public, "title" => $event->title, "desc" => $event->description]
         );
 
-        $poolID = $database->get_last_insert_id('pools_id_seq');
+        $poolID = Ctx::$database->get_last_insert_id('pools_id_seq');
         Log::info("pools", "Pool {$poolID} created by " . Ctx::$user->name);
 
         $event->new_id = $poolID;
@@ -603,9 +602,9 @@ final class Pools extends Extension
      */
     private function get_single_pool(int $poolID): Pool
     {
-        /** @var array<string, mixed> $pool_row */
-        $pool_row = Ctx::$database->get_row("SELECT * FROM pools WHERE id=:id", ["id" => $poolID]);
-        return new Pool($pool_row);
+        $row = Ctx::$database->get_row("SELECT * FROM pools WHERE id=:id", ["id" => $poolID]);
+        // @phpstan-ignore-next-line
+        return new Pool($row);
     }
 
     /**
@@ -613,8 +612,8 @@ final class Pools extends Extension
      */
     private function get_single_pool_from_title(string $poolTitle): ?Pool
     {
-        global $database;
-        $row = $database->get_row("SELECT * FROM pools WHERE title=:title", ["title" => $poolTitle]);
+        $row = Ctx::$database->get_row("SELECT * FROM pools WHERE title=:title", ["title" => $poolTitle]);
+        // @phpstan-ignore-next-line
         return $row ? new Pool($row) : null;
     }
 
@@ -624,8 +623,7 @@ final class Pools extends Extension
      */
     private function get_pool_ids(int $imageID): array
     {
-        global $database;
-        $col = $database->get_col("SELECT pool_id FROM pool_images WHERE image_id=:iid", ["iid" => $imageID]);
+        $col = Ctx::$database->get_col("SELECT pool_id FROM pool_images WHERE image_id=:iid", ["iid" => $imageID]);
         $col = array_map(intval(...), $col);
         return $col;
     }
@@ -635,8 +633,9 @@ final class Pools extends Extension
      */
     private function get_last_userpool(int $userID): Pool
     {
-        global $database;
-        return new Pool($database->get_row("SELECT * FROM pools WHERE user_id=:uid ORDER BY id DESC", ["uid" => $userID]));
+        $row = Ctx::$database->get_row("SELECT * FROM pools WHERE user_id=:uid ORDER BY id DESC", ["uid" => $userID]);
+        // @phpstan-ignore-next-line
+        return new Pool($row);
     }
 
     /**

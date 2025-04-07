@@ -7,7 +7,7 @@ namespace Shimmie2;
 use MicroCRUD\DateTimeColumn;
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{emptyHTML, INPUT, BR};
+use function MicroHTML\{BR, INPUT, emptyHTML};
 
 class ShortDateTimeColumn extends DateTimeColumn
 {

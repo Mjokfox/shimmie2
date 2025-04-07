@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{emptyHTML, A, DIV, SPAN, LINK, rawHTML, TR, TD, INPUT, TABLE, FORM};
+use function MicroHTML\{A, DIV, FORM, INPUT, LINK, SPAN, TABLE, TD, TR, emptyHTML, rawHTML};
 
 class CustomViewPostTheme extends ViewPostTheme
 {

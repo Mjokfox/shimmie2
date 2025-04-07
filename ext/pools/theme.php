@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+use function MicroHTML\emptyHTML;
+
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\emptyHTML;
 use function MicroHTML\{A,BR,DIV,INPUT,P,SPAN,TABLE,TBODY,TD,TEXTAREA,TH,THEAD,TR};
 
 /**

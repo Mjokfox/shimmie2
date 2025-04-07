@@ -6,9 +6,8 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{INPUT,DIV};
-use function MicroHTML\BR;
-use function MicroHTML\LABEL;
+use function MicroHTML\{BR, LABEL};
+use function MicroHTML\{DIV, INPUT};
 use function MicroHTML\{emptyHTML,joinHTML};
 
 class BulkActionsTheme extends Themelet

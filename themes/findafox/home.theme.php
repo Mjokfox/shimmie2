@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{A, emptyHTML, DIV, INPUT};
+use function MicroHTML\{A, DIV, INPUT, emptyHTML};
 
 class CustomhomeTheme extends HomeTheme
 {
