@@ -39,8 +39,6 @@ class PostDescription extends Extension
             $database->execute("ALTER TABLE images ADD COLUMN description VARCHAR(512)");
 
             $this->set_version(1);
-
-            Log::info("Post description", "extension installed");
         }
     }
 

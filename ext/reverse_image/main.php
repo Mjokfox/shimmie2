@@ -28,8 +28,6 @@ class ReverseImage extends Extension
             );
 
             $this->set_version(1);
-
-            Log::info("Reverse_image", "extension installed");
         }
     }
 
