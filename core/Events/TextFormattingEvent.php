@@ -33,10 +33,9 @@ final class TextFormattingEvent extends Event
         // We need to escape before formatting, instead of at display time,
         // because formatters will add their own HTML tags into the mix and
         // we don't want to escape those.
-        $h_text = html_escape(trim($text));
-        $this->original  = $h_text;
-        $this->formatted = $h_text;
-        $this->stripped  = $h_text;
+        $this->formatted = html_escape(trim($text));
+        $this->original  = $text;
+        $this->stripped  = $text;
     }
 
     public function getFormattedHTML(): HTMLElement

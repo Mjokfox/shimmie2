@@ -8,7 +8,6 @@ namespace Shimmie2;
 * Make sure that shimmie is correctly installed                             *
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-$_shm_load_start = microtime(true);
 if (!file_exists("vendor/")) {
     die("
         <p>Shimmie is unable to find the composer <code>vendor</code> directory.</p>
@@ -38,7 +37,7 @@ if (!file_exists("data/config/shimmie.conf.php")) {
 _set_up_shimmie_environment();
 Ctx::setTracer(new \EventTracer());
 // Override TS to show that bootstrapping started in the past
-Ctx::$tracer->begin("Bootstrap", raw: ["ts" => $_shm_load_start * 1e6]);
+Ctx::$tracer->begin("Bootstrap", raw: ["ts" => $_SERVER["REQUEST_TIME_FLOAT"] * 1e6]);
 _load_ext_files();
 // Depends on core files
 $cache = Ctx::setCache(load_cache(SysConfig::getCacheDsn()));
@@ -60,8 +59,6 @@ Ctx::$tracer->end();
 
 function main(): int
 {
-    global $_shm_load_start;
-
     try {
         // Ctx::$tracer->mark($_SERVER["REQUEST_URI"] ?? "No Request");
         Ctx::$tracer->begin(
@@ -88,10 +85,6 @@ function main(): int
             send_event(new CliGenEvent($app));
             if ($app->run() !== 0) {
                 throw new \Exception("CLI command failed");
-            }
-            if ($app->traceFile !== null) {
-                Ctx::$tracer->end();
-                Ctx::$tracer->flush($app->traceFile);
             }
         } else {
             send_event(new PageRequestEvent(
@@ -129,12 +122,10 @@ function main(): int
     } finally {
         Ctx::$tracer->end();
         if (
-            PHP_SAPI !== 'cli'
-            && PHP_SAPI !== 'phpdbg'
-            && SysConfig::getTraceFile() !== null
+            SysConfig::getTraceFile() !== null
             && (
                 @$_GET["trace"] === "on"
-                || (ftime() - $_shm_load_start) > SysConfig::getTraceThreshold()
+                || (ftime() - $_SERVER["REQUEST_TIME_FLOAT"]) > SysConfig::getTraceThreshold()
             )
             && ($_SERVER["REQUEST_URI"] ?? "") !== "/upload"
         ) {

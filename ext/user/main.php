@@ -130,6 +130,72 @@ final class UserPage extends Extension
         Ctx::setUser($event->user);
     }
 
+    public function onInitExt(InitExtEvent $event): void
+    {
+        UserClass::$loading = UserClassSource::DEFAULT;
+        $_all_false = [];
+        $_all_true = [];
+        foreach (PermissionGroup::get_subclasses(all: true) as $class) {
+            foreach ($class->getConstants() as $k => $v) {
+                assert(is_string($v));
+                $_all_false[$v] = false;
+                $_all_true[$v] = true;
+            }
+        }
+        new UserClass("base", null, $_all_false);
+        new UserClass("admin", null, $_all_true);
+
+        // Anonymous users can't do anything except sign
+        // up to become regular users
+        new UserClass(
+            "anonymous",
+            "base",
+            [
+                UserAccountsPermission::CREATE_USER => true,
+                UserAccountsPermission::SKIP_LOGIN_CAPTCHA => true,
+            ],
+            description: "The default class for people who are not logged in",
+        );
+
+        // Users can control themselves, upload new content,
+        // and do basic edits (tags, source, title) on other
+        // people's content
+        new UserClass(
+            "user",
+            "base",
+            [
+                ArtistsPermission::EDIT_ARTIST_INFO => true,
+                ArtistsPermission::EDIT_IMAGE_ARTIST => true,
+                BulkActionsPermission::PERFORM_BULK_ACTIONS => true,
+                BulkDownloadPermission::BULK_DOWNLOAD => true,
+                CommentPermission::CREATE_COMMENT => true,
+                CommentPermission::SKIP_CAPTCHA => true,
+                FavouritesPermission::EDIT_FAVOURITES => true,
+                ForumPermission::FORUM_CREATE => true,
+                ImagePermission::CREATE_IMAGE => true,
+                IndexPermission::BIG_SEARCH => true,
+                NotesPermission::CREATE => true,
+                NotesPermission::EDIT => true,
+                NotesPermission::REQUEST => true,
+                NumericScorePermission::CREATE_VOTE => true,
+                PoolsPermission::CREATE => true,
+                PoolsPermission::UPDATE => true,
+                PostSourcePermission::EDIT_IMAGE_SOURCE => true,
+                PostTagsPermission::EDIT_IMAGE_TAG => true,
+                PostTitlesPermission::EDIT_IMAGE_TITLE => true,
+                PrivateImagePermission::SET_PRIVATE_IMAGE => true,
+                PrivMsgPermission::READ_PM => true,
+                PrivMsgPermission::SEND_PM => true,
+                RatingsPermission::EDIT_IMAGE_RATING => true,
+                RelationshipsPermission::EDIT_IMAGE_RELATIONSHIPS => true,
+                ReportImagePermission::CREATE_IMAGE_REPORT => true,
+                UserAccountsPermission::CHANGE_USER_SETTING => true,
+            ],
+            description: "The default class for people who are logged in",
+        );
+        UserClass::$loading = UserClassSource::UNKNOWN;
+    }
+
     public function onPageRequest(PageRequestEvent $event): void
     {
         global $database;
@@ -420,7 +486,7 @@ final class UserPage extends Extension
         } catch (UserNotFound $ex) {
             // user not found is good
         }
-        if (!Captcha::check()) {
+        if (!Captcha::check(UserAccountsPermission::SKIP_SIGNUP_CAPTCHA)) {
             throw new UserCreationException("Error in captcha");
         }
         if ($event->password !== $event->password2) {
@@ -509,6 +575,10 @@ final class UserPage extends Extension
 
     private function page_login(string $name, string $pass): void
     {
+        if (!Captcha::check(UserAccountsPermission::SKIP_LOGIN_CAPTCHA)) {
+            throw new PermissionDenied("Captcha failed");
+        }
+
         $duser = User::by_name_and_pass($name, $pass);
         send_event(new UserLoginEvent($duser));
         $duser->set_login_cookie();

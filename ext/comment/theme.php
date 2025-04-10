@@ -35,7 +35,6 @@ class CommentListTheme extends Themelet
         $position = 10;
 
         $comment_limit = Ctx::$config->req(CommentConfig::LIST_COUNT);
-        $comment_captcha = Ctx::$config->req(CommentConfig::CAPTCHA);
 
         foreach ($images as $pair) {
             $image = $pair[0];
@@ -55,20 +54,7 @@ class CommentListTheme extends Themelet
             foreach ($comments as $comment) {
                 $comment_html->appendChild($this->comment_to_html($comment));
             }
-            if (!Ctx::$user->is_anonymous()) {
-                if ($can_post) {
-                    $comment_html->appendChild($this->build_postbox($image->id));
-                }
-            } else {
-                if ($can_post) {
-                    if (!$comment_captcha) {
-                        $comment_html->appendChild($this->build_postbox($image->id));
-                    } else {
-                        $link = make_link("post/view/".$image->id);
-                        $comment_html->appendChild(A(["href" => $link], "Add Comment"));
-                    }
-                }
-            }
+            $comment_html->appendChild($this->build_postbox($image->id));
 
             $html = DIV(
                 ["class" => "comment_big_list"],
@@ -258,7 +244,7 @@ class CommentListTheme extends Themelet
                 INPUT(["type" => "hidden", "name" => "image_id", "value" => $image_id]),
                 INPUT(["type" => "hidden", "name" => "hash", "value" => CommentList::get_hash()]),
                 TEXTAREA(["id" => "comment_on_$image_id", "name" => "comment", "rows" => 5, "cols" => 50]),
-                Ctx::$config->req(CommentConfig::CAPTCHA) ? Captcha::get_html() : null,
+                Captcha::get_html(CommentPermission::SKIP_CAPTCHA),
                 BR(),
                 INPUT(["type" => "submit", "value" => "Post Comment"])
             ),

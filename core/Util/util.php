@@ -178,10 +178,8 @@ function get_debug_info(): string
  */
 function get_debug_info_arr(): array
 {
-    global $_shm_load_start;
-
     return [
-        "time" => round(ftime() - $_shm_load_start, 2),
+        "time" => round(ftime() - $_SERVER["REQUEST_TIME_FLOAT"], 2),
         "dbtime" => round(Ctx::$database->dbtime, 2),
         "mem_mb" => round(((memory_get_peak_usage(true) + 512) / 1024) / 1024, 2),
         "files" => count(get_included_files()),
@@ -301,11 +299,11 @@ function _fatal_error(\Throwable $e): void
 <!doctype html>
 <html lang="en">
 	<head>
-		<title>Internal error - SCore-'.$version.'</title>
+		<title>Internal Error</title>
 	</head>
 	<body>
 		<h1>Internal Error</h1>
-		<p><b>Message:</b> '.html_escape($message).'
+		<p><b>Message:</b> '.$e::class . ": " . html_escape($message).'
 		'.$q.'
 		<p><b>Version:</b> '.$version.' (on '.$phpver.')
         <p><b>Stack Trace:</b></p><pre><code>'.$e->getTraceAsString().'</code></pre>

@@ -355,6 +355,7 @@ class UploadTheme extends Themelet
             emptyHTML(
                 INPUT(["id" => "data[]", "name" => "data[]", "size" => "16", "type" => "file", "accept" => $accept, "multiple" => true]),
                 INPUT(["name" => "tags", "type" => "text", "placeholder" => "tagme", "class" => "autocomplete_tags", "required" => true]),
+                Captcha::get_html(UploadPermission::SKIP_UPLOAD_CAPTCHA),
                 INPUT(["type" => "submit", "value" => "Post"]),
             )
         );

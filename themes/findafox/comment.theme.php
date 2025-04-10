@@ -30,7 +30,6 @@ class CustomCommentListTheme extends CommentListTheme
         // parts for each image
         $position = 10;
 
-        $comment_captcha = $config->get(CommentConfig::CAPTCHA);
         $comment_limit = $config->get(CommentConfig::LIST_COUNT);
 
         foreach ($images as $pair) {
@@ -71,17 +70,7 @@ class CustomCommentListTheme extends CommentListTheme
             foreach ($comments as $comment) {
                 $comment_html->appendChild($this->comment_to_html($comment));
             }
-            if ($can_post) {
-                if (!$user->is_anonymous()) {
-                    $comment_html->appendChild($this->build_postbox($image->id));
-                } else {
-                    if (!$comment_captcha) {
-                        $comment_html->appendChild($this->build_postbox($image->id));
-                    } else {
-                        $comment_html->appendChild(A(["href" => make_link("post/view/".$image->id)], "Add Comment"));
-                    }
-                }
-            }
+            $comment_html->appendChild($this->build_postbox($image->id));
 
             $html = TABLE(
                 TR(
@@ -153,7 +142,6 @@ class CustomCommentListTheme extends CommentListTheme
         global $config;
 
         $hash = CommentList::get_hash();
-        $h_captcha = $config->get(CommentConfig::CAPTCHA) ? Captcha::get_html() : "";
         return DIV(
             ["class" => "comment comment_add", "id" => "cadd$image_id"],
             SHM_SIMPLE_FORM(
@@ -161,7 +149,7 @@ class CustomCommentListTheme extends CommentListTheme
                 INPUT(["type" => "hidden", "name" => "image_id", "value" => $image_id]),
                 INPUT(["type" => "hidden", "name" => "hash", "value" => $hash]),
                 TEXTAREA(["id" => "comment_on_$image_id", "name" => "comment", "rows" => 5, "cols" => 50]),
-                $h_captcha,
+                Captcha::get_html(CommentPermission::SKIP_CAPTCHA),
                 SHM_SUBMIT("Post Comment")
             )
         );

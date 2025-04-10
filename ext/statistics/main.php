@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{SPAN, emptyHTML};
-
 final class Statistics extends Extension
 {
     public const KEY = "statistics";
@@ -29,11 +27,7 @@ final class Statistics extends Extension
                 arsort($tallies[0], SORT_NUMERIC);
                 $stats = [];
                 foreach ($tallies[0] as $name => $tag_diff) {
-                    $stats[$name] = emptyHTML(
-                        SPAN(["title" => "Tags changed (ignoring aliases)"], $tag_diff),
-                        isset($tallies[1][$name]) ?
-                            SPAN(["class" => "tag_count", "title" => "Total edits"], $tallies[1][$name]) : null
-                    );
+                    $stats[$name] = $this->theme->build_tag_field($tallies[1][$name], $tag_diff);
                 }
                 $tag_table = $this->theme->build_table($stats, "Taggers", "Top $limit taggers", $limit);
             } else {

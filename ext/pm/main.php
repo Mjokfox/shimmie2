@@ -290,29 +290,29 @@ final class PrivMsg extends Extension
     public function onUserPageBuilding(UserPageBuildingEvent $event): void
     {
         $duser = $event->display_user;
-        if (!Ctx::$user->is_anonymous() && !$duser->is_anonymous()) {
-            if (Ctx::$user->can(PrivMsgPermission::READ_PM)) {
-                if (($duser->id == Ctx::$user->id) || Ctx::$user->can(PrivMsgPermission::VIEW_OTHER_PMS)) {
-                    $pms = PM::get_pms_to($duser, 5, );
-                    if (!empty($pms)) {
-                        $this->theme->display_pms($pms, from:true, more:$duser->id, archived:$duser->id);
-                    }
-                    $sent_pms = PM::get_pms_by($duser, 5);
-                    if (!empty($sent_pms)) {
-                        $this->theme->display_pms($sent_pms, header:"Sent messages", to:true, edit:true, delete:true, more:$duser->id, archived:$duser->id);
-                    }
-                } else {
-                    $pms = PM::get_pms_to_and_by($duser, Ctx::$user, 5);
-                    if (!empty($pms)) {
-                        $this->theme->display_pms($pms, header:"Messages from you", to:true, edit:true, delete:true, more:$duser->id);
-                    }
+
+        if (Ctx::$user->can(PrivMsgPermission::READ_PM)) {
+            if (($duser->id == Ctx::$user->id) || Ctx::$user->can(PrivMsgPermission::VIEW_OTHER_PMS)) {
+                $pms = PM::get_pms_to($duser, 5, );
+                if (!empty($pms)) {
+                    $this->theme->display_pms($pms, from:true, more:$duser->id, archived:$duser->id);
+                }
+                $sent_pms = PM::get_pms_by($duser, 5);
+                if (!empty($sent_pms)) {
+                    $this->theme->display_pms($sent_pms, header:"Sent messages", to:true, edit:true, delete:true, more:$duser->id, archived:$duser->id);
+                }
+            } else {
+                $pms = PM::get_pms_to_and_by($duser, Ctx::$user, 5);
+                if (!empty($pms)) {
+                    $this->theme->display_pms($pms, header:"Messages from you", to:true, edit:true, delete:true, more:$duser->id);
                 }
             }
-            if (Ctx::$user->can(PrivMsgPermission::SEND_PM) && Ctx::$user->id !== $duser->id) {
-                $this->theme->display_composer(Ctx::$user, $duser);
-            }
+        }
+        if (Ctx::$user->can(PrivMsgPermission::SEND_PM) && Ctx::$user->id !== $duser->id) {
+            $this->theme->display_composer(Ctx::$user, $duser);
         }
     }
+
 
     public function onPageRequest(PageRequestEvent $event): void
     {
