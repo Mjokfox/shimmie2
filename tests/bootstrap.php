@@ -57,7 +57,7 @@ Ctx::setEventBus(new EventBus());
 // $config->set_int("upload_limit:anonymous", 100000);
 send_event(new DatabaseUpgradeEvent());
 send_event(new InitExtEvent());
-Ctx::setUser(User::by_id(Ctx::$config->req(UserAccountsConfig::ANON_ID)));
+Ctx::setUser(User::get_anonymous());
 $userPage = new UserPage();
 $userPage->onUserCreation(new UserCreationEvent("demo", "demo", "demo", "demo@demo.com", false));
 $userPage->onUserCreation(new UserCreationEvent("test", "test", "test", "test@test.com", false));

@@ -22,8 +22,8 @@ class LitePage extends Page
     protected function body_html(): HTMLElement
     {
         list($nav_links, $sub_links) = $this->get_nav_links();
-        $theme_name = Ctx::$config->req(SetupConfig::THEME);
-        $site_name = Ctx::$config->req(SetupConfig::TITLE);
+        $theme_name = Ctx::$config->get(SetupConfig::THEME);
+        $site_name = Ctx::$config->get(SetupConfig::TITLE);
         $data_href = Url::base();
 
         $menu = DIV(
@@ -73,7 +73,7 @@ class LitePage extends Page
         }
 
         $custom_sublinks = null;
-        if (!empty($sub_links)) {
+        if (count($sub_links) > 0) {
             $custom_sublinks = DIV(["class" => "sbar"]);
             foreach ($sub_links as $nav_link) {
                 $custom_sublinks->appendChild($this->navlinks($nav_link->link, $nav_link->description, $nav_link->active));

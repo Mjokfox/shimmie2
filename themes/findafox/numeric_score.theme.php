@@ -63,9 +63,9 @@ class CustomNumericScoreTheme extends NumericScoreTheme
         }
         $html = DIV(
             ["class" => "numeric-score", "style" => "display:flex; flex-direction:row; align-items:center"],
-            DIV($vote_form($image->id, 1, "⬆", $score_without, $i_vote == 1 ? "score-pos" : null)),
+            DIV($vote_form($image->id, 1, "⬆", $score_without, $i_vote === 1 ? "score-pos" : null)),
             DIV(["class" => "current-score $score_class", "title" => "Current score"], B($i_score)),
-            DIV($vote_form($image->id, -1, "⬇", $score_without, $i_vote == -1 ? "score-neg" : null)),
+            DIV($vote_form($image->id, -1, "⬇", $score_without, $i_vote === -1 ? "score-neg" : null)),
             $fav,
             $voters,
         );

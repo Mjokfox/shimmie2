@@ -102,7 +102,7 @@ final readonly class Url
             $dir = str_replace("\\", "/", $dir);
             $dir = rtrim($dir, "/");
         }
-        if (empty($dir)) {
+        if ($dir === "") {
             $dir = null;
         }
         return new Url(path: $dir);
@@ -263,6 +263,6 @@ final readonly class Url
 
     public static function are_niceurls_enabled(): bool
     {
-        return SysConfig::getNiceUrls() || Ctx::$config->req(SetupConfig::NICE_URLS);
+        return SysConfig::getNiceUrls() || Ctx::$config->get(SetupConfig::NICE_URLS);
     }
 }

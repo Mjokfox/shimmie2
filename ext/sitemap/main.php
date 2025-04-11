@@ -42,7 +42,7 @@ final class XMLSitemap extends Extension
 
         // add index
         $urls[] = new XMLSitemapURL(
-            make_link(Ctx::$config->req(SetupConfig::FRONT_PAGE)),
+            make_link(Ctx::$config->get(SetupConfig::FRONT_PAGE)),
             "weekly",
             "1",
             date("Y-m-d")
@@ -126,11 +126,6 @@ final class XMLSitemap extends Extension
 
         $sitemap_generation_interval = 3600; // allow new site map every hour
         $last_generated_time = $cache_path->filemtime();
-
-        // if file doesn't exist, return true
-        if ($last_generated_time == false) {
-            return true;
-        }
 
         // if it's been an hour since last sitemap creation, return true
         return ($last_generated_time + $sitemap_generation_interval < time());

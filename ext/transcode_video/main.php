@@ -107,7 +107,7 @@ final class TranscodeVideo extends Extension
         $output = ["" => null];
 
         foreach (VideoContainer::cases() as $container) {
-            if ($starting_container == $container) {
+            if ($starting_container === $container) {
                 continue;
             }
             if (!empty($starting_codec) &&
@@ -124,7 +124,7 @@ final class TranscodeVideo extends Extension
 
     private function transcode_and_replace_video(Image $image, string $target_mime): bool
     {
-        if ($image->get_mime() == $target_mime) {
+        if ($image->get_mime()->base === $target_mime) {
             return false;
         }
 
@@ -154,7 +154,7 @@ final class TranscodeVideo extends Extension
             throw new VideoTranscodeException("Cannot transcode item to $target_mime because it does not support the video codec {$source_video_codec->value}");
         }
 
-        $command = new CommandBuilder(Ctx::$config->req(MediaConfig::FFMPEG_PATH));
+        $command = new CommandBuilder(Ctx::$config->get(MediaConfig::FFMPEG_PATH));
         $command->add_args("-y"); // Bypass y/n prompts
         $command->add_args("-i", $source_file->str()); // input file
 

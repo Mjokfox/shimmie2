@@ -167,7 +167,7 @@ final class Wiki extends Extension
             } elseif ($action === "save") {
                 $rev = int_escape($event->POST->req('revision'));
                 $body = $event->POST->req('body');
-                $lock = $user->can(WikiPermission::ADMIN) && ($event->POST->get('lock') == "on");
+                $lock = $user->can(WikiPermission::ADMIN) && ($event->POST->get('lock') === "on");
 
                 if (self::can_edit($user, self::get_page($title))) {
                     $wikipage = self::get_page($title);
@@ -224,7 +224,7 @@ final class Wiki extends Extension
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
-        if ($event->parent == "wiki") {
+        if ($event->parent === "wiki") {
             $event->add_nav_link(make_link('wiki/rules'), "Rules");
             $event->add_nav_link(make_link('ext_doc/wiki'), "Help");
             $event->add_nav_link(make_link('wiki/wiki:list'), "Page list");
@@ -356,7 +356,7 @@ final class Wiki extends Extension
 
             // correct the default
             $row["title"] = $title;
-            $row["owner_id"] = Ctx::$config->req(UserAccountsConfig::ANON_ID);
+            $row["owner_id"] = Ctx::$config->get(UserAccountsConfig::ANON_ID);
         }
 
         // @phpstan-ignore-next-line

@@ -25,7 +25,7 @@ class PostTitlesTheme extends Themelet
             INPUT([
                 "type" => "text",
                 "name" => "title{$suffix}",
-                "value" => ($suffix == 0) ? @$_GET['title'] : null,
+                "value" => ($suffix === "0") ? @$_GET['title'] : null,
             ])
         );
     }

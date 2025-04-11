@@ -69,7 +69,7 @@ class CustomBlotterTheme extends BlotterTheme
                 $messy_date = $entry['entry_date'];
                 $clean_date = date("m/d/y", \Safe\strtotime($messy_date));
                 $entry_text = $entry['entry_text'];
-                if ($entry['important'] == 'Y') {
+                if ($entry['important']) {
                     $i_open = "<span style='color: #$i_color'>";
                     $i_close = "</span>";
                 }

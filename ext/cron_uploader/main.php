@@ -22,7 +22,7 @@ final class CronUploader extends Extension
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
-        if ($event->parent == "system") {
+        if ($event->parent === "system") {
             $event->add_nav_link(make_link('cron_upload'), "Cron Upload");
         }
     }
@@ -86,7 +86,7 @@ final class CronUploader extends Extension
         if (self::$IMPORT_RUNNING) {
             $all = Ctx::$user->get_config()->get(CronUploaderUserConfig::INCLUDE_ALL_LOGS);
             if ($event->priority >= Ctx::$user->get_config()->get(CronUploaderUserConfig::LOG_LEVEL) &&
-                ($event->section == self::NAME || $all)) {
+                ($event->section === self::NAME || $all)) {
                 $output = "[" . date('Y-m-d H:i:s') . "] " . ($all ? '[' . $event->section . '] ' : '') . "[" . LogLevel::from($event->priority)->name . "] " . $event->message;
 
                 echo $output . "\r\n";
@@ -111,7 +111,7 @@ final class CronUploader extends Extension
 
         $results = Filesystem::get_files_recursively($stage_dir);
 
-        if (count($results) == 0) {
+        if (count($results) === 0) {
             if (Filesystem::remove_empty_dirs($stage_dir) === false) {
                 Ctx::$page->flash("Nothing to stage from {$folder->str()}, cannot remove folder");
             } else {
@@ -267,7 +267,7 @@ final class CronUploader extends Extension
         Ctx::$page->add_http_header("Content-Type: text/plain");
         Ctx::$page->send_headers();
 
-        if (!Ctx::$config->req(UserAccountsConfig::ENABLE_API_KEYS)) {
+        if (!Ctx::$config->get(UserAccountsConfig::ENABLE_API_KEYS)) {
             throw new ServerError("User API keys are not enabled. Please enable them for the cron upload functionality to work.");
         }
 
@@ -389,7 +389,7 @@ final class CronUploader extends Extension
         ])));
 
         // Generate info message
-        if (count($event->images) == 0) {
+        if (count($event->images) === 0) {
             throw new UploadException("File type not recognised (".$event->mime."). Filename: {$filename}");
         } elseif ($event->merged === true) {
             $infomsg = "Post merged. ID: {$event->images[0]->id} - Filename: {$filename}";

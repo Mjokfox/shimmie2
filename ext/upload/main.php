@@ -145,7 +145,7 @@ final class Upload extends Extension
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
-        if ($event->parent == "upload") {
+        if ($event->parent === "upload") {
             if (WikiInfo::is_enabled()) {
                 $event->add_nav_link(make_link('wiki/upload_guidelines'), "Guidelines");
             }
@@ -157,9 +157,9 @@ final class Upload extends Extension
         if ($this->is_full) {
             throw new UploadException("Upload failed; disk nearly full");
         }
-        if ($event->size > Ctx::$config->req(UploadConfig::SIZE)) {
+        if ($event->size > Ctx::$config->get(UploadConfig::SIZE)) {
             $size = to_shorthand_int($event->size);
-            $limit = to_shorthand_int(Ctx::$config->req(UploadConfig::SIZE));
+            $limit = to_shorthand_int(Ctx::$config->get(UploadConfig::SIZE));
             throw new UploadException("File too large ($size > $limit)");
         }
     }
@@ -305,7 +305,7 @@ final class Upload extends Extension
 
                 $new_images = $database->with_savepoint(function () use ($tmp_name, $name, $slot, $metadata) {
                     $event = send_event(new DataUploadEvent($tmp_name, basename($name), $slot, $metadata));
-                    if (count($event->images) == 0) {
+                    if (count($event->images) === 0) {
                         throw new UploadException("MIME type not supported: " . $event->mime);
                     }
                     return $event->images;
@@ -346,7 +346,7 @@ final class Upload extends Extension
 
             $new_images = Ctx::$database->with_savepoint(function () use ($tmp_filename, $filename, $slot, $metadata) {
                 $event = send_event(new DataUploadEvent($tmp_filename, $filename, $slot, $metadata));
-                if (count($event->images) == 0) {
+                if (count($event->images) === 0) {
                     throw new UploadException("File type not supported: " . $event->mime);
                 }
                 return $event->images;

@@ -12,7 +12,7 @@ use MicroHTML\HTMLElement;
 
 function get_theme(): string
 {
-    $theme = Ctx::$config->req(SetupConfig::THEME);
+    $theme = Ctx::$config->get(SetupConfig::THEME);
     if (!file_exists("themes/$theme")) {
         $theme = "default";
     }
@@ -99,8 +99,8 @@ function get_upload_limits(): array
     $sys_filesize = empty($ini_filesize) ? null : parse_shorthand_int($ini_filesize);
     $sys_post = empty($ini_post) ? null : parse_shorthand_int($ini_post);
 
-    $conf_files = Ctx::$config->req(UploadConfig::COUNT);
-    $conf_filesize = Ctx::$config->req(UploadConfig::SIZE);
+    $conf_files = Ctx::$config->get(UploadConfig::COUNT);
+    $conf_filesize = Ctx::$config->get(UploadConfig::SIZE);
     $conf_post = $conf_files * $conf_filesize;
 
     $limits = [
@@ -331,7 +331,7 @@ function _get_user(): User
         $my_user = User::by_session(Ctx::$page->get_cookie("user"), Ctx::$page->get_cookie("session"));
     }
     if (is_null($my_user)) {
-        $my_user = User::by_id(Ctx::$config->req(UserAccountsConfig::ANON_ID));
+        $my_user = User::get_anonymous();
     }
 
     return $my_user;

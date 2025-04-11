@@ -51,7 +51,7 @@ final class TagCategories extends Extension
         // if empty, add our default values
         $number_of_db_rows = $database->get_one('SELECT COUNT(*) FROM image_tag_categories');
 
-        if ($number_of_db_rows == 0) {
+        if ($number_of_db_rows === 0) {
             $database->execute(
                 'INSERT INTO image_tag_categories (category, upper_group, lower_group, color) VALUES (:category, :single, :multiple, :color)',
                 ["category" => "artist", "single" => "Artist", "multiple" => "Artists", "color" => "#BB6666"]
@@ -69,7 +69,7 @@ final class TagCategories extends Extension
 
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
-        if ($event->parent == "tags") {
+        if ($event->parent === "tags") {
             $event->add_nav_link(make_link('tags/categories'), "Tag Categories", ["tag_categories"]);
         }
     }
@@ -278,7 +278,7 @@ final class TagCategories extends Extension
                 return;
             }
 
-            if ($_POST['tc_status'] == 'edit') {
+            if ($_POST['tc_status'] === 'edit') {
                 $database->execute(
                     'UPDATE image_tag_categories
                     SET upper_group=:upper_group,
@@ -300,7 +300,7 @@ final class TagCategories extends Extension
                 $this->add_tags_to_category($_POST['tc_category'], $_POST['tc_tag_list']);
                 Log::info("tag_categories", "Edited category: ".$_POST['tc_category'], "Edited category: ".$_POST['tc_category']);
 
-            } elseif ($_POST['tc_status'] == 'new') {
+            } elseif ($_POST['tc_status'] === 'new') {
                 $database->execute(
                     'INSERT INTO image_tag_categories (category, upper_group, lower_group, color, upload_page_type, upload_page_priority)
                     VALUES (:category, :upper_group, :lower_group, :color, :upload_page_type, :upload_page_priority)',
@@ -315,7 +315,7 @@ final class TagCategories extends Extension
                 );
                 $this->add_tags_to_category($_POST['tc_category'], $_POST['tc_tag_list']);
                 Log::info("tag_categories", "Created category: ".$_POST['tc_category'], "Created category: ".$_POST['tc_category']);
-            } elseif ($_POST['tc_status'] == 'delete') {
+            } elseif ($_POST['tc_status'] === 'delete') {
                 $this->delete_tags_from_category($_POST['tc_category']);
                 $database->execute(
                     'DELETE FROM image_tag_categories

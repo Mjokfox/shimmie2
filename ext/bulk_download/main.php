@@ -20,13 +20,13 @@ final class BulkDownload extends Extension
     {
         if (
             Ctx::$user->can(BulkDownloadPermission::BULK_DOWNLOAD)
-            && ($event->action == BulkDownload::DOWNLOAD_ACTION_NAME)
+            && ($event->action === BulkDownload::DOWNLOAD_ACTION_NAME)
         ) {
             $download_filename = Ctx::$user->name . '-' . date('YmdHis') . '.zip';
             $zip_filename = shm_tempnam("bulk_download");
             $zip = new \ZipArchive();
             $size_total = 0;
-            $max_size = Ctx::$config->req(BulkDownloadConfig::SIZE_LIMIT);
+            $max_size = Ctx::$config->get(BulkDownloadConfig::SIZE_LIMIT);
 
             if ($zip->open($zip_filename->str(), \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
                 foreach ($event->items as $image) {

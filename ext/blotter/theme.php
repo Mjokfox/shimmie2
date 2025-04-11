@@ -97,7 +97,7 @@ class BlotterTheme extends Themelet
             $clean_date = date("m/d/y", \Safe\strtotime($entry['entry_date']));
             $entry_text = $entry['entry_text'];
             $text = "{$clean_date} - {$entry_text}";
-            if ($entry['important'] == 'Y') {
+            if ($entry['important']) {
                 $text = SPAN(["style" => "color: $i_color"], $text);
             }
             $entries_list->appendChild(LI($text));
@@ -134,7 +134,7 @@ class BlotterTheme extends Themelet
             DIV(["id" => "blotter2", "class" => "shm-blotter2"], $in_text)
         );
 
-        $position = Ctx::$config->req(BlotterConfig::POSITION);
+        $position = Ctx::$config->get(BlotterConfig::POSITION);
         Ctx::$page->add_block(new Block(null, $html, $position, 20));
     }
 }

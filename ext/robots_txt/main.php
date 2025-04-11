@@ -44,7 +44,7 @@ final class RobotsTxt extends Extension
     public function onRobotsBuilding(RobotsBuildingEvent $event): void
     {
         $domain = Ctx::$config->get(RobotsTxtConfig::CANONICAL_DOMAIN);
-        if (!empty($domain) && $_SERVER['HTTP_HOST'] !== $domain) {
+        if ($domain !== null && $_SERVER['HTTP_HOST'] !== $domain) {
             $event->add_disallow("");
         }
     }

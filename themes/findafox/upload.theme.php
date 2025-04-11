@@ -30,7 +30,7 @@ class CustomUploadTheme extends UploadTheme
         $upload_count = $config->get(UploadConfig::COUNT);
         $preview_enabled = $config->get(UploadConfig::PREVIEW);
         $split_view = $config->get(UploadConfig::SPLITVIEW);
-        $tl_enabled = ($config->get(UploadConfig::TRANSLOAD_ENGINE) != "none");
+        $tl_enabled = ($config->get(UploadConfig::TRANSLOAD_ENGINE) !== "none");
         $accept = $this->get_accept();
 
         $headers = emptyHTML();
@@ -91,7 +91,7 @@ class CustomUploadTheme extends UploadTheme
                             "class" => "url-input",
                             "id" => "urldata{$i}",
                             "name" => "url{$i}",
-                            "value" => ($i == 0) ? @$_GET['url'] : null,
+                            "value" => ($i === 0) ? @$_GET['url'] : null,
                         ]) : null
                     ),
                     TD(
@@ -170,8 +170,8 @@ function customkciSort(array &$array, array $customOrder): void // custom key ca
     $customOrderLower = array_map('strtolower', $customOrder);
 
     uksort($array, function ($a, $b) use ($customOrderLower) {
-        $indexA = array_search(strtolower($a), $customOrderLower);
-        $indexB = array_search(strtolower($b), $customOrderLower);
+        $indexA = array_search(strtolower($a), $customOrderLower, true);
+        $indexB = array_search(strtolower($b), $customOrderLower, true);
 
         if ($indexA !== false && $indexB !== false) {
             return $indexA <=> $indexB;
@@ -189,7 +189,7 @@ function customkciSort(array &$array, array $customOrder): void // custom key ca
 function get_categories_html(string $suffix): HTMLElement
 {
     global $database,$config,$cache;
-    /** @var array{string:string} $types */
+    /** @var array{lower_group:string, type:int} $types */
     $types = cache_get_or_set("ct_type_table", fn () => $database->get_pairs("
         SELECT lower_group, upload_page_type
         FROM image_tag_categories itc
@@ -238,12 +238,12 @@ function get_categories_html(string $suffix): HTMLElement
 
         $stop = $count_array[$group] / $type_table[$type]["cols"];
 
-        if ($type == 4) {
+        if ($type === 4) {
             $i = 0;
             $dropdownHtml = emptyHTML();
             foreach ($tc_dict[$group] as $tag) {
                 if ($i++ < 4) {
-                    $input_array[$group]->appendChild(make_input_label($suffix, $tag, $group, $type == 4 ? "radio" : "checkbox", "", $i < $stop && $i % 4 == 3 ? "label-margin" : "", in_array($tag, $preselect_tags)));
+                    $input_array[$group]->appendChild(make_input_label($suffix, $tag, $group, "radio", "", $i < $stop && $i % 4 === 3 ? "label-margin" : "", in_array($tag, $preselect_tags)));
                 } else {
                     $dropdownHtml->appendChild(
                         OPTION(["value" => $tag, "onClick" => "presettags(this);"], $tag)
@@ -262,7 +262,7 @@ function get_categories_html(string $suffix): HTMLElement
         } else {
             $i = 0;
             foreach ($tc_dict[$group] as $tag) {
-                $input_array[$group]->appendChild(make_input_label($suffix, $tag, $group, $type == 4 ? "radio" : "checkbox", "", $i < $stop && $i % 4 == 3 ? "label-margin" : "", in_array($tag, $preselect_tags)));
+                $input_array[$group]->appendChild(make_input_label($suffix, $tag, $group, "checkbox", "", $i < $stop && $i % 4 === 3 ? "label-margin" : "", in_array($tag, $preselect_tags)));
                 $i++;
             }
         }
@@ -276,7 +276,7 @@ function get_categories_html(string $suffix): HTMLElement
             DIV(
                 ["class" => $type_table[$type]["class"]],
                 DIV(["class" => "grid-cell-separator"], DIV(["class" => "grid-cell-label"], $group), ),
-                DIV(["class" => "grid-cell-content" . ($type == 4 ? " dir-row" : ""), "style" => "--rows: $rows;--tworows: $tworows"], $input_array[$group], ),
+                DIV(["class" => "grid-cell-content" . ($type === 4 ? " dir-row" : ""), "style" => "--rows: $rows;--tworows: $tworows"], $input_array[$group], ),
             )
         );
     }

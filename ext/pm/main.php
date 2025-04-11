@@ -292,7 +292,7 @@ final class PrivMsg extends Extension
         $duser = $event->display_user;
 
         if (Ctx::$user->can(PrivMsgPermission::READ_PM)) {
-            if (($duser->id == Ctx::$user->id) || Ctx::$user->can(PrivMsgPermission::VIEW_OTHER_PMS)) {
+            if (($duser->id === Ctx::$user->id) || Ctx::$user->can(PrivMsgPermission::VIEW_OTHER_PMS)) {
                 $pms = PM::get_pms_to($duser, 5, );
                 if (!empty($pms)) {
                     $this->theme->display_pms($pms, from:true, more:$duser->id, archived:$duser->id);
@@ -333,7 +333,7 @@ final class PrivMsg extends Extension
                 $pmo = PM::from_row($pm);
                 $this->theme->display_message($from_user, Ctx::$user, $pmo);
                 if ($user->can(PrivMsgPermission::SEND_PM)) {
-                    if ($pm["from_id"] == $user->id) {
+                    if ($pm["from_id"] === $user->id) {
                         $this->theme->display_edit_button($pmo->id);
                     } else {
                         $this->theme->display_composer($user, $from_user, "Re: ".$pmo->subject);
@@ -345,7 +345,7 @@ final class PrivMsg extends Extension
         } elseif ($event->page_matches("pm/list", method: "GET", permission: PrivMsgPermission::READ_PM, paged:true)) {
             $duser_id = $event->get_iarg('page_num', 0);
             if (!$user->is_anonymous()) {
-                if ($duser_id == 0 || ($duser_id == $user->id)) {
+                if ($duser_id === 0 || ($duser_id === $user->id)) {
                     $pms = PM::get_pms_to($user);
                     if (!empty($pms)) {
                         $this->theme->display_pms($pms, from:true, archived:$user->id);
@@ -383,7 +383,7 @@ final class PrivMsg extends Extension
         } elseif ($event->page_matches("pm/archived", method: "GET", permission: PrivMsgPermission::READ_PM, paged:true)) {
             $duser_id = $event->get_iarg('page_num', 0);
             if (!$user->is_anonymous()) {
-                if ($duser_id == 0 || ($duser_id == $user->id)) {
+                if ($duser_id === 0 || ($duser_id === $user->id)) {
                     $pms = PM::get_pm_archive($user);
                     if (!empty($pms)) {
                         $this->theme->display_pms($pms, header:"Archive", from:true, to:true, edit:true, archive:false, delete:true);
@@ -409,15 +409,15 @@ final class PrivMsg extends Extension
             $pm = $database->get_row("SELECT * FROM private_message WHERE id = :id", ["id" => $pm_id]);
             if (is_null($pm)) {
                 throw new ObjectNotFound("No such PM");
-            } elseif (($pm["to_id"] == $user->id) || ($pm["from_id"] == $user->id)) {
+            } elseif (($pm["to_id"] === $user->id) || ($pm["from_id"] === $user->id)) {
                 if (is_null($pm["archived_by"])) {
                     $database->execute("UPDATE private_message SET archived_by = :u_id WHERE id = :id;", ["u_id" => $user->id, "id" => $pm_id]);
-                } elseif ($pm["archived_by"] != $user->id) {
+                } elseif ($pm["archived_by"] !== $user->id) {
                     $database->execute("UPDATE private_message SET archived_by = -1 WHERE id = :id;", ["id" => $pm_id]);
                 } else {
                     throw new PermissionDenied("This PM is already archived for you");
                 }
-                if (($pm["to_id"] == $user->id)) {
+                if (($pm["to_id"] === $user->id)) {
                     Ctx::$cache->delete("pm-count-{$user->id}");
                 } else {
                     Ctx::$cache->delete("pm-count-".$pm["from_id"]);
@@ -430,9 +430,9 @@ final class PrivMsg extends Extension
             $pm = $database->get_row("SELECT * FROM private_message WHERE id = :id", ["id" => $pm_id]);
             if (is_null($pm)) {
                 throw new ObjectNotFound("No such PM");
-            } elseif (($pm["to_id"] == $user->id) || ($pm["from_id"] === $user->id) || $user->can(PrivMsgPermission::VIEW_OTHER_PMS)) {
+            } elseif (($pm["to_id"] === $user->id) || ($pm["from_id"] === $user->id) || $user->can(PrivMsgPermission::VIEW_OTHER_PMS)) {
                 $database->execute("DELETE FROM private_message WHERE id = :id", ["id" => $pm_id]);
-                if (($pm["to_id"] == $user->id)) {
+                if (($pm["to_id"] === $user->id)) {
                     Ctx::$cache->delete("pm-count-{$user->id}");
                 } else {
                     Ctx::$cache->delete("pm-count-".$pm["from_id"]);
@@ -459,7 +459,7 @@ final class PrivMsg extends Extension
             $pm = $database->get_row("SELECT * FROM private_message WHERE id = :id", ["id" => $pm_id]);
             if (is_null($pm)) {
                 throw new ObjectNotFound("No such PM");
-            } elseif ($pm["from_id"] == $user->id) {
+            } elseif ($pm["from_id"] === $user->id) {
                 $pmo = PM::from_row($pm);
                 $subject = $pmo->subject;
                 if (substr($subject, -9) === " (edited)") {
@@ -474,7 +474,7 @@ final class PrivMsg extends Extension
             $pm = $database->get_row("SELECT * FROM private_message WHERE id = :id", ["id" => $pm_id]);
             if (is_null($pm)) {
                 throw new ObjectNotFound("No such PM");
-            } elseif ($pm["from_id"] == $user->id) {
+            } elseif ($pm["from_id"] === $user->id) {
                 $pmo = PM::from_row($pm);
                 $pmo->subject = $event->POST->req("subject");
                 $pmo->message = $event->POST->req("message");

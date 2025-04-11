@@ -56,7 +56,7 @@ class EmailVerification extends Extension
             $user = User::by_id($user->id); // cached user can give problems
             if ($user->class->name === "user" && !is_null($user->email)) {
                 $token = $_GET['token'];
-                if ($token != null) {
+                if (!is_null($token)) {
                     if ($token === $this->get_email_token($user, $user->email)) {
                         $user->set_class("verified");
                         $page->flash("Email verified!");
@@ -72,7 +72,7 @@ class EmailVerification extends Extension
             }
         } elseif ($event->page_matches("user_admin/send_verification_mail", method:"POST")) {
             $user = User::by_id($user->id);
-            if ($event->POST->req('id') == $user->id) {
+            if ((int)$event->POST->req('id') === $user->id) {
                 if ($user->email) {
                     $this->send_verification_mail($this->get_email_token($user, $user->email), $user->email);
                 } else {
@@ -105,10 +105,10 @@ class EmailVerification extends Extension
 
     public function onUserPageBuilding(UserPageBuildingEvent $event): void
     {
-        global $page, $user;
-        $ruser = User::by_name($user->name);
+        global $page;
+        $ruser = User::by_name(Ctx::$user->name);
         $duser = $event->display_user;
-        if ($ruser->class->name == "user" && $duser == $ruser) {
+        if ($ruser->class->name === "user" && $duser === $ruser) {
             if ($duser->email) {
                 $html = emptyHTML();
                 $html->appendChild(SHM_USER_FORM(
@@ -166,8 +166,8 @@ class EmailVerification extends Extension
         }
 
         if (
-            ($a->name == $b->name) ||
-            ($b->can(UserAccountsPermission::PROTECTED) && $a->class->name == "admin") ||
+            ($a->name === $b->name) ||
+            ($b->can(UserAccountsPermission::PROTECTED) && $a->class->name === "admin") ||
             (!$b->can(UserAccountsPermission::PROTECTED) && $a->can(UserAccountsPermission::EDIT_USER_INFO))
         ) {
             return true;

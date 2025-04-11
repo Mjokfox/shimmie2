@@ -115,7 +115,7 @@ final class Comment
     #[Field(name: "owner")]
     public function get_owner(): User
     {
-        if (empty($this->owner)) {
+        if (is_null($this->owner)) {
             $this->owner = User::by_id_dangerously_cached($this->owner_id);
         }
         return $this->owner;
@@ -273,7 +273,7 @@ final class CommentList extends Extension
         } elseif ($event->page_matches("comment/list", paged: true)) {
             $threads_per_page = 10;
 
-            $where = Ctx::$config->req(CommentConfig::RECENT_COMMENTS)
+            $where = Ctx::$config->get(CommentConfig::RECENT_COMMENTS)
                 ? "WHERE posted > now() - interval '24 hours'"
                 : "";
 
@@ -600,7 +600,7 @@ final class CommentList extends Extension
             $this->comment_checks($image_id, $user, $comment);
         }
         global $database;
-        $edit_query = $database->get_driver_id() == DatabaseDriverID::PGSQL ?
+        $edit_query = $database->get_driver_id() === DatabaseDriverID::PGSQL ?
             "CASE 
                 WHEN posted < CURRENT_TIMESTAMP - INTERVAL '5 minutes' THEN TRUE 
                 ELSE edited 

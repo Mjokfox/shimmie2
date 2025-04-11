@@ -75,8 +75,8 @@ class PrivMsgTheme extends Themelet
                 THEAD(TR(TH("R?"), TH("Subject"), $from ? TH("From") : null, $to ? TH("To") : null, TH("Date"), TH("Action"))),
                 $tbody
             ),
-            $more != 0 ? A(["href" => make_link("pm/list/$more")], "See all") : null,
-            $archived != 0 ? A(["href" => make_link("pm/archived/$archived"), "style" => "margin-left:1em"], "Archived messages") : null,
+            $more !== 0 ? A(["href" => make_link("pm/list/$more")], "See all") : null,
+            $archived !== 0 ? A(["href" => make_link("pm/archived/$archived"), "style" => "margin-left:1em"], "Archived messages") : null,
         );
         Ctx::$page->add_block(new Block($header, $html, "main", 40, "private-messages-$header", hidable:true));
     }

@@ -30,7 +30,7 @@ class UploadTheme extends Themelet
     {
         $limits = get_upload_limits();
 
-        $tl_enabled = (Ctx::$config->req(UploadConfig::TRANSLOAD_ENGINE) !== "none");
+        $tl_enabled = (Ctx::$config->get(UploadConfig::TRANSLOAD_ENGINE) !== "none");
         $max_size = $limits['shm_filesize'];
         $split_view = Ctx::$config->get(UploadConfig::SPLITVIEW);
         $preview_enabled = Ctx::$config->get(UploadConfig::PREVIEW);
@@ -141,10 +141,10 @@ class UploadTheme extends Themelet
     protected function build_upload_list(): HTMLElement
     {
         $upload_list = emptyHTML();
-        $upload_count = Ctx::$config->req(UploadConfig::COUNT);
+        $upload_count = Ctx::$config->get(UploadConfig::COUNT);
         $preview_enabled = Ctx::$config->get(UploadConfig::PREVIEW);
         $split_view = Ctx::$config->get(UploadConfig::SPLITVIEW);
-        $tl_enabled = Ctx::$config->req(UploadConfig::TRANSLOAD_ENGINE) !== "none";
+        $tl_enabled = Ctx::$config->get(UploadConfig::TRANSLOAD_ENGINE) !== "none";
         $accept = $this->get_accept();
 
         $headers = emptyHTML();
@@ -204,7 +204,7 @@ class UploadTheme extends Themelet
                             "type" => "text",
                             "class" => "url-input",
                             "name" => "url{$i}",
-                            "value" => ($i == 0) ? @$_GET['url'] : null,
+                            "value" => ($i === 0) ? @$_GET['url'] : null,
                         ]) : null
                     ),
                     TD(
@@ -255,7 +255,7 @@ class UploadTheme extends Themelet
         $limits = get_upload_limits();
         $link = make_link("upload")->asAbsolute();
         $main_page = make_link()->asAbsolute();
-        $title = Ctx::$config->req(SetupConfig::TITLE);
+        $title = Ctx::$config->get(SetupConfig::TITLE);
         $max_size = $limits['shm_filesize'];
         $max_kb = to_shorthand_int($max_size);
         $delimiter = Url::are_niceurls_enabled() ? '?' : '&amp;';
@@ -288,7 +288,7 @@ class UploadTheme extends Themelet
         // Bookmarklet checks if shimmie supports ext. If not, won't upload to site/shows alert saying not supported.
         $supported_ext = join(" ", DataHandlerExtension::get_all_supported_exts());
 
-        $title = "Booru to " . Ctx::$config->req(SetupConfig::TITLE);
+        $title = "Booru to " . Ctx::$config->get(SetupConfig::TITLE);
         // CA=0: Ask to use current or new tags | CA=1: Always use current tags | CA=2: Always use new tags
         $js = '
             javascript:
@@ -325,11 +325,11 @@ class UploadTheme extends Themelet
             foreach ($errors as $error) {
                 $page->add_block(new Block($error->name, format_text($error->error)));
             }
-        } elseif (count($successes) == 0) {
+        } elseif (count($successes) === 0) {
             $page->set_title("No images uploaded");
             $this->display_navigation();
             $page->add_block(new Block("No images uploaded", emptyHTML("Upload attempted, but nothing succeeded and nothing failed?")));
-        } elseif (count($successes) == 1) {
+        } elseif (count($successes) === 1) {
             $page->set_redirect(make_link("post/view/{$successes[0]->image_id}"));
             $page->add_http_header("X-Shimmie-Post-ID: " . $successes[0]->image_id);
         } else {

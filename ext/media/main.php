@@ -119,7 +119,7 @@ final class Media extends Extension
             $event->resize_type,
             MediaEngine::RESIZE_TYPE_SUPPORT[$event->engine->value]
         )) {
-            throw new MediaException("Resize type $event->resize_type not supported by selected media engine {$event->engine->value}");
+            throw new MediaException("Resize type {$event->resize_type->name} not supported by selected media engine {$event->engine->value}");
         }
 
         switch ($event->engine) {
@@ -267,7 +267,7 @@ final class Media extends Extension
             $orig_size = self::video_size($inname);
             $scaled_size = ThumbnailUtil::get_thumbnail_size($orig_size[0], $orig_size[1], true);
 
-            $command = new CommandBuilder(Ctx::$config->req(MediaConfig::FFMPEG_PATH));
+            $command = new CommandBuilder(Ctx::$config->get(MediaConfig::FFMPEG_PATH));
             $command->add_args("-y");
             $command->add_args("-i", $inname->str());
             $command->add_args("-vf", "scale=$scaled_size[0]:$scaled_size[1],thumbnail");
@@ -321,7 +321,7 @@ final class Media extends Extension
      */
     public static function get_ffprobe_data(Path $filename): array
     {
-        $command = new CommandBuilder(Ctx::$config->req(MediaConfig::FFPROBE_PATH));
+        $command = new CommandBuilder(Ctx::$config->get(MediaConfig::FFPROBE_PATH));
         $command->add_args("-print_format", "json");
         $command->add_args("-v", "quiet");
         $command->add_args("-show_format");
@@ -368,14 +368,14 @@ final class Media extends Extension
             $output_mime = $input_mime;
         }
         if (is_null($alpha_color)) {
-            $alpha_color = Ctx::$config->req(ThumbnailConfig::ALPHA_COLOR);
+            $alpha_color = Ctx::$config->get(ThumbnailConfig::ALPHA_COLOR);
         }
 
         if ($output_mime->base === MimeType::WEBP && self::is_lossless($input_path, $input_mime)) {
             $output_mime = new MimeType(MimeType::WEBP_LOSSLESS);
         }
 
-        $command = new CommandBuilder(Ctx::$config->req(MediaConfig::CONVERT_PATH));
+        $command = new CommandBuilder(Ctx::$config->get(MediaConfig::CONVERT_PATH));
 
         // read input
         $input_ext = self::determine_ext($input_mime);
@@ -452,11 +452,11 @@ final class Media extends Extension
         // format-specific compression options
         if ($output_mime->base === MimeType::PNG) {
             $command->add_args("-define", "png:compression-level=9");
-        } elseif ($output_mime->base == MimeType::WEBP && $output_mime->parameters == MimeType::LOSSLESS_PARAMETER) {
+        } elseif ($output_mime->base === MimeType::WEBP && $output_mime->parameters === MimeType::LOSSLESS_PARAMETER) {
             $command->add_args("-define", "webp:lossless=true");
             $command->add_args("-quality", "100");
         } else {
-            $command->add_args("-quality", (string)Ctx::$config->req(TranscodeImageConfig::QUALITY));
+            $command->add_args("-quality", (string)Ctx::$config->get(TranscodeImageConfig::QUALITY));
         }
 
         // write output
@@ -506,7 +506,7 @@ final class Media extends Extension
             });
         }
         if (is_null($alpha_color)) {
-            $alpha_color = Ctx::$config->req(ThumbnailConfig::ALPHA_COLOR);
+            $alpha_color = Ctx::$config->get(ThumbnailConfig::ALPHA_COLOR);
         }
 
         $memory_use = self::calc_memory_use($info);
@@ -658,7 +658,7 @@ final class Media extends Extension
         $width = 1;
         $height = 1;
         foreach ($data["streams"] as $stream) {
-            if ($stream["codec_type"] == "video") {
+            if ($stream["codec_type"] === "video") {
                 $width = max($width, $stream["width"]);
                 $height = max($height, $stream["height"]);
             }

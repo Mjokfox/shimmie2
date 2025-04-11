@@ -33,9 +33,9 @@ final class ReplaceFile extends Extension
                 Ctx::$page->set_redirect(make_link("replace/$image_id"));
                 return;
             }
-            if ($tmp_filename->filesize() > Ctx::$config->req(UploadConfig::SIZE)) {
+            if ($tmp_filename->filesize() > Ctx::$config->get(UploadConfig::SIZE)) {
                 $size = to_shorthand_int($tmp_filename->filesize());
-                $limit = to_shorthand_int(Ctx::$config->req(UploadConfig::SIZE));
+                $limit = to_shorthand_int(Ctx::$config->get(UploadConfig::SIZE));
                 throw new UploadException("File too large ($size > $limit)");
             }
             send_event(new ImageReplaceEvent($image, $tmp_filename));
@@ -77,7 +77,7 @@ final class ReplaceFile extends Extension
         // update metadata and save metadata to DB
         $event->image->hash = $event->new_hash;
         $filesize = $target->filesize();
-        if ($filesize == 0) {
+        if ($filesize === 0) {
             throw new ImageReplaceException("Replacement file size is zero");
         }
         $event->image->filesize = $filesize;

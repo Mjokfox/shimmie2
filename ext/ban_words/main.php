@@ -47,7 +47,7 @@ final class BanWords extends Extension
         $comment = mb_strtolower($comment);
 
         foreach (self::get_words() as $word) {
-            if ($word[0] == '/') {
+            if ($word[0] === '/') {
                 // lines that start with slash are regex
                 if (\Safe\preg_match($word, $comment)) {
                     throw $ex;
@@ -68,10 +68,10 @@ final class BanWords extends Extension
     {
         $words = [];
 
-        $banned = Ctx::$config->req(BanWordsConfig::BANNED_WORDS);
+        $banned = Ctx::$config->get(BanWordsConfig::BANNED_WORDS);
         foreach (explode("\n", $banned) as $word) {
             $word = trim(mb_strtolower($word));
-            if (strlen($word) == 0) {
+            if (strlen($word) === 0) {
                 // line is blank
                 continue;
             }

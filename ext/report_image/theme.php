@@ -46,7 +46,7 @@ class ReportImageTheme extends Themelet
             ["id" => "reportedImage", "class" => "zebra"],
             THEAD(
                 TR(
-                    TD(["width" => Ctx::$config->req(ThumbnailConfig::WIDTH)], "Post"),
+                    TD(["width" => Ctx::$config->get(ThumbnailConfig::WIDTH)], "Post"),
                     TD("Reason"),
                     TD(["width" => "128"], "Action")
                 )
@@ -70,13 +70,13 @@ class ReportImageTheme extends Themelet
             $html->appendChild(P(B("Current reports:")));
             foreach ($reports as $report) {
                 $html->appendChild(BR());
-                if ($public == "both") {
+                if ($public === "both") {
                     $html->appendChild(User::by_id($report->user_id)->name);
                     $html->appendChild(" - ");
                     $html->appendChild(format_text($report->reason));
-                } elseif ($public == "user") {
+                } elseif ($public === "user") {
                     $html->appendChild(User::by_id($report->user_id)->name);
-                } elseif ($public == "reason") {
+                } elseif ($public === "reason") {
                     $html->appendChild(format_text($report->reason));
                 }
             }

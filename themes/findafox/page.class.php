@@ -77,7 +77,7 @@ class customPage extends Page
                     $sub_block_html[] = $block->body;
                     break;
                 case "main":
-                    if ($block->header == "Posts") {
+                    if ($block->header === "Posts") {
                         $block->header = "&nbsp;";
                     }
                     $main_block_html[] = $this->block_html($block, false);
@@ -91,7 +91,7 @@ class customPage extends Page
             }
         }
 
-        if (empty($this->subheading)) {
+        if ($this->subheading === "") {
             $subheading = null;
         } else {
             $subheading = DIV(["id" => "subtitle"], $this->subheading);
@@ -106,7 +106,7 @@ class customPage extends Page
         }
 
         $custom_sublinks = "";
-        if (!empty($sub_links)) {
+        if (count($sub_links) > 0) {
             $custom_sublinks = DIV(["class" => "sbar"]);
             foreach ($sub_links as $nav_link) {
                 $custom_sublinks->appendChild(LI($this->navlinks($nav_link->link, $nav_link->description, $nav_link->active)));
@@ -166,7 +166,7 @@ class customPage extends Page
         $debug = get_debug_info();
         $contact_link = contact_link() ?? "";
         $footer_html = $config->get(SetupConfig::FOOTER_HTML);
-        if (!($footer_html == "" || $footer_html == null)) {
+        if (!empty($footer_html)) {
             $footer_html = str_replace('%d', $debug, $footer_html);
             $footer_html = str_replace('%c', $contact_link, $footer_html);
             /** @var string $footer_html */

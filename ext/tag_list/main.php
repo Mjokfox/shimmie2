@@ -25,10 +25,10 @@ final class TagList extends Extension
     {
         if (Ctx::$config->get(TagListConfig::LENGTH) > 0) {
             $type = Ctx::$config->get(TagListConfig::IMAGE_TYPE);
-            if ($type == TagListConfig::TYPE_TAGS || $type == TagListConfig::TYPE_BOTH) {
+            if ($type === TagListConfig::TYPE_TAGS || $type === TagListConfig::TYPE_BOTH) {
                 $this->add_tags_block($event->image);
             }
-            if ($type == TagListConfig::TYPE_RELATED || $type == TagListConfig::TYPE_BOTH) {
+            if ($type === TagListConfig::TYPE_RELATED || $type === TagListConfig::TYPE_BOTH) {
                 $this->add_related_block($event->image);
             }
         }
@@ -39,13 +39,13 @@ final class TagList extends Extension
      */
     private static function get_omitted_tags(): array
     {
-        $tags_config = Ctx::$config->req(TagListConfig::OMIT_TAGS);
+        $tags_config = Ctx::$config->get(TagListConfig::OMIT_TAGS);
         $results = Ctx::$cache->get("tag_list_omitted_tags:".$tags_config);
 
         if (is_null($results)) {
             $tags = Tag::explode($tags_config, false);
 
-            if (count($tags) == 0) {
+            if (count($tags) === 0) {
                 return [];
             }
 
@@ -151,7 +151,7 @@ final class TagList extends Extension
                     ";
             }
 
-            $args = ["popular_tag_list_length" => Ctx::$config->req(TagListConfig::POPULAR_TAG_LIST_LENGTH)];
+            $args = ["popular_tag_list_length" => Ctx::$config->get(TagListConfig::POPULAR_TAG_LIST_LENGTH)];
 
             // @phpstan-ignore-next-line
             $tags = Ctx::$database->get_all($query, $args);
@@ -172,7 +172,7 @@ final class TagList extends Extension
             return;
         }
 
-        $related_tags = self::get_related_tags($search, Ctx::$config->req(TagListConfig::LENGTH));
+        $related_tags = self::get_related_tags($search, Ctx::$config->get(TagListConfig::LENGTH));
 
         if (!empty($related_tags)) {
             $this->theme->display_refine_block($related_tags, $search);
@@ -194,7 +194,7 @@ final class TagList extends Extension
             $starting_tags = [];
             $tags_ok = true;
             foreach ($search as $tag) {
-                if ($tag[0] == "-" || str_starts_with($tag, "tagme")) {
+                if ($tag[0] === "-" || str_starts_with($tag, "tagme")) {
                     continue;
                 }
                 $tag = Tag::sqlify($tag);

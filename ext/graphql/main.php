@@ -95,7 +95,7 @@ final class GraphQL extends Extension
             }
         }
 
-        if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
             if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD'])) {
                 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
             }
@@ -119,7 +119,7 @@ final class GraphQL extends Extension
             $resp = $server->executeRequest();
             assert(!is_array($resp));
             assert(is_a($resp, \GraphQL\Executor\ExecutionResult::class));
-            if (Ctx::$config->req(GraphQLConfig::DEBUG)) {
+            if (Ctx::$config->get(GraphQLConfig::DEBUG)) {
                 $debug = DebugFlag::INCLUDE_DEBUG_MESSAGE | DebugFlag::RETHROW_INTERNAL_EXCEPTIONS;
                 $body = $resp->toArray($debug);
             } else {
@@ -152,7 +152,7 @@ final class GraphQL extends Extension
             if (empty($post["url$n"]) && empty($_FILES["data$n"])) {
                 break;
             }
-            if (isset($_FILES["data$n"]) && ($_FILES["data$n"]["size"] == 0 || $_FILES["data$n"]["error"] == UPLOAD_ERR_NO_FILE)) {
+            if (isset($_FILES["data$n"]) && ($_FILES["data$n"]["size"] === 0 || $_FILES["data$n"]["error"] === UPLOAD_ERR_NO_FILE)) {
                 break;
             }
             try {

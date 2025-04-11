@@ -47,7 +47,7 @@ class CustomViewPostTheme extends ViewPostTheme
 		<br>Type: $h_type
 		";
 
-        if ($image->length != null) {
+        if (!is_null($image->length)) {
             $h_length = format_milliseconds($image->length);
             $html .= "<br/>Length: $h_length";
         }
@@ -104,9 +104,9 @@ class CustomViewPostTheme extends ViewPostTheme
 
     protected function build_info(Image $image, array $editor_parts): HTMLElement
     {
-        global $config, $user;
+        global $user;
 
-        if (count($editor_parts) == 0) {
+        if (count($editor_parts) === 0) {
             return emptyHTML($image->is_locked() ? "[Post Locked]" : "");
         }
 

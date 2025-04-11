@@ -175,7 +175,7 @@ final class Forum extends Extension
             WHERE thread_id = :thread_id
         ", ['thread_id' => $threadID]);
 
-        return (int) ceil($count / Ctx::$config->req(ForumConfig::POSTS_PER_PAGE));
+        return (int) ceil($count / Ctx::$config->get(ForumConfig::POSTS_PER_PAGE));
     }
 
     /**
@@ -186,7 +186,7 @@ final class Forum extends Extension
         $errors = [];
         if (!array_key_exists("title", $_POST)) {
             $errors[] = "No title supplied.";
-        } elseif (strlen($_POST["title"]) == 0) {
+        } elseif (strlen($_POST["title"]) === 0) {
             $errors[] = "You cannot have an empty title.";
         } elseif (strlen($_POST["title"]) > 255) {
             $errors[] = "Your title is too long.";
@@ -194,7 +194,7 @@ final class Forum extends Extension
 
         if (!array_key_exists("message", $_POST)) {
             $errors[] = "No message supplied.";
-        } elseif (strlen($_POST["message"]) == 0) {
+        } elseif (strlen($_POST["message"]) === 0) {
             $errors[] = "You cannot have an empty message.";
         }
 
@@ -209,12 +209,12 @@ final class Forum extends Extension
         $errors = [];
         if (!array_key_exists("threadID", $_POST)) {
             $errors[] = "No thread ID supplied.";
-        } elseif (strlen($_POST["threadID"]) == 0) {
+        } elseif (strlen($_POST["threadID"]) === 0) {
             $errors[] = "No thread ID supplied.";
         } elseif (is_numeric($_POST["threadID"])) {
             if (!array_key_exists("message", $_POST)) {
                 $errors[] = "No message supplied.";
-            } elseif (strlen($_POST["message"]) == 0) {
+            } elseif (strlen($_POST["message"]) === 0) {
                 $errors[] = "You cannot have an empty message.";
             }
         }
@@ -242,7 +242,7 @@ final class Forum extends Extension
     private function show_last_threads(int $pageNumber, bool $showAdminOptions = false): void
     {
         $database = Ctx::$database;
-        $threadsPerPage = Ctx::$config->req(ForumConfig::THREADS_PER_PAGE);
+        $threadsPerPage = Ctx::$config->get(ForumConfig::THREADS_PER_PAGE);
         $totalPages = (int) ceil($database->get_one("SELECT COUNT(*) FROM forum_threads") / $threadsPerPage);
 
         /** @var Thread[] $threads */
@@ -264,7 +264,7 @@ final class Forum extends Extension
     private function show_posts(int $threadID, int $pageNumber): void
     {
         global $database;
-        $postsPerPage = Ctx::$config->req(ForumConfig::POSTS_PER_PAGE);
+        $postsPerPage = Ctx::$config->get(ForumConfig::POSTS_PER_PAGE);
         $totalPages = (int) ceil($database->get_one("SELECT COUNT(*) FROM forum_posts WHERE thread_id = :id", ['id' => $threadID]) / $postsPerPage);
         $threadTitle = $this->get_thread_title($threadID);
 
@@ -363,6 +363,6 @@ final class Forum extends Extension
     private function threadExists(int $threadID): bool
     {
         $result = Ctx::$database->get_one("SELECT EXISTS (SELECT * FROM forum_threads WHERE id=:id)", ['id' => $threadID]);
-        return $result == 1;
+        return $result === true;
     }
 }

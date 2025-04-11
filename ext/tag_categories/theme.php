@@ -81,11 +81,11 @@ class TagCategoriesTheme extends Themelet
                                 SPAN($type_map[$upload_page_type]),
                                 SELECT(
                                     ["name" => "tc_up_type", "style" => "display:none;"],
-                                    OPTION(["value" => "0", ($upload_page_type == "0" ? "selected" : "") => true], "hidden"),
-                                    OPTION(["value" => "1", ($upload_page_type == "1" ? "selected" : "") => true], "half width"),
-                                    OPTION(["value" => "2", ($upload_page_type == "2" ? "selected" : "") => true], "full width"),
-                                    OPTION(["value" => "3", ($upload_page_type == "3" ? "selected" : "") => true], "single column"),
-                                    OPTION(["value" => "4", ($upload_page_type == "4" ? "selected" : "") => true], "single row"),
+                                    OPTION(["value" => "0", ($upload_page_type === 0 ? "selected" : "") => true], "hidden"),
+                                    OPTION(["value" => "1", ($upload_page_type === 1 ? "selected" : "") => true], "half width"),
+                                    OPTION(["value" => "2", ($upload_page_type === 2 ? "selected" : "") => true], "full width"),
+                                    OPTION(["value" => "3", ($upload_page_type === 3 ? "selected" : "") => true], "single column"),
+                                    OPTION(["value" => "4", ($upload_page_type === 4 ? "selected" : "") => true], "single row"),
                                 ),
                             ),
                         ),
@@ -110,13 +110,13 @@ class TagCategoriesTheme extends Themelet
                         "class" => "tc_edit",
                         "type" => "button",
                         "onclick" => "
-                            $(\'.tagcategorycategories:nth-of-type('.$tc_block_index.') tr + tr td span\').hide();
-                            $(\'.tagcategorycategories:nth-of-type('.$tc_block_index.') td input\').show();
-                            $(\'.tagcategorycategories:nth-of-type('.$tc_block_index.') td select\').show();
-                            $(\'.tagcategorycategories:nth-of-type('.$tc_block_index.') .tc_edit\').hide();
-                            $(\'.tagcategorycategories:nth-of-type('.$tc_block_index.') .tc_colorswatch\').hide();
-                            $(\'.tagcategorycategories:nth-of-type('.$tc_block_index.') .tc_submit\').show();
-                            $(\'.tagcategorycategories:nth-of-type('.$tc_block_index.' ) textarea\').prop(\'readonly\', false);
+                            $('.tagcategorycategories:nth-of-type($tc_block_index) tr + tr td span').hide();
+                            $('.tagcategorycategories:nth-of-type($tc_block_index) td input').show();
+                            $('.tagcategorycategories:nth-of-type($tc_block_index) td select').show();
+                            $('.tagcategorycategories:nth-of-type($tc_block_index) .tc_edit').hide();
+                            $('.tagcategorycategories:nth-of-type($tc_block_index) .tc_colorswatch').hide();
+                            $('.tagcategorycategories:nth-of-type($tc_block_index) .tc_submit').show();
+                            $('.tagcategorycategories:nth-of-type($tc_block_index) textarea').prop('readonly', false);
                         "
                     ], "Edit"),
                     BUTTON([
