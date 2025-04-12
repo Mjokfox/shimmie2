@@ -44,12 +44,11 @@ class PostDescription extends Extension
 
     public function onImageInfoSet(ImageInfoSetEvent $event): void
     {
-        global $config, $page, $user, $database;
         $desc = $event->get_param('description') ?? "";
-        if ($user->can(PostSourcePermission::EDIT_IMAGE_SOURCE)) {
+        if (Ctx::$user->can(PostSourcePermission::EDIT_IMAGE_SOURCE)) {
             /** @var DescriptionSetEvent $cpe */
-            $cpe = send_event(new DescriptionSetEvent($event->image->id, $user, $desc));
-            $database->execute("UPDATE images SET description=:description WHERE id=:id", ["description" => substr($cpe->description, 0, 512), "id" => $event->image->id]);
+            $cpe = send_event(new DescriptionSetEvent($event->image->id, Ctx::$user, $desc));
+            Ctx::$database->execute("UPDATE images SET description=:description WHERE id=:id", ["description" => substr($cpe->description, 0, 512), "id" => $event->image->id]);
         }
     }
 
