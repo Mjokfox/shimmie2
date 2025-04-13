@@ -11,56 +11,31 @@ class EmailVerification extends Extension
     public const KEY = "email_verification";
     public function get_priority(): int
     {
-        return 51;
+        return 71; // after perm_manager
     }
 
-    public function onInitExt(InitExtEvent $event): void
+    public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
-
-        new UserClass("user", "base", [
-            IndexPermission::BIG_SEARCH => true,
-            ImagePermission::CREATE_IMAGE => true,
-            CommentPermission::CREATE_COMMENT => true,
-            PostTagsPermission::EDIT_IMAGE_TAG => true,
-            PostSourcePermission::EDIT_IMAGE_SOURCE => true,
-            PostTitlesPermission::EDIT_IMAGE_TITLE => true,
-            RelationshipsPermission::EDIT_IMAGE_RELATIONSHIPS => true,
-            ArtistsPermission::EDIT_IMAGE_ARTIST => true,
-            ReportImagePermission::CREATE_IMAGE_REPORT => true,
-            RatingsPermission::EDIT_IMAGE_RATING => true,
-            FavouritesPermission::EDIT_FAVOURITES => true,
-            NumericScorePermission::CREATE_VOTE => true,
-            PrivMsgPermission::SEND_PM => true,
-            PrivMsgPermission::READ_PM => true,
-            PrivateImagePermission::SET_PRIVATE_IMAGE => true,
-            UserAccountsPermission::CHANGE_USER_SETTING => true,
-            ForumPermission::FORUM_CREATE => true,
-            NotesPermission::CREATE => true,
-            NotesPermission::EDIT => true,
-            NotesPermission::REQUEST => true,
-            PoolsPermission::CREATE => true,
-            PoolsPermission::UPDATE => true,
-        ]);
-
-        new UserClass("verified", "user", [
-            BulkActionsPermission::PERFORM_BULK_ACTIONS => true,
-            BulkDownloadPermission::BULK_DOWNLOAD => true,
-        ]);
-
+        if ($this->get_version() < 1) {
+            Ctx::$database->execute(
+                "INSERT INTO user_classes (name, parent, description) VALUES (:name, :parent, :description)",
+                ["name" => "verified", "parent" => "user", "description" => "email verified users"]
+            );
+            $this->set_version(1);
+        }
     }
+
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page, $user;
-
         if ($event->page_matches("email_verification", method:"GET")) {
-            $user = User::by_id($user->id); // cached user can give problems
-            if ($user->class->name === "user" && !is_null($user->email)) {
+            Ctx::$user = User::by_id(Ctx::$user->id); // cached user can give problems
+            if (Ctx::$user->class->name === "user" && !is_null(Ctx::$user->email)) {
                 $token = $_GET['token'];
                 if (!is_null($token)) {
-                    if ($token === $this->get_email_token($user, $user->email)) {
-                        $user->set_class("verified");
-                        $page->flash("Email verified!");
-                        $page->add_block(new Block("Email verified", rawHTML(""), "main", 1));
+                    if ($token === $this->get_email_token(Ctx::$user, Ctx::$user->email)) {
+                        Ctx::$user->set_class("verified");
+                        Ctx::$page->flash("Email verified!");
+                        Ctx::$page->add_block(new Block("Email verified", rawHTML(""), "main", 1));
                     } else {
                         throw new PermissionDenied("Verification failed: Invalid Token (Are you logged in?)");
                     }
@@ -71,14 +46,14 @@ class EmailVerification extends Extension
                 throw new PermissionDenied("Your email is already verified!");
             }
         } elseif ($event->page_matches("user_admin/send_verification_mail", method:"POST")) {
-            $user = User::by_id($user->id);
-            if ((int)$event->POST->req('id') === $user->id) {
-                if ($user->email) {
-                    $this->send_verification_mail($this->get_email_token($user, $user->email), $user->email);
+            Ctx::$user = User::by_id(Ctx::$user->id);
+            if ((int)$event->POST->req('id') === Ctx::$user->id) {
+                if (Ctx::$user->email) {
+                    $this->send_verification_mail($this->get_email_token(Ctx::$user, Ctx::$user->email), Ctx::$user->email);
                 } else {
-                    $page->flash("no email set, cannot send verification email");
+                    Ctx::$page->flash("no email set, cannot send verification email");
                 }
-                $page->set_redirect(make_link("user"));
+                Ctx::$page->set_redirect(make_link("user"));
             }
         } elseif ($event->page_matches("user_admin/change_email", method: "POST")) {
             $input = validate_input([
@@ -86,7 +61,7 @@ class EmailVerification extends Extension
                 'address' => 'email',
             ]);
             $duser = User::by_id($input['id']);
-            if ($this->user_can_edit_user($user, $duser)) {
+            if ($this->user_can_edit_user(Ctx::$user, $duser)) {
                 if ($duser->class->name === "verified" || $duser->class->name === "user") {
                     $duser->set_class("user");
                     $this->send_verification_mail($this->get_email_token($duser, $input['address']), $input['address']);
@@ -97,15 +72,13 @@ class EmailVerification extends Extension
 
     public function onUserCreation(UserCreationEvent $event): void
     {
-        global $page, $config;
-        $title = $config->get(SetupConfig::TITLE);
-        $page->flash("Welcome to $title, {$event->username}!");
+        $title = Ctx::$config->get(SetupConfig::TITLE);
+        Ctx::$page->flash("Welcome to $title, {$event->username}!");
         $this->send_verification_mail($this->get_email_token($event->get_user(), $event->email), $event->email);
     }
 
     public function onUserPageBuilding(UserPageBuildingEvent $event): void
     {
-        global $page;
         $ruser = User::by_name(Ctx::$user->name);
         $duser = $event->display_user;
         if ($ruser->class->name === "user" && $duser === $ruser) {
@@ -118,25 +91,24 @@ class EmailVerification extends Extension
                     emptyHTML(),
                     "Resend verification email"
                 ));
-                $page->add_block(new Block("Verify", $html, "main", 61));
+                Ctx::$page->add_block(new Block("Verify", $html, "main", 61));
             }
         }
     }
 
     public function send_verification_mail(string $token, string $email): void
     {
-        global $page, $config;
         if ($email === "") {
-            $page->flash($config->get(EmailVerificationConfig::DEFAULT_MESSAGE));
+            Ctx::$page->flash(Ctx::$config->get(EmailVerificationConfig::DEFAULT_MESSAGE));
             return;
         }
         if ($token === "") {
-            $page->flash("verification email failed to send, to verify please try again by clicking the button in the account panel to become verified user");
+            Ctx::$page->flash("verification email failed to send, to verify please try again by clicking the button in the account panel to become verified user");
             return;
         }
-        $sender = $config->get(EmailVerificationConfig::EMAIL_SENDER);
+        $sender = Ctx::$config->get(EmailVerificationConfig::EMAIL_SENDER);
         if (is_null($sender)) {
-            $page->flash("Email verification not setup by site owner");
+            Ctx::$page->flash("Email verification not setup by site owner");
             return;
         }
         $server_name = $_SERVER['SERVER_NAME'];
@@ -152,9 +124,9 @@ class EmailVerification extends Extension
             'X-Mailer' => 'PHP/' . phpversion()
         ];
         if (mail($to, $subject, $message, $headers)) {
-            $page->flash("Email verification mail sent, please check your inbox and spam");
+            Ctx::$page->flash("Email verification mail sent, please check your inbox and spam");
         } else {
-            $page->flash("Email verification mail failed to send, please retry later to become verified user");
+            Ctx::$page->flash("Email verification mail failed to send, please retry later to become verified user");
         }
     }
 

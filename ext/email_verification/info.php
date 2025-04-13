@@ -15,5 +15,6 @@ class EmailVerificationInfo extends ExtensionInfo
     public ExtensionVisibility $visibility = ExtensionVisibility::ADMIN;
     public ExtensionCategory $category = ExtensionCategory::ADMIN;
     public string $description = "Adds email verification";
-    public bool $core = true;
+    public array $dependencies = [PermManagerInfo::KEY];
+    public bool $core = false;
 }
