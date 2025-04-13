@@ -130,7 +130,7 @@ class TagCategoriesTheme extends Themelet
                         "class" => "tc_submit",
                         "type" => "button",
                         "style" => "display:none;",
-                        "onclick" => "$(\'.tagcategoryblock:nth-of-type('.$tc_block_index.') .tc_delete\').show(); $(this).hide();",
+                        "onclick" => "$('.tagcategoryblock:nth-of-type($tc_block_index) .tc_delete').show(); $(this).hide();",
                     ], "Delete"),
                     BUTTON([
                         "class" => "tc_delete",
@@ -202,9 +202,9 @@ class TagCategoriesTheme extends Themelet
                             TEXTAREA(["type" => "text", "name" => "tc_tag_list", "class" => "autocomplete_tags", "placeholder" => "tagme", "rows" => "5", "cols" => "15"]),
                         ),
                     ),
-                )
+                ),
+                BUTTON(["class" => "tc_submit", "type" => "submit", "name" => "tc_status", "value" => "new"], "Submit")
             ),
-            BUTTON(["class" => "tc_submit", "type" => "submit", "name" => "tc_status", "value" => "new"], "Submit")
         );
 
         // add html to stuffs
