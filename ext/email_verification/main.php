@@ -19,7 +19,7 @@ class EmailVerification extends Extension
         if ($this->get_version() < 1) {
             Ctx::$database->execute(
                 "INSERT INTO user_classes (name, parent, description) VALUES (:name, :parent, :description)",
-                ["name" => "verified", "parent" => "user", "description" => "email verified users"]
+                ["name" => "verified", "parent" => "user", "description" => "Email verified users"]
             );
             $this->set_version(1);
         }

@@ -72,6 +72,7 @@ try {
 
     while (true) {
         sleep($timer);
+        $config = Ctx::setConfig(new DatabaseConfig($database));
         Ctx::$database->begin_transaction();
         $timer = $ps->get_scheduled_post();
         if (Ctx::$database->is_transaction_open()) {

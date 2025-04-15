@@ -9,12 +9,13 @@ use function MicroHTML\{INPUT, TD, TH, TR};
 final class PostScheduling extends DataHandlerExtension
 {
     public const KEY = "post_scheduling";
-
+    /** @var PostSchedulingTheme */
+    protected Themelet $theme;
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         if ($this->get_version() < 1) {
 
-            Ctx::$database->create_table("scheduled_images", "
+            Ctx::$database->create_table("scheduled_posts", "
                 id SCORE_AIPK,
                 owner_id INTEGER NOT NULL,
                 owner_ip SCORE_INET NOT NULL,
@@ -37,11 +38,11 @@ final class PostScheduling extends DataHandlerExtension
                 FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE RESTRICT
             ");
 
-            Ctx::$database->create_table("scheduled_images_metadata", "
+            Ctx::$database->create_table("scheduled_posts_metadata", "
                 schedule_id INTEGER NOT NULL,
                 key TEXT,
                 value TEXT,
-                FOREIGN KEY (schedule_id) REFERENCES scheduled_images(id) ON DELETE CASCADE
+                FOREIGN KEY (schedule_id) REFERENCES scheduled_posts(id) ON DELETE CASCADE
             ");
 
             $this->set_version(1);
@@ -55,8 +56,8 @@ final class PostScheduling extends DataHandlerExtension
                 // We DO support this extension - but the file looks corrupt
                 throw new UploadException("Invalid or corrupted file");
             }
-
-            $existing = Image::by_hash($event->tmpname->md5());
+            $hash = $event->tmpname->md5();
+            $existing = Image::by_hash($hash);
             if (!is_null($existing)) {
                 if (Ctx::$config->get(UploadConfig::COLLISION_HANDLER) === 'merge') {
                     // Right now tags are the only thing that get merged, so
@@ -73,53 +74,101 @@ final class PostScheduling extends DataHandlerExtension
                 }
             }
 
-            // Create a new Image object
-            $filename = $event->tmpname;
-            assert($filename->is_readable());
-            $image = new Image();
-            $image->tmp_file = $filename;
-            $filesize = $filename->filesize();
-            if ($filesize === 0) {
-                throw new UploadException("File size is zero");
-            }
-            $image->filesize = $filesize;
-            $image->hash = $filename->md5();
-            // DB limits to 255 char filenames
-            $image->filename = substr($event->filename, -250);
-            $image->set_mime($event->mime);
-            try {
-                send_event(new MediaCheckPropertiesEvent($image));
-            } catch (MediaException $e) {
-                throw new UploadException("Unable to scan media properties {$filename->str()} / {$image->filename} / $image->hash: ".$e->getMessage());
-            }
-            $latest = $this->get_latest();
+            $res = Ctx::$database->get_one(
+                "
+                SELECT id FROM scheduled_posts
+                WHERE hash = :hash
+                ",
+                ["hash" => $hash]
+            );
 
+            if (!is_null($res)) {
+                throw new UploadException(">>{$res} already has hash {$hash}");
+            }
+
+            $latest = $this->get_latest();
             $interval = Ctx::$config->get(PostSchedulingConfig::SCHEDULE_INTERVAL, ConfigType::INT);
             $diff = time() - $latest;
-            $base = Image::IMAGE_DIR;
+
             if ($diff > $interval) {
-                $image->save_to_db(); // Ensure the image has a DB-assigned ID
-
-                $iae = send_event(new ImageAdditionEvent($image));
-                send_event(new ImageInfoSetEvent($image, $event->slot, $event->metadata));
-                $image = $iae->image;
+                $meta = new QueryArray($event->metadata->toArray());
+                $meta->set("schedule", "");
+                $due = send_event(new DataUploadEvent($event->tmpname, $event->filename, $event->slot, $meta)); // this isnt cursed
+                $event->images = array_merge($event->images, $due->images);
             } else {
+                // Create a new Image object
+                $filename = $event->tmpname;
+                assert($filename->is_readable());
+                $image = new Image();
+                $image->tmp_file = $filename;
+                $filesize = $filename->filesize();
+                if ($filesize === 0) {
+                    throw new UploadException("File size is zero");
+                }
+                $image->filesize = $filesize;
+                $image->hash = $hash;
+                // DB limits to 255 char filenames
+                $image->filename = substr($event->filename, -250);
+                $image->set_mime($event->mime);
+                try {
+                    send_event(new MediaCheckPropertiesEvent($image));
+                } catch (MediaException $e) {
+                    throw new UploadException("Unable to scan media properties {$filename->str()} / {$image->filename} / $image->hash: ".$e->getMessage());
+                }
+
                 $this->schedule_image($image, $event->metadata, $event->slot); // Ensure the image has a DB-assigned ID
-                $base = "scheduled_images";
                 \safe\exec("php ext/post_scheduling/timer.php $interval > /dev/null 2>&1 &");
-            }
 
-            // If everything is OK, then move the file to the archive
-            $filename = Filesystem::warehouse_path($base, $event->hash);
-            try {
-                $event->tmpname->copy($filename);
-            } catch (\Exception $e) {
-                throw new UploadException("Failed to copy file from uploads ({$event->tmpname->str()}) to archive ({$filename->str()}): ".$e->getMessage());
-            }
+                // If everything is OK, then move the file to the archive
+                $filename = Filesystem::warehouse_path(PostSchedulingConfig::BASE, $event->hash);
+                try {
+                    $event->tmpname->copy($filename);
+                } catch (\Exception $e) {
+                    throw new UploadException("Failed to copy file from uploads ({$event->tmpname->str()}) to archive ({$filename->str()}): ".$e->getMessage());
+                }
 
-            $event->images[] = $image;
+                $event->images[] = $image;
+            }
             $event->stop_processing = true;
         }
+    }
+
+    public function onPageRequest(PageRequestEvent $event): void
+    {
+        if ($event->page_matches("post_schedule/list", permission: ReplaceFilePermission::REPLACE_IMAGE)) {
+            $posts = Ctx::$database->get_all("SELECT * FROM scheduled_posts;");
+            $meta = Ctx::$database->get_all("SELECT * FROM scheduled_posts_metadata;");
+
+            $metadata = [];
+            foreach ($meta as $row) {
+                if (!isset($metadata[$row["schedule_id"]])) {
+                    $metadata[$row["schedule_id"]] = [];
+                }
+                $metadata[$row["schedule_id"]][$row["key"]] = $row["value"];
+            }
+            $images = array_map(function ($row) use ($metadata): Image {
+                $row = array_merge($row, $metadata[$row["id"]] ?: []);
+                $image = new Image($row);
+                $image->tag_array = Tag::explode($row["tags"] ?: "");
+                return $image;
+            }, $posts);
+
+            $this->theme->display_scheduled_posts($images);
+        } elseif ($event->page_matches("post_schedule/remove", method: "POST", permission: ReplaceFilePermission::REPLACE_IMAGE)) {
+            $id = $event->POST->req("id");
+            $arg = ["id" => $id];
+            $hash = Ctx::$database->get_one("SELECT hash FROM scheduled_posts WHERE id = :id", $arg);
+            Ctx::$database->execute("DELETE FROM scheduled_posts_metadata WHERE schedule_id = :id", $arg);
+            Ctx::$database->execute("DELETE FROM scheduled_posts WHERE id = :id", $arg);
+            Filesystem::warehouse_path(PostSchedulingConfig::BASE, $hash)->unlink();
+            Ctx::$page->flash("Scheduled post deleted");
+            ctx::$page->set_redirect(make_link("post_schedule/list"));
+        }
+    }
+
+    public function onAdminBuilding(AdminBuildingEvent $event): void
+    {
+        $this->theme->display_admin_block();
     }
 
     private function get_latest(): int
@@ -139,7 +188,7 @@ final class PostScheduling extends DataHandlerExtension
         $diff = time() - $latest;
         if ($diff >= $interval) {
             $scheduled = Ctx::$database->get_row("
-                SELECT * FROM scheduled_images
+                SELECT * FROM scheduled_posts
                 ORDER BY id ASC
                 LIMIT 1;
             ");
@@ -149,20 +198,20 @@ final class PostScheduling extends DataHandlerExtension
 
             Ctx::$user = User::by_id($scheduled["owner_id"]);
             $_SERVER['REMOTE_ADDR'] = $scheduled["owner_ip"];
-            $path = Filesystem::warehouse_path("scheduled_images", $scheduled["hash"]);
+            $path = Filesystem::warehouse_path(PostSchedulingConfig::BASE, $scheduled["hash"]);
 
             $args = ["id" => $scheduled["id"]];
             $metadata = new QueryArray(Ctx::$database->get_pairs("
-                SELECT key, value FROM scheduled_images_metadata
+                SELECT key, value FROM scheduled_posts_metadata
                 WHERE schedule_id = :id;
             ", $args));
 
             Ctx::$database->execute(
-                "DELETE FROM scheduled_images_metadata WHERE schedule_id = :id",
+                "DELETE FROM scheduled_posts_metadata WHERE schedule_id = :id",
                 $args
             );
             Ctx::$database->execute(
-                "DELETE FROM scheduled_images WHERE id = :id",
+                "DELETE FROM scheduled_posts WHERE id = :id",
                 $args
             );
 
@@ -178,8 +227,8 @@ final class PostScheduling extends DataHandlerExtension
                 Log::error("post_schedule", "Image with hash ".$scheduled["hash"]." failed to upload, tags: ". $metadata->get("tags"));
                 return 1;
             }
-
-            $more = Ctx::$database->get_one("SELECT count(id) > 0 FROM scheduled_images");
+            Filesystem::warehouse_path(PostSchedulingConfig::BASE, $scheduled["hash"])->unlink();
+            $more = Ctx::$database->get_one("SELECT count(id) > 0 FROM scheduled_posts");
             if (!$more) {
                 return -1;
             }
@@ -224,11 +273,11 @@ final class PostScheduling extends DataHandlerExtension
         $vals_sql = implode(", ", array_map(fn ($prop) => ":$prop", array_keys($props_to_save)));
 
         Ctx::$database->execute(
-            "INSERT INTO scheduled_images($props_sql) VALUES ($vals_sql)",
+            "INSERT INTO scheduled_posts($props_sql) VALUES ($vals_sql)",
             $props_to_save,
         );
-        $schedule_id = Ctx::$database->get_last_insert_id('scheduled_images_id_seq');
-        $image->id = $slot;
+        $schedule_id = Ctx::$database->get_last_insert_id('scheduled_posts_id_seq');
+        $image->id = $slot + 1;
 
         $slotted_params = [];
         $metarray = $metadata->toArray();
@@ -251,7 +300,7 @@ final class PostScheduling extends DataHandlerExtension
         }
         foreach ($slotted_params as $key => $value) {
             Ctx::$database->execute(
-                "INSERT INTO scheduled_images_metadata(schedule_id, key, value) VALUES (:id, :key, :value)",
+                "INSERT INTO scheduled_posts_metadata(schedule_id, key, value) VALUES (:id, :key, :value)",
                 ["id" => $schedule_id, "key" => $key, "value" => $value],
             );
         }

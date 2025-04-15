@@ -1,0 +1,18 @@
+.scheduled-post-list {
+    display: grid;
+    grid-gap: 1em;
+}
+
+.scheduled-post {
+    display: flex;
+    border-bottom: 1px solid var(--text);
+}
+
+.schedule-image {
+    width: var(--thumb-width);
+}
+
+.schedule-image IMG {
+    max-width: var(--thumb-width);
+    max-height: var(--thumb-height);
+}
