@@ -374,8 +374,7 @@ final class Image implements \ArrayAccess
      */
     public function get_image_link(): Url
     {
-        // return $this->get_link(ImageConfig::ILINK, '_images/$hash/$id%20-%20$tags.$ext', 'image/$id/$id%20-%20$tags.$ext');
-        return $this->get_link(ImageConfig::ILINK, 'images/$hash/$idF_$filename.$ext', 'image/$id/$idF_$filename.$ext');
+        return $this->get_link(ImageConfig::ILINK, '_images/$hash/$id%20-%20$tags.$ext', 'image/$id/$id%20-%20$tags.$ext');
     }
 
     #[Field(name: "image_link")]
@@ -400,7 +399,7 @@ final class Image implements \ArrayAccess
     {
         $mime = new MimeType(Ctx::$config->get(ThumbnailConfig::MIME));
         $ext = FileExtension::get_for_mime($mime);
-        return $this->get_link(ImageConfig::TLINK, 'thumbs/$hash/thumb.'.$ext, 'thumb/$id/thumb.'.$ext);
+        return $this->get_link(ImageConfig::TLINK, '_thumbs/$hash/thumb.'.$ext, 'thumb/$id/thumb.'.$ext);
     }
 
     #[Field(name: "thumb_link")]
