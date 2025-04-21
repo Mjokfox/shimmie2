@@ -8,7 +8,7 @@ namespace Shimmie2;
 $pid_file = "data/temp/shimmie_post_scheduler.pid";
 
 if (file_exists($pid_file)) {
-    exit;
+    return;
 }
 
 file_put_contents($pid_file, getmypid());
@@ -17,10 +17,10 @@ try {
     // Handle signals
     pcntl_async_signals(true);
 
-    function cleanup($pid_file)
+    function cleanup(string $pid_file): void
     {
         @unlink($pid_file);
-        exit;
+        return;
     }
 
     pcntl_signal(SIGTERM, function () use ($pid_file) {cleanup($pid_file);});
@@ -59,15 +59,15 @@ try {
     $ps = new PostScheduling();
 
     global $argc, $argv;
-    if ($argc > 1) {    // @phpstan-ignore-line
-        $timer = (int)$argv[1]; // @phpstan-ignore-line
+    if ($argc > 1) {
+        $timer = (int)$argv[1];
     } else {
         $timer = $ps->get_scheduled_post();
     }
 
     if ($timer <= 0) {
         @unlink($pid_file);
-        exit;
+        return;
     }
 
     while (true) {
@@ -80,7 +80,7 @@ try {
         }
         if ($timer <= 0) {
             @unlink($pid_file);
-            exit;
+            return;
         }
     }
 

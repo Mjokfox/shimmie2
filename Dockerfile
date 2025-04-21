@@ -21,7 +21,7 @@ RUN apt update && \
     php${PHP_VERSION}-gd php${PHP_VERSION}-zip php${PHP_VERSION}-xml php${PHP_VERSION}-mbstring php${PHP_VERSION}-curl \
     php${PHP_VERSION}-pgsql php${PHP_VERSION}-mysql php${PHP_VERSION}-sqlite3 \
     php${PHP_VERSION}-memcached \
-    curl imagemagick zip unzip librsvg2-bin && \
+    curl imagemagick zip unzip librsvg2-bin git && \
     rm -rf /var/lib/apt/lists/*
 
 # copy individual files from unit:php rather than inheriting
@@ -46,7 +46,7 @@ RUN true \
 # dependencies, so let's avoid including that in the final image
 FROM base AS dev-tools
 RUN apt update && apt upgrade -y && \
-    apt install -y composer php${PHP_VERSION}-xdebug git procps net-tools vim && \
+    apt install -y composer php${PHP_VERSION}-xdebug procps net-tools vim && \
     rm -rf /var/lib/apt/lists/*
 ENV XDEBUG_MODE=coverage
 
@@ -69,12 +69,14 @@ EXPOSE 8000
 FROM base AS run
 EXPOSE 8000
 # HEALTHCHECK --interval=1m --timeout=3s CMD curl --fail http://127.0.0.1:8000/ || exit 1
-ARG BUILD_TIME=unknown BUILD_HASH=unknown
-ENV UID=1000 GID=1000
+ARG BUILD_TIME=unknown
+ARG BUILD_HASH=unknown
+ENV UID=1000
+ENV GID=1000
+ENV SHM_NICE_URLS=true
 COPY --from=build /app /app
 WORKDIR /app
 RUN echo "define('BUILD_TIME', '$BUILD_TIME');" >> core/Config/SysConfig.php && \
-    echo "define('BUILD_HASH', '$BUILD_HASH');" >> core/Config/SysConfig.php && \
-    echo "define('NICE_URLS', true);" >> core/Config/SysConfig.php
+    echo "define('BUILD_HASH', '$BUILD_HASH');" >> core/Config/SysConfig.php
 ENTRYPOINT ["/app/.docker/entrypoint.sh"]
 CMD ["php", "/app/.docker/run.php"]

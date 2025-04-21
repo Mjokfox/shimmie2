@@ -154,7 +154,7 @@ final class Forum extends Extension
             $threadID = int_escape($event->POST->req("threadID"));
             $postID = int_escape($event->POST->req("postID"));
 
-            $errors = $this->sanity_check_new_post($event->POST);
+            $errors = $this->sanity_check_edit_post($event->POST);
 
             if (count($errors) > 0) {
                 throw new InvalidInput(implode("<br>", $errors));

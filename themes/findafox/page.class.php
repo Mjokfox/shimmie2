@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A, ARTICLE, BODY, BR, DIV, FOOTER, H1, HEADER, IMG, LI, NAV, UL, emptyHTML, joinHTML, rawHTML};
+use function MicroHTML\{A, ARTICLE, BODY, BR, DIV, FOOTER, H1, HEADER, IMG, LI, LINK, META, NAV, SCRIPT, UL, emptyHTML, joinHTML, rawHTML};
 
 use MicroHTML\HTMLElement;
 
@@ -53,17 +53,16 @@ Tips
 
 class customPage extends Page
 {
+    use Page_Page;
+
     protected function body_html(): HTMLElement
     {
-        global $config;
-
         list($nav_links, $sub_links) = $this->get_nav_links();
 
         $left_block_html = [];
         $user_block_html = [];
         $main_block_html = [];
         $sub_block_html = [];
-        $heading_html = [];
 
         foreach ($this->blocks as $block) {
             switch ($block->section) {
@@ -82,9 +81,6 @@ class customPage extends Page
                     }
                     $main_block_html[] = $this->block_html($block, false);
                     break;
-                case "heading":
-                    $heading_html[] = $block->body;
-                    // no break
                 default:
                     print "<p>error: {$block->header} using an unknown section ({$block->section})";
                     break;
@@ -97,8 +93,8 @@ class customPage extends Page
             $subheading = DIV(["id" => "subtitle"], $this->subheading);
         }
 
-        $site_name = $config->get(SetupConfig::TITLE); // bzchan: change from normal default to get title for top of page
-        $main_page = $config->get(SetupConfig::MAIN_PAGE); // bzchan: change from normal default to get main page for top of page
+        $site_name = Ctx::$config->get(SetupConfig::TITLE); // bzchan: change from normal default to get title for top of page
+        $main_page = Ctx::$config->get(SetupConfig::MAIN_PAGE); // bzchan: change from normal default to get main page for top of page
 
         $custom_links = emptyHTML();
         foreach ($nav_links as $nav_link) {
@@ -127,19 +123,20 @@ class customPage extends Page
         return BODY(
             $this->body_attrs(),
             HEADER(
-                DIV(
-                    ["class" => "title-container"],
-                    $title_link,
+                emptyHTML(
                     DIV(
-                        ["class" => "mobile-burger",],
-                        A([
-                            "onclick" => '$(".flat-list").toggle();$(this).text($(this).text() === "≡" ? "×" : "≡");'
-                        ], "≡")
+                        ["class" => "title-container"],
+                        $title_link,
+                        DIV(
+                            ["class" => "mobile-burger",],
+                            A([
+                                "onclick" => '$(".flat-list").toggle();$(this).text($(this).text() === "≡" ? "×" : "≡");'
+                            ], "≡")
+                        )
                     ),
-                    ...$heading_html
-                ),
-                UL(["id" => "navbar", "class" => "flat-list"], $custom_links),
-                UL(["id" => "subnavbar", "class" => "flat-list"], $custom_sublinks),
+                    UL(["id" => "navbar", "class" => "flat-list"], $custom_links),
+                    UL(["id" => "subnavbar", "class" => "flat-list"], $custom_sublinks),
+                )
             ),
             $subheading,
             emptyHTML(...$sub_block_html),
@@ -182,5 +179,65 @@ class customPage extends Page
             " 2007-2024, based on the Danbooru concept.",
             $contact_link ? emptyHTML(BR(), A(["href" => $contact_link], "Contact")) : ""
         ]);
+    }
+
+    public function add_auto_html_headers(): void
+    {
+        $data_href = (string)Url::base();
+        $theme_name = get_theme();
+
+        # static handler will map these to themes/foo/static/bar.ico or ext/static_files/static/bar.ico
+        $this->add_html_header(LINK([
+            'rel' => 'icon', 'type' => 'image/png',
+            'href' => "$data_href/favicon-48x48.png",
+            'sizes' => '48x48'
+        ]), 41);
+        $this->add_html_header(LINK([
+            'rel' => 'icon', 'type' => 'image/svg+xml',
+            'href' => "$data_href/favicon.svg"
+        ]), 42);
+        $this->add_html_header(LINK([
+            'rel' => 'shortcut icon',
+            'href' => "$data_href/favicon.ico"
+        ]), 42);
+        $this->add_html_header(LINK([
+            'rel' => 'apple-touch-icon',
+            'sizes' => '180x180',
+            'href' => "$data_href/apple-touch-icon.png"
+        ]), 42);
+        $this->add_html_header(META([
+            'name' => 'apple-mobile-web-app-title',
+            'content' => 'FindaFox'
+        ]), 42);
+        $this->add_html_header(LINK([
+            'rel' => 'manifest',
+            'href' => "$data_href/site.webmanifest"
+        ]), 42);
+
+        //We use $config_latest to make sure cache is reset if config is ever updated.
+        $config_latest = 0;
+        foreach (Filesystem::zglob("data/config/*") as $conf) {
+            $config_latest = max($config_latest, $conf->filemtime());
+        }
+
+        $css_cache_file = $this->get_css_cache_file($theme_name, $config_latest);
+        $this->add_html_header(LINK([
+            'rel' => 'stylesheet',
+            'href' => "$data_href/{$css_cache_file->str()}",
+            'type' => 'text/css'
+        ]), 43);
+
+        $initjs_cache_file = $this->get_initjs_cache_file($theme_name, $config_latest);
+        $this->add_html_header(SCRIPT([
+            'src' => "$data_href/{$initjs_cache_file->str()}",
+            'type' => 'text/javascript'
+        ]));
+
+        $js_cache_file = $this->get_js_cache_file($theme_name, $config_latest);
+        $this->add_html_header(SCRIPT([
+            'defer' => true,
+            'src' => "$data_href/{$js_cache_file->str()}",
+            'type' => 'text/javascript'
+        ]));
     }
 }

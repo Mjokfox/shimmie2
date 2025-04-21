@@ -8,7 +8,7 @@ use function MicroHTML\{A, B, DIV, IMG, INPUT, TABLE, emptyHTML};
 
 class PostSchedulingTheme extends Themelet
 {
-    public function display_admin_block()
+    public function display_admin_block(): void
     {
         $count = Ctx::$database->get_one("SELECT count(id) FROM scheduled_posts");
         $html = emptyHTML(
@@ -21,9 +21,8 @@ class PostSchedulingTheme extends Themelet
 
     /**
      * @param Image[] $scheduled_posts
-     * @param array<int, array<string,string|null>> $metadata
      */
-    public function display_scheduled_posts(array $scheduled_posts)
+    public function display_scheduled_posts(array $scheduled_posts): void
     {
         $html = DIV(["class" => "scheduled-post-list"]);
         if (count($scheduled_posts) <= 0) {

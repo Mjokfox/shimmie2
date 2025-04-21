@@ -51,7 +51,7 @@ final class PostScheduling extends DataHandlerExtension
 
     public function onDataUpload(DataUploadEvent $event): void
     {
-        if ($event->metadata->get("schedule") == "on") {
+        if ($event->metadata->get("schedule") === "on") {
             if (!$this->check_contents($event->tmpname)) {
                 // We DO support this extension - but the file looks corrupt
                 throw new UploadException("Invalid or corrupted file");
@@ -117,7 +117,7 @@ final class PostScheduling extends DataHandlerExtension
                 }
 
                 $this->schedule_image($image, $event->metadata, $event->slot); // Ensure the image has a DB-assigned ID
-                \safe\exec("php ext/post_scheduling/timer.php $interval > /dev/null 2>&1 &");
+                \Safe\exec("php ext/post_scheduling/timer.php $interval > /dev/null 2>&1 &");
 
                 // If everything is OK, then move the file to the archive
                 $filename = Filesystem::warehouse_path(PostSchedulingConfig::BASE, $event->hash);
@@ -147,9 +147,9 @@ final class PostScheduling extends DataHandlerExtension
                 $metadata[$row["schedule_id"]][$row["key"]] = $row["value"];
             }
             $images = array_map(function ($row) use ($metadata): Image {
-                $row = array_merge($row, $metadata[$row["id"]] ?: []);
+                $row = array_merge($row, $metadata[$row["id"]] ?? []);
                 $image = new Image($row);
-                $image->tag_array = Tag::explode($row["tags"] ?: "");
+                $image->tag_array = Tag::explode($row["tags"] ?? "");
                 return $image;
             }, $posts);
 
@@ -160,9 +160,14 @@ final class PostScheduling extends DataHandlerExtension
             $hash = Ctx::$database->get_one("SELECT hash FROM scheduled_posts WHERE id = :id", $arg);
             Ctx::$database->execute("DELETE FROM scheduled_posts_metadata WHERE schedule_id = :id", $arg);
             Ctx::$database->execute("DELETE FROM scheduled_posts WHERE id = :id", $arg);
-            Filesystem::warehouse_path(PostSchedulingConfig::BASE, $hash)->unlink();
+            try {
+                Filesystem::warehouse_path(PostSchedulingConfig::BASE, $hash)->unlink();
+            } catch (\Exception $e) {
+                // the file already is gone
+            }
+
             Ctx::$page->flash("Scheduled post deleted");
-            ctx::$page->set_redirect(make_link("post_schedule/list"));
+            Ctx::$page->set_redirect(make_link("post_schedule/list"));
         }
     }
 
@@ -184,6 +189,7 @@ final class PostScheduling extends DataHandlerExtension
     {
         $latest = $this->get_latest();
 
+        /** @var int $interval */
         $interval = Ctx::$config->get(PostSchedulingConfig::SCHEDULE_INTERVAL, ConfigType::INT);
         $diff = time() - $latest;
         if ($diff >= $interval) {
@@ -216,7 +222,7 @@ final class PostScheduling extends DataHandlerExtension
             );
 
             try {
-                Ctx::$database->with_savepoint(function () use ($path, $scheduled, $metadata, $args) {
+                Ctx::$database->with_savepoint(function () use ($path, $scheduled, $metadata) {
                     $event = send_event(new DataUploadEvent($path, $scheduled["filename"], 0, $metadata));
                     if (count($event->images) === 0) {
                         throw new UploadException("MIME type not supported: " . $event->mime);
@@ -288,12 +294,15 @@ final class PostScheduling extends DataHandlerExtension
             unset($metarray["schedule"]);
         }
         foreach ($metarray as $key => $value) {
-            if (\safe\preg_match('/(.+?)(\d+)$/', $key, $matches)) {
+            if (\Safe\preg_match('/(.+?)(\d+)$/', $key, $matches)) {
                 if ((int)$matches[2] === $slot) {
                     $slotted_params[$matches[1]] = $value;
                 }
             } else {
                 if (!isset($slotted_params[$key])) {
+                    if (is_array($value)) {
+                        $value = implode(", ", $value);
+                    }
                     $slotted_params[$key] = $value;
                 }
             }
@@ -301,7 +310,7 @@ final class PostScheduling extends DataHandlerExtension
         foreach ($slotted_params as $key => $value) {
             Ctx::$database->execute(
                 "INSERT INTO scheduled_posts_metadata(schedule_id, key, value) VALUES (:id, :key, :value)",
-                ["id" => $schedule_id, "key" => $key, "value" => $value],
+                ["id" => $schedule_id, "key" => $key, "value" => $value] // @phpstan-ignore-line
             );
         }
     }
