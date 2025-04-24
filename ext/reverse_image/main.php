@@ -120,11 +120,9 @@ class ReverseImage extends Extension
                 }
                 $tag_n = $this->tags_from_features_id($ids);
                 $json_input = ["tags" => $tag_n,"closest" => $closest];
-                $page->set_data(MimeType::JSON, json_encode($json_input));
-                $page->set_filename('tag_occurrences.json', 'Content-Type: application/json');
+                $page->set_data(MimeType::JSON, json_encode($json_input), 'tag_occurrences.json');
             } else {
-                $page->set_data(MimeType::JSON, json_encode(["No similar images found, either the file was not uploaded properly or no url given"]));
-                $page->set_filename('failed.json', 'Content-Type: application/json');
+                $page->set_data(MimeType::JSON, json_encode(["No similar images found, either the file was not uploaded properly or no url given"]), 'failed.json');
             }
         } elseif ($event->page_matches("upload", method: "GET", permission: ImagePermission::CREATE_IMAGE)) {
             global $config, $user;
