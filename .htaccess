@@ -26,6 +26,7 @@
 	# we link to images/hash/tags.ext; mod_rewrite splits things so
 	# that shimmie sees hash and the user sees tags.ext
 	RewriteRule ^(images|thumbs)/([0-9a-f]{2})([0-9a-f]{30}).*$  data/$1/$2/$2$3 [L]
+	RewriteRule ^scheduled_posts/([0-9a-f]{2})([0-9a-f]{30}).*$  data/scheduled_posts/$1/$1$2 [L]
 
 	# any requests for files which don't physically exist should be handled by index.php
 	RewriteCond %{REQUEST_FILENAME} !-f

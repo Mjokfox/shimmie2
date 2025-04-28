@@ -28,14 +28,13 @@ class PostSchedulingTheme extends Themelet
         if (count($scheduled_posts) <= 0) {
             $html->appendChild("No posts queued");
         }
-        foreach ($scheduled_posts as $post) {
-            $path = Filesystem::warehouse_path("scheduled_posts", $post->hash);
+        foreach ($scheduled_posts as $i => $post) {
             $iibbe = send_event(new ImageInfoBoxBuildingEvent($post, $post->get_owner()));
             $html->appendChild(DIV(
                 ["class" => "scheduled-post"],
                 DIV(
                     ["class" => "schedule-image"],
-                    IMG(["src" => make_link($path->str())])
+                    IMG(["src" => make_link(PostSchedulingConfig::BASE . "/{$post->hash}/$i.{$post->get_ext()}")])
                 ),
                 TABLE(
                     ["class" => "image_info form infomode-view"],
