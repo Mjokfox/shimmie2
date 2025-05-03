@@ -201,21 +201,20 @@ final class PostScheduling extends DataHandlerExtension
 
     public function get_scheduled_post(): int
     {
-        $latest = $this->get_latest();
+        $scheduled = Ctx::$database->get_row("
+            SELECT * FROM scheduled_posts
+            ORDER BY id ASC
+            LIMIT 1;
+        ");
+        if (is_null($scheduled)) {
+            return -1;
+        }
 
+        $latest = $this->get_latest();
         /** @var int $interval */
         $interval = Ctx::$config->get(PostSchedulingConfig::SCHEDULE_INTERVAL, ConfigType::INT);
         $diff = time() - $latest;
         if ($diff >= $interval) {
-            $scheduled = Ctx::$database->get_row("
-                SELECT * FROM scheduled_posts
-                ORDER BY id ASC
-                LIMIT 1;
-            ");
-            if (is_null($scheduled)) {
-                return -1;
-            }
-
             Ctx::$user = User::by_id($scheduled["owner_id"]);
             $_SERVER['REMOTE_ADDR'] = $scheduled["owner_ip"];
             $path = Filesystem::warehouse_path(PostSchedulingConfig::BASE, $scheduled["hash"]);
@@ -255,7 +254,6 @@ final class PostScheduling extends DataHandlerExtension
             return $interval;
         }
         return $interval - $diff;
-
     }
 
     public function onUploadCommonBuilding(UploadCommonBuildingEvent $event): void
