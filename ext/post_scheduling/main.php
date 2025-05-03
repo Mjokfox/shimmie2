@@ -6,6 +6,10 @@ namespace Shimmie2;
 
 use function MicroHTML\{INPUT, TD, TH, TR};
 
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+
 final class PostScheduling extends DataHandlerExtension
 {
     public const KEY = "post_scheduling";
@@ -117,7 +121,7 @@ final class PostScheduling extends DataHandlerExtension
                 }
 
                 $this->schedule_image($image, $event->metadata, $event->slot); // Ensure the image has a DB-assigned ID
-                \Safe\exec("php ext/post_scheduling/timer.php $interval > /dev/null 2>&1 &");
+                \Safe\exec("bash ext/post_scheduling/timer.sh -t $interval -d $interval > /dev/null 2>&1 &");
 
                 // If everything is OK, then move the file to the archive
                 $filename = Filesystem::warehouse_path(PostSchedulingConfig::BASE, $event->hash);
@@ -174,6 +178,16 @@ final class PostScheduling extends DataHandlerExtension
     public function onAdminBuilding(AdminBuildingEvent $event): void
     {
         $this->theme->display_admin_block();
+    }
+
+    public function onCliGen(CliGenEvent $event): void
+    {
+        $event->app->register('check-post-scheduler')
+            ->setDescription('Checks the current schedule queue, uploads if possible, and returns the time to wait for the next post')
+            ->setCode(function (InputInterface $input, OutputInterface $output): int {
+                $output->write((string)$this->get_scheduled_post());
+                return Command::SUCCESS;
+            });
     }
 
     private function get_latest(): int
