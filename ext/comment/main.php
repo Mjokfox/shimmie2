@@ -12,6 +12,7 @@ require_once "vendor/ifixit/php-akismet/akismet.class.php";
 
 final class CommentPostingEvent extends Event
 {
+    public ?int $comment_id = null;
     public function __construct(
         public int $image_id,
         public User $user,
@@ -388,7 +389,7 @@ final class CommentList extends Extension
     // TODO: split akismet into a separate class, which can veto the event
     public function onCommentPosting(CommentPostingEvent $event): void
     {
-        $this->add_comment_wrapper($event->image_id, $event->user, $event->comment);
+        $event->comment_id = $this->add_comment_wrapper($event->image_id, $event->user, $event->comment);
     }
 
     public function onCommentEditing(CommentEditingEvent $event): void
@@ -570,7 +571,7 @@ final class CommentList extends Extension
 		", ["image_id" => $image_id, "comment" => $comment]);
     }
 
-    private function add_comment_wrapper(int $image_id, User $user, string $comment): void
+    private function add_comment_wrapper(int $image_id, User $user, string $comment): int
     {
         if (!$user->can(CommentPermission::BYPASS_COMMENT_CHECKS)) {
             // will raise an exception if anything is wrong
@@ -591,6 +592,7 @@ final class CommentList extends Extension
         $snippet = str_replace("\n", " ", $snippet);
         $snippet = str_replace("\r", " ", $snippet);
         Log::info("comment", "Comment #$cid added to >>$image_id: $snippet");
+        return $cid;
     }
 
     private function edit_comment(int $image_id, int $comment_id, User $user, string $comment): void
