@@ -486,6 +486,36 @@ final class PrivMsg extends Extension
         }
     }
 
+    public function onCommentPosting(CommentPostingEvent $event): void
+    {
+        preg_match_all('/@(\S+)/m', $event->comment, $matches);
+        if (count($matches[1]) < 1) {
+            return;
+        }
+        $res = array_unique($matches[1]);
+        $k = array_search($event->user->name, $res, true); // no need to pm yourself
+        if ($k !== false) {
+            unset($res[$k]);
+        }
+
+        foreach ($res as $name) {
+            try {
+                $user = User::by_name($name);
+                send_event(new SendPMEvent(new PM(
+                    $event->user->id,
+                    Network::get_real_ip(),
+                    $user->id,
+                    "{$event->user->name} mentioned you on post >>{$event->image_id}!",
+                    ">>{$event->image_id}" .
+                    (is_null($event->comment_id) ? "" : "#{$event->comment_id}") . "\n" .
+                    str_replace("\n", "\n> ", ">({$event->user->name}) {$event->comment}")
+                )));
+            } catch (UserNotFound $e) {
+                // username does not exist
+            }
+        }
+    }
+
     public function onSendPM(SendPMEvent $event): void
     {
         Ctx::$database->execute(

@@ -30,6 +30,7 @@ function markdown_format(text)
 	});
 	text = text.replaceAll(/^&gt;\((\S+)\)\s+(.+)/gm, "<blockquote><i><b>$1</b> said:</i><br><small>$2</small></blockquote>");
 	text = text.replaceAll(/^&gt;\s+(.+)/gm, '<blockquote><small>$1</small></blockquote>');
+	text = text.replaceAll(/blockquote>\n/gs, 'blockquote>');
 	text = text.replaceAll(/\$&gt;&gt;(\d+)/gs, '<widget type="widget" post-id="$1"></widget>');
 	text = text.replaceAll(/\!&gt;&gt;(\d+)/gs, '<widget type="thumb" post-id="$1"></widget>');
 	text = text.replaceAll(/&gt;&gt;(\d+)(#c?\d+)?/gs, '<a class="shm-clink" data-clink-sel="$2" href="/post/view/$1$2">&gt;&gt;$1$2</a>');
@@ -63,17 +64,19 @@ function markdown_format(text)
 function encode_links(text) {
 	text = text.replaceAll(/\(((?:(?:https?|ftp|irc|site):\/\/|mailto:))([^\)\[\]]+)\)/gm, function(m, c, c1) {return "({url!}"+window.btoa(c+c1.replaceAll(" ","%20",c1))+"{/url!})";});
 	text = text.replaceAll(/((?:(?:https?|ftp|irc|site):\/\/|mailto:)[^\s\)\[\]]+)/gm, function(m, c) {return "{url!}"+window.btoa(c)+"{/url!}";});
+	text = text.replaceAll(/@(\S+)/gm, function(m, c) {return "{usr!}"+window.btoa(c)+"{/usr!}";});
 	text = text.replaceAll(/\[(.+?)\]\(/gm, function(m, c) {return "[{alt!}"+window.btoa(c)+"{/alt!}](";});
 	return text;
 }
 function insert_links(text) {
 	text = text.replaceAll(/\{alt!\}(.+?)\{\/alt!\}/gm,function(m, c) {return  window.atob(c);});
+	text = text.replaceAll(/\{usr!\}(.+?)\{\/usr!\}/gm,function(m, c) {let u = window.atob(c); return `<a href="/user/${u}">@${u}</a>`;});
 	text = text.replaceAll(/\#\{url!\}(.+?)\{\/url!\}/gm,function(m, c) {return  window.atob(c);});
 	text = text.replaceAll(/!\[(.+?)\]\(\{url!\}(.+?)\{\/url!\}\)/gm,function(m, c, c1) {return "<img alt='"+ c +"' src='"+window.atob(c1)+"'>";}); // image
 	text = text.replaceAll(/\[(.+?)\]\(\{url!\}(.+?)\{\/url!\}\)/gm,function(m, c,c1) {return "<a href='"+ window.atob(c1)+"'>"+c+"</a>";}); // []()
 	text = text.replaceAll(/!\{url!\}(.+?)\{\/url!\}/gm,function(m, c) {return "<img alt='user image' src='"+window.atob(c)+"'>";}); // image
-	text = text.replaceAll(/\{url!\}(.+?)\{\/url!\}/gm, function(m, c) {url =  window.atob(c);return `<a href='${url}'>${url}</a>`;});
-	text = text.replaceAll(/\{url!\}(.+?)\{\/url!\}/gm, function(m, c) {url =  window.atob(c);return `<a href='${url}'>${url}</a>`;});
+	text = text.replaceAll(/\{url!\}(.+?)\{\/url!\}/gm, function(m, c) {let url =  window.atob(c);return `<a href='${url}'>${url}</a>`;});
+	text = text.replaceAll(/\{url!\}(.+?)\{\/url!\}/gm, function(m, c) {let url =  window.atob(c);return `<a href='${url}'>${url}</a>`;});
 	text = text.replaceAll(/site:\/\/([^\s\)\[\]\'\"\>\<]+)/gm,"/$1");
 	return text;
 }
