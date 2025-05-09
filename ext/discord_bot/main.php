@@ -56,7 +56,7 @@ final class DiscordBot extends Extension
     public function onImageAddition(ImageAdditionEvent $event): void
     {
         $this->send_data($this->data_builder(
-            "image",
+            "post",
             "create",
             [
                 "post_id" => $event->image->id,
@@ -71,7 +71,7 @@ final class DiscordBot extends Extension
     public function onImageReplace(ImageReplaceEvent $event): void
     {
         $this->send_data($this->data_builder(
-            "image",
+            "post",
             "edit",
             [
                 "post_id" => $event->image->id,
@@ -86,7 +86,7 @@ final class DiscordBot extends Extension
     public function onImageDeletion(ImageDeletionEvent $event): void
     {
         $this->send_data($this->data_builder(
-            "image",
+            "post",
             "delete",
             [
                 "post_id" => $event->image->id,
@@ -113,7 +113,7 @@ final class DiscordBot extends Extension
             "user",
             "delete",
             [
-                "username" => $event->id,
+                "username" => User::by_id($event->id)->name,
             ]
         ));
     }
