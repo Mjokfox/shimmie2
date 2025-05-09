@@ -53,7 +53,7 @@ final class DiscordBot extends Extension
         ));
     }
 
-    public function onImageInfoSet(ImageInfoSetEvent $event): void
+    public function onImageAddition(ImageAdditionEvent $event): void
     {
         $this->send_data($this->data_builder(
             "image",
