@@ -21,7 +21,7 @@ class SiteCaptcha extends Extension
         $css_cookie = Ctx::$page->get_cookie("captcha_css");
         $image_token = $this->get_token("img");
         $css_token = $this->get_token("css");
-        error_log($_SERVER["HTTP_USER_AGENT"]);
+
         if ($event->page_matches("captcha/image", method:"GET")) {
             $this->theme->display_cookie_image("captcha_image", $image_token);
         } elseif ($event->page_matches("captcha/css", method:"GET")) {
@@ -71,11 +71,13 @@ class SiteCaptcha extends Extension
 
     public function is_useragent_whitelisted(): bool
     {
-        $user_agent = $_SERVER["HTTP_USER_AGENT"];
         $uas = cache_get_or_set("captcha_whitelist_uas", function () {
             $rows = explode(",", Ctx::$config->get(SiteCaptchaConfig::ALLOWED_USERAGENTS) ?: "");
-            return array_map('trim', $rows);
-        });
+            $rows = array_map('trim', $rows);
+            return array_filter($rows, fn ($v) => !empty($v));
+        }, 60);
+
+        $user_agent = $_SERVER["HTTP_USER_AGENT"];
         foreach ($uas as $ua) {
             if (str_contains($user_agent, $ua)) {
                 return true;
