@@ -10,14 +10,15 @@ class SiteCaptchaTheme extends Themelet
 {
     public function display_page(): void
     {
-        Ctx::$page->add_http_header("Refresh: 3; url=/captcha/check");
+        $url = make_link("captcha/check");
+        Ctx::$page->add_http_header("Refresh: 3; url=$url");
         $data_href = Url::base();
         $time = time(); // add a 'random' string behind the image urls to avoid caching
 
         Ctx::$page->set_data(MimeType::HTML, (string)Ctx::$page->html_html(
             emptyHTML(
                 TITLE("captcha verification"),
-                META(["http-equiv" => "refresh", "url" => "/captcha/check"]),
+                META(["http-equiv" => "refresh", "url" => $url]),
                 META(["http-equiv" => "Content-Type", "content" => "text/html;charset=utf-8"]),
                 META(["name" => "viewport", "content" => "width=device-width, initial-scale=1"]),
                 SCRIPT(["type" => "text/javascript", "src" => "{$data_href}/ext/site_captcha/captcha.js"])
