@@ -77,7 +77,7 @@ class SiteCaptcha extends Extension
             return array_filter($rows, fn ($v) => !empty($v));
         }, 60);
 
-        $user_agent = $_SERVER["HTTP_USER_AGENT"];
+        $user_agent = $_SERVER["HTTP_USER_AGENT"] ?? "No UA";
         foreach ($uas as $ua) {
             if (str_contains($user_agent, $ua)) {
                 return true;
