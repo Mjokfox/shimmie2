@@ -10,15 +10,20 @@ use function MicroHTML\{TD, TEXTAREA, TR};
 
 class PostDescriptionTheme extends Themelet
 {
-    public function get_description_editor_html(Image $image): HTMLElement
+    public function get_description_editor_html(string $raw_description): HTMLElement
     {
-        global $user;
-        /** @var TextFormattingEvent $tfe */
-        $tfe = send_event(new TextFormattingEvent($image->offsetGet("description") ?? ""));
+        $tfe = send_event(new TextFormattingEvent($raw_description));
+
         return SHM_POST_INFO(
             "Description",
             $tfe->getFormattedHTML(),
-            $user->can(ImagePermission::CREATE_IMAGE) ? TEXTAREA(["type" => "text", "name" => "description"], $tfe->original) : null
+            Ctx::$user->can(PostDescriptionPermission::EDIT_IMAGE_DESCRIPTIONS)
+            ? TEXTAREA([
+                "type" => "text",
+                "name" => "description",
+                "id" => "description_editor",
+                ], $raw_description)
+            : null
         );
     }
 
@@ -30,7 +35,7 @@ class PostDescriptionTheme extends Themelet
                 TEXTAREA([
                     "type" => "text",
                     "name" => "description{$suffix}",
-                    "placeholder" => "Description (512 characters max)"
+                    "placeholder" => "Description"
                 ])
             )
         );

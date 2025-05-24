@@ -15,11 +15,10 @@ final class SourceSetEvent extends Event
     }
 }
 
+/** @extends Extension<PostSourceTheme> */
 final class PostSource extends Extension
 {
     public const KEY = "post_source";
-    /** @var PostSourceTheme */
-    protected Themelet $theme;
 
     public function onPageRequest(PageRequestEvent $event): void
     {
@@ -64,7 +63,7 @@ final class PostSource extends Extension
                 $not = ($source === "any" ? "NOT" : "");
                 $event->add_querylet(new Querylet("images.source IS $not NULL"));
             } else {
-                $event->add_querylet(new Querylet('LOWER(images.source) LIKE :src', ["src" => "%$source%"]));
+                $event->add_querylet(new Querylet('SCORE_ILIKE(images.source, :src)', ["src" => "%$source%"]));
             }
         }
     }

@@ -9,11 +9,10 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Yaml\Yaml;
 
+/** @extends Extension<ETTheme> */
 final class ET extends Extension
 {
     public const KEY = "et";
-    /** @var ETTheme */
-    protected Themelet $theme;
 
     public function onPageRequest(PageRequestEvent $event): void
     {
@@ -121,7 +120,7 @@ final class ET extends Extension
                 $changeList = [];
                 foreach (explode("\0", $changes) as $change) {
                     $parts = explode(" ", $change, 3);
-                    if (count($parts) > 1) {
+                    if (count($parts) > 2) {
                         $changeList[] = $parts[2];
                     }
                 }

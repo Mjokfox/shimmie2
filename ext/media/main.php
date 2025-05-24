@@ -8,11 +8,10 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\{InputArgument, InputInterface};
 use Symfony\Component\Console\Output\OutputInterface;
 
+/** @extends Extension<MediaTheme> */
 final class Media extends Extension
 {
     public const KEY = "media";
-    /** @var MediaTheme */
-    protected Themelet $theme;
 
     private const LOSSLESS_FORMATS = [
         MimeType::WEBP_LOSSLESS,
@@ -92,7 +91,7 @@ final class Media extends Extension
 
     public function onCliGen(CliGenEvent $event): void
     {
-        $event->app->register('media-rescan')
+        $event->app->register('post:media-rescan')
             ->addArgument('id_or_hash', InputArgument::REQUIRED)
             ->setDescription('Refresh metadata for a given post')
             ->setCode(function (InputInterface $input, OutputInterface $output): int {

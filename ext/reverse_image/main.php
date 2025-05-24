@@ -8,11 +8,10 @@ use function MicroHTML\{INPUT, rawHTML};
 
 require_once "config.php";
 
+/** @extends Extension<ReverseImageTheme> */
 class ReverseImage extends Extension
 {
     public const KEY = "reverse_image";
-    /** @var ReverseImageTheme */
-    protected Themelet $theme;
 
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {

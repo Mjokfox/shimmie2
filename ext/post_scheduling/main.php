@@ -10,11 +10,10 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+/** @extends DataHandlerExtension<PostSchedulingTheme> */
 final class PostScheduling extends DataHandlerExtension
 {
     public const KEY = "post_scheduling";
-    /** @var PostSchedulingTheme */
-    protected Themelet $theme;
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         if ($this->get_version() < 1) {

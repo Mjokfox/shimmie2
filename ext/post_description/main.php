@@ -4,57 +4,69 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-class DescriptionSetEvent extends Event
+final class PostDescriptionSetEvent extends Event
 {
-    public int $image_id;
-    public User $user;
-    public string $description;
-
-    public function __construct(int $image_id, User $user, string $description)
-    {
+    public function __construct(
+        public int $image_id,
+        public string $description
+    ) {
         parent::__construct();
-        $this->image_id = $image_id;
-        $this->user = $user;
-        $this->description = $description;
     }
 }
 
-
-class PostDescription extends Extension
+/** @extends Extension<PostDescriptionTheme> */
+final class PostDescription extends Extension
 {
     public const KEY = "post_description";
-
-    /** @var PostDescriptionTheme */
-    protected Themelet $theme;
-
-    public function onInitExt(InitExtEvent $event): void
-    {
-        Image::$prop_types["description"] = ImagePropType::STRING;
-    }
 
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         global $database;
-        if ($this->get_version() < 1) {
-            $database->execute("ALTER TABLE images ADD COLUMN description VARCHAR(512)");
 
+        if ($this->get_version() < 1) {
+            $database->create_table("image_descriptions", "
+                image_id INTEGER NOT NULL,
+                description TEXT,
+                UNIQUE(image_id),
+                FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE,
+            ");
             $this->set_version(1);
         }
     }
 
     public function onImageInfoSet(ImageInfoSetEvent $event): void
     {
-        $desc = $event->get_param('description') ?? "";
-        if (Ctx::$user->can(PostSourcePermission::EDIT_IMAGE_SOURCE)) {
-            /** @var DescriptionSetEvent $cpe */
-            $cpe = send_event(new DescriptionSetEvent($event->image->id, Ctx::$user, $desc));
-            Ctx::$database->execute("UPDATE images SET description=:description WHERE id=:id", ["description" => substr($cpe->description, 0, 512), "id" => $event->image->id]);
+        $description = $event->get_param("description");
+        if (Ctx::$user->can(PostDescriptionPermission::EDIT_IMAGE_DESCRIPTIONS) && $description) {
+            send_event(new PostDescriptionSetEvent($event->image->id, $description));
         }
+    }
+
+    public function onPostDescriptionSet(PostDescriptionSetEvent $event): void
+    {
+        global $database;
+
+        $database->execute("
+            DELETE
+            FROM image_descriptions
+            WHERE image_id=:id
+        ", ["id" => $event->image_id]);
+        $database->execute("
+            INSERT
+            INTO image_descriptions
+            VALUES (:id, :description)
+        ", ["id" => $event->image_id, "description" => $event->description]);
     }
 
     public function onImageInfoBoxBuilding(ImageInfoBoxBuildingEvent $event): void
     {
-        $event->add_part($this->theme->get_description_editor_html($event->image), 11);
+        global $database;
+
+        $description = (string) $database->get_one(
+            "SELECT description FROM image_descriptions WHERE image_id = :id",
+            ["id" => $event->image->id]
+        ) ?: "None";
+        $event->add_part($this->theme->get_description_editor_html($description), 35);
     }
 
     public function onUploadSpecificBuilding(UploadSpecificBuildingEvent $event): void

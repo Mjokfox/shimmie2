@@ -63,7 +63,8 @@ final class ImageIO extends Extension
 
     public function onImageAdminBlockBuilding(ImageAdminBlockBuildingEvent $event): void
     {
-        if (Ctx::$user->can(ImagePermission::DELETE_IMAGE)) {
+        $image = Image::by_id_ex($event->image->id);
+        if ($this->can_user_delete_image(Ctx::$user, $image)) {
             $event->add_part(SHM_FORM(
                 action: make_link("image/delete"),
                 id: "image_delete_form",
@@ -77,7 +78,7 @@ final class ImageIO extends Extension
 
     public function onCliGen(CliGenEvent $event): void
     {
-        $event->app->register('delete')
+        $event->app->register('post:delete')
             ->addArgument('id', InputArgument::REQUIRED)
             ->setDescription('Delete a specific post')
             ->setCode(function (InputInterface $input, OutputInterface $output): int {

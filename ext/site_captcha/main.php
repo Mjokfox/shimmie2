@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+/** @extends Extension<SiteCaptchaTheme> */
 class SiteCaptcha extends Extension
 {
     public const KEY = "site_captcha";
-    /** @var SiteCaptchaTheme */
-    protected Themelet $theme;
 
     public function get_priority(): int
     {

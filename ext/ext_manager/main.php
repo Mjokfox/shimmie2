@@ -17,11 +17,10 @@ final class ExtensionAuthor
     }
 }
 
+/** @extends Extension<ExtManagerTheme> */
 final class ExtManager extends Extension
 {
     public const KEY = "ext_manager";
-    /** @var ExtManagerTheme */
-    protected Themelet $theme;
 
     public function onPageRequest(PageRequestEvent $event): void
     {
@@ -30,14 +29,7 @@ final class ExtManager extends Extension
                 $extras = $event->POST->getAll("extensions");
                 $infos = ExtensionInfo::get_all();
                 $extras = array_filter($extras, fn ($x) => array_key_exists($x, $infos) && !$infos[$x]->core);
-                \Safe\file_put_contents(
-                    "data/config/extensions.conf.php",
-                    "<?php\ndefine(\"EXTRA_EXTS\", " . \Safe\json_encode($extras) . ");\n"
-                );
-                // force PHP to re-read extensions.conf.php on the next request,
-                // otherwise it will use an old version for a few seconds
-                opcache_reset();
-                Log::warning("ext_manager", "Active extensions changed", "Active extensions changed");
+                $this->write_extensions_conf($extras);
                 Ctx::$page->set_redirect(make_link("ext_manager"));
             } else {
                 throw new ServerError("The config file (data/config/extensions.conf.php) isn't writable by the web server :(");
@@ -58,7 +50,7 @@ final class ExtManager extends Extension
 
     public function onCliGen(CliGenEvent $event): void
     {
-        $event->app->register('disable-all-ext')
+        $event->app->register('ext:disable-all')
             ->setDescription('Disable all extensions')
             ->setCode(function (InputInterface $input, OutputInterface $output): int {
                 \Safe\unlink("data/config/extensions.conf.php");
@@ -82,6 +74,21 @@ final class ExtManager extends Extension
         if (Ctx::$user->can(ExtManagerPermission::MANAGE_EXTENSION_LIST)) {
             $event->add_link("Extension Manager", make_link("ext_manager"));
         }
+    }
+
+    /**
+     * @param string[] $extras
+     */
+    private function write_extensions_conf(array $extras): void
+    {
+        \Safe\file_put_contents(
+            "data/config/extensions.conf.php",
+            "<?php\ndefine(\"EXTRA_EXTS\", " . \Safe\json_encode($extras) . ");\n"
+        );
+        // force PHP to re-read extensions.conf.php on the next request,
+        // otherwise it will use an old version for a few seconds
+        opcache_reset();
+        Log::warning("ext_manager", "Active extensions changed", "Active extensions changed");
     }
 
     /**

@@ -32,9 +32,9 @@ final class BanWords extends Extension
         $this->test_text(Tag::implode($event->new_tags), new UserError("Tags contain banned terms"));
     }
 
-    public function onDescriptionSet(DescriptionSetEvent $event): void
+    public function onDescriptionSet(PostDescriptionSetEvent $event): void
     {
-        if (!$event->user->can(CommentPermission::BYPASS_COMMENT_CHECKS)) {
+        if (!Ctx::$user->can(CommentPermission::BYPASS_COMMENT_CHECKS)) {
             $this->test_text($event->description, new UserError("Description contains banned terms"));
         }
     }

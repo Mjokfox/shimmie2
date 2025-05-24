@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+/** @extends Extension<DmcaTheme> */
 class Dmca extends Extension
 {
-    /** @var DmcaTheme */
-    protected Themelet $theme;
     public function get_priority(): int
     {
         return 1;
