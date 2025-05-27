@@ -304,6 +304,24 @@ final class Image implements \ArrayAccess
             "length" => $this->length
         ];
         if (!$this->in_db) {
+            $fill = Ctx::$config->get(ImageConfig::FILL_GAPS);
+            if ($fill) {
+                $id = Ctx::$database->get_one(
+                    "SELECT id + 1
+                    FROM images a
+                    WHERE NOT EXISTS (
+                        SELECT NULL
+                        FROM images b
+                    WHERE b.id = a.id + 1)
+                    ORDER BY id LIMIT 1"
+                );
+                if (!is_null($id)) {
+                    $props_to_save["id"] = $id;
+                    $this->id = $id;
+                } else {
+                    $fill = false;
+                }
+            }
             $props_to_save["owner_id"] = Ctx::$user->id;
             $props_to_save["owner_ip"] = Network::get_real_ip();
             $props_to_save["posted"] = date('Y-m-d H:i:s', time());
@@ -315,7 +333,9 @@ final class Image implements \ArrayAccess
                 "INSERT INTO images($props_sql) VALUES ($vals_sql)",
                 $props_to_save,
             );
-            $this->id = Ctx::$database->get_last_insert_id('images_id_seq');
+            if (!$fill) {
+                $this->id = Ctx::$database->get_last_insert_id('images_id_seq');
+            }
             $this->in_db = true;
         } else {
             $props_sql = implode(", ", array_map(fn ($prop) => "$prop = :$prop", array_keys($props_to_save)));
