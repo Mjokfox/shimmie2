@@ -133,7 +133,8 @@ body {
 
 BODY.layout-grid {
 	display: grid;
-	grid-template-columns: 11.5rem auto;
+	grid-template-columns: 11.5rem minmax(0, calc(100vw - 11.5rem));
+	overflow-x: hidden;
 	grid-gap: 0 2rem;
 }
 BODY.layout-no-left NAV {
@@ -1117,5 +1118,9 @@ table#threadList {
 DIV.wiki-all-grid {
 	display: block;
 	column-count: 3;
+}
+
+div.zoom-container {
+    max-width: minmax(0, calc(100vw - 11.5rem));;
 }
 /* end of changes */
