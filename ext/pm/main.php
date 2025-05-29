@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use GQLA\{Field, Mutation, Type};
 
-use function MicroHTML\{SPAN, emptyHTML};
+use function MicroHTML\{A, SPAN, emptyHTML};
 
 final class SendPMEvent extends Event
 {
@@ -101,10 +101,8 @@ final class PM
     #[Field(extends: "User", name: "private_messages", type: "[PrivateMessage!]")]
     public static function get_pms_to(User $to, int $limit = null): array
     {
-        global $database;
-
         $pms = [];
-        $arr = $database->get_all(
+        $arr = Ctx::$database->get_all(
             "SELECT * FROM private_message WHERE to_id = :to_id AND archived_by IS DISTINCT FROM :to_id AND archived_by IS DISTINCT FROM -1 ORDER BY sent_date DESC LIMIT :limit",
             ["to_id" => $to->id, "limit" => $limit]
         );
@@ -120,10 +118,8 @@ final class PM
     #[Field(extends: "User", name: "private_messages", type: "[PrivateMessage!]")]
     public static function get_pms_by(User $by, int $limit = null): array
     {
-        global $database;
-
         $pms = [];
-        $arr = $database->get_all(
+        $arr = Ctx::$database->get_all(
             "SELECT * FROM private_message WHERE from_id = :from_id AND archived_by IS DISTINCT FROM :from_id AND archived_by IS DISTINCT FROM -1 ORDER BY sent_date DESC LIMIT :limit",
             ["from_id" => $by->id, "limit" => $limit]
         );
@@ -139,10 +135,8 @@ final class PM
     #[Field(extends: "User", name: "private_messages", type: "[PrivateMessage!]")]
     public static function get_pms_to_and_by(User $to, User $from, int $limit = null): array
     {
-        global $database;
-
         $pms = [];
-        $arr = $database->get_all(
+        $arr = Ctx::$database->get_all(
             "SELECT * FROM private_message WHERE from_id = :from_id AND to_id = :to_id AND archived_by IS DISTINCT FROM :from_id AND archived_by IS DISTINCT FROM -1 ORDER BY sent_date DESC LIMIT :limit",
             ["from_id" => $from->id,"to_id" => $to->id, "limit" => $limit]
         );
@@ -158,10 +152,8 @@ final class PM
     #[Field(extends: "User", name: "private_messages", type: "[PrivateMessage!]")]
     public static function get_pm_archive(User $of, int $limit = null): array
     {
-        global $database;
-
         $pms = [];
-        $arr = $database->get_all(
+        $arr = Ctx::$database->get_all(
             "SELECT * FROM private_message WHERE archived_by = :of_id OR ((from_id = :of_id OR to_id = :of_id) AND archived_by = -1 ) ORDER BY sent_date DESC LIMIT :limit",
             ["of_id" => $of->id, "limit" => $limit]
         );
@@ -174,7 +166,6 @@ final class PM
     #[Field(extends: "User", name: "private_message_unread_count")]
     public static function count_unread_pms(User $duser): ?int
     {
-        global $database;
 
         if (!Ctx::$user->can(PrivMsgPermission::READ_PM)) {
             return null;
@@ -183,7 +174,7 @@ final class PM
             return null;
         }
 
-        return (int)$database->get_one(
+        return (int)Ctx::$database->get_one(
             "SELECT COUNT(*) FROM private_message WHERE to_id = :to_id AND is_read = :is_read AND archived_by IS DISTINCT FROM :to_id AND archived_by IS DISTINCT FROM -1",
             ["is_read" => false, "to_id" => $duser->id]
         );
@@ -208,11 +199,9 @@ final class PrivMsg extends Extension
 
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
-        global $database;
-
         // shortcut to latest
         if ($this->get_version() < 1) {
-            $database->create_table("private_message", "
+            Ctx::$database->create_table("private_message", "
 				id SCORE_AIPK,
 				from_id INTEGER NOT NULL,
 				from_ip SCORE_INET NOT NULL,
@@ -225,30 +214,30 @@ final class PrivMsg extends Extension
 				FOREIGN KEY (from_id) REFERENCES users(id) ON DELETE CASCADE,
 				FOREIGN KEY (to_id) REFERENCES users(id) ON DELETE CASCADE
 			");
-            $database->execute("CREATE INDEX private_message__to_id ON private_message(to_id)");
+            Ctx::$database->execute("CREATE INDEX private_message__to_id ON private_message(to_id)");
             $this->set_version(5);
         }
 
         if ($this->get_version() < 2) {
             Log::info("pm", "Adding foreign keys to private messages");
-            $database->execute("delete from private_message where to_id not in (select id from users);");
-            $database->execute("delete from private_message where from_id not in (select id from users);");
-            $database->execute("ALTER TABLE private_message
+            Ctx::$database->execute("delete from private_message where to_id not in (select id from users);");
+            Ctx::$database->execute("delete from private_message where from_id not in (select id from users);");
+            Ctx::$database->execute("ALTER TABLE private_message
 			ADD FOREIGN KEY (from_id) REFERENCES users(id) ON DELETE CASCADE,
 			ADD FOREIGN KEY (to_id) REFERENCES users(id) ON DELETE CASCADE;");
             $this->set_version(2);
         }
 
         if ($this->get_version() < 3) {
-            $database->standardise_boolean("private_message", "is_read", true);
+            Ctx::$database->standardise_boolean("private_message", "is_read", true);
             $this->set_version(3);
         }
         if ($this->get_version() < 4) {
-            $database->execute("ALTER TABLE private_message ALTER COLUMN subject TYPE VARCHAR(192);"); // 64 got very annoying with how long RE: threads
+            Ctx::$database->execute("ALTER TABLE private_message ALTER COLUMN subject TYPE VARCHAR(192);"); // 64 got very annoying with how long RE: threads
             $this->set_version(4);
         }
         if ($this->get_version() < 5) {
-            $database->execute("ALTER TABLE private_message
+            Ctx::$database->execute("ALTER TABLE private_message
 			add column archived_by INTEGER;");
             $this->set_version(5);
         }
@@ -256,9 +245,8 @@ final class PrivMsg extends Extension
 
     public function onPageNavBuilding(PageNavBuildingEvent $event): void
     {
-        global $user;
-        if ($user->can(PrivMsgPermission::READ_PM)) {
-            $count = $this->count_pms($user);
+        if (Ctx::$user->can(PrivMsgPermission::READ_PM)) {
+            $count = $this->count_pms(Ctx::$user);
             if ($count > 0) {
                 $event->add_nav_link(make_link('user', fragment: 'private-messages'), "Messages ($count)", order:11);
             }
@@ -299,6 +287,9 @@ final class PrivMsg extends Extension
                 if (!empty($sent_pms)) {
                     $this->theme->display_pms($sent_pms, header:"Sent messages", to:true, edit:true, delete:true, more:$duser->id, archived:$duser->id);
                 }
+                if (empty($pms) && empty($sent_pms)) {
+                    Ctx::$page->add_block(new Block("Messages", emptyHTML(A(["href" => make_link("pm/list/{$duser->id}")], "See all"), A(["href" => make_link("pm/archived/{$duser->id}"), "style" => "margin-left:1em"], "Archived messages"))));
+                }
             } else {
                 $pms = PM::get_pms_to_and_by($duser, Ctx::$user, 5);
                 if (!empty($pms)) {
@@ -314,7 +305,7 @@ final class PrivMsg extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $database;
+        $database = Ctx::$database;
         $user = Ctx::$user;
         $page = Ctx::$page;
         if ($event->page_matches("pm/read/{pm_id}", permission: PrivMsgPermission::READ_PM)) {
@@ -529,8 +520,7 @@ final class PrivMsg extends Extension
 
     public function onEditPM(EditPMEvent $event): void
     {
-        global $cache, $database;
-        $database->execute(
+        Ctx::$database->execute(
             "
             UPDATE private_message SET 
             (from_ip,sent_date,subject,message,is_read) = (:fromip,now(),:subject,:message,false)
