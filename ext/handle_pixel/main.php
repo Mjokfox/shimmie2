@@ -69,7 +69,7 @@ final class PixelFileHandler extends DataHandlerExtension
                     ["class" => "shm-zoomer"],
                     OPTION(["value" => "full"], "Full"),
                     OPTION(["value" => "both"], "Fit"),
-                    OPTION(["value" => "width"], "Fit width")
+                    OPTION(["value" => "width"], "Fit Width")
                 )
             ), 19);
         }
