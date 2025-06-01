@@ -116,7 +116,7 @@ final class UrlTest extends TestCase
 
         self::assertEquals(
             ["bar", "foo"],
-            $gst(["foo", "bar"])
+            $gst(["bar", "foo"])
         );
         self::assertEquals(
             ["AC/DC"],
@@ -124,7 +124,7 @@ final class UrlTest extends TestCase
         );
         self::assertEquals(
             ["cat*", "rating=?"],
-            $gst(["rating=?", "cat*"]),
+            $gst(["cat*", "rating=?"]),
         );
     }
 
@@ -135,7 +135,7 @@ final class UrlTest extends TestCase
 
         self::assertUrlEquals(
             $nice_urls ? "/test/post/list/bar%20foo/1" : "/test/index.php?q=post%2Flist%2Fbar%2520foo%2F1",
-            search_link(["foo", "bar"])
+            search_link(["bar", "foo"])
         );
         self::assertUrlEquals(
             $nice_urls ? "/test/post/list/AC%2FDC/1" : "/test/index.php?q=post%2Flist%2FAC%252FDC%2F1",
@@ -143,7 +143,7 @@ final class UrlTest extends TestCase
         );
         self::assertUrlEquals(
             $nice_urls ? "/test/post/list/cat%2A%20rating%3D%3F/1" : "/test/index.php?q=post%2Flist%2Fcat%252A%2520rating%253D%253F%2F1",
-            search_link(["rating=?", "cat*"])
+            search_link(["cat*", "rating=?"])
         );
     }
 

@@ -48,10 +48,10 @@ final class ViewPostTest extends ShimmiePHPUnitTestCase
 
         // When searching, we skip the middle
         $page = self::get_page("post/prev/$image_id_1", ["search" => "test"]);
-        self::assertEquals("/test/post/view/$image_id_3#search=test", $page->redirect);
+        self::assertEquals("/test/post/view/$image_id_3?search=test", $page->redirect);
 
         $page = self::get_page("post/next/$image_id_3", ["search" => "test"]);
-        self::assertEquals("/test/post/view/$image_id_1#search=test", $page->redirect);
+        self::assertEquals("/test/post/view/$image_id_1?search=test", $page->redirect);
 
         // Middle image: has next and prev
         $page = self::get_page("post/next/$image_id_2");

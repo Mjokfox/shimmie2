@@ -12,6 +12,7 @@ final readonly class TagCondition
     public function __construct(
         public string $tag,
         public bool $positive = true,
+        public ?int $or_group = null,
     ) {
     }
 }

@@ -220,7 +220,7 @@ final class TagCategories extends Extension
     {
         global $database;
         $tags = str_replace("\n", ' ', $tags);
-        $tags = Tag::explode($tags, false, sort:false);
+        $tags = Tag::explode($tags, false);
         $tag_ids = [];
         foreach ($tags as $tag) {
             $tag_ids[] = Tag::get_or_create_id($tag);

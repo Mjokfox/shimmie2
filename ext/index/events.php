@@ -4,21 +4,15 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-const TAG_OPERANDS = [
-    "-" => "negative",
-];
-
 /*
  * SearchTermParseEvent:
  * Signal that a search term needs parsing
  */
 class SearchTermParseEvent extends Event
 {
-    public int $id = 0;
     public ?string $term = null;
     public bool $negative = false;
-    /** @var string[] */
-    public array $context = [];
+    public bool $or = false;
     /** @var ImgCondition[] */
     public array $img_conditions = [];
     /** @var TagCondition[] */
@@ -28,15 +22,15 @@ class SearchTermParseEvent extends Event
     /**
      * @param string[] $context
      */
-    public function __construct(int $id, ?string $term = null, array $context = [])
+    public function __construct(public int $id, ?string $term = null, public array $context = [], public int $or_group = 0)
     {
         parent::__construct();
         $original_term = $term;
 
         if ($term !== null) {
             // pull any operands off the start of the search term
-            while (!empty($term) && array_key_exists($term[0], TAG_OPERANDS)) {
-                $operand = TAG_OPERANDS[$term[0]];
+            while (!empty($term) && array_key_exists($term[0], Tag::TAG_OPERANDS)) {
+                $operand = Tag::TAG_OPERANDS[$term[0]];
                 $term = substr($term, 1);
                 $this->$operand = true;
             }
@@ -52,9 +46,7 @@ class SearchTermParseEvent extends Event
             }
         }
 
-        $this->id = $id;
         $this->term = $term;
-        $this->context = $context;
     }
 
     public function add_querylet(Querylet $q): void

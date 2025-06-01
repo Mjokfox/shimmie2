@@ -48,6 +48,6 @@ final class LinkScanTest extends ShimmiePHPUnitTestCase
         $page = self::get_page("post/list", ["search" => $text]);
 
         self::assertEquals(PageMode::REDIRECT, $page->mode);
-        self::assertEquals("/test/post/list/at%20feb01bab5698a11dd87416724c7a89e3%2Ffoobar.jpg%20Look/1", $page->redirect);
+        self::assertEquals("/test/post/list/Look%20at%20feb01bab5698a11dd87416724c7a89e3%2Ffoobar.jpg/1", $page->redirect);
     }
 }

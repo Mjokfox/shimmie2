@@ -246,13 +246,20 @@ final class Search
             $positive_tag_id_array = [];
             $positive_wildcard_id_array = [];
             $negative_tag_id_array = [];
+            $or_tag_id_array = [];
             $all_nonexistent_negatives = true;
 
             foreach ($params->tag_conditions as $tq) {
                 $tag_ids = self::tag_or_wildcard_to_ids($tq->tag);
                 $tag_count = count($tag_ids);
-
-                if ($tq->positive) {
+                if (!is_null($tq->or_group)) {
+                    if ($tag_count > 0) {
+                        $all_nonexistent_negatives = false;
+                        // OR criteria will have to stay in its respective group
+                        $or_tag_id_array[$tq->or_group] = !isset($or_tag_id_array[$tq->or_group]) ?
+                            $tag_ids : array_merge($or_tag_id_array[$tq->or_group], $tag_ids);
+                    }
+                } elseif ($tq->positive) {
                     $all_nonexistent_negatives = false;
                     if ($tag_count === 0) {
                         # one of the positive tags had zero results, therefor there
@@ -282,7 +289,7 @@ final class Search
             if ($all_nonexistent_negatives) {
                 static::$_search_path[] = "all_nonexistent_negatives";
                 $query = new Querylet("SELECT $columns FROM images WHERE 1=1");
-            } elseif (!empty($positive_tag_id_array) || !empty($positive_wildcard_id_array)) {
+            } elseif (!empty($positive_tag_id_array) || !empty($positive_wildcard_id_array) || !empty($or_tag_id_array)) {
                 static::$_search_path[] = "some_positives";
                 $inner_joins = [];
                 if (!empty($positive_tag_id_array)) {
@@ -292,6 +299,12 @@ final class Search
                 }
                 if (!empty($positive_wildcard_id_array)) {
                     foreach ($positive_wildcard_id_array as $tags) {
+                        $positive_tag_id_list = join(', ', $tags);
+                        $inner_joins[] = "IN ($positive_tag_id_list)";
+                    }
+                }
+                if (!empty($or_tag_id_array)) {
+                    foreach ($or_tag_id_array as $tags) {
                         $positive_tag_id_list = join(', ', $tags);
                         $inner_joins[] = "IN ($positive_tag_id_list)";
                     }

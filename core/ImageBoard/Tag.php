@@ -15,6 +15,10 @@ final class Tag
 {
     /** @var array<string, int> */
     private static array $tag_id_cache = [];
+    public const TAG_OPERANDS = [
+        "-" => "negative",
+        "|" => "or"
+    ];
 
     public static function get_or_create_id(string $tag): int
     {
@@ -47,7 +51,6 @@ final class Tag
     /** @param string[] $tags */
     public static function implode(array $tags): string
     {
-        sort($tags, SORT_FLAG_CASE | SORT_STRING);
         return implode(' ', $tags);
     }
 
@@ -56,13 +59,12 @@ final class Tag
      *
      * @return list<tag-string>
      */
-    public static function explode(string $tags, bool $tagme = true, bool $sort = true): array
+    public static function explode(string $tags, bool $tagme = true): array
     {
         $tags = explode(' ', trim($tags));
 
         /* sanitise by removing invisible / dodgy characters */
         $tags_to_process = self::sanitize_array($tags);
-
         /* if user supplied a blank string, add "tagme" */
         if (count($tags_to_process) === 0 && $tagme) {
             $tags_to_process = ["tagme"];
@@ -74,9 +76,9 @@ final class Tag
         $tag_count = count($tags_to_process);
         while ($i < $tag_count) {
             $tag = $tags_to_process[$i];
-            $negative = '';
-            if (!empty($tag) && ($tag[0] === '-')) {
-                $negative = '-';
+            $operand = '';
+            if (!empty($tag) && array_key_exists($tag[0], Tag::TAG_OPERANDS)) {
+                $operand = $tag[0];
                 $tag = substr($tag, 1);
             }
 
@@ -96,26 +98,19 @@ final class Tag
             }
 
             foreach ($aliases as $alias) {
-                if (!in_array($alias, $processed_tags)) {
-                    if ($tag === $alias) {
-                        $processed_tags[] = $negative.$alias;
-                    } elseif (!in_array($alias, $tags_to_process)) {
-                        $tags_to_process[] = $negative.$alias;
-                        $tag_count++;
-                    }
+                if ($tag === $alias) {
+                    $processed_tags[] = "$operand$alias";
+                } elseif (!in_array($alias, $tags_to_process)) {
+                    $tags_to_process[] = "$operand$alias";
+                    $tag_count++;
                 }
             }
             $i++;
         }
 
-        /* remove any duplicate tags */
-        $processed_tags = array_iunique($processed_tags);
-        if ($sort) {
-            sort($processed_tags);
-        }
+        /* remove any empty tags */
         $processed_tags = array_filter($processed_tags, fn ($t) => !empty($t));
         $processed_tags = array_values($processed_tags);
-
         return $processed_tags;
     }
 

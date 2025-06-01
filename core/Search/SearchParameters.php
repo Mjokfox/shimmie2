@@ -29,11 +29,20 @@ final class SearchParameters
         $order = null;
 
         $stpen = 0;  // search term parse event number
+        $or_group = 0;
+        $current_or_group = 0;
         foreach (array_merge([null], $terms) as $term) {
-            $stpe = send_event(new SearchTermParseEvent($stpen++, $term, $terms));
-            $order ??= $stpe->order;
-            $img_conditions = array_merge($img_conditions, $stpe->img_conditions);
-            $tag_conditions = array_merge($tag_conditions, $stpe->tag_conditions);
+            if ($term === "(") {
+                $or_group++;
+                $current_or_group = $or_group;
+            } elseif ($term === ")") {
+                $current_or_group = 0;
+            } else {
+                $stpe = send_event(new SearchTermParseEvent($stpen++, $term, $terms, $current_or_group));
+                $order ??= $stpe->order;
+                $img_conditions = array_merge($img_conditions, $stpe->img_conditions);
+                $tag_conditions = array_merge($tag_conditions, $stpe->tag_conditions);
+            }
         }
 
         $order ??= "images.".Ctx::$config->get(IndexConfig::ORDER);

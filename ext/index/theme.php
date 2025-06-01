@@ -173,6 +173,12 @@ class IndexTheme extends Themelet
             SHM_COMMAND_EXAMPLE("tag*", 'Returns posts that are tagged with "tag", "tags", "tagme", "tag_name", or anything else that starts with "tag".'),
             SHM_COMMAND_EXAMPLE("*name", 'Returns posts that are tagged with "name", "tag_name", "other_tag_name" or anything else that ends with "name".'),
             //
+            BR(),
+            P('OR searches are possible using a vertical pipe (|).'),
+            SHM_COMMAND_EXAMPLE("|tag_name |other_tag_name", 'Returns posts that are tagged with "tag" or "tag_name".'),
+            P('They can be grouped with parentheses, the parentheses MUST be followed by a space on either end (like they are separate tags).'),
+            SHM_COMMAND_EXAMPLE("( |tag_name |other_tag_name ) ( |different_tag |tag_tag ) always_tag", 'Returns posts that are tagged with always_tag and ("tag_name" or "other_tag_name") and ("different_tag" or "tag_tag").'),
+            //
             HR(),
             H3("Comparing values (<, <=, >, >=, or =)"),
             P("For example, you can use this to count tags."),
