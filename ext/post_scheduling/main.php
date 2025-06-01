@@ -191,9 +191,10 @@ final class PostScheduling extends DataHandlerExtension
 
     private function get_latest(): int
     {
+        $order = Ctx::$config->get(IndexConfig::ORDER);
         return \Safe\strtotime(Ctx::$database->get_one("
             SELECT posted FROM images
-            ORDER BY id DESC
+            ORDER BY $order
             LIMIT 1;
         "));
     }
