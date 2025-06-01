@@ -137,16 +137,16 @@ class CustomViewPostTheme extends ViewPostTheme
     {
         global $page;
         $query = $this->get_query();
-        $page->add_html_header(LINK(["id" => "nextlink", "rel" => "next", "href" => make_link("post/next/{$image->id}", $query)]));
-        $page->add_html_header(LINK(["id" => "prevlink", "rel" => "previous", "href" => make_link("post/prev/{$image->id}", $query)]));
+        $page->add_html_header(LINK(["class" => "nextlink", "rel" => "next", "href" => make_link("post/next/{$image->id}", $query)]));
+        $page->add_html_header(LINK(["class" => "prevlink", "rel" => "previous", "href" => make_link("post/prev/{$image->id}", $query)]));
         return DIV(
             ["class" => "post-controls"],
-            A(["href" => make_link("post/prev/{$image->id}", $query), "id" => "prevlink"], "<< Next"),
+            A(["href" => make_link("post/prev/{$image->id}", $query), "class" => "prevlink"], "<< Next"),
             SPAN(
                 ["class" => "post-controls-center"],
                 A(["href" => make_link("post/list/", $query), "id" => "searchlink"], "Search" . (isset($_GET['search']) ? ": ".$_GET['search'] : ""))
             ),
-            A(["href" => make_link("post/next/{$image->id}", $query), "id" => "nextlink"], "Prev >>"),
+            A(["href" => make_link("post/next/{$image->id}", $query), "class" => "nextlink"], "Prev >>"),
         );
     }
 }

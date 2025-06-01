@@ -23,10 +23,10 @@ final class ViewPost extends Extension
             $search = $event->GET->get('search');
             if ($search) {
                 $search_terms = Tag::explode($search);
-                $fragment = "search=".url_escape($search);
+                $query = ["search" => $search];
             } else {
                 $search_terms = [];
-                $fragment = null;
+                $query = null;
             }
 
             $image = Image::by_id_ex($image_id);
@@ -38,9 +38,9 @@ final class ViewPost extends Extension
             }
 
             if (is_null($image)) {
-                $page->set_redirect(make_link("post/view/{$image_id}", fragment: $fragment));
+                $page->set_redirect(make_link("post/view/{$image_id}", query: $query));
             } else {
-                $page->set_redirect(make_link("post/view/{$image->id}", fragment: $fragment));
+                $page->set_redirect(make_link("post/view/{$image->id}", query: $query));
             }
         } elseif ($event->page_matches("post/view/{image_id}")) {
             if (!is_numeric($event->get_arg('image_id'))) {

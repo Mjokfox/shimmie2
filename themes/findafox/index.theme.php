@@ -45,10 +45,10 @@ class CustomIndexTheme extends IndexTheme
         $query = implode(" ", $this->search_terms);
 
         if ($next <= $this->total_pages) {
-            $page->add_html_header(LINK(["id" => "nextlink", "rel" => "next", "href" => make_link("post/$path".($query ? "/$query" : "")."/$next")]));
+            $page->add_html_header(LINK(["class" => "nextlink", "rel" => "next", "href" => make_link("post/$path".($query ? "/$query" : "")."/$next")]));
         }
         if ($prev > 0) {
-            $page->add_html_header(LINK(["id" => "prevlink", "rel" => "previous", "href" => make_link("post/$path".($query ? "/$query" : "")."/$prev")]));
+            $page->add_html_header(LINK(["class" => "prevlink", "rel" => "previous", "href" => make_link("post/$path".($query ? "/$query" : "")."/$prev")]));
         }
         if (count($images) > 0) {
             $this->display_page_images($images);
