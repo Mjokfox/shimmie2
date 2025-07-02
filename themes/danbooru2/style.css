@@ -526,6 +526,13 @@ form+form {
 	display: none;
 }
 
+.log-db-debug {
+    color: #0a0;
+}
+.log-db-info {
+    color: #FFF;
+}
+
 @media screen and (width <=800px) {
 	BODY.layout-grid {
 		grid-template-columns: auto;

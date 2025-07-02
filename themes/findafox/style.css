@@ -550,6 +550,14 @@ form+form {
 #Imagemain h3 {
 	display: none;
 }
+
+.log-db-debug {
+    color: #0a0;
+}
+.log-db-info {
+    color: #FFF;
+}
+
 /* My changes */
 @media only screen and (min-resolution: 2dppx) and (orientation: portrait) {
 	:root {

@@ -1,0 +1,15 @@
+.log-db-debug {
+    color: #999;
+}
+.log-db-info {
+    color: #000;
+}
+.log-db-warning {
+    color: #800;
+}
+.log-db-error {
+    color: #C00;
+}
+.log-db-critical {
+    color: #F00;
+}

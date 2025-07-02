@@ -140,14 +140,14 @@ final class MessageColumn extends Column
     public function display(array $row): HTMLElement
     {
         $c = match ($row['priority']) {
-            LogLevel::DEBUG->value => "#999",
-            LogLevel::INFO->value => "#000",
-            LogLevel::WARNING->value => "#800",
-            LogLevel::ERROR->value => "#C00",
-            LogLevel::CRITICAL->value => "#F00",
-            default => "#000",
+            LogLevel::DEBUG->value => "log-db-debug",
+            LogLevel::INFO->value => "log-db-info",
+            LogLevel::WARNING->value => "log-db-warning",
+            LogLevel::ERROR->value => "log-db-error",
+            LogLevel::CRITICAL->value => "log-db-critical",
+            default => "log-db-info",
         };
-        return SPAN(["style" => "color: $c"], \MicroHTML\rawHTML($this->scan_entities($row[$this->name])));
+        return SPAN(["class" => $c], \MicroHTML\rawHTML($this->scan_entities($row[$this->name])));
     }
 
     protected function scan_entities(string $line): string
