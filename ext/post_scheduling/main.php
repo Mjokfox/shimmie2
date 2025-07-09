@@ -129,6 +129,7 @@ final class PostScheduling extends DataHandlerExtension
                 } catch (\Exception $e) {
                     throw new UploadException("Failed to copy file from uploads ({$event->tmpname->str()}) to archive ({$filename->str()}): ".$e->getMessage());
                 }
+                Ctx::$cache->delete("scheduled_post_count");
 
                 $event->images[] = $image;
             }
@@ -163,6 +164,7 @@ final class PostScheduling extends DataHandlerExtension
             $hash = Ctx::$database->get_one("SELECT hash FROM scheduled_posts WHERE id = :id", $arg);
             Ctx::$database->execute("DELETE FROM scheduled_posts_metadata WHERE schedule_id = :id", $arg);
             Ctx::$database->execute("DELETE FROM scheduled_posts WHERE id = :id", $arg);
+            Ctx::$cache->delete("scheduled_post_count");
             try {
                 Filesystem::warehouse_path(PostSchedulingConfig::BASE, $hash)->unlink();
             } catch (\Exception $e) {
@@ -176,7 +178,7 @@ final class PostScheduling extends DataHandlerExtension
 
     public function onAdminBuilding(AdminBuildingEvent $event): void
     {
-        $this->theme->display_admin_block();
+        $this->theme->display_admin_block($this->count_scheduled_posts());
     }
 
     public function onCliGen(CliGenEvent $event): void
@@ -246,6 +248,7 @@ final class PostScheduling extends DataHandlerExtension
                 Log::error("post_schedule", "Image with hash ".$scheduled["hash"]." failed to upload, tags: ". $metadata->get("tags"));
                 return 1;
             }
+            Ctx::$cache->delete("scheduled_post_count");
             Filesystem::warehouse_path(PostSchedulingConfig::BASE, $scheduled["hash"])->unlink();
             $more = Ctx::$database->get_one("SELECT count(id) > 0 FROM scheduled_posts");
             if (!$more) {
@@ -256,12 +259,22 @@ final class PostScheduling extends DataHandlerExtension
         return $interval - $diff;
     }
 
+    public function count_scheduled_posts(): int
+    {
+        return (int)cache_get_or_set(
+            "scheduled_post_count",
+            fn () => Ctx::$database->get_one("SELECT count(id) FROM scheduled_posts"),
+            900
+        );
+    }
+
     public function onUploadCommonBuilding(UploadCommonBuildingEvent $event): void
     {
         $interval = Ctx::$config->get(PostSchedulingConfig::SCHEDULE_INTERVAL);
+        $count = $this->count_scheduled_posts();
         $event->add_part(TR(
             TH(["width" => "20"], "Schedule?"),
-            TD(["colspan" => "6"], INPUT(["name" => "schedule", "type" => "checkbox"]), " ($interval seconds)")
+            TD(["colspan" => "6"], INPUT(["name" => "schedule", "type" => "checkbox"]), " ($interval seconds, currently $count posts in queue)")
         ), 10);
     }
 

@@ -8,9 +8,8 @@ use function MicroHTML\{A, B, DIV, IMG, INPUT, TABLE, emptyHTML};
 
 class PostSchedulingTheme extends Themelet
 {
-    public function display_admin_block(): void
+    public function display_admin_block(int $count): void
     {
-        $count = Ctx::$database->get_one("SELECT count(id) FROM scheduled_posts");
         $html = emptyHTML(
             "Current posts in queue: ",
             B($count),
