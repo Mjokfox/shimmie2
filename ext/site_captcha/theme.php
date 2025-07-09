@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{BODY, DIV, FORM, H1, IMG, INPUT, META, NOSCRIPT, SCRIPT, TITLE, emptyHTML};
+use function MicroHTML\{A, BODY, DIV, FORM, H1, IMG, INPUT, META, SCRIPT, STYLE, TITLE, emptyHTML};
 
 class SiteCaptchaTheme extends Themelet
 {
@@ -14,44 +14,53 @@ class SiteCaptchaTheme extends Themelet
         Ctx::$page->add_http_header("Refresh: 3; url=$url");
         $data_href = Url::base();
         $time = time(); // add a 'random' string behind the image urls to avoid caching
-
+        Ctx::$page->add_auto_html_headers();
         Ctx::$page->set_data(MimeType::HTML, (string)Ctx::$page->html_html(
             emptyHTML(
                 TITLE("captcha verification"),
                 META(["http-equiv" => "refresh", "url" => $url]),
                 META(["http-equiv" => "Content-Type", "content" => "text/html;charset=utf-8"]),
                 META(["name" => "viewport", "content" => "width=device-width, initial-scale=1"]),
-                SCRIPT(["type" => "text/javascript", "src" => "{$data_href}/ext/site_captcha/captcha.js"])
+                SCRIPT(["type" => "text/javascript", "src" => "{$data_href}/ext/site_captcha/captcha.js"]),
+                STYLE("
+                    .delayed-text {
+                        visibility: hidden;
+                        animation: showText forwards;
+                        animation-delay: 3s;
+                    }
+                    @keyframes showText { to { visibility: unset }}
+                "),
+                ...Ctx::$page->get_all_html_headers(),
             ),
             BODY(
-                ["style" => "background-color:#888;background-image:url(\"/captcha/css?$time\");"],
+                ["style" => "background-image:url(\"/captcha/css?$time\");"],
                 IMG(["id" => "img", "style" => "display:none;", "src" => "/captcha/image?$time"]),
-                H1("Automatically verifying you are not a bot, please wait..."),
-                NOSCRIPT(
-                    H1("Javascript disabled: Page will reload in 3 seconds.."),
-                )
+                H1(["class" => "delayed-text"], "Loading..."),
+                A(["class" => "delayed-text", "style" => "animation-delay:5s", "href" => $url], "Your browser might not be redirecting automatically, please click this link"),
             )
         ));
+
     }
 
     public function display_bot(string $image_token, string $css_token): void
     {
         $ref = Url::referer_or(make_link(""), ["captcha/check"]);
+        Ctx::$page->add_auto_html_headers();
         Ctx::$page->set_data(MimeType::HTML, (string)Ctx::$page->html_html(
             emptyHTML(
                 TITLE("captcha failed"),
                 META(["http-equiv" => "Content-Type", "content" => "text/html;charset=utf-8"]),
                 META(["name" => "viewport", "content" => "width=device-width, initial-scale=1"]),
+                ...Ctx::$page->get_all_html_headers(),
             ),
             BODY(
-                ["style" => "background-color:#888;"],
-                H1("We detected you might be a bot, please verify you are human"),
+                H1("You may have cookies disabled, please click this button to enter the site!"),
                 FORM(
                     ["action" => make_link("captcha/verify"), "method" => "POST"],
                     INPUT(["type" => "hidden", "name" => "ref", "value" => $ref]),
                     INPUT(["type" => "hidden", "name" => "image_token", "value" => $image_token]),
                     INPUT(["type" => "hidden", "name" => "css_token", "value" => $css_token]),
-                    INPUT(["type" => "submit", "value" => "I am a human", "style" => "font-size:2em"])
+                    INPUT(["type" => "submit", "value" => " I want foxes!! ", "style" => "font-size:2em;padding:.5em;margin:.5em"])
                 )
             )
         ));
