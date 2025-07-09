@@ -56,7 +56,7 @@ class UploadTheme extends Themelet
                 ["class" => "container"],
                 DIV(
                     ["class" => "left-column"],
-                    NOSCRIPT(H1("this page requires javascript")),
+                    NOSCRIPT(H1("sorry, this page requires javascript")),
                     DIV(
                         ["style" => "display:flex;justify-content:center"],
                         B(

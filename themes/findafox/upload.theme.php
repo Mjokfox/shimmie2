@@ -18,19 +18,17 @@ class CustomUploadTheme extends UploadTheme
 
     public function display_page(): void
     {
-        global $page;
-        $page->set_layout("no-left");
+        Ctx::$page->set_layout("no-left");
         parent::display_page();
     }
 
     protected function build_upload_list(): HTMLElement
     {
-        global $config;
         $upload_list = emptyHTML();
-        $upload_count = $config->get(UploadConfig::COUNT);
-        $preview_enabled = $config->get(UploadConfig::PREVIEW);
-        $split_view = $config->get(UploadConfig::SPLITVIEW);
-        $tl_enabled = ($config->get(UploadConfig::TRANSLOAD_ENGINE) !== "none");
+        $upload_count = Ctx::$config->get(UploadConfig::COUNT);
+        $preview_enabled = Ctx::$config->get(UploadConfig::PREVIEW);
+        $split_view = Ctx::$config->get(UploadConfig::SPLITVIEW);
+        $tl_enabled = (Ctx::$config->get(UploadConfig::TRANSLOAD_ENGINE) !== "none");
         $accept = $this->get_accept();
 
         $headers = emptyHTML();
@@ -161,40 +159,14 @@ function make_input_label(int|string $suffix, string $tag, int|string $id, strin
     ;
 }
 
-/**
- * @param array<mixed> $array
- * @param array<mixed> $customOrder
- */
-function customkciSort(array &$array, array $customOrder): void // custom key case insensitive sorting thingy
-{
-    $customOrderLower = array_map('strtolower', $customOrder);
-
-    uksort($array, function ($a, $b) use ($customOrderLower) {
-        $indexA = array_search(strtolower($a), $customOrderLower, true);
-        $indexB = array_search(strtolower($b), $customOrderLower, true);
-
-        if ($indexA !== false && $indexB !== false) {
-            return $indexA <=> $indexB;
-        }
-        if ($indexA !== false) {
-            return -1;
-        }
-        if ($indexB !== false) {
-            return 1;
-        }
-        return 0;
-    });
-}
-
 function get_categories_html(string $suffix): HTMLElement
 {
-    global $database,$config,$cache;
     /** @var array{lower_group:string, type:int} $types */
-    $types = cache_get_or_set("ct_type_table", fn () => $database->get_pairs("
+    $types = cache_get_or_set("ct_type_table", fn () => Ctx::$database->get_pairs("
         SELECT lower_group, upload_page_type
         FROM image_tag_categories itc
         "), 1);
-    $res = cache_get_or_set("category_table", fn () => $database->get_all("
+    $res = cache_get_or_set("category_table", fn () => Ctx::$database->get_all("
             SELECT
             itc.lower_group AS group,
             t.tag AS tag_name
@@ -280,7 +252,7 @@ function get_categories_html(string $suffix): HTMLElement
             )
         );
     }
-    $upload_count = $config->get(UploadConfig::COUNT) - 1;
+    $upload_count = Ctx::$config->get(UploadConfig::COUNT) - 1;
     $output = emptyHTML();
     $output->appendChild(DIV(
         ["class" => "dont-offset"],
