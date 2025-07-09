@@ -15,10 +15,9 @@ class ReverseImage extends Extension
 
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
-        global $database;
         if ($this->get_version() < 1) {
-            $database->execute("CREATE EXTENSION IF NOT EXISTS vector;");
-            $database->create_table(
+            Ctx::$database->execute("CREATE EXTENSION IF NOT EXISTS vector;");
+            Ctx::$database->create_table(
                 'image_features',
                 'image_id INTEGER,
                 features vector(512),
@@ -38,7 +37,9 @@ class ReverseImage extends Extension
     }
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $user, $page, $config, $user;
+        $page = Ctx::$page;
+        $user = Ctx::$user;
+        $config = Ctx::$config;
         if ($event->page_matches("post/list", paged: true)
             || $event->page_matches("post/list/{search}", paged: true)) {
             if ($config->get(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
@@ -51,7 +52,6 @@ class ReverseImage extends Extension
         } elseif ($event->page_matches("post/search", paged: true)
             || $event->page_matches("post/search/{search}", paged: true)
         ) {
-            global $database;
             $get_search = $event->GET->get('search');
             if ($get_search || !($config->get(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get(ReverseImageUserConfig::USER_SEARCH_ENABLE))) {
                 if (empty($get_search)) {
@@ -79,7 +79,7 @@ class ReverseImage extends Extension
             $image_ids = $this->reverse_image_compare($feat, $page_size, ($page_number - 1) * $page_size);
             $in = implode(",", array_keys($image_ids));
 
-            $res = $database->get_all(
+            $res = Ctx::$database->get_all(
                 "SELECT images.* FROM images
                 WHERE id IN ($in)
                 order by array_position(array[$in], id);"
@@ -91,7 +91,7 @@ class ReverseImage extends Extension
 
             $this->theme->list_search($search);
 
-            $image_count = $database->get_one("SELECT count(id) from images;");
+            $image_count = Ctx::$database->get_one("SELECT count(id) from images;");
 
 
             /** @var IndexTheme $IT */
@@ -124,7 +124,6 @@ class ReverseImage extends Extension
                 $page->set_data(MimeType::JSON, json_encode(["No similar images found, either the file was not uploaded properly or no url given"]), 'failed.json');
             }
         } elseif ($event->page_matches("upload", method: "GET", permission: ImagePermission::CREATE_IMAGE)) {
-            global $config, $user;
             $user_config = $user->get_config();
             $default_reverse_result_limit = $config->get(ReverseImageConfig::CONF_DEFAULT_AMOUNT);
             $enable_auto_pre = $user_config->get(ReverseImageUserConfig::USER_ENABLE_AUTO);
@@ -168,7 +167,6 @@ class ReverseImage extends Extension
 
     public function onImageAdminBlockBuilding(ImageAdminBlockBuildingEvent $event): void
     {
-        global $user, $config;
         $event->add_part(
             SHM_SIMPLE_FORM(
                 make_link("reverse_image_search"),
@@ -182,10 +180,29 @@ class ReverseImage extends Extension
         );
     }
 
+    public function onImageInfoSet(ImageInfoSetEvent $event): void
+    {
+        $features = $this->get_image_features($event->image->get_image_filename()->str());
+        if ($features) {
+            $this->add_features_to_db($features, $event->image->id);
+        }
+    }
+
+    public function onImageReplace(ImageReplaceEvent $event): void
+    {
+        $exists = Ctx::$database->get_one("SELECT 1 FROM image_features WHERE image_id = :id", ["id" => $event->image->id]);
+        $features = $this->get_image_features($event->image->get_image_filename()->str());
+        if ($features) {
+            if ($exists) {
+                $this->edit_features_to_db($features, $event->image->id);
+            } else {
+                $this->add_features_to_db($features, $event->image->id);
+            }
+        }
+    }
 
     public function onAdminAction(AdminActionEvent $event): void
     {
-        global $database;
         switch ($event->action) {
             case "reverse_image":
                 $start_time = ftime();
@@ -197,7 +214,7 @@ class ReverseImage extends Extension
                 AND a.image = TRUE
                 AND a.id > :id
                 LIMIT :limit;";
-                $images = $database->get_all($query, ["id" => $event->params['reverse_image_start_id'] ?: "0","limit" => $event->params['reverse_image_limit'] ?: "0"]);
+                $images = Ctx::$database->get_all($query, ["id" => $event->params['reverse_image_start_id'] ?: "0","limit" => $event->params['reverse_image_limit'] ?: "0"]);
                 $i = 0;
                 $j = [];
                 foreach ($images as $image) {
@@ -224,7 +241,6 @@ class ReverseImage extends Extension
      */
     public function tags_from_features_id(array $ids): array
     {
-        global $database;
         $ids_array = implode(",", array_keys($ids));
 
         $sum_case = "SUM(CASE\n";
@@ -241,7 +257,7 @@ class ReverseImage extends Extension
             GROUP BY a.tag
             ORDER BY n DESC";
 
-        return $database->get_pairs($query, []);
+        return Ctx::$database->get_pairs($query, []);
     }
 
     // adds features belonging to id to database
@@ -250,11 +266,22 @@ class ReverseImage extends Extension
      */
     public function add_features_to_db(array $features, int $id): void
     {
-        global $database;
         $feature_array = "[" . implode(",", $features) . "]";
         $query = "INSERT INTO image_features VALUES(:id,:feature_array)";
         $args = ["id" => $id,"feature_array" => $feature_array];
-        $database->execute($query, $args);
+        Ctx::$database->execute($query, $args);
+    }
+
+    // edits features from an image
+    /**
+     * @param float[] $features
+     */
+    public function edit_features_to_db(array $features, int $id): void
+    {
+        $feature_array = "[" . implode(",", $features) . "]";
+        $query = "UPDATE image_features SET features = :feature_array WHERE image_id = :id";
+        $args = ["id" => $id,"feature_array" => $feature_array];
+        Ctx::$database->execute($query, $args);
     }
 
     // downloads an image from a given url, returns the full image path
@@ -278,7 +305,6 @@ class ReverseImage extends Extension
      */
     public function reverse_image_search_post(): array
     {
-        global $page, $config;
         if (isset($_POST["url"]) && $_POST["url"]) {
             $file = $this->transload($_POST["url"]);
         } elseif (isset($_POST["hash"]) && $_POST["hash"]) {
@@ -302,9 +328,9 @@ class ReverseImage extends Extension
         if (!$features) {
             return [];
         }
-        $limit = isset($_POST["reverse_image_limit"]) ? $_POST["reverse_image_limit"] : $config->get(ReverseImageConfig::CONF_DEFAULT_AMOUNT);
-        if ($limit > $config->get(ReverseImageConfig::CONF_MAX_LIMIT)) {
-            $limit = $config->get(ReverseImageConfig::CONF_MAX_LIMIT);
+        $limit = isset($_POST["reverse_image_limit"]) ? $_POST["reverse_image_limit"] : Ctx::$config->get(ReverseImageConfig::CONF_DEFAULT_AMOUNT);
+        if ($limit > Ctx::$config->get(ReverseImageConfig::CONF_MAX_LIMIT)) {
+            $limit = Ctx::$config->get(ReverseImageConfig::CONF_MAX_LIMIT);
         }
         return $this->reverse_image_compare($features, $limit);
     }
@@ -325,8 +351,7 @@ class ReverseImage extends Extension
      */
     public function get_image_features(string $path): array|false
     {
-        global $config;
-        $uri = $config->get(ReverseImageConfig::CONF_URL);
+        $uri = Ctx::$config->get(ReverseImageConfig::CONF_URL);
         $url = "$uri/extract_features";
         $ch = curl_init($url);
         assert($ch !== false);
@@ -361,8 +386,7 @@ class ReverseImage extends Extension
      */
     public function get_search_features(string $search): array|false
     {
-        global $config;
-        $uri = $config->get(ReverseImageConfig::CONF_URL);
+        $uri = Ctx::$config->get(ReverseImageConfig::CONF_URL);
         $url = "$uri/search_features";
         $ch = curl_init($url);
         assert($ch !== false);
@@ -393,7 +417,6 @@ class ReverseImage extends Extension
      */
     private function reverse_image_compare(array $features, int|string $limit, int $offset = null): array
     {
-        global $database;
         $feature_array = "[" . implode(",", $features) . "]";
         $query = "SELECT image_id, features <=> :feature_array AS similarity
             FROM image_features
@@ -403,7 +426,7 @@ class ReverseImage extends Extension
             $query .= "\nOFFSET $offset";
         }
         $args = ["feature_array" => $feature_array, "limit" => $limit];
-        $image_ids = $database->get_pairs($query, $args);
+        $image_ids = Ctx::$database->get_pairs($query, $args);
         return $image_ids;
     }
 }
