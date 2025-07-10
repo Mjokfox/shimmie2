@@ -182,9 +182,12 @@ class ReverseImage extends Extension
 
     public function onImageInfoSet(ImageInfoSetEvent $event): void
     {
-        $features = $this->get_image_features($event->image->get_image_filename()->str());
-        if ($features) {
-            $this->add_features_to_db($features, $event->image->id);
+        $exists = Ctx::$database->get_one("SELECT 1 FROM image_features WHERE image_id = :id", ["id" => $event->image->id]);
+        if (is_null($exists)) {
+            $features = $this->get_image_features($event->image->get_image_filename()->str());
+            if ($features) {
+                $this->add_features_to_db($features, $event->image->id);
+            }
         }
     }
 
