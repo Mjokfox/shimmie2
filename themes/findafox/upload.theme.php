@@ -256,13 +256,13 @@ function get_categories_html(string $suffix): HTMLElement
     $output = emptyHTML();
     $output->appendChild(DIV(
         ["class" => "dont-offset"],
-        TEXTAREA(["name" => "faketags{$suffix}","id" => "usertags_{$suffix}","class" => "autocomplete_tags user-input-tags","placeholder" => "Custom tags","rows" => "2", "cols" => "15",]),
+        TEXTAREA(["id" => "usertags_{$suffix}","class" => "autocomplete_tags user-input-tags","placeholder" => "Custom tags","rows" => "2", "cols" => "15",]),
     ));
     $output->appendChild(DIV(["class" => "upload-tags-grid"], $tags_input));
     $output->appendChild(DIV(
         ["class" => "dont-offset"],
         B("Tags from this panel:"),
-        TEXTAREA(["name" => "faketags{$suffix}","id" => "faketags_{$suffix}","placeholder" => "Tags from the input panel above","readonly" => true,"rows" => "1", "cols" => "15","style" => "cursor:"]),
+        TEXTAREA(["id" => "faketags_{$suffix}","placeholder" => "Tags from the input panel above","readonly" => true,"rows" => "1", "cols" => "15","style" => "cursor:"]),
         INPUT(["type" => "text","name" => "tags{$suffix}","id" => "tags{$suffix}","readonly" => true, "style" => "display: none;"]),
         DIV(
             ["style" => "display:flex"],

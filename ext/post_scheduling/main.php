@@ -86,14 +86,14 @@ final class PostScheduling extends DataHandlerExtension
             );
 
             if (!is_null($res)) {
-                throw new UploadException(">>{$res} already has hash {$hash}");
+                throw new UploadException("Currently scheduled post #{$res} already has hash {$hash}");
             }
 
             $latest = $this->get_latest();
             $interval = Ctx::$config->get(PostSchedulingConfig::SCHEDULE_INTERVAL, ConfigType::INT);
             $diff = time() - $latest;
 
-            if ($diff > $interval) {
+            if (self::count_scheduled_posts() === 0 && $diff > $interval) {
                 $meta = new QueryArray($event->metadata->toArray());
                 $meta->set("schedule", "");
                 $due = send_event(new DataUploadEvent($event->tmpname, $event->filename, $event->slot, $meta)); // this isnt cursed
@@ -271,10 +271,27 @@ final class PostScheduling extends DataHandlerExtension
     public function onUploadCommonBuilding(UploadCommonBuildingEvent $event): void
     {
         $interval = Ctx::$config->get(PostSchedulingConfig::SCHEDULE_INTERVAL);
+        $time = [];
+        if ($interval > 86400) {
+            $time[] = floor($interval / 86400) . " days";
+            $interval %= 86400;
+        }
+        if ($interval > 3600) {
+            $time[] = floor($interval / 3600) . " hours";
+            $interval %= 3600;
+        }
+        if ($interval > 60) {
+            $time[] = floor($interval / 60) . " min";
+            $interval %= 60;
+        }
+        if ($interval > 0) {
+            $time[] = "$interval sec";
+        }
+        $strtime = join(", ", $time);
         $count = $this->count_scheduled_posts();
         $event->add_part(TR(
             TH(["width" => "20"], "Schedule?"),
-            TD(["colspan" => "6"], INPUT(["name" => "schedule", "type" => "checkbox"]), " ($interval seconds, currently $count posts in queue)")
+            TD(["colspan" => "6"], INPUT(["name" => "schedule", "type" => "checkbox"]), " (current queue: $count posts, with $strtime interval)")
         ), 10);
     }
 
@@ -319,17 +336,23 @@ final class PostScheduling extends DataHandlerExtension
             unset($metarray["schedule"]);
         }
         foreach ($metarray as $key => $value) {
+            if (empty($value)) {
+                continue;
+            }
             if (\Safe\preg_match('/(.+?)(\d+)$/', $key, $matches)) {
                 if ((int)$matches[2] === $slot) {
-                    $slotted_params[$matches[1]] = $value;
+                    $key = $matches[1];
+                } else {
+                    continue;
                 }
+            }
+            if (is_array($value)) {
+                $value = implode(" ", $value);
+            }
+            if (!isset($slotted_params[$key])) {
+                $slotted_params[$key] = $value;
             } else {
-                if (!isset($slotted_params[$key])) {
-                    if (is_array($value)) {
-                        $value = implode(", ", $value);
-                    }
-                    $slotted_params[$key] = $value;
-                }
+                $slotted_params[$key] = "{$slotted_params[$key]} $value";
             }
         }
         foreach ($slotted_params as $key => $value) {
