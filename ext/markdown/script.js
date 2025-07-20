@@ -150,6 +150,33 @@ function preview_markdown(el) {
 	el.previewing = !el.previewing
 }
 
+function urlPaste(event) {
+	let t = event.target;
+	if (t.nodeName !== "TEXTAREA") return;
+
+	let paste = event.clipboardData.getData("text");
+	if (!isUrl(paste)) return;
+
+	let start = t.selectionStart;
+	let end = t.selectionEnd;
+	if (start != end) {
+		event.preventDefault();
+		let text = t.value;
+		let sel = text.substring(start, end);
+		t.value = text.substring(0,start) + `[${sel}](${paste})` + text.substring(end);
+	}
+}
+
+function isUrl(s="") {
+    let url;
+    try {
+      url = new URL(s);
+    } catch (_) {
+      return false;  
+    }
+    return url.protocol === "https:" || url.protocol === "http:" || url.protocol === "site:" || url.protocol === "mailto:";
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 	document.querySelectorAll("SPAN.markdown").forEach(function(e) {
 		e.original_innerHTML = e.innerHTML;
@@ -175,6 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	})
 
 	document.querySelectorAll("TEXTAREA:not(.autocomplete_tags)").forEach(function(e) {
+		e.addEventListener("paste", urlPaste);
 		const A = document.createElement("input");
 		A.type = "button";
 		A.value = "Preview";
