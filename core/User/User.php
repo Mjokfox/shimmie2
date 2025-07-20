@@ -255,7 +255,7 @@ final class User
 
     public function get_session_id(): string
     {
-        return hash("sha3-256", $this->passhash . Network::get_session_ip() . SysConfig::getSecret());
+        return hash("sha3-256", $this->passhash . SysConfig::getSecret());
     }
 
     public function set_login_cookie(): void

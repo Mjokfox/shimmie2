@@ -150,7 +150,7 @@ class EmailVerification extends Extension
 
     public function get_email_token(User $user, string $email): string
     {
-        return hash("sha3-256", $email . $user->get_session_id() . SECRET);
+        return hash("sha3-256", $email . $user->get_session_id() . SysConfig::getSecret());
     }
 
 }
