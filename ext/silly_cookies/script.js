@@ -1,3 +1,8 @@
+let score = 0;
+let current_high_score = shm_cookie_get("shm_cookie_high_score") ?? 0;
+let new_hs = false;
+let score_loop = 0;
+
 function htmlDecode(input) {
     var doc = new DOMParser().parseFromString(input, "text/html");
     return doc.documentElement.textContent;
@@ -46,7 +51,7 @@ if ((window.location.pathname === "/home" || window.location.pathname === "/") &
             requestAnimationFrame(animate);
         }
 
-        // Function to create a draggable and interactive floating image
+        // Function to create a draggable and interactive cookie
         function dispenseCookie(clickEvent, targetElement, callback) {
             const img = document.createElement("img");
             img.src = "/ext/silly_cookies/default/cookie.png";
@@ -58,19 +63,19 @@ if ((window.location.pathname === "/home" || window.location.pathname === "/") &
             img.style.top = `${clickEvent.pageY - 16}px`;
             document.body.appendChild(img);
             
-            let isDragging = false;
+            let isDragging = true;
+            const onMouseMove = (e) => {
+                if (isDragging) {
+                    img.style.left = `${e.pageX - 16}px`;
+                    img.style.top = `${e.pageY - 16}px`;
+                }
+            };
+            document.addEventListener("mousemove", onMouseMove)
             img.addEventListener("mousedown", (e) => {
-                const onMouseMove = (e) => {
-                    if (isDragging) {
-                        img.style.left = `${e.pageX - 16}px`;
-                        img.style.top = `${e.pageY - 16}px`;
-                    }
-                };
-
                 isDragging = !isDragging;
                 if (isDragging){
                     img.style.cursor = "grabbing";
-                    document.addEventListener("mousemove", onMouseMove)
+                    document.addEventListener("mousemove", onMouseMove);
                 } else {
                     img.style.cursor = "grab";
                     const imgRect = img.getBoundingClientRect();
@@ -90,19 +95,50 @@ if ((window.location.pathname === "/home" || window.location.pathname === "/") &
             });
         }
 
+        // spawn n cookies at the container
+        function spawn_bunch(n) {
+            let container = document.querySelector(".silly-cookie-container");
+            let bb = container.getBoundingClientRect();
+            for (let i = 0; i < n; i++) {
+                setTimeout(() => {
+                    makeFallingCookie({pageX: bb.x + Math.random()*bb.width, pageY: bb.y + Math.random()*bb.height})
+                }, Math.random()*500);
+            }
+        }
+
+        // the user gives a cookie
         function gibCookie(x,y) {
+            score++;
+            score_loop++;
+            let text = `Thanks for the ${score} cookies fren!`;
+            if (score_loop > 9) {
+                score_loop = 0;
+                text = `A whole ${score} cookies? Big thankies!`;
+                spawn_bunch(25);
+            }
+
+            if (score > current_high_score) {
+                current_high_score = score;
+                shm_cookie_set("shm_cookie_high_score", score);
+                if (!new_hs) {
+                    text = "More cookies than ever before!";
+                    new_hs = true;
+                    spawn_bunch(100);
+                }
+            }
+            
             const chat_bubble = document.createElement("div");
             chat_bubble.className = "silly-cookie-bubble";
-            chat_bubble.textContent = "Thanks for the cookie fren!";
-            chat_bubble.style["left"] = `${x + (Math.random() - 0.5)*40}px`
-            chat_bubble.style["top"] = `${y + (Math.random() - 0.5)*40}px`
-            document.body.appendChild(chat_bubble)
+            chat_bubble.textContent = text;
+            chat_bubble.style["left"] = `${x + (Math.random() - 0.5)*40}px`;
+            chat_bubble.style["top"] = `${y + (Math.random() - 0.5)*40}px`;
+            document.body.appendChild(chat_bubble);
             setTimeout(() => {
                 chat_bubble.style["margin-top"] = "0px"
-              }, 10)
+              }, 10);
             setTimeout(() => {
                 chat_bubble.remove()
-              }, 2500)
+              }, 2500);
         };
         // add the actual stuff
         const container = document.createElement("div");
@@ -116,7 +152,7 @@ if ((window.location.pathname === "/home" || window.location.pathname === "/") &
         subcontainer.className = "silly-cookie-subcontainer";
 
         image.src = window.silly_cookies_url;
-        image.addEventListener("click",makeFallingCookie)
+        image.addEventListener("click",makeFallingCookie);
 
         text.innerHTML = htmlDecode(window.silly_cookies_text);
         if (typeof(markdown_format) == "function") {
@@ -141,8 +177,8 @@ if ((window.location.pathname === "/home" || window.location.pathname === "/") &
 
         if (window.silly_cookies_gib){
             const dispenser = document.createElement("button");
-            dispenser.className = "silly-cookie-dispenser"
-            dispenser.textContent = "Cookie dispenser"
+            dispenser.className = "silly-cookie-dispenser";
+            dispenser.textContent = "Cookie dispenser";
             dispenser.addEventListener("click", (event) => {
                 dispenseCookie(event, image, gibCookie);
             });
