@@ -7,6 +7,19 @@ function htmlDecode(input) {
     var doc = new DOMParser().parseFromString(input, "text/html");
     return doc.documentElement.textContent;
 }
+
+let last_touchmove = {x:0, y:0};
+function xy_from_touch_mouse(e) {
+    if (e.touches === undefined) {
+        return {x:e.pageX, y:e.pageY}
+    } else {
+        if (e.type === "touchend") {
+            return last_touchmove;
+        } else {
+            return {x:e.touches[0].pageX, y:e.touches[0].pageY}
+        }
+    }
+}
   
 // only do this on the right page
 if ((window.location.pathname === "/home" || window.location.pathname === "/") && window.silly_cookies_url && window.silly_cookies_text){
@@ -15,9 +28,7 @@ if ((window.location.pathname === "/home" || window.location.pathname === "/") &
         function makeFallingCookie(event) {
             const img = document.createElement("img");
             img.src = "/ext/silly_cookies/default/cookie.png";
-            img.style.position = "absolute";
-            img.style.width = "32px";
-            img.style.height = "32px";
+            img.classList.add("silly-cookie");
             img.style.pointerEvents = "none";
             img.style.left = `${event.pageX - 16}px`;
             img.style.top = `${event.pageY - 16}px`;
@@ -55,44 +66,55 @@ if ((window.location.pathname === "/home" || window.location.pathname === "/") &
         function dispenseCookie(clickEvent, targetElement, callback) {
             const img = document.createElement("img");
             img.src = "/ext/silly_cookies/default/cookie.png";
-            img.style.position = "absolute";
-            img.style.width = "32px";
-            img.style.height = "32px";
-            img.style.cursor = "grab";
-            img.style.left = `${clickEvent.pageX - 16}px`;
-            img.style.top = `${clickEvent.pageY - 16}px`;
+            img.classList.add("silly-cookie");
+            img.draggable = false;
+            let pos = xy_from_touch_mouse(clickEvent);
+            img.style.left = `${pos.x - 16}px`;
+            img.style.top = `${pos.y - 16}px`;
             document.body.appendChild(img);
             
-            let isDragging = true;
             const onMouseMove = (e) => {
-                if (isDragging) {
-                    img.style.left = `${e.pageX - 16}px`;
-                    img.style.top = `${e.pageY - 16}px`;
-                }
+                let pos = xy_from_touch_mouse(e);
+                last_touchmove = pos;
+                img.style.left = `${pos.x - 16}px`;
+                img.style.top = `${pos.y - 16}px`;
             };
-            document.addEventListener("mousemove", onMouseMove)
-            img.addEventListener("mousedown", (e) => {
-                isDragging = !isDragging;
-                if (isDragging){
-                    img.style.cursor = "grabbing";
-                    document.addEventListener("mousemove", onMouseMove);
-                } else {
-                    img.style.cursor = "grab";
-                    const imgRect = img.getBoundingClientRect();
-                    const targetRect = targetElement.getBoundingClientRect();
-                    const isOverTarget = (
-                        imgRect.left < targetRect.right &&
-                        imgRect.right > targetRect.left &&
-                        imgRect.top < targetRect.bottom &&
-                        imgRect.bottom > targetRect.top
-                    );
-                    if (isOverTarget) {
-                        callback(e.pageX,e.pageY);
-                        img.remove();
-                    }
-                    document.removeEventListener("mousemove", onMouseMove);
-                } 
-            });
+
+            const let_go = (e) => {
+                img.style.cursor = "grab";
+                const imgRect = img.getBoundingClientRect();
+                const targetRect = targetElement.getBoundingClientRect();
+                const isOverTarget = (
+                    imgRect.left < targetRect.right &&
+                    imgRect.right > targetRect.left &&
+                    imgRect.top < targetRect.bottom &&
+                    imgRect.bottom > targetRect.top
+                );
+                if (isOverTarget) {
+                    let pos = xy_from_touch_mouse(e);
+                    callback(pos.x, pos.y);
+                    img.remove();
+                }
+                img.removeEventListener("mouseup", let_go);
+                document.removeEventListener("touchend", let_go);
+                document.removeEventListener("touchcancel", let_go);
+                img.addEventListener("mousedown", pick_up);
+                img.addEventListener("touchstart", pick_up);
+                document.removeEventListener("mousemove", onMouseMove);
+                document.removeEventListener("touchmove", onMouseMove);
+            }
+
+            const pick_up = () => {
+                img.style.cursor = "grabbing";
+                img.addEventListener("mouseup", let_go);
+                document.addEventListener("touchend", let_go);
+                document.addEventListener("touchcancel", let_go);
+                img.removeEventListener("mousedown", pick_up);
+                img.removeEventListener("touchstart", pick_up);
+                document.addEventListener("mousemove", onMouseMove);
+                document.addEventListener("touchmove", onMouseMove);
+            }
+            pick_up();
         }
 
         // spawn n cookies at the container
@@ -152,7 +174,8 @@ if ((window.location.pathname === "/home" || window.location.pathname === "/") &
         subcontainer.className = "silly-cookie-subcontainer";
 
         image.src = window.silly_cookies_url;
-        image.addEventListener("click",makeFallingCookie);
+        image.draggable = false;
+        image.addEventListener("mousedown", makeFallingCookie);
 
         text.innerHTML = htmlDecode(window.silly_cookies_text);
         if (typeof(markdown_format) == "function") {
@@ -179,7 +202,11 @@ if ((window.location.pathname === "/home" || window.location.pathname === "/") &
             const dispenser = document.createElement("button");
             dispenser.className = "silly-cookie-dispenser";
             dispenser.textContent = "Cookie dispenser";
-            dispenser.addEventListener("click", (event) => {
+            dispenser.draggable = false;
+            dispenser.addEventListener("mousedown", (event) => {
+                dispenseCookie(event, image, gibCookie);
+            });
+            dispenser.addEventListener("touchstart", (event) => {
                 dispenseCookie(event, image, gibCookie);
             });
             subcontainer.appendChild(dispenser);

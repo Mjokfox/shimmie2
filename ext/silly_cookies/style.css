@@ -10,6 +10,10 @@
         font-size: 1em;
     }
 
+    BUTTON.silly-cookie-dispenser {
+        padding: 1.5em .5em;
+    }
+
     DIV.silly-cookie-subcontainer {
         flex-direction: column;
     }
@@ -35,6 +39,12 @@
     border: 1px solid var(--link-default);
     background-color: #00f1;
     border-radius: 10px;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .silly-cookie-container H3 {
@@ -63,7 +73,7 @@
 }
 
 .silly-cookie-dispenser {
-    padding: 5px;
+    padding: 1.5em .5em;
 }
 
 .silly-cookie-dispenser:hover {
@@ -80,4 +90,10 @@
     position: absolute;
     -moz-transition: all 1s ease-out;
     transition: all 1s ease-out;
+}
+
+.silly-cookie {
+    position: fixed;
+    width: 32px;
+    height: 32px;
 }
