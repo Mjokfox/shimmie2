@@ -1,3 +1,25 @@
+function toBinaryStr(str) {
+	const encoder = new TextEncoder();
+	const charCodes = encoder.encode(str);
+	return String.fromCharCode(...charCodes);
+}
+
+function fromBinaryStr(binary) {
+	const bytes = Uint8Array.from({ length: binary.length }, (_, index) =>
+	  binary.charCodeAt(index)
+	);
+	const decoder = new TextDecoder('utf-8');
+	return decoder.decode(bytes);
+}
+
+function safe_atob(str) {
+	return fromBinaryStr(atob(str))
+}
+
+function safe_btoa(str) {
+	return btoa(toBinaryStr(str))
+}
+
 function markdown_spoiler(el) {
 	if (el.style["background-color"] === "unset"){
 		el.style["background-color"] = "#000";
@@ -10,7 +32,7 @@ function markdown_spoiler(el) {
 
 function markdown_format(text)
 {
-	text = text.replaceAll(/\\(.)/gs, function(m, c) {return "\\"+window.btoa(c)+"\\";});
+	text = text.replaceAll(/\\(.)/gs, function(m, c) {return "\\"+safe_btoa(c)+"\\";});
 	text = extract_code(text);
 	text = encode_links(text);
 	text = text.replaceAll(/\*\*\*(.*?)\*\*\*/g, "<b><i>$1</b></i>"); // bi
@@ -57,26 +79,26 @@ function markdown_format(text)
 	text = text.replaceAll(/\|\|(.*?)\|\|/gs, '<span class="spoiler" title="spoilered text" onclick="markdown_spoiler(this);">$1</span>');
 	text = insert_links(text);
 	text = insert_code(text);
-	text = text.replaceAll(/\\(.+?)\\/gs, function(m, c) {return window.atob(c);});
+	text = text.replaceAll(/\\(.+?)\\/gs, function(m, c) {return safe_atob(c);});
 	return text;
 }
 
 function encode_links(text) {
-	text = text.replaceAll(/\(((?:(?:https?|ftp|irc|site):\/\/|mailto:))([^\)\[\]]+)\)/gm, function(m, c, c1) {return "({url!}"+window.btoa(c+c1.replaceAll(" ","%20",c1))+"{/url!})";});
-	text = text.replaceAll(/((?:(?:https?|ftp|irc|site):\/\/|mailto:)[^\s\)\[\]]+)/gm, function(m, c) {return "{url!}"+window.btoa(c)+"{/url!}";});
-	text = text.replaceAll(/@(\S+)/gm, function(m, c) {return "{usr!}"+window.btoa(c)+"{/usr!}";});
-	text = text.replaceAll(/\[(.+?)\]\(/gm, function(m, c) {return "[{alt!}"+window.btoa(c)+"{/alt!}](";});
+	text = text.replaceAll(/\(((?:(?:https?|ftp|irc|site):\/\/|mailto:))([^\)\[\]]+)\)/gm, function(m, c, c1) {return "({url!}"+safe_btoa(c+c1.replaceAll(" ","%20",c1))+"{/url!})";});
+	text = text.replaceAll(/((?:(?:https?|ftp|irc|site):\/\/|mailto:)[^\s\)\[\]]+)/gm, function(m, c) {return "{url!}"+safe_btoa(c)+"{/url!}";});
+	text = text.replaceAll(/@(\S+)/gm, function(m, c) {return "{usr!}"+safe_btoa(c)+"{/usr!}";});
+	text = text.replaceAll(/\[(.+?)\]\(/gm, function(m, c) {return "[{alt!}"+safe_btoa(c)+"{/alt!}](";});
 	return text;
 }
 function insert_links(text) {
-	text = text.replaceAll(/\{alt!\}(.+?)\{\/alt!\}/gm,function(m, c) {return  window.atob(c);});
-	text = text.replaceAll(/\{usr!\}(.+?)\{\/usr!\}/gm,function(m, c) {let u = window.atob(c); return `<a href="/user/${u}">@${u}</a>`;});
-	text = text.replaceAll(/\#\{url!\}(.+?)\{\/url!\}/gm,function(m, c) {return  window.atob(c);});
-	text = text.replaceAll(/!\[(.+?)\]\(\{url!\}(.+?)\{\/url!\}\)/gm,function(m, c, c1) {return "<img alt='"+ c +"' src='"+window.atob(c1)+"'>";}); // image
-	text = text.replaceAll(/\[(.+?)\]\(\{url!\}(.+?)\{\/url!\}\)/gm,function(m, c,c1) {return "<a href='"+ window.atob(c1)+"'>"+c+"</a>";}); // []()
-	text = text.replaceAll(/!\{url!\}(.+?)\{\/url!\}/gm,function(m, c) {return "<img alt='user image' src='"+window.atob(c)+"'>";}); // image
-	text = text.replaceAll(/\{url!\}(.+?)\{\/url!\}/gm, function(m, c) {let url =  window.atob(c);return `<a href='${url}'>${url}</a>`;});
-	text = text.replaceAll(/\{url!\}(.+?)\{\/url!\}/gm, function(m, c) {let url =  window.atob(c);return `<a href='${url}'>${url}</a>`;});
+	text = text.replaceAll(/\{alt!\}(.+?)\{\/alt!\}/gm,function(m, c) {return  safe_atob(c);});
+	text = text.replaceAll(/\{usr!\}(.+?)\{\/usr!\}/gm,function(m, c) {let u = safe_atob(c); return `<a href="/user/${u}">@${u}</a>`;});
+	text = text.replaceAll(/\#\{url!\}(.+?)\{\/url!\}/gm,function(m, c) {return  safe_atob(c);});
+	text = text.replaceAll(/!\[(.+?)\]\(\{url!\}(.+?)\{\/url!\}\)/gm,function(m, c, c1) {return "<img alt='"+ c +"' src='"+safe_atob(c1)+"'>";}); // image
+	text = text.replaceAll(/\[(.+?)\]\(\{url!\}(.+?)\{\/url!\}\)/gm,function(m, c,c1) {return "<a href='"+ safe_atob(c1)+"'>"+c+"</a>";}); // []()
+	text = text.replaceAll(/!\{url!\}(.+?)\{\/url!\}/gm,function(m, c) {return "<img alt='user image' src='"+safe_atob(c)+"'>";}); // image
+	text = text.replaceAll(/\{url!\}(.+?)\{\/url!\}/gm, function(m, c) {let url =  safe_atob(c);return `<a href='${url}'>${url}</a>`;});
+	text = text.replaceAll(/\{url!\}(.+?)\{\/url!\}/gm, function(m, c) {let url =  safe_atob(c);return `<a href='${url}'>${url}</a>`;});
 	text = text.replaceAll(/site:\/\/([^\s\)\[\]\'\"\>\<]+)/gm,"/$1");
 	return text;
 }
@@ -88,12 +110,12 @@ function extract_code(text)
 	// which would only appear after decoding
 	text = text.replaceAll("[code!]", "```");
 	text = text.replaceAll("[/code!]", "```");
-	return text.replaceAll(/```(.*?)```/gs, function(m, c) {return "[code!]"+window.btoa(c.trim())+"[/code!]";});
+	return text.replaceAll(/```(.*?)```/gs, function(m, c) {return "[code!]"+safe_btoa(c.trim())+"[/code!]";});
 }
 
 function insert_code(text)
 {
-	return text.replaceAll(/\[code!\](.*?)\[\/code!\]/gs, function(m, c) {return "<pre><code>"+window.atob(c)+"</code></pre>";});
+	return text.replaceAll(/\[code!\](.*?)\[\/code!\]/gs, function(m, c) {return "<pre><code>"+safe_atob(c)+"</code></pre>";});
 }
 
 async function get_widget(type, post_id)
