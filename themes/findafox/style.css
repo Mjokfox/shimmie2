@@ -864,7 +864,6 @@ DIV.grid-cell.cell-wide {
 	grid-column: span 4;
 }
 
-
 DIV.grid-cell-label {
     font-weight: bold;
     width: 8ch;
@@ -1014,6 +1013,10 @@ INPUT.autocomplete_tags {
 
 #Statsmain .avatar-container, .avatar-editor .avatar-container{
 	margin: 0;
+}
+
+.image_info.infomode-view .view {
+    word-wrap:anywhere;
 }
 
 .comment {
