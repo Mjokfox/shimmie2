@@ -30,7 +30,7 @@ final class Notes extends Extension
 					enable INTEGER NOT NULL,
 					image_id INTEGER NOT NULL,
 					user_id INTEGER NOT NULL,
-					user_ip CHAR(15) NOT NULL,
+					user_ip SCORE_INET NOT NULL,
 					date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 					x1 INTEGER NOT NULL,
 					y1 INTEGER NOT NULL,
@@ -59,7 +59,7 @@ final class Notes extends Extension
 					review_id INTEGER NOT NULL,
 					image_id INTEGER NOT NULL,
 					user_id INTEGER NOT NULL,
-					user_ip CHAR(15) NOT NULL,
+					user_ip SCORE_INET NOT NULL,
 					date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 					x1 INTEGER NOT NULL,
 					y1 INTEGER NOT NULL,
@@ -71,7 +71,22 @@ final class Notes extends Extension
 					");
             $database->execute("CREATE INDEX note_histories_image_id_idx ON note_histories(image_id)", []);
 
-            $this->set_version(1);
+            $this->set_version(2);
+        }
+        if ($this->get_version() === 1) {
+            // SQLite doesn't support modifying column types, but it also allows
+            // storing an IPv6 sized address in an IPv4 sized column, so...
+            switch ($database->get_driver_id()) {
+                case DatabaseDriverID::MYSQL:
+                    $database->execute("ALTER TABLE notes CHANGE user_ip user_ip SCORE_INET");
+                    $database->execute("ALTER TABLE note_histories CHANGE user_ip user_ip SCORE_INET");
+                    break;
+                case DatabaseDriverID::PGSQL:
+                    $database->execute("ALTER TABLE notes ALTER COLUMN user_ip TYPE SCORE_INET USING TRIM(user_ip)::inet");
+                    $database->execute("ALTER TABLE note_histories ALTER COLUMN user_ip TYPE SCORE_INET USING TRIM(user_ip)::inet");
+                    break;
+            }
+            $this->set_version(2);
         }
     }
 
@@ -165,11 +180,10 @@ final class Notes extends Extension
     {
         if (Ctx::$user->can(NotesPermission::CREATE)) {
             $event->add_part($this->theme->note_button($event->image->id));
-
-            if (Ctx::$user->can(NotesPermission::ADMIN)) {
-                $event->add_part($this->theme->nuke_notes_button($event->image->id));
-                $event->add_part($this->theme->nuke_requests_button($event->image->id));
-            }
+        }
+        if (Ctx::$user->can(NotesPermission::ADMIN)) {
+            $event->add_part($this->theme->nuke_notes_button($event->image->id));
+            $event->add_part($this->theme->nuke_requests_button($event->image->id));
         }
         if (Ctx::$user->can(NotesPermission::REQUEST)) {
             $event->add_part($this->theme->request_button($event->image->id));

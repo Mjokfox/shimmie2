@@ -40,7 +40,7 @@ final class PM
 
     public function __construct(
         public int $from_id,
-        public string $from_ip,
+        public IPAddress $from_ip,
         public int $to_id,
         #[Field]
         public string $subject,
@@ -84,7 +84,7 @@ final class PM
     {
         $pm = new PM(
             (int)$row["from_id"],
-            $row["from_ip"],
+            IPAddress::parse($row["from_ip"]),
             (int)$row["to_id"],
             $row["subject"],
             $row["message"],
@@ -510,7 +510,7 @@ final class PrivMsg extends Extension
         Ctx::$database->execute(
             "INSERT INTO private_message(from_id, from_ip, to_id, sent_date, subject, message)
 			VALUES(:fromid, :fromip, :toid, now(), :subject, :message)",
-            ["fromid" => $event->pm->from_id, "fromip" => $event->pm->from_ip,
+            ["fromid" => $event->pm->from_id, "fromip" => (string)$event->pm->from_ip,
             "toid" => $event->pm->to_id, "subject" => $event->pm->subject, "message" => $event->pm->message]
         );
         $event->id = Ctx::$database->get_last_insert_id("private_message_id_seq");
@@ -525,7 +525,7 @@ final class PrivMsg extends Extension
             UPDATE private_message SET 
             (from_ip,sent_date,subject,message,is_read) = (:fromip,now(),:subject,:message,false)
             WHERE id = :id;",
-            ["fromip" => $event->pm->from_ip,"subject" => $event->pm->subject. " (edited)", "message" => $event->pm->message, "id" => $event->pm->id]
+            ["fromip" => $event->pm->from_ip,"subject" => $event->pm->subject. " (edited)", "message" => $event->pm->message, "id" => (string)$event->pm->id]
         );
         Log::info("pm", "Edited PM #{$event->pm->id}");
     }

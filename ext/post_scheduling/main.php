@@ -314,7 +314,7 @@ final class PostScheduling extends DataHandlerExtension
             "length" => $image->length
         ];
         $props_to_save["owner_id"] = Ctx::$user->id;
-        $props_to_save["owner_ip"] = Network::get_real_ip();
+        $props_to_save["owner_ip"] = (string)Network::get_real_ip();
         $props_to_save["posted"] = date('Y-m-d H:i:s', time());
 
         $props_sql = implode(", ", array_keys($props_to_save));
@@ -358,7 +358,7 @@ final class PostScheduling extends DataHandlerExtension
         foreach ($slotted_params as $key => $value) {
             Ctx::$database->execute(
                 "INSERT INTO scheduled_posts_metadata(schedule_id, key, value) VALUES (:id, :key, :value)",
-                ["id" => $schedule_id, "key" => $key, "value" => $value] // @phpstan-ignore-line
+                ["id" => $schedule_id, "key" => $key, "value" => $value]
             );
         }
     }
@@ -369,8 +369,9 @@ final class PostScheduling extends DataHandlerExtension
     }
 
     // we don't do this
-    protected function media_check_properties(MediaCheckPropertiesEvent $event): void
+    protected function media_check_properties(Image $image): ?MediaProperties
     {
+        return null;
     }
 
     protected function check_contents(Path $tmpname): bool

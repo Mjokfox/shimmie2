@@ -19,6 +19,7 @@ final class MimeType
     public const BZIP2 = 'application/x-bzip2';
     public const CSS = 'text/css';
     public const CSV = 'text/csv';
+    public const FLAC = 'audio/flac';
     public const FLASH = 'application/x-shockwave-flash';
     public const FLASH_VIDEO = 'video/x-flv';
     public const GIF = 'image/gif';
@@ -85,15 +86,6 @@ final class MimeType
         return $this->base . ($this->parameters ? '; ' . $this->parameters : '');
     }
 
-    //RIFF####WEBPVP8?..............ANIM
-    private const WEBP_ANIMATION_HEADER =
-        [0x52, 0x49, 0x46, 0x46, null, null, null, null, 0x57, 0x45, 0x42, 0x50, 0x56, 0x50, 0x38, null,
-            null, null, null, null, null, null, null, null, null, null, null, null, null, null, 0x41, 0x4E, 0x49, 0x4D];
-
-    //RIFF####WEBPVP8L
-    private const WEBP_LOSSLESS_HEADER =
-        [0x52, 0x49, 0x46, 0x46, null, null, null, null, 0x57, 0x45, 0x42, 0x50, 0x56, 0x50, 0x38, 0x4C];
-
     /**
      * @param array<string> $mime_array
      */
@@ -117,81 +109,6 @@ final class MimeType
             return $mime1->base === $mime2->base;
         }
     }
-
-
-    /**
-     * Determines if a file is an animated gif.
-     *
-     * @param Path $image_filename The path of the file to check.
-     * @return bool true if the file is an animated gif, false if it is not.
-     */
-    public static function is_animated_gif(Path $image_filename): bool
-    {
-        $is_anim_gif = 0;
-        if (($fh = @fopen($image_filename->str(), 'rb'))) {
-            try {
-                //check if gif is animated (via https://www.php.net/manual/en/function.imagecreatefromgif.php#104473)
-                $chunk = false;
-
-                while (!feof($fh) && $is_anim_gif < 2) {
-                    $chunk =  ($chunk ? substr($chunk, -20) : "") . fread($fh, 1024 * 100); //read 100kb at a time
-                    $is_anim_gif += \Safe\preg_match_all('#\x00\x21\xF9\x04.{4}\x00(\x2C|\x21)#s', $chunk);
-                }
-            } finally {
-                @fclose($fh);
-            }
-        }
-        return ($is_anim_gif >= 2);
-    }
-
-
-    /**
-     * @param non-empty-array<int|null> $comparison
-     */
-    private static function compare_file_bytes(Path $file_name, array $comparison): bool
-    {
-        $size = $file_name->filesize();
-        $cc = count($comparison);
-        if ($size < $cc) {
-            // Can't match because it's too small
-            return false;
-        }
-
-        if (($fh = @fopen($file_name->str(), 'rb'))) {
-            try {
-                $chunk = \Safe\unpack("C*", \Safe\fread($fh, $cc));
-
-                for ($i = 0; $i < $cc; $i++) {
-                    $byte = $comparison[$i];
-                    if ($byte === null) {
-                        continue;
-                    } else {
-                        $fileByte = $chunk[$i + 1];
-                        if ($fileByte !== $byte) {
-                            return false;
-                        }
-                    }
-                }
-                return true;
-            } finally {
-                @fclose($fh);
-            }
-        } else {
-            throw new MediaException("Unable to open file for byte check: {$file_name->str()}");
-        }
-    }
-
-    public static function is_animated_webp(Path $image_filename): bool
-    {
-        return self::compare_file_bytes($image_filename, self::WEBP_ANIMATION_HEADER);
-    }
-
-    public static function is_lossless_webp(Path $image_filename): bool
-    {
-        return self::compare_file_bytes($image_filename, self::WEBP_LOSSLESS_HEADER);
-    }
-
-
 
     /**
      * Returns the mimetype that matches the provided extension.

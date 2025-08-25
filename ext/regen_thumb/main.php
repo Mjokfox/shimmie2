@@ -30,8 +30,8 @@ final class RegenThumb extends Extension
             $this->theme->display_results($image);
         }
         if ($event->page_matches("regen_thumb/mass", method: "POST", permission: ImagePermission::DELETE_IMAGE)) {
-            $tags = Tag::explode(strtolower($event->POST->req('tags')), false);
-            $images = Search::find_images(limit: 10000, tags: $tags);
+            $tags = SearchTerm::explode(strtolower($event->POST->req('tags')));
+            $images = Search::find_images(limit: 10000, terms: $tags);
 
             foreach ($images as $image) {
                 $this->regenerate_thumbnail($image);
@@ -99,7 +99,7 @@ final class RegenThumb extends Extension
                 if (isset($event->params["regen_thumb_mime"])) {
                     $mime = $event->params["regen_thumb_mime"];
                 }
-                $images = Search::find_images(tags: ["mime=" . $mime]);
+                $images = Search::find_images(terms: ["mime=" . $mime]);
 
                 $i = 0;
                 foreach ($images as $image) {

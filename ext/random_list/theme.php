@@ -10,7 +10,7 @@ use function MicroHTML\{INPUT};
 class RandomListTheme extends Themelet
 {
     /**
-     * @param string[] $search_terms
+     * @param search-term-array $search_terms
      * @param Image[] $images
      */
     public function display_page(array $search_terms, array $images): void
@@ -36,7 +36,7 @@ class RandomListTheme extends Themelet
                 INPUT([
                     "type" => "search",
                     "name" => "search",
-                    "value" => Tag::implode($search_terms),
+                    "value" => SearchTerm::implode($search_terms),
                     "placeholder" => "Search random list",
                     "class" => "autocomplete_tags"
                 ]),

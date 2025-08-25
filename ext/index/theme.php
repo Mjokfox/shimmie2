@@ -13,11 +13,11 @@ class IndexTheme extends Themelet
 {
     protected int $page_number;
     protected int $total_pages;
-    /** @var string[] */
+    /** @var search-term-array */
     protected array $search_terms;
 
     /**
-     * @param string[] $search_terms
+     * @param search-term-array $search_terms
      */
     public function set_page(int $page_number, int $total_pages, array $search_terms): void
     {
@@ -29,7 +29,7 @@ class IndexTheme extends Themelet
     public function display_intro(): void
     {
         $text = DIV(
-            ["style" => "text-align: left;"],
+            ["class" => "prose"],
             P("The first thing you'll probably want to do is create a new account; note
          that the first account you create will by default be marked as the board's
          administrator, and any further accounts will be regular users."),
@@ -59,7 +59,7 @@ class IndexTheme extends Themelet
                 INPUT([
                     "type" => "search",
                     "name" => "search",
-                    "value" => Tag::implode($this->search_terms),
+                    "value" => SearchTerm::implode($this->search_terms),
                     "placeholder" => "Search",
                     "class" => "autocomplete_tags"
                 ]),
@@ -97,7 +97,7 @@ class IndexTheme extends Themelet
     {
         if (WikiInfo::is_enabled() && Ctx::$config->get(WikiConfig::TAG_SHORTWIKIS)) {
             if (count($this->search_terms) === 1) {
-                $st = Tag::implode($this->search_terms);
+                $st = SearchTerm::implode($this->search_terms);
                 $wikiPage = Wiki::get_page($st);
                 if ($wikiPage->id !== -1) {
                     if (TagCategoriesInfo::is_enabled()) {
@@ -145,7 +145,7 @@ class IndexTheme extends Themelet
                 // only index the first pages of each term
                 Ctx::$page->add_html_header(META(["name" => "robots", "content" => "noindex, nofollow"]));
             }
-            $query = url_escape(Tag::implode($this->search_terms));
+            $query = url_escape(SearchTerm::implode($this->search_terms));
             Ctx::$page->add_block(new Block("Posts ", $this->build_table($images, "?search=$query"), "main", 10, "image-list"));
             $this->display_paginator("post/list/$query", null, $this->page_number, $this->total_pages, true);
         } else {

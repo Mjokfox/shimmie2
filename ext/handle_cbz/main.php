@@ -9,20 +9,30 @@ final class CBZFileHandler extends DataHandlerExtension
     public const KEY = "handle_cbz";
     public const SUPPORTED_MIME = [MimeType::COMIC_ZIP];
 
-    protected function media_check_properties(MediaCheckPropertiesEvent $event): void
+    protected function media_check_properties(Image $image): MediaProperties
     {
-        $event->image->lossless = false;
-        $event->image->video = false;
-        $event->image->audio = false;
-        $event->image->image = false;
-
-        $tmp = $this->get_representative_image($event->image->get_image_filename());
+        $tmp = $this->get_representative_image($image->get_image_filename());
         $info = getimagesize($tmp->str());
         if ($info) {
-            $event->image->width = $info[0];
-            $event->image->height = $info[1];
+            $width = $info[0];
+            $height = $info[1];
+        } else {
+            throw new MediaException(
+                "The representative image in the CBZ file is not a valid image."
+            );
         }
         $tmp->unlink();
+
+        return new MediaProperties(
+            width: $width,
+            height: $height,
+            lossless: false,
+            video: false,
+            audio: false,
+            image: true,
+            video_codec: null,
+            length: null,
+        );
     }
 
     protected function create_thumb(Image $image): bool

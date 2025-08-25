@@ -75,7 +75,7 @@ class CustomIndexTheme extends IndexTheme
             INPUT([
                 "name" => 'search',
                 "type" => 'text',
-                "value" => Tag::implode($search_terms),
+                "value" => SearchTerm::implode($search_terms),
                 "class" => 'autocomplete_tags',
                 "placeholder" => 'tags'
             ]),

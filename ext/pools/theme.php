@@ -351,7 +351,7 @@ class PoolsTheme extends Themelet
     }
 
     /**
-     * @param string[] $search_terms
+     * @param search-term-array $search_terms
      */
     public function get_bulk_pool_input(array $search_terms): HTMLElement
     {
@@ -361,7 +361,7 @@ class PoolsTheme extends Themelet
                 "name" => "bulk_pool_new",
                 "placeholder" => "New Pool",
                 "required" => "",
-                "value" => Tag::implode($search_terms)
+                "value" => SearchTerm::implode($search_terms)
             ]
         );
     }

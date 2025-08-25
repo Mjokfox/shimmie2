@@ -149,6 +149,13 @@ function ftime(): float
     return microtime(true);
 }
 
+/**
+ * Truncate a filename to a maximum length, preserving the extension.
+ *
+ * @param ?string $filename The filename to truncate, or null.
+ * @param int $max_len The maximum length of the filename, including the extension.
+ * @return ($filename is null ? null : string) The truncated filename, or null if the input was null.
+ */
 function truncate_filename(?string $filename, int $max_len = 250): ?string
 {
     if ($filename === null) {
@@ -245,7 +252,7 @@ function _load_theme_files(): void
 function _set_up_shimmie_environment(): void
 {
     if (file_exists("images") && !file_exists("data/images")) {
-        die_nicely("Upgrade error", "As of Shimmie 2.7 images and thumbs should be moved to data/images and data/thumbs");
+        die("As of Shimmie 2.7 images and thumbs should be moved to data/images and data/thumbs");
     }
 
     if (SysConfig::getTimezone()) {
@@ -424,12 +431,12 @@ function shm_tempdir(string $prefix = ""): Path
  * Build a link to a search page for given terms,
  * with all the appropriate escaping
  *
- * @param string[] $terms
+ * @param search-term-array $terms
  */
 function search_link(array $terms = [], int $page = 1): Url
 {
     if ($terms) {
-        $q = url_escape(Tag::implode($terms));
+        $q = url_escape(SearchTerm::implode($terms));
         return make_link("post/list/$q/$page");
     } else {
         return make_link("post/list/$page");
@@ -449,7 +456,7 @@ function make_link(?string $page = null, QueryArray|array|null $query = null, ?s
     if (is_array($query)) {
         $query = new QueryArray($query);
     }
-    return new Url(page: $page ?? "", query: $query, fragment: $fragment);
+    return new Url(page: $page ?? Ctx::$config->get(SetupConfig::MAIN_PAGE), query: $query, fragment: $fragment);
 }
 
 /**
@@ -524,4 +531,40 @@ function _get_query(?string $uri = null): string
 
     assert(!str_starts_with($q, "/"));
     return $q;
+}
+
+/**
+ * @param non-empty-array<int|null> $comparison
+ */
+function compare_file_bytes(Path $file_name, array $comparison): bool
+{
+    $size = $file_name->filesize();
+    $cc = count($comparison);
+    if ($size < $cc) {
+        // Can't match because it's too small
+        return false;
+    }
+
+    if (($fh = @fopen($file_name->str(), 'rb'))) {
+        try {
+            $chunk = \Safe\unpack("C*", \Safe\fread($fh, $cc));
+
+            for ($i = 0; $i < $cc; $i++) {
+                $byte = $comparison[$i];
+                if ($byte === null) {
+                    continue;
+                } else {
+                    $fileByte = $chunk[$i + 1];
+                    if ($fileByte !== $byte) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        } finally {
+            @fclose($fh);
+        }
+    } else {
+        throw new MediaException("Unable to open file for byte check: {$file_name->str()}");
+    }
 }

@@ -56,15 +56,12 @@ class EmailVerification extends Extension
                 Ctx::$page->set_redirect(make_link("user"));
             }
         } elseif ($event->page_matches("user_admin/change_email", method: "POST")) {
-            $input = validate_input([
-                'id' => 'user_id,exists',
-                'address' => 'email',
-            ]);
-            $duser = User::by_id($input['id']);
+            $duser = User::by_id((int)$event->POST->req('id'));
             if ($this->user_can_edit_user(Ctx::$user, $duser)) {
                 if ($duser->class->name === "verified" || $duser->class->name === "user") {
                     $duser->set_class("user");
-                    $this->send_verification_mail($this->get_email_token($duser, $input['address']), $input['address']);
+                    $addr = $event->POST->req('address');
+                    $this->send_verification_mail($this->get_email_token($duser, $addr), $addr);
                 }
             }
         }

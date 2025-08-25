@@ -13,34 +13,11 @@ final class Media extends Extension
 {
     public const KEY = "media";
 
-    private const LOSSLESS_FORMATS = [
-        MimeType::WEBP_LOSSLESS,
-        MimeType::PNG,
-        MimeType::PSD,
-        MimeType::BMP,
-        MimeType::ICO,
-        MimeType::ANI,
-        MimeType::GIF
-    ];
-
     private const ALPHA_FORMATS = [
         MimeType::WEBP_LOSSLESS,
         MimeType::WEBP,
         MimeType::PNG,
     ];
-
-    public static function imagick_available(): bool
-    {
-        return extension_loaded("imagick");
-    }
-
-    /**
-     * High priority just so that it can be early in the settings
-     */
-    public function get_priority(): int
-    {
-        return 30;
-    }
 
     public function onPageRequest(PageRequestEvent $event): void
     {
@@ -141,8 +118,6 @@ final class Media extends Extension
 
                 break;
             case MediaEngine::IMAGICK:
-                //                if (self::imagick_available()) {
-                //                } else {
                 self::image_resize_convert(
                     $event->input_path,
                     $event->input_mime,
@@ -156,7 +131,6 @@ final class Media extends Extension
                     $event->minimize,
                     $event->allow_upscale
                 );
-                //}
                 break;
             case MediaEngine::STATIC:
                 $event->input_path->copy($event->output_path);
@@ -245,109 +219,6 @@ final class Media extends Extension
         return (int)$memory_use;
     }
 
-
-    /**
-     * Creates a thumbnail using ffmpeg.
-     *
-     * @param $hash
-     * @return bool true if successful, false if not.
-     * @throws MediaException
-     */
-    public static function create_thumbnail_ffmpeg(Image $image): bool
-    {
-        $ok = false;
-        $inname = $image->get_image_filename();
-        $tmpname = shm_tempnam("ffmpeg_thumb");
-        try {
-            $outname = $image->get_thumb_filename();
-
-            $orig_size = self::video_size($inname);
-            $scaled_size = ThumbnailUtil::get_thumbnail_size($orig_size[0], $orig_size[1], true);
-
-            $command = new CommandBuilder(Ctx::$config->get(MediaConfig::FFMPEG_PATH));
-            $command->add_args("-y");
-            $command->add_args("-i", $inname->str());
-            $command->add_args("-vf", "scale=$scaled_size[0]:$scaled_size[1],thumbnail");
-            $command->add_args("-f", "image2");
-            $command->add_args("-vframes", "1");
-            $command->add_args("-c:v", "png");
-            $command->add_args($tmpname->str());
-            $command->execute();
-
-            ThumbnailUtil::create_scaled_image($tmpname, $outname, $scaled_size, new MimeType(MimeType::PNG));
-            $ok = true;
-        } finally {
-            @$tmpname->unlink();
-        }
-        return $ok;
-    }
-
-    /**
-     * @return array{
-     *     streams: array<array{
-     *         codec_type: "audio",
-     *         codec_name: string,
-     *         codec_tag_string: string,
-     *         tags?: array<string, string>
-     *     }|array{
-     *         codec_type: "video",
-     *         codec_name: string,
-     *         codec_tag_string: string,
-     *         width: int,
-     *         height: int,
-     *         coded_width: int,
-     *         coded_height: int,
-     *         pix_fmt: string,
-     *         tags?: array<string, string>
-     *     }>,
-     *     format: array{
-     *         filename: string,
-     *         nb_streams: int,
-     *         nb_programs: int,
-     *         nb_stream_groups: int,
-     *         format_name: string,
-     *         format_long_name: string,
-     *         start_time: string,
-     *         duration: string,
-     *         size: string,
-     *         bit_rate: string,
-     *         probe_score: int,
-     *         tags?: array<string, string>
-     *     }
-     * }
-     */
-    public static function get_ffprobe_data(Path $filename): array
-    {
-        $command = new CommandBuilder(Ctx::$config->get(MediaConfig::FFPROBE_PATH));
-        $command->add_args("-print_format", "json");
-        $command->add_args("-v", "quiet");
-        $command->add_args("-show_format");
-        $command->add_args("-show_streams");
-        $command->add_args($filename->str());
-        $output = $command->execute();
-        return json_decode($output, true);
-    }
-
-    public static function determine_ext(MimeType $mime): string
-    {
-        $ext = FileExtension::get_for_mime($mime);
-        if (empty($ext)) {
-            throw new ServerError("Could not determine extension for $mime");
-        }
-        return $ext;
-    }
-
-    public static function is_lossless(Path $filename, MimeType $mime): bool
-    {
-        if (in_array((string)$mime, self::LOSSLESS_FORMATS)) {
-            return true;
-        }
-        if ($mime->base === MimeType::WEBP) {
-            return MimeType::is_lossless_webp($filename);
-        }
-        return false;
-    }
-
     public static function image_resize_convert(
         Path $input_path,
         MimeType $input_mime,
@@ -368,14 +239,10 @@ final class Media extends Extension
             $alpha_color = Ctx::$config->get(ThumbnailConfig::ALPHA_COLOR);
         }
 
-        if ($output_mime->base === MimeType::WEBP && self::is_lossless($input_path, $input_mime)) {
-            $output_mime = new MimeType(MimeType::WEBP_LOSSLESS);
-        }
-
         $command = new CommandBuilder(Ctx::$config->get(MediaConfig::MAGICK_PATH));
 
         // read input
-        $input_ext = self::determine_ext($input_mime);
+        $input_ext = FileExtension::get_for_mime($input_mime);
         $command->add_args("{$input_ext}:{$input_path->str()}[0]");
 
         // strip data
@@ -449,15 +316,15 @@ final class Media extends Extension
         // format-specific compression options
         if ($output_mime->base === MimeType::PNG) {
             $command->add_args("-define", "png:compression-level=9");
-        } elseif ($output_mime->base === MimeType::WEBP && $output_mime->parameters === MimeType::LOSSLESS_PARAMETER) {
+        } elseif ($output_mime->base === MimeType::WEBP && $output_quality === 100) {
             $command->add_args("-define", "webp:lossless=true");
             $command->add_args("-quality", "100");
         } else {
-            $command->add_args("-quality", (string)Ctx::$config->get(TranscodeImageConfig::QUALITY));
+            $command->add_args("-quality", (string)$output_quality);
         }
 
         // write output
-        $output_ext = self::determine_ext($output_mime);
+        $output_ext = FileExtension::get_for_mime($output_mime);
         $command->add_args("$output_ext:{$output_filename->str()}");
 
         // go
@@ -640,28 +507,6 @@ final class Media extends Extension
     public static function supports_alpha(MimeType $mime): bool
     {
         return MimeType::matches_array($mime, self::ALPHA_FORMATS, true);
-    }
-
-
-    /**
-     * Determines the dimensions of a video file using ffmpeg.
-     *
-     * @return array{0: positive-int, 1: positive-int}
-     */
-    public static function video_size(Path $filename): array
-    {
-        $data = Media::get_ffprobe_data($filename);
-
-        $width = 1;
-        $height = 1;
-        foreach ($data["streams"] as $stream) {
-            if ($stream["codec_type"] === "video") {
-                $width = max($width, $stream["width"]);
-                $height = max($height, $stream["height"]);
-            }
-        }
-
-        return [$width, $height];
     }
 
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void

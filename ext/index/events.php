@@ -10,6 +10,7 @@ namespace Shimmie2;
  */
 class SearchTermParseEvent extends Event
 {
+    /** @var search-term-string|null */
     public ?string $term = null;
     public bool $negative = false;
     public bool $or = false;
@@ -87,7 +88,7 @@ class SearchTermParseException extends InvalidInput
 class PostListBuildingEvent extends Event
 {
     /**
-     * @param list<tag-string> $search_terms
+     * @param search-term-array $search_terms
      */
     public function __construct(
         public array $search_terms

@@ -58,6 +58,27 @@ final class UtilTest extends TestCase
         );
     }
 
+    public function test_make_link(): void
+    {
+        Ctx::$config->set(SetupConfig::NICE_URLS, true);
+        self::assertEquals(
+            "/test/foo",
+            (string)make_link("foo")
+        );
+
+        Ctx::$config->set(SetupConfig::NICE_URLS, false);
+        self::assertEquals(
+            "/test/index.php?q=foo",
+            (string)make_link("foo")
+        );
+
+        Ctx::$config->set(SetupConfig::NICE_URLS, false);
+        self::assertEquals(
+            "/test/index.php?q=post%2Flist",
+            (string)make_link()
+        );
+    }
+
     public function test_get_user(): void
     {
         // TODO: HTTP_AUTHORIZATION
@@ -136,6 +157,24 @@ final class UtilTest extends TestCase
             _get_query("/test/index.php?q=post%2Flist%2Ftasty%252Fcake%2F1"),
             'URL encoded uglyurl components within a URL encoded param should be left alone, even encoded slashes'
         );
+    }
+
+    public function test_compare_file_bytes(): void
+    {
+        $path = shm_tempnam("test_compare_file_bytes");
+        try {
+            $path->put_contents("abcd");
+            // starts with abc
+            self::assertTrue(compare_file_bytes($path, [0x61, 0x62, 0x63]));
+            // starts with abd
+            self::assertFalse(compare_file_bytes($path, [0x61, 0x62, 0x64]));
+            // starts with a?c
+            self::assertTrue(compare_file_bytes($path, [0x61, null, 0x63]));
+            // starts with abcde
+            self::assertFalse(compare_file_bytes($path, [0x61, 0x62, 0x63, 0x64, 0x65]));
+        } finally {
+            $path->unlink();
+        }
     }
 
     public function tearDown(): void

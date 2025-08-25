@@ -67,6 +67,7 @@ final class ActorColumn extends Column
     /**
      * @param array{username: string, address: string} $row
      */
+    // @phpstan-ignore-next-line
     public function display(array $row): HTMLElement
     {
         $ret = emptyHTML();
@@ -260,7 +261,7 @@ final class LogDatabase extends Extension
 				VALUES(now(), :section, :priority, :username, :address, :message)
 			", [
                 "section" => $event->section, "priority" => $event->priority, "username" => $username,
-                "address" => Network::get_real_ip(), "message" => $event->message
+                "address" => (string)Network::get_real_ip(), "message" => $event->message
             ]);
         }
     }

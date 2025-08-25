@@ -11,8 +11,8 @@ final class Installer
         date_default_timezone_set('UTC');
 
         if (is_readable("data/config/shimmie.conf.php")) {
-            die_nicely(
-                "Shimmie is already installed.",
+            Installer::screen(
+                "Shimmie is already installed",
                 "data/config/shimmie.conf.php exists, how did you get here?"
             );
         }
@@ -31,6 +31,29 @@ final class Installer
                 self::ask_questions();
             }
         }
+    }
+
+    private static function screen(string $title, string $body, int $code = 0): void
+    {
+        $data_href = Url::base();
+        print("<!DOCTYPE html>
+    <html lang='en'>
+	<head>
+		<title>Shimmie</title>
+		<link rel='shortcut icon' href='$data_href/ext/static_files/static/favicon.ico'>
+		<link rel='stylesheet' href='$data_href/ext/static_files/installer.css' type='text/css'>
+	</head>
+	<body>
+		<div id='installer'>
+		    <h1>$title</h1>
+			$body
+		</div>
+        </body>
+    </html>");
+        if ($code !== 0) {
+            http_response_code(500);
+        }
+        exit($code);
     }
 
     private static function get_dsn(): ?string
@@ -56,7 +79,7 @@ final class Installer
             self::create_tables(new Database($dsn));
             self::write_config($dsn);
         } catch (InstallerException $e) {
-            die_nicely($e->title, $e->body, $e->exit_code);
+            Installer::screen($e->title, $e->body, $e->exit_code);
         }
     }
 
@@ -65,24 +88,39 @@ final class Installer
         $warnings = [];
         $errors = [];
 
-        if (!function_exists('gd_info') && !self::is_im_installed()) {
+        if (!function_exists('gd_info') && !self::get_im_command()) {
             $errors[] = "
-            No thumbnailers could be found - install the imagemagick
-            tools (or the PHP-GD library, if imagemagick is unavailable).
-        ";
-        } elseif (!self::is_im_installed()) {
+                No thumbnailers could be found - install the imagemagick
+                tools (or the PHP-GD library, if imagemagick is unavailable).
+            ";
+        } elseif (!self::get_im_command()) {
             $warnings[] = "
-            The 'magick' command (from the imagemagick package)
-            could not be found - PHP-GD can be used instead, but
-            the size of thumbnails will be limited.
-        ";
+                The 'magick' command (from the imagemagick package)
+                could not be found - PHP-GD can be used instead, but
+                the size of thumbnails will be limited.
+            ";
         }
 
         if (!function_exists('mb_strlen')) {
+            $warnings[] = "
+                The mbstring PHP extension is missing - multibyte languages
+                (eg non-english languages) may not work right.
+            ";
+        }
+
+        if (!file_exists("data") && !is_writable(".")) {
             $errors[] = "
-            The mbstring PHP extension is missing - multibyte languages
-            (eg non-english languages) may not work right.
-        ";
+                The <code>data</code> directory does not exist, and the web server
+                does not have permission to create it. Please create a
+                <code>data</code> directory inside the shimmie folder, and make
+                sure the web server has permission to write to it.
+            ";
+        } elseif (!is_writable("data")) {
+            $errors[] = "
+                The <code>data</code> directory exists, but is not writable by the web server.
+                Please make sure the web server has permission to write to the
+                <code>data</code> directory.
+            ";
         }
 
         $drivers = \PDO::getAvailableDrivers();
@@ -92,26 +130,38 @@ final class Installer
             !in_array(DatabaseDriverID::SQLITE->value, $drivers)
         ) {
             $errors[] = "
-            No database connection library could be found; shimmie needs
-            PDO with either Postgres, MySQL, or SQLite drivers
-        ";
+                No database connection library could be found; shimmie needs
+                PDO with either Postgres, MySQL, or SQLite drivers
+            ";
         }
 
         $db_s = in_array(DatabaseDriverID::SQLITE->value, $drivers) ? '<option value="'. DatabaseDriverID::SQLITE->value .'">SQLite</option>' : "";
         $db_m = in_array(DatabaseDriverID::MYSQL->value, $drivers) ? '<option value="'. DatabaseDriverID::MYSQL->value .'">MySQL</option>' : "";
         $db_p = in_array(DatabaseDriverID::PGSQL->value, $drivers) ? '<option value="'. DatabaseDriverID::PGSQL->value .'">PostgreSQL</option>' : "";
 
-        $warn_msg = $warnings ? "<h3>Warnings</h3>".implode("\n<p>", $warnings) : "";
-        $err_msg = $errors ? "<h3>Errors</h3>".implode("\n<p>", $errors) : "";
+        $msg = "";
+        if ($errors) {
+            $msg .= "<h3>Errors</h3>";
+            $msg .= implode("", array_map(fn ($x) => "<p class='error'>$x</p>", $errors));
+        }
+        if ($warnings) {
+            $msg .= "<h3>Warnings</h3>";
+            $msg .= implode("", array_map(fn ($x) => "<p class='warning'>$x</p>", $warnings));
+        }
+        if (!$errors) {
+            $button = '<input type="submit" value="Go!">';
+        } else {
+            $button = "<input type='submit' value='Install disabled due to errors above' disabled>";
+        }
 
         $data_href = Url::base();
 
-        die_nicely(
-            "Install Options",
+        Installer::screen(
+            "Shimmie Installer",
             <<<EOD
-        $warn_msg
-        $err_msg
+        $msg
 
+        <h3>Database Options</h3>
         <form action="$data_href/index.php" method="POST">
         <table class='form' style="margin: 1em auto;">
             <tr>
@@ -138,7 +188,7 @@ final class Installer
                 <th>DB&nbsp;Name:</th>
                 <td><input type="text" name="database_name" size="40" value="shimmie"></td>
             </tr>
-            <tr><td colspan="2"><input type="submit" value="Go!"></td></tr>
+            <tr><td colspan="2">$button</td></tr>
         </table>
             <script>
             document.addEventListener('DOMContentLoaded', update_qs);
@@ -165,7 +215,7 @@ final class Installer
         </p>
         <p class="dbconf none">
             Drivers can generally be downloaded with your OS package manager;
-            for Debian / Ubuntu you want php-pgsql, php-mysql, or php-sqlite.
+            for Debian / Ubuntu you want php-pgsql, php-mysql, or php-sqlite3.
         </p>
     EOD
         );
@@ -197,7 +247,7 @@ final class Installer
                 throw new InstallerException(
                     "Warning: The Database schema is not empty!",
                     "<p>Please ensure that the database you are installing Shimmie with is empty before continuing.</p>
-                <p>Once you have emptied the database of any tables, please hit 'refresh' to continue.</p>",
+                    <p>Once you have emptied the database of any tables, please hit 'refresh' to continue.</p>",
                     2
                 );
             }
@@ -227,8 +277,15 @@ final class Installer
             $db->execute("INSERT INTO users(name, pass, joindate, class) VALUES(:name, :pass, now(), :class)", ["name" => 'Anonymous', "pass" => null, "class" => 'anonymous']);
             $db->execute("INSERT INTO config(name, value) VALUES(:name, :value)", ["name" => 'anon_id', "value" => $db->get_last_insert_id('users_id_seq')]);
 
-            if (self::is_im_installed()) {
-                $db->execute("INSERT INTO config(name, value) VALUES(:name, :value)", ["name" => 'thumb_engine', "value" => 'convert']);
+            if ($cmd = self::get_im_command()) {
+                $db->execute(
+                    "INSERT INTO config(name, value) VALUES(:name, :value)",
+                    ["name" => 'thumb_engine', "value" => 'convert']
+                );
+                $db->execute(
+                    "INSERT INTO config(name, value) VALUES(:name, :value)",
+                    ["name" => 'media_convert_path', "value" => $cmd]
+                );
             }
 
             $db->create_table("images", "
@@ -304,7 +361,7 @@ final class Installer
                 exit(0);
             } else {
                 header("Location: index.php?flash=Installation%20complete");
-                die_nicely(
+                Installer::screen(
                     "Installation Successful",
                     "<p>If you aren't redirected, <a href=\"index.php\">click here to Continue</a>."
                 );
@@ -326,20 +383,22 @@ final class Installer
         }
     }
 
-    private static function is_im_installed(): bool
+    /**
+     * @return non-empty-string|null
+     */
+    private static function get_im_command(): ?string
     {
         $ext = (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') ? ".exe" : "";
-        $path_env = getenv('PATH');
-        if (!$path_env) {
-            return false;
-        }
-        $paths = explode(PATH_SEPARATOR, $path_env);
-        foreach ($paths as $path) {
-            if (file_exists("$path/magick$ext")) {
-                return true;
+        if ($path_env = getenv('PATH')) {
+            foreach (explode(PATH_SEPARATOR, $path_env) as $path) {
+                if (file_exists("$path/magick$ext")) {
+                    return "magick$ext";
+                }
+                if (file_exists("$path/convert$ext")) {
+                    return "convert$ext";
+                }
             }
         }
-        return false;
-
+        return null;
     }
 }

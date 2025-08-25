@@ -107,11 +107,11 @@ class SiteCaptcha extends Extension
             Ctx::$cache->set("captcha_whitelist_networks", $networks, 60);
         }
         $ip = Network::get_real_ip();
-        if (in_array($ip, $ips)) {
+        if (in_array((string)$ip, $ips)) {
             return true;
         }
         foreach ($networks as $range) {
-            if (Network::ip_in_range($ip, $range)) {
+            if (IPRange::parse($range)->contains($ip)) {
                 return true;
             }
         }

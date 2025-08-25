@@ -6,20 +6,26 @@ namespace Shimmie2;
 
 final class AuthorSetEvent extends Event
 {
+    /**
+     * @param non-empty-string $author
+     */
     public function __construct(
         public Image $image,
         public User $user,
         public string $author
     ) {
         parent::__construct();
+        if (strpos($author, " ")) {
+            throw new InvalidInput("Author name cannot be empty or contain spaces");
+        }
     }
 }
 
 /**
- * @phpstan-type ArtistArtist array{id:int,artist_id:int,user_name:string,name:string,notes:string,type:string,posts:int}
- * @phpstan-type ArtistAlias array{id:int,alias:string}
- * @phpstan-type ArtistMember array{id:int,name:string}
- * @phpstan-type ArtistUrl array{id:int,url:string}
+ * @phpstan-type ArtistArtist array{id:int,artist_id:int,user_name:non-empty-string,name:non-empty-string,notes:string,type:string,posts:int}
+ * @phpstan-type ArtistAlias array{id:int,alias:non-empty-string}
+ * @phpstan-type ArtistMember array{id:int,name:non-empty-string}
+ * @phpstan-type ArtistUrl array{id:int,url:non-empty-string}
  * @extends Extension<ArtistsTheme>
  */
 final class Artists extends Extension
@@ -115,9 +121,6 @@ final class Artists extends Extension
     public function onAuthorSet(AuthorSetEvent $event): void
     {
         $author = strtolower($event->author);
-        if (strlen($author) === 0 || strpos($author, " ")) {
-            return;
-        }
 
         $paddedAuthor = str_replace(" ", "_", $author);
 
@@ -172,7 +175,7 @@ final class Artists extends Extension
         }
         if ($event->page_matches("artist/create")) {
             if ($user->can(ArtistsPermission::EDIT_ARTIST_INFO)) {
-                $newArtistID = $this->add_artist();
+                $newArtistID = $this->add_artist($event);
                 $page->set_redirect(make_link("artist/view/" . $newArtistID));
             } else {
                 throw new PermissionDenied("You must be registered and logged in to create a new artist.");
@@ -188,7 +191,7 @@ final class Artists extends Extension
             $userIsLogged = $user->can(ArtistsPermission::EDIT_ARTIST_INFO);
             $userIsAdmin = $user->can(ArtistsPermission::ADMIN);
 
-            $images = Search::find_images(limit: 4, tags: Tag::explode($artist['name']));
+            $images = Search::find_images(limit: 4, terms: SearchTerm::explode($artist['name']));
 
             $this->theme->show_artist($artist, $aliases, $members, $urls, $images, $userIsLogged, $userIsAdmin);
 
@@ -216,7 +219,7 @@ final class Artists extends Extension
         }
         if ($event->page_matches("artist/edited")) {
             $artistID = int_escape($event->POST->get('id'));
-            $this->update_artist();
+            $this->update_artist($event);
             $page->set_redirect(make_link("artist/view/" . $artistID));
         }
         if ($event->page_matches("artist/nuke_artist")) {
@@ -242,7 +245,13 @@ final class Artists extends Extension
         }
         if ($event->page_matches("artist/alias/add")) {
             $artistID = int_escape($event->POST->req('artist_id'));
-            $this->add_alias();
+            $aliases = explode(" ", strtolower($event->POST->req("aliases")));
+
+            foreach ($aliases as $alias) {
+                if (!$this->alias_exists($artistID, $alias)) {
+                    $this->save_new_alias($artistID, $alias, Ctx::$user->id);
+                }
+            }
             $page->set_redirect(make_link("artist/view/" . $artistID));
         }
         if ($event->page_matches("artist/alias/delete/{aliasID}")) {
@@ -257,14 +266,20 @@ final class Artists extends Extension
             $this->theme->show_alias_editor($alias);
         }
         if ($event->page_matches("artist/alias/edited")) {
-            $this->update_alias();
             $aliasID = int_escape($event->POST->req('aliasID'));
+            $alias = strtolower($event->POST->req('alias'));
+            $this->save_existing_alias($aliasID, $alias, Ctx::$user->id);
             $artistID = $this->get_artistID_by_aliasID($aliasID);
             $page->set_redirect(make_link("artist/view/" . $artistID));
         }
         if ($event->page_matches("artist/url/add")) {
             $artistID = int_escape($event->POST->req('artist_id'));
-            $this->add_urls();
+            $urls = explode("\n", $event->POST->req("urls"));
+            foreach ($urls as $url) {
+                if (!$this->url_exists($artistID, $url)) {
+                    $this->save_new_url($artistID, $url, Ctx::$user->id);
+                }
+            }
             $page->set_redirect(make_link("artist/view/" . $artistID));
         }
         if ($event->page_matches("artist/url/delete/{urlID}")) {
@@ -279,14 +294,20 @@ final class Artists extends Extension
             $this->theme->show_url_editor($url);
         }
         if ($event->page_matches("artist/url/edited")) {
-            $this->update_url();
             $urlID = int_escape($event->POST->req('urlID'));
+            $url = $event->POST->req('url');
+            $this->save_existing_url($urlID, $url, Ctx::$user->id);
             $artistID = $this->get_artistID_by_urlID($urlID);
             $page->set_redirect(make_link("artist/view/" . $artistID));
         }
         if ($event->page_matches("artist/member/add")) {
             $artistID = int_escape($event->POST->req('artist_id'));
-            $this->add_members();
+            $members = explode(" ", strtolower($event->POST->req("members")));
+            foreach ($members as $member) {
+                if (!$this->member_exists($artistID, $member)) {
+                    $this->save_new_member($artistID, $member, Ctx::$user->id);
+                }
+            }
             $page->set_redirect(make_link("artist/view/" . $artistID));
         }
         if ($event->page_matches("artist/member/delete/{memberID}")) {
@@ -301,8 +322,9 @@ final class Artists extends Extension
             $this->theme->show_member_editor($member);
         }
         if ($event->page_matches("artist/member/edited")) {
-            $this->update_member();
             $memberID = int_escape($event->POST->req('memberID'));
+            $name = strtolower($event->POST->req('name'));
+            $this->save_existing_member($memberID, $name, Ctx::$user->id);
             $artistID = $this->get_artistID_by_memberID($memberID);
             $page->set_redirect(make_link("artist/view/" . $artistID));
         }
@@ -416,30 +438,23 @@ final class Artists extends Extension
         return $row;
     }
 
-    private function update_artist(): void
+    private function update_artist(PageRequestEvent $event): void
     {
         $user = Ctx::$user;
-        $inputs = validate_input([
-            'id' => 'int',
-            'name' => 'string,lower',
-            'notes' => 'string,trim,nullify',
-            'aliases' => 'string,trim,nullify',
-            'aliasesIDs' => 'string,trim,nullify',
-            'members' => 'string,trim,nullify',
-        ]);
-        $artistID = $inputs['id'];
-        $name = $inputs['name'];
-        $notes = $inputs['notes'];
         $userID = $user->id;
 
-        $aliasesAsString = $inputs["aliases"];
-        $aliasesIDsAsString = $inputs["aliasesIDs"];
+        $artistID = (int)$event->POST->req('id');
+        $name = strtolower($event->POST->req('name'));
+        $notes = nullify($event->POST->get('notes'));
 
-        $membersAsString = $inputs["members"];
-        $membersIDsAsString = $inputs["membersIDs"];
+        $aliasesAsString = nullify($event->POST->get('aliases'));
+        $aliasesIDsAsString = nullify($event->POST->get('aliasesIDs'));
 
-        $urlsAsString = $inputs["urls"];
-        $urlsIDsAsString = $inputs["urlsIDs"];
+        $membersAsString = nullify($event->POST->get('members'));
+        $membersIDsAsString = nullify($event->POST->get('membersIDs'));
+
+        $urlsAsString = nullify($event->POST->get('urls'));
+        $urlsIDsAsString = nullify($event->POST->get('urlsIDs'));
 
         if (str_contains($name, " ")) {
             return;
@@ -514,30 +529,12 @@ final class Artists extends Extension
         }
     }
 
-    private function update_alias(): void
-    {
-        $inputs = validate_input([
-            "aliasID" => "int",
-            "alias" => "string,lower",
-        ]);
-        $this->save_existing_alias($inputs['aliasID'], $inputs['alias'], Ctx::$user->id);
-    }
-
     private function save_existing_alias(int $aliasID, string $alias, int $userID): void
     {
         Ctx::$database->execute(
             "UPDATE artist_alias SET alias = :alias, updated = now(), user_id = :user_id WHERE id = :id",
             ['alias' => $alias, 'user_id' => $userID, 'id' => $aliasID]
         );
-    }
-
-    private function update_url(): void
-    {
-        $inputs = validate_input([
-            "urlID" => "int",
-            "url" => "string",
-        ]);
-        $this->save_existing_url($inputs['urlID'], $inputs['url'], Ctx::$user->id);
     }
 
     private function save_existing_url(int $urlID, string $url, int $userID): void
@@ -548,15 +545,6 @@ final class Artists extends Extension
         );
     }
 
-    private function update_member(): void
-    {
-        $inputs = validate_input([
-            "memberID" => "int",
-            "name" => "string,lower",
-        ]);
-        $this->save_existing_member($inputs['memberID'], $inputs['name'], Ctx::$user->id);
-    }
-
     private function save_existing_member(int $memberID, string $memberName, int $userID): void
     {
         Ctx::$database->execute(
@@ -565,26 +553,17 @@ final class Artists extends Extension
         );
     }
 
-    private function add_artist(): int
+    private function add_artist(PageRequestEvent $event): int
     {
-        $inputs = validate_input([
-            "name" => "string,lower",
-            "notes" => "string,optional",
-            "aliases" => "string,lower,optional",
-            "members" => "string,lower,optional",
-            "urls" => "string,optional"
-        ]);
-
-        $name = $inputs["name"];
+        $name = strtolower($event->POST->req("name"));
         if (str_contains($name, " ")) {
             throw new InvalidInput("Artist name cannot contain spaces");
         }
 
-        $notes = $inputs["notes"];
-
-        $aliases = $inputs["aliases"];
-        $members = $inputs["members"];
-        $urls = $inputs["urls"];
+        $notes = $event->POST->req("notes");
+        $aliases = $event->POST->get("aliases");
+        $members = $event->POST->get("members");
+        $urls = $event->POST->get("urls");
         $username = Ctx::$user->name;
         $userID = Ctx::$user->id;
 
@@ -617,7 +596,6 @@ final class Artists extends Extension
         }
 
         if (!is_null($urls)) {
-            assert(is_string($urls));
             //delete double "separators"
             $urls = str_replace("\r\n", "\n", $urls);
             $urls = str_replace("\n\r", "\n", $urls);
@@ -789,25 +767,6 @@ final class Artists extends Extension
         $this->theme->list_artists($listing, $pageNumber + 1, $totalPages);
     }
 
-    /*
-     * HERE WE ADD AN ALIAS
-     */
-    private function add_urls(): void
-    {
-        $inputs = validate_input([
-            "artistID" => "int",
-            "urls" => "string",
-        ]);
-        $artistID = $inputs["artistID"];
-        $urls = explode("\n", $inputs["urls"]);
-
-        foreach ($urls as $url) {
-            if (!$this->url_exists($artistID, $url)) {
-                $this->save_new_url($artistID, $url, Ctx::$user->id);
-            }
-        }
-    }
-
     private function save_new_url(int $artistID, string $url, int $userID): void
     {
         Ctx::$database->execute(
@@ -816,44 +775,12 @@ final class Artists extends Extension
         );
     }
 
-    private function add_alias(): void
-    {
-        $inputs = validate_input([
-            "artistID" => "int",
-            "aliases" => "string,lower",
-        ]);
-        $artistID = $inputs["artistID"];
-        $aliases = explode(" ", $inputs["aliases"]);
-
-        foreach ($aliases as $alias) {
-            if (!$this->alias_exists($artistID, $alias)) {
-                $this->save_new_alias($artistID, $alias, Ctx::$user->id);
-            }
-        }
-    }
-
     private function save_new_alias(int $artistID, string $alias, int $userID): void
     {
         Ctx::$database->execute(
             "INSERT INTO artist_alias (artist_id, created, updated, alias, user_id) VALUES (:artist_id, now(), now(), :alias, :user_id)",
             ['artist_id' => $artistID, 'alias' => $alias, 'user_id' => $userID]
         );
-    }
-
-    private function add_members(): void
-    {
-        $inputs = validate_input([
-            "artistID" => "int",
-            "members" => "string,lower",
-        ]);
-        $artistID = $inputs["artistID"];
-        $members = explode(" ", $inputs["members"]);
-
-        foreach ($members as $member) {
-            if (!$this->member_exists($artistID, $member)) {
-                $this->save_new_member($artistID, $member, Ctx::$user->id);
-            }
-        }
     }
 
     private function save_new_member(int $artistID, string $member, int $userID): void
@@ -883,13 +810,11 @@ final class Artists extends Extension
     }
 
     /**
-     * HERE WE GET THE INFO OF THE ALIAS
-     *
      * @return ArtistAlias[]
      */
     private function get_alias(int $artistID): array
     {
-        /** @var array<array{id: int, alias: string}> */
+        /** @var array<array{id: int, alias: tag-string}> */
         $result = Ctx::$database->get_all("
             SELECT id, alias
             FROM artist_alias

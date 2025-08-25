@@ -39,19 +39,20 @@ class CustomUserPageTheme extends UserPageTheme
     }
 
     /**
-     * @param array<int, array{name: string, link: Url}> $parts
+     * @param array<int, array{name: string|HTMLElement, link: Url}> $parts
      */
     public function display_user_links(User $user, array $parts): void
     {
-        // no block in this theme
+        # $page->add_block(new Block("User Links", join(", ", $parts), "main", 10));
     }
+
     public function display_login_block(): void
     {
         // no block in this theme
     }
 
     /**
-     * @param array<array{link: Url, name: string}> $parts
+     * @param array<array{name: string|HTMLElement, link: Url}> $parts
      */
     public function display_user_block(User $user, array $parts): void
     {

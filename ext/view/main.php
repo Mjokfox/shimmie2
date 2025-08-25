@@ -22,7 +22,7 @@ final class ViewPost extends Extension
 
             $search = $event->GET->get('search');
             if ($search) {
-                $search_terms = Tag::explode($search);
+                $search_terms = SearchTerm::explode($search);
                 $query = ["search" => $search];
             } else {
                 $search_terms = [];

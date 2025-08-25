@@ -8,42 +8,32 @@ use function MicroHTML\{A, BR, SOURCE, VIDEO, emptyHTML};
 
 class VideoFileHandlerTheme extends Themelet
 {
-    public function display_image(Image $image): void
+    public function build_media(Image $image): \MicroHTML\HTMLElement
     {
-        $width = "auto";
-        if ($image->width > 1) {
-            $width = $image->width."px";
-        }
-        $height = "auto";
-        if ($image->height > 1) {
-            $height = $image->height."px";
-        }
+        $src = $image->get_image_link();
 
-        $html = emptyHTML(
-            "Video not playing? ",
-            A(['href' => $image->get_image_link()], "Click here"),
-            " to download the file.",
-            BR(),
+        return emptyHTML(
             VIDEO(
                 [
                     'controls' => true,
-                    'class' => 'shm-main-image',
                     'id' => 'main_image',
+                    'class' => 'shm-main-image',
                     'alt' => 'main image',
                     'poster' => $image->get_thumb_link()->asAbsolute(),
                     'autoplay' => Ctx::$config->get(VideoFileHandlerConfig::PLAYBACK_AUTOPLAY),
                     'loop' => Ctx::$config->get(VideoFileHandlerConfig::PLAYBACK_LOOP),
                     'muted' => Ctx::$config->get(VideoFileHandlerConfig::PLAYBACK_MUTE),
-                    'style' => "height: $height; width: $width; max-width: 100%; object-fit: contain; background-color: black;",
                     'onloadstart' => 'this.volume = 0.25',
                 ],
                 SOURCE([
-                    'src' => $image->get_image_link(),
+                    'src' => $src,
                     'type' => $image->get_mime()
                 ])
-            )
+            ),
+            BR(),
+            "Video not playing? ",
+            A(['href' => $src], "Click here"),
+            " to download the file.",
         );
-
-        Ctx::$page->add_block(new Block(null, $html, "main", 10));
     }
 }

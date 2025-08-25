@@ -9,24 +9,31 @@ final class IcoFileHandler extends DataHandlerExtension
     public const KEY = "handle_ico";
     public const SUPPORTED_MIME = [MimeType::ICO, MimeType::ANI, MimeType::WIN_BITMAP, MimeType::ICO_OSX];
 
-    protected function media_check_properties(MediaCheckPropertiesEvent $event): void
+    protected function media_check_properties(Image $image): MediaProperties
     {
-        $event->image->lossless = true;
-        $event->image->video = false;
-        $event->image->audio = false;
-        $event->image->image = ($event->image->get_mime()->base !== MimeType::ANI);
-
-        $fp = \Safe\fopen($event->image->get_image_filename()->str(), "r");
+        $video = $image->get_mime()->base === MimeType::ANI;
+        $fp = \Safe\fopen($image->get_image_filename()->str(), "r");
         try {
             fseek($fp, 6); // skip header
             $subheader = \Safe\unpack("Cwidth/Cheight/Ccolours/Cnull/Splanes/Sbpp/Lsize/loffset", \Safe\fread($fp, 16));
             $width = $subheader['width'];
             $height = $subheader['height'];
-            $event->image->width = $width === 0 ? 256 : $width;
-            $event->image->height = $height === 0 ? 256 : $height;
+            $width = $width === 0 ? 256 : $width;
+            $height = $height === 0 ? 256 : $height;
         } finally {
             fclose($fp);
         }
+
+        return new MediaProperties(
+            width: $width,
+            height: $height,
+            lossless: true,
+            video: $video,
+            audio: false,
+            image: !$video,
+            video_codec: null,
+            length: null,
+        );
     }
 
     protected function create_thumb(Image $image): bool

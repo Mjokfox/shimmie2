@@ -16,8 +16,9 @@ use Psr\SimpleCache\CacheInterface;
 /**
  * Return the unique elements of an array, case insensitively
  *
- * @param array<string> $array
- * @return list<string>
+ * @template T of string
+ * @param array<T> $array
+ * @return list<T>
  */
 function array_iunique(array $array): array
 {
@@ -148,94 +149,17 @@ function bool_escape(string|bool|int $input): bool
 }
 
 /**
- * @param array<string, string> $inputs
- * @return array<string, mixed>
+ * If X is empty, return null, else return X
+ * @template T
+ * @param T $x
+ * @return T|null
  */
-function validate_input(array $inputs): array
+function nullify(mixed $x): mixed
 {
-    $outputs = [];
-
-    foreach ($inputs as $key => $validations) {
-        $flags = explode(',', $validations);
-
-        if (in_array('bool', $flags) && !isset($_POST[$key])) {
-            $_POST[$key] = 'off';
-        }
-
-        if (in_array('optional', $flags)) {
-            if (!isset($_POST[$key]) || trim($_POST[$key]) === "") {
-                $outputs[$key] = null;
-                continue;
-            }
-        }
-        if (!isset($_POST[$key]) || trim($_POST[$key]) === "") {
-            throw new InvalidInput("Input '$key' not set");
-        }
-
-        $value = trim($_POST[$key]);
-
-        if (in_array('user_id', $flags)) {
-            $id = int_escape($value);
-            if (in_array('exists', $flags)) {
-                try {
-                    User::by_id($id);
-                } catch (UserNotFound $e) {
-                    throw new InvalidInput("User #$id does not exist");
-                }
-            }
-            $outputs[$key] = $id;
-        } elseif (in_array('user_name', $flags)) {
-            // @phpstan-ignore-next-line - phpstan thinks $value can never be empty?
-            if (strlen($value) < 1) {
-                throw new InvalidInput("Username must be at least 1 character");
-            } elseif (!\Safe\preg_match('/^[a-zA-Z0-9-_]+$/', $value)) {
-                throw new InvalidInput(
-                    "Username contains invalid characters. Allowed characters are ".
-                    "letters, numbers, dash, and underscore"
-                );
-            }
-            $outputs[$key] = $value;
-        } elseif (in_array('user_class', $flags)) {
-            if (!array_key_exists($value, UserClass::$known_classes)) {
-                throw new InvalidInput("Invalid user class: $value");
-            }
-            $outputs[$key] = $value;
-        } elseif (in_array('email', $flags)) {
-            $outputs[$key] = trim($value);
-        } elseif (in_array('password', $flags)) {
-            $outputs[$key] = $value;
-        } elseif (in_array('int', $flags)) {
-            $value = trim($value);
-            if (empty($value) || !is_numeric($value)) {
-                throw new InvalidInput("Invalid int: $value");
-            }
-            $outputs[$key] = (int)$value;
-        } elseif (in_array('bool', $flags)) {
-            $outputs[$key] = bool_escape($value);
-        } elseif (in_array('date', $flags)) {
-            $outputs[$key] = date("Y-m-d H:i:s", \Safe\strtotime(trim($value)));
-        } elseif (in_array('string', $flags)) {
-            if (in_array('trim', $flags)) {
-                $value = trim($value);
-            }
-            if (in_array('lower', $flags)) {
-                $value = strtolower($value);
-            }
-            if (in_array('not-empty', $flags)) {
-                throw new InvalidInput("$key must not be blank");
-            }
-            if (in_array('nullify', $flags)) {
-                if (empty($value)) {
-                    $value = null;
-                }
-            }
-            $outputs[$key] = $value;
-        } else {
-            throw new InvalidInput("Unknown validation '$validations'");
-        }
+    if (empty($x)) {
+        return null;
     }
-
-    return $outputs;
+    return $x;
 }
 
 function truncate(string $string, int $limit, string $break = " ", string $pad = "..."): string
@@ -466,40 +390,13 @@ function is_valid_date(string $date): bool
 ///////////////////////////////////////////////////////////////////////
 // Misc things
 
-function die_nicely(string $title, string $body, int $code = 0): void
-{
-    $data_href = Url::base();
-    print("<!DOCTYPE html>
-<html lang='en'>
-	<head>
-		<title>Shimmie</title>
-		<link rel='shortcut icon' href='$data_href/ext/static_files/static/favicon.ico'>
-		<link rel='stylesheet' href='$data_href/ext/static_files/style.css' type='text/css'>
-		<link rel='stylesheet' href='$data_href/ext/static_files/installer.css' type='text/css'>
-	</head>
-	<body>
-		<div id='installer'>
-		    <h1>Shimmie</h1>
-		    <h3>$title</h3>
-			<div class='container'>
-			    $body
-			</div>
-		</div>
-    </body>
-</html>");
-    if ($code !== 0) {
-        http_response_code(500);
-    }
-    exit($code);
-}
-
 function version_check(string $min_php): void
 {
     if (version_compare(phpversion(), $min_php, ">=") === false) {
-        die_nicely("Not Supported", "
-            Shimmie does not support versions of PHP lower than $min_php
-            (PHP reports that it is version ".phpversion().").
-        ", 1);
+        die(
+            "PHP " . phpversion(). " Not Supported: " .
+            "Shimmie does not support versions of PHP lower than $min_php."
+        );
     }
 }
 

@@ -153,7 +153,7 @@ final class CronUploader extends Extension
 
     private function get_cron_url(): string
     {
-        $user_api_key = Ctx::$user->get_config()->get(UserConfigUserConfig::API_KEY) ?? "API_KEY";
+        $user_api_key = Ctx::$user->get_config()->get(UserApiKeysUserConfig::API_KEY) ?? "API_KEY";
         return (string)make_link("cron_upload/run", ["api_key" => $user_api_key])->asAbsolute();
     }
 
@@ -266,19 +266,11 @@ final class CronUploader extends Extension
         Ctx::$page->add_http_header("Content-Type: text/plain");
         Ctx::$page->send_headers();
 
-        if (!Ctx::$config->get(UserAccountsConfig::ENABLE_API_KEYS)) {
-            throw new ServerError("User API keys are not enabled. Please enable them for the cron upload functionality to work.");
-        }
-
-        if (Ctx::$user->is_anonymous()) {
-            throw new UserError("User not present. Please specify the api_key for the user to run cron upload as.");
-        }
-
-        Log::info(self::NAME, "Logged in as user " . Ctx::$user->name);
-
         if (!Ctx::$user->can(CronUploaderPermission::CRON_RUN)) {
             throw new PermissionDenied("User does not have permission to run cron upload");
         }
+
+        Log::info(self::NAME, "Logged in as user " . Ctx::$user->name);
 
         $lockfile = \Safe\fopen($this->get_lock_file()->str(), "w");
         if (!flock($lockfile, LOCK_EX | LOCK_NB)) {
@@ -379,7 +371,7 @@ final class CronUploader extends Extension
     /**
      * Generate the necessary DataUploadEvent for a given image and tags.
      *
-     * @param string[] $tags
+     * @param tag-array $tags
      */
     private function add_image(Path $tmpname, string $filename, array $tags): DataUploadEvent
     {

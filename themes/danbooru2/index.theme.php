@@ -32,7 +32,7 @@ class Danbooru2IndexTheme extends IndexTheme
     }
 
     /**
-     * @param string[] $search_terms
+     * @param search-term-array $search_terms
      */
     protected function build_navigation(int $page_number, int $total_pages, array $search_terms): HTMLElement
     {
@@ -44,7 +44,7 @@ class Danbooru2IndexTheme extends IndexTheme
                 INPUT([
                     "name" => 'search',
                     "type" => 'text',
-                    "value" => Tag::implode($search_terms),
+                    "value" => SearchTerm::implode($search_terms),
                     "class" => 'autocomplete_tags',
                     "style" => 'width:75%'
                 ]),

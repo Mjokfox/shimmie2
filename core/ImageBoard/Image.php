@@ -94,7 +94,7 @@ final class Image implements \ArrayAccess
                                 "bool" => bool_escape((string)$value),
                                 "string" => (string)$value,
                                 "Shimmie2\MimeType" => new MimeType($value),
-                                "Shimmie2\VideoCodec" => VideoCodec::from($value),
+                                "Shimmie2\VideoCodec" => VideoCodec::from_or_unknown($value),
                                 default => $value,
                             };
                         }
@@ -203,11 +203,11 @@ final class Image implements \ArrayAccess
     }
 
     /**
-     * @param list<tag-string> $tags
+     * @param search-term-array $terms
      */
-    public static function by_random(array $tags = [], int $limit_range = 0): ?Image
+    public static function by_random(array $terms = [], int $limit_range = 0): ?Image
     {
-        $max = Search::count_images($tags);
+        $max = Search::count_images($terms);
         if ($max < 1) {
             return null;
         }        // From Issue #22 - opened by HungryFeline on May 30, 2011.
@@ -215,7 +215,7 @@ final class Image implements \ArrayAccess
             $max = $limit_range;
         }
         $rand = mt_rand(0, $max - 1);
-        $set = Search::find_images($rand, 1, $tags);
+        $set = Search::find_images($rand, 1, $terms);
         if (count($set) > 0) {
             return $set[0];
         } else {
@@ -233,9 +233,9 @@ final class Image implements \ArrayAccess
      * Rather than simply $this_id + 1, one must take into account
      * deleted images and search queries
      *
-     * @param list<tag-string> $tags
+     * @param search-term-array $terms
      */
-    public function get_next(array $tags = [], bool $next = true): ?Image
+    public function get_next(array $terms = [], bool $next = true): ?Image
     {
         if ($next) {
             $gtlt = "<";
@@ -245,20 +245,20 @@ final class Image implements \ArrayAccess
             $dir = "ASC";
         }
 
-        $tags[] = 'id'. $gtlt . $this->id;
-        $tags[] = 'order:id_'. strtolower($dir);
-        $images = Search::find_images(0, 1, $tags);
+        $terms[] = 'id'. $gtlt . $this->id;
+        $terms[] = 'order:id_'. strtolower($dir);
+        $images = Search::find_images(0, 1, $terms);
         return (count($images) > 0) ? $images[0] : null;
     }
 
     /**
      * The reverse of get_next
      *
-     * @param list<tag-string> $tags
+     * @param search-term-array $terms
      */
-    public function get_prev(array $tags = []): ?Image
+    public function get_prev(array $terms = []): ?Image
     {
-        return $this->get_next($tags, false);
+        return $this->get_next($terms, false);
     }
 
     /**
@@ -288,7 +288,7 @@ final class Image implements \ArrayAccess
     public function save_to_db(): void
     {
         $props_to_save = [
-            "filename" => substr($this->filename, 0, 255),
+            "filename" => truncate_filename($this->filename, 250),
             "filesize" => $this->filesize,
             "hash" => $this->hash,
             "mime" => (string)$this->mime,
@@ -323,7 +323,7 @@ final class Image implements \ArrayAccess
                 }
             }
             $props_to_save["owner_id"] = Ctx::$user->id;
-            $props_to_save["owner_ip"] = Network::get_real_ip();
+            $props_to_save["owner_ip"] = (string)Network::get_real_ip();
             $props_to_save["posted"] = date('Y-m-d H:i:s', time());
 
             $props_sql = implode(", ", array_keys($props_to_save));
@@ -405,11 +405,16 @@ final class Image implements \ArrayAccess
 
     /**
      * Get the nicely formatted version of the file name
+     * in a filesystem-safe manner
      */
     #[Field(name: "nice_name")]
     public function get_nice_image_name(): string
     {
-        return send_event(new ParseLinkTemplateEvent('$id - $tags.$ext', $this))->text;
+        $text = send_event(new ParseLinkTemplateEvent('$id - $tags.$ext', $this))->text;
+        $text = str_replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], '_', $text);
+        $text = rawurldecode($text);
+        $text = truncate_filename($text);
+        return $text;
     }
 
     /**
@@ -536,9 +541,7 @@ final class Image implements \ArrayAccess
             $mime = new MimeType($mime);
         }
         $this->mime = $mime;
-        $ext = FileExtension::get_for_mime($this->get_mime());
-        assert($ext !== null);
-        $this->ext = $ext;
+        $this->ext = FileExtension::get_for_mime($this->get_mime());
     }
 
 
@@ -613,7 +616,7 @@ final class Image implements \ArrayAccess
      */
     public function set_tags(array $unfiltered_tags): void
     {
-        $tags = array_unique($unfiltered_tags);
+        $tags = array_iunique($unfiltered_tags);
 
         foreach ($tags as $tag) {
             if (mb_strlen($tag, 'UTF-8') > 255) {
@@ -671,26 +674,17 @@ final class Image implements \ArrayAccess
      */
     public function remove_image_only(bool $quiet = false): void
     {
-        $img_del = false;
-        $thumb_del = false;
-
-        try {
-            $this->get_image_filename()->unlink();
-            $img_del = true;
-        } catch (\Exception $e) {
-            Log::error('core_image', "Failed to delete image file for Post #{$this->id}: {$e->getMessage()}");
+        $img = $this->get_image_filename();
+        if ($img->exists()) {
+            $img->unlink();
         }
 
-        try {
-            $this->get_thumb_filename()->unlink();
-            $thumb_del = true;
-        } catch (\Exception $e) {
-            Log::error('core_image', "Failed to delete thumbnail file for Post #{$this->id}: {$e->getMessage()}");
+        $thumb = $this->get_thumb_filename();
+        if ($thumb->exists()) {
+            $thumb->unlink();
         }
 
-        if ($img_del && $thumb_del && !$quiet) {
-            Log::info("core_image", "Deleted files for Post #{$this->id} ({$this->hash})");
-        }
+        Log::info("core_image", "Deleted files for Post #{$this->id} ({$this->hash})");
     }
 
     public function parse_link_template(string $tmpl, int $n = 0): string

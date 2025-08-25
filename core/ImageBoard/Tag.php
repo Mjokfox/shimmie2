@@ -13,19 +13,25 @@ namespace Shimmie2;
  */
 final class Tag
 {
-    /** @var array<string, int> */
+    /** @var array<tag-string, int> */
     private static array $tag_id_cache = [];
     public const TAG_OPERANDS = [
         "-" => "negative",
         "|" => "or"
     ];
 
+    /**
+     * @param tag-string $tag
+     */
     public static function get_or_create_id(string $tag): int
     {
+        // use a lowercase key for the cache, but preserve case in the DB
+        $key = mb_strtolower($tag);
+
         // don't cache in unit tests, because the test suite doesn't
         // reset static variables but it does reset the database
-        if (!defined("UNITTEST") && array_key_exists($tag, self::$tag_id_cache)) {
-            return self::$tag_id_cache[$tag];
+        if (!defined("UNITTEST") && array_key_exists($key, self::$tag_id_cache)) {
+            return self::$tag_id_cache[$key];
         }
 
         $id = Ctx::$database->get_one(
@@ -34,6 +40,11 @@ final class Tag
         );
         if (empty($id)) {
             // a new tag
+            // lowercase extension ruins unit tests, so disable during testing
+            if (!defined("UNITTEST") && Ctx::$config->get(PostTagsConfig::FORCE_LOWERCASE)) {
+                $tag = mb_strtolower($tag);
+            }
+
             Ctx::$database->execute(
                 "INSERT INTO tags(tag) VALUES (:tag)",
                 ["tag" => $tag]
@@ -44,11 +55,13 @@ final class Tag
             );
         }
 
-        self::$tag_id_cache[$tag] = $id;
+        self::$tag_id_cache[$key] = $id;
         return $id;
     }
 
-    /** @param string[] $tags */
+    /**
+     * @param tag-string[] $tags
+     */
     public static function implode(array $tags): string
     {
         return implode(' ', $tags);
@@ -57,7 +70,7 @@ final class Tag
     /**
      * Turn a human-supplied string into a valid tag array.
      *
-     * @return list<tag-string>
+     * @return tag-array
      */
     public static function explode(string $tags, bool $tagme = true): array
     {
@@ -187,6 +200,10 @@ final class Tag
         return $tag_array;
     }
 
+    /**
+     * @param search-term-string $term
+     * @return string
+     */
     public static function sqlify(string $term): string
     {
         if (Ctx::$database->get_driver_id() === DatabaseDriverID::SQLITE) {

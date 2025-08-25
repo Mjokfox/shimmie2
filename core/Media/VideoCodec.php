@@ -15,4 +15,15 @@ enum VideoCodec: string
     case AVC = "avc";
     case H265 = "h265";
     case HEVC = "hevc";
+    case FLV1 = "flv1";
+    case UNKNOWN = "unknown";
+
+    public static function from_or_unknown(string $codec): VideoCodec
+    {
+        try {
+            return VideoCodec::from($codec);
+        } catch (\ValueError) {
+            return VideoCodec::UNKNOWN;
+        }
+    }
 }

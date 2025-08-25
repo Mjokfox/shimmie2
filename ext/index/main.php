@@ -23,11 +23,11 @@ final class Index extends Extension
             || $event->page_matches("post/list/{search}", paged: true)
         ) {
             if ($event->GET->get('search')) {
-                Ctx::$page->set_redirect(search_link(Tag::explode($event->GET->get('search'), false)));
+                Ctx::$page->set_redirect(search_link(SearchTerm::explode($event->GET->get('search'))));
                 return;
             }
 
-            $search_terms = Tag::explode($event->get_arg('search', ""), false);
+            $search_terms = SearchTerm::explode($event->get_arg('search', ""));
             $count_search_terms = count($search_terms);
             $page_number = $event->get_iarg('page_num', 1);
             $page_size = Ctx::$config->get(IndexConfig::IMAGES);
@@ -107,7 +107,7 @@ final class Index extends Extension
     public function onHelpPageBuilding(HelpPageBuildingEvent $event): void
     {
         if ($event->key === HelpPages::SEARCH) {
-            $event->add_block(new Block("General", $this->theme->get_help_html()), 0);
+            $event->add_section("General", $this->theme->get_help_html(), 0);
         }
     }
 
@@ -126,8 +126,8 @@ final class Index extends Extension
             ->addArgument('query', InputArgument::REQUIRED)
             ->setDescription('Search the database and print results')
             ->setCode(function (InputInterface $input, OutputInterface $output): int {
-                $query = Tag::explode($input->getArgument('query'));
-                $items = Search::find_images(limit: 1000, tags: $query);
+                $query = SearchTerm::explode($input->getArgument('query'));
+                $items = Search::find_images(limit: 1000, terms: $query);
                 foreach ($items as $item) {
                     $output->writeln($item->hash);
                 }
@@ -140,7 +140,7 @@ final class Index extends Extension
             ->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Number of results per page', default: 25)
             ->setDescription('Show the SQL generated for a given search query')
             ->setCode(function (InputInterface $input, OutputInterface $output): int {
-                $search = Tag::explode($input->getArgument('query'), false);
+                $search = SearchTerm::explode($input->getArgument('query'));
                 $page = $input->getOption('page');
                 $limit = $input->getOption('limit');
                 $count = $input->getOption('count');
