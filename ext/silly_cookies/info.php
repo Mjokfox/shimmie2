@@ -10,7 +10,7 @@ class SillyCookiesInfo extends ExtensionInfo
 
     public string $key = self::KEY;
     public string $name = "Silly cookies";
-    public array $authors = ["Mjokfox" => "mjokfox@findafox.net"];
+    public array $authors = ["Mjokfox" => "mailto:mjokfox@findafox.net"];
     public string $license = self::LICENSE_GPLV2;
     public ExtensionCategory $category = ExtensionCategory::GENERAL;
     public string $description = "adds a silly cookies footer on the home page";

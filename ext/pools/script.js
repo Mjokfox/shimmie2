@@ -1,7 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
-    $("#order_pool").change(function () {
-        var val = this.options[this.selectedIndex].value;
-        shm_cookie_set("shm_ui-order-pool", val); //FIXME: This won't play nice if COOKIE_PREFIX is not "shm_".
-        window.location.href = "";
-    });
+    document
+        .getElementById("order_pool")
+        .addEventListener("change", function () {
+            let val = this.options[this.selectedIndex].value;
+            shm_cookie_set("ui-order-pool", val);
+            window.location.href = "";
+        });
 });

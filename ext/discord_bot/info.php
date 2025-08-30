@@ -11,7 +11,7 @@ final class DiscordBotInfo extends ExtensionInfo
     public string $key = self::KEY;
     public string $name = "Discord bot integration";
     public string $url = "https://findafox.net";
-    public array $authors = ["Mjokfox" => "mjokfox@findafox.net"];
+    public array $authors = ["Mjokfox" => "mailto:mjokfox@findafox.net"];
     public string $license = self::LICENSE_GPLV2;
     public ExtensionCategory $category = ExtensionCategory::OBSERVABILITY;
     public string $description = "Sends logs over udp in a format for a discord bot";

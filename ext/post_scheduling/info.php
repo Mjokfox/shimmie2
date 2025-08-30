@@ -11,7 +11,7 @@ final class PostSchedulingInfo extends ExtensionInfo
     public string $key = self::KEY;
     public string $name = "Post Scheduling";
     public string $url = "https://findafox.net";
-    public array $authors = ["mjokfox" => "mjokfox@findafox.net"];
+    public array $authors = ["Mjokfox" => "mailto:mjokfox@findafox.net"];
     public string $license = self::LICENSE_GPLV2;
     public string $description = "Let users schedule a post upload when no new post has been uploaded in a given time.";
     public ?string $documentation =

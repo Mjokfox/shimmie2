@@ -40,14 +40,12 @@ class SiteCaptcha extends Extension
                 Ctx::$page->add_cookie(
                     "captcha_image",
                     $image_token,
-                    time() + 60 * 60 * 24 * 30,
-                    '/'
+                    time() + 60 * 60 * 24 * 30
                 );
                 Ctx::$page->add_cookie(
                     "captcha_css",
                     $css_token,
-                    time() + 60 * 60 * 24 * 30,
-                    '/'
+                    time() + 60 * 60 * 24 * 30
                 );
             }
             Ctx::$page->set_redirect(Url::parse($ref));

@@ -85,8 +85,7 @@ class SiteCaptchaTheme extends Themelet
         Ctx::$page->add_cookie(
             $cookie_name,
             $token,
-            time() + 60 * 60 * 24 * 30,
-            '/'
+            time() + 60 * 60 * 24 * 30
         );
         Ctx::$page->set_mode(PageMode::MANUAL);
         Ctx::$page->add_http_header("Content-Type: image/jpeg");

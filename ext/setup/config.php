@@ -28,7 +28,7 @@ final class SetupConfig extends ConfigGroup
     #[ConfigMeta("Theme", ConfigType::STRING, default: "default", options: "Shimmie2\SetupConfig::get_theme_options")]
     public const THEME = "theme";
 
-    #[ConfigMeta("Avatar Size", ConfigType::INT, default: 128)]
+    #[ConfigMeta("Avatar size", ConfigType::INT, default: 128)]
     public const AVATAR_SIZE = "avatar_size";
 
     #[ConfigMeta("Nice URLs", ConfigType::BOOL, default: false, help: "Javascript inactive, can't test Nice URLs!")]
@@ -71,7 +71,7 @@ final class SetupConfig extends ConfigGroup
 
         // If niceurls are force-enabled at the system level, don't show the option
         foreach ($fields as $key => $field) {
-            if (SysConfig::getNiceUrls() && $key === SetupConfig::NICE_URLS) {
+            if ($key === SetupConfig::NICE_URLS && getenv("SHM_NICE_URLS") === "true") {
                 unset($fields[$key]);
             }
         }

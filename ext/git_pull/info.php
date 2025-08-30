@@ -11,7 +11,7 @@ class GitPullInfo extends ExtensionInfo
     public string $key = self::KEY;
     public string $name = "Git Pull";
     public string $url = "https://findafox.net";
-    public array $authors = ["Mjokfox" => "mjokfox@findafox.net"];
+    public array $authors = ["Mjokfox" => "mailto:mjokfox@findafox.net"];
     public string $license = self::LICENSE_GPLV2;
     public string $description = "Adds a git pull button to the admin panel";
     public bool $core = true;

@@ -1,15 +1,22 @@
-.log-db-debug {
-    color: #999;
+:root {
+   	--level-debug: #999;
+	--level-info: var(--text);
+	--level-warning: #880;
+	--level-error: #C50;
+	--level-critical: #F00;
 }
-.log-db-info {
-    color: #000;
+/* tweak for dark mode */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --level-debug: #666;
+        --level-info: var(--text);
+        --level-warning: #FFA;
+        --level-error: #F88;
+        --level-critical: #F55;
+    }
 }
-.log-db-warning {
-    color: #800;
-}
-.log-db-error {
-    color: #C00;
-}
-.log-db-critical {
-    color: #F00;
-}
+SPAN.level-debug { color: var(--level-debug); }
+SPAN.level-info { color: var(--level-info); }
+SPAN.level-warning { color: var(--level-warning); }
+SPAN.level-error { color: var(--level-error); }
+SPAN.level-critical { color: var(--level-critical); }

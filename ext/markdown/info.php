@@ -11,7 +11,7 @@ class MarkdownInfo extends ExtensionInfo
     public string $key = self::KEY;
     public string $name = "Markdown";
     public string $url = "https://findafox.net";
-    public array $authors = ["Mjokfox" => "mjokfox@findafox.net"];
+    public array $authors = ["Mjokfox" => "mailto:mjokfox@findafox.net"];
     public string $license = self::LICENSE_GPLV2;
     public string $description = "Turns markdown into HTML";
     public ?string $documentation =

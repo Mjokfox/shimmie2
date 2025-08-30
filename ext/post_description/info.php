@@ -8,10 +8,8 @@ final class PostDescriptionInfo extends ExtensionInfo
 {
     public const KEY = "post_description";
 
-    public string $key = self::KEY;
     public string $name = "Post Description";
-    public array $authors = ["xifize" => "xifize@gmail.com", "Mjokfox" => "mjokfox@findafox.net"];
-    public string $license = self::LICENSE_GPLV2;
+    public array $authors = ["xifize" => "mailto:xifize@gmail.com"];
     public ExtensionCategory $category = ExtensionCategory::METADATA;
     public string $description = "Allow posts to have descriptions";
 }

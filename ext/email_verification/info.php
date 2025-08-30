@@ -10,7 +10,7 @@ class EmailVerificationInfo extends ExtensionInfo
 
     public string $key = self::KEY;
     public string $name = "Email Verification";
-    public array $authors = ["Mjokfox" => "mjokfox@findafox.net"];
+    public array $authors = ["Mjokfox" => "mailto:mjokfox@findafox.net"];
     public string $license = self::LICENSE_GPLV2;
     public ExtensionVisibility $visibility = ExtensionVisibility::ADMIN;
     public ExtensionCategory $category = ExtensionCategory::ADMIN;

@@ -188,6 +188,7 @@ final class UserPage extends Extension
                 RatingsPermission::EDIT_IMAGE_RATING => true,
                 RelationshipsPermission::EDIT_IMAGE_RELATIONSHIPS => true,
                 ReportImagePermission::CREATE_IMAGE_REPORT => true,
+                TermsPermission::SKIP_TERMS => true,
                 UserAccountsPermission::CHANGE_USER_SETTING => true,
             ],
             description: "The default class for people who are logged in",
@@ -519,8 +520,8 @@ final class UserPage extends Extension
         $event->set_user($new_user);
     }
 
-    public const USER_SEARCH_REGEX = "/^(?:poster|user)(!?)[=|:](.*)$/i";
-    public const USER_ID_SEARCH_REGEX = "/^(?:poster|user)_id(!?)[=|:]([0-9]+)$/i";
+    public const USER_SEARCH_REGEX = "/^(?:poster|user)(!?)[=:](.*)$/i";
+    public const USER_ID_SEARCH_REGEX = "/^(?:poster|user)_id(!?)[=:]([0-9]+)$/i";
 
     /**
      * @param string[] $context
@@ -546,7 +547,7 @@ final class UserPage extends Extension
         } elseif ($matches = $event->matches(self::USER_ID_SEARCH_REGEX)) {
             $user_id = int_escape($matches[2]);
             $event->add_querylet(new Querylet("images.owner_id {$matches[1]}= $user_id"));
-        } elseif (Ctx::$user->can(IPBanPermission::VIEW_IP) && $matches = $event->matches("/^(?:poster|user)_ip[=|:]([0-9\.]+)$/i")) {
+        } elseif (Ctx::$user->can(IPBanPermission::VIEW_IP) && $matches = $event->matches("/^(?:poster|user)_ip[=:]([0-9\.]+)$/i")) {
             $user_ip = $matches[1]; // FIXME: ip_escape?
             $event->add_querylet(new Querylet("images.owner_ip = '$user_ip'"));
         }
@@ -589,11 +590,11 @@ final class UserPage extends Extension
 
     private function page_logout(): void
     {
-        Ctx::$page->add_cookie("session", "", time() + 60 * 60 * 24 * Ctx::$config->get(UserAccountsConfig::LOGIN_MEMORY), "/");
+        Ctx::$page->add_cookie("session", "", time() + 60 * 60 * 24 * Ctx::$config->get(UserAccountsConfig::LOGIN_MEMORY));
         if (Ctx::$config->get(UserAccountsConfig::PURGE_COOKIE)) {
             # to keep as few versions of content as possible,
             # make cookies all-or-nothing
-            Ctx::$page->add_cookie("user", "", time() + 60 * 60 * 24 * Ctx::$config->get(UserAccountsConfig::LOGIN_MEMORY), "/");
+            Ctx::$page->add_cookie("user", "", time() + 60 * 60 * 24 * Ctx::$config->get(UserAccountsConfig::LOGIN_MEMORY));
         }
         Log::info("user", "Logged out");
         Ctx::$page->set_redirect(make_link());

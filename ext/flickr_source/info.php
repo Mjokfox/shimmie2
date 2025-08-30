@@ -10,7 +10,7 @@ class FlickrSourceInfo extends ExtensionInfo
 
     public string $key = self::KEY;
     public string $name = "Flickr Source";
-    public array $authors = ["Mjokfox" => "mjokfox@findafox.net"];
+    public array $authors = ["Mjokfox" => "mailto:mjokfox@findafox.net"];
     public string $license = self::LICENSE_GPLV2;
     public ExtensionVisibility $visibility = ExtensionVisibility::ADMIN;
     public ExtensionCategory $category = ExtensionCategory::INTEGRATION;

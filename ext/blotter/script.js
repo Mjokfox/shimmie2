@@ -1,5 +1,3 @@
-/*jshint bitwise:true, curly:true, forin:false, noarg:true, noempty:true, nonew:true, undef:true, strict:false, browser:true, jquery:true */
-
 document.addEventListener('DOMContentLoaded', () => {
 	const id = $(".blotter").attr("data-id");
 	if (id){
@@ -9,10 +7,10 @@ document.addEventListener('DOMContentLoaded', () => {
 			$(".shm-blotter2-toggle").click(function() {
 				$(".shm-blotter2").slideToggle("slow", function() {
 					if($(".shm-blotter2").is(":hidden")) {
-						shm_cookie_set("ui-blotter2-hidden", 'true');
+						ui_cookie_set("ui-blotter2-hidden", 'true');
 					}
 					else {
-						shm_cookie_set("ui-blotter2-hidden", 'false');
+						ui_cookie_set("ui-blotter2-hidden", 'false');
 					}
 				});
 			});
@@ -21,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 		
 			$("#blotter-hide").click(function() {
-				shm_cookie_set("ui-blotter-removed", id);
+				ui_cookie_set("ui-blotter-removed", id);
 				$("#blotter, .blotter").remove()
 			})
 		} else {
