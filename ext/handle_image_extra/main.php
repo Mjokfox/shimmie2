@@ -9,8 +9,10 @@ final class ExtraImageFileHandler extends Extension
     public const KEY = "handle_image_extra";
 
     public const INPUT_MIMES = [
+        "AVIF" => MimeType::AVIF,
         "BMP" => MimeType::BMP,
         "GIF" => MimeType::GIF,
+        "HEIC" => MimeType::HEIC,
         "ICO" => MimeType::ICO,
         "JPG" => MimeType::JPEG,
         "PNG" => MimeType::PNG,
@@ -22,7 +24,9 @@ final class ExtraImageFileHandler extends Extension
     ];
 
     public const OUTPUT_MIMES = [
-        "Don't convert" => "",
+        // postToSettings converts empty string to null, and Config::get converts
+        // null to default, so "Don't convert" needs to be its own distinct value
+        "Don't convert" => "-",
         "JPEG" => MimeType::JPEG,
         "PNG" => MimeType::PNG,
         "WEBP (lossy)" => MimeType::WEBP,
@@ -39,6 +43,7 @@ final class ExtraImageFileHandler extends Extension
 
     public static function get_mapping_name(MimeType $mime): string
     {
+        $mime = MimeMap::get_canonical($mime);
         $flat = preg_replace('/[\.\/]/', '_', $mime->base);
         return "handle_image_extra_conversion_$flat";
     }
@@ -47,7 +52,7 @@ final class ExtraImageFileHandler extends Extension
     {
         $val = Ctx::$config->get(self::get_mapping_name($mime));
         assert(is_string($val) || is_null($val));
-        return ($val === null || $val === "") ? null : new MimeType($val);
+        return ($val === null || $val === "" || $val === "-") ? null : new MimeType($val);
     }
 
     public function onBuildSupportedMimes(BuildSupportedMimesEvent $event): void
@@ -87,7 +92,7 @@ final class ExtraImageFileHandler extends Extension
             // format-specific compression options
             if ($target_mime->base === MimeType::PNG) {
                 $command->add_args("-define", "png:compression-level=9");
-            } elseif ($target_mime->base === MimeType::WEBP && $target_mime->parameters === MimeType::LOSSLESS_PARAMETER) {
+            } elseif ($target_mime->base === MimeType::WEBP && ($target_mime->parameters["lossless"] ?? "") === "true") {
                 $command->add_args("-define", "webp:lossless=true");
                 $command->add_args("-quality", "100");
             } else {
