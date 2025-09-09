@@ -54,45 +54,82 @@ class FlickrSource extends Extension
 
     public function onAdminAction(AdminActionEvent $event): void
     {
-        global $database;
         switch ($event->action) {
             case "flickr_source":
                 $start_time = ftime();
-                $query = "SELECT *
-                FROM images
+                $offset = $event->params['id_offset'] ?: "0";
+                $limit = $event->params['limit'] ?: "0";
+                $query = "SELECT * FROM images
                 WHERE (source IS NULL OR source LIKE '%live.staticflickr%')
                 AND mime LIKE 'image/%'
                 AND id > :id_offset
                 LIMIT :limit;";
-                $files = $database->get_all($query, ["id_offset" => $event->params['id_offset'] ?: "0","limit" => $event->params['limit'] ?: "0"]);
-                $i = 0;
-                $j = [];
-                $k = 0;
-                foreach ($files as $file) {
-                    if (!\Safe\preg_match("/(\d{7,13})_[a-f0-9]{7,13}_[a-z0-9]{1,2}(?:_d)?(?:\.jpg|\.png)$/", $file["filename"], $matches)) {
-                        if (!\Safe\preg_match("/[a-zA-Z\-]+_(\d{7,13})_o(?:_d)?(?:\.jpg|\.png)$/", $file["filename"], $matches)) {
-                            $k++;
-                            continue;
-                        }
-                    }
-                    $source = $this->getFlickrUrl($matches[1]);
-                    if ($source !== "https://flickr.com/photos///") {
-                        $image = new Image($file);
-                        send_event(new SourceSetEvent($image, $source));
-                        $i++;
-                    } else {
-                        $j[] = $file["id"];
-                    }
+                /** @var array{array{id:int,filename:string}} $files  */
+                $files = Ctx::$database->get_all($query, ["id_offset" => $offset, "limit" => $limit]);
+                $res = $this->findSources($files, [$this, "imageUpdate"]);
+
+                if (PostSchedulingInfo::is_enabled()) {
+                    $query = "SELECT * FROM scheduled_posts sp
+                    LEFT JOIN scheduled_posts_metadata spm ON spm.schedule_id = sp.id AND spm.key = 'source'
+                    WHERE spm.schedule_id IS NULL;";
+                    /** @var array{array{id:int,filename:string}} $files  */
+                    $files = Ctx::$database->get_all($query);
+                    $res1 = $this->findSources($files, [$this, "scheduleImageUpdate"]);
+                    $res["passed"] += $res1["passed"];
+                    $res["failed"] = array_merge($res["failed"], $res1["failed"]);
+                    $res["not"] += $res1["not"];
                 }
+
                 $exec_time = round(ftime() - $start_time, 2);
-                $message = "Found valid sources for {$i} images, invalid sources for ".count($j).", and skipped {$k} non flickr images, which took $exec_time seconds." . (count($j) > 0 ? " Failed: " . implode(", ", $j) : "");
+                $message = "Found valid sources for {$res["passed"]} images, invalid sources for ".count($res["failed"]).", and skipped {$res["not"]} non flickr images, which took $exec_time seconds." . (count($res["failed"]) > 0 ? " Failed: " . implode(", ", $res["failed"]) : "");
                 Log::info("admin", $message, $message);
                 $event->redirect = true;
                 break;
         }
     }
 
-    public function getFlickrUrl(int|string $id): string
+    /**
+     * @param array{array{id:int,filename:string}} $files
+     * @return array{passed:int,failed:array<int>,not:int}
+     */
+    private function findSources(array $files, callable $func): array
+    {
+        $passed = 0;
+        $failed = [];
+        $not = 0;
+        foreach ($files as $file) {
+            if (!\Safe\preg_match("/(\d{7,13})_[a-f0-9]{7,13}_[a-z0-9]{1,2}(?:_d)?(?:\.jpg|\.png)$/", $file["filename"], $matches)) {
+                if (!\Safe\preg_match("/[a-zA-Z\-]+_(\d{7,13})_o(?:_d)?(?:\.jpg|\.png)$/", $file["filename"], $matches)) {
+                    $not++;
+                    continue;
+                }
+            }
+            $source = $this->getFlickrUrl($matches[1]);
+            if ($source !== "https://flickr.com/photos///") {
+                $func($file, $source);
+                $passed++;
+            } else {
+                $failed[] = $file["id"];
+            }
+        }
+        return ["passed" => $passed, "failed" => $failed, "not" => $not];
+    }
+
+    /** @param array{id:int,filename:string} $file */
+    private function imageUpdate(array $file, string $source): void
+    {
+        $image = new Image($file);
+        send_event(new SourceSetEvent($image, $source));
+    }
+
+    /** @param array{id:int,filename:string} $file */
+    private function scheduleImageUpdate(array $file, string $source): void
+    {
+        $query = "INSERT INTO scheduled_posts_metadata(schedule_id, key, value) VALUES (:id, 'source', :value)";
+        Ctx::$database->execute($query, ["id" => $file["id"], "value" => $source]);
+    }
+
+    private function getFlickrUrl(int|string $id): string
     {
         $url = "https://flickr.com/photo.gne?id={$id}";
 
@@ -111,5 +148,4 @@ class FlickrSource extends Extension
 
         return $redirectedUrl;
     }
-
 }
