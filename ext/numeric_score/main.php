@@ -163,12 +163,16 @@ final class NumericScore extends Extension
             } else {
                 throw new InvalidInput("Invalid score");
             }
-            if ($_SERVER['HTTP_USER_AGENT'] === "shimmie-js") {
-                Ctx::$page->set_data(MimeType::TEXT, (string)$NSSE->new_score);
+            Ctx::$page->set_redirect(make_link("post/view/$image_id"));
+        } elseif ($event->page_matches("numeric_score/votefetch", method: "POST", permission: NumericScorePermission::CREATE_VOTE)) {
+            $image_id = int_escape($event->POST->req("image_id"));
+            $score = int_escape($event->POST->req("vote"));
+            if (($score === -1 || $score === 1) && $image_id > 0) {
+                $NSSE = send_event(new NumericScoreSetEvent($image_id, $user, $score));
             } else {
-                Ctx::$page->set_redirect(make_link("post/view/$image_id"));
+                throw new InvalidInput("Invalid score");
             }
-
+            Ctx::$page->set_data(MimeType::TEXT, (string)$NSSE->new_score);
         } elseif ($event->page_matches("numeric_score/remove_votes_on", method: "POST", permission: NumericScorePermission::EDIT_OTHER_VOTE)) {
             $image_id = int_escape($event->POST->req("image_id"));
             $database->execute(

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A, B, BR, BUTTON, DIV, emptyHTML};
+use function MicroHTML\{A, B, BR, DIV, INPUT, emptyHTML};
 
 use MicroHTML\HTMLElement;
 
@@ -14,9 +14,13 @@ class CustomNumericScoreTheme extends NumericScoreTheme
     {
         global $user, $page, $database;
 
-        $vote_form = function (int $image_id, int $vote, string $text, int $score_without, ?string $class): HTMLElement {
-            global $user;
-            return BUTTON(["class" => "vote-button $class", "score" => $vote,"onclick" => "update_vote($image_id,$vote,$score_without,'{$user->get_auth_token()}')"], $text);
+        $vote_form = function (int $image_id, int $vote, string $text): HTMLElement {
+            return SHM_SIMPLE_FORM(
+                make_link("numeric_score/vote"),
+                INPUT(['type' => 'hidden', 'name' => 'image_id', 'value' => $image_id]),
+                INPUT(['type' => 'hidden', 'name' => 'vote', 'value' => $vote]),
+                SHM_SUBMIT($text)
+            );
         };
         $voters = null;
         if ($user->can(NumericScorePermission::EDIT_OTHER_VOTE)) {
@@ -37,7 +41,6 @@ class CustomNumericScoreTheme extends NumericScoreTheme
 
         $i_score = $image['numeric_score'];
         $i_vote = $this->get_my_vote($user->id, $image->id);
-        $score_without = $i_score - $i_vote;
         $score_class = $i_score > 0 ? "score-pos" : ($i_score < 0 ? "score-neg" : "score-zero");
 
         $fav = null;
@@ -63,9 +66,9 @@ class CustomNumericScoreTheme extends NumericScoreTheme
         }
         $html = DIV(
             ["class" => "numeric-score", "style" => "display:flex; flex-direction:row; align-items:center"],
-            DIV($vote_form($image->id, 1, "⬆", $score_without, $i_vote === 1 ? "score-pos" : null)),
-            DIV(["class" => "current-score $score_class", "title" => "Current score"], B($i_score)),
-            DIV($vote_form($image->id, -1, "⬇", $score_without, $i_vote === -1 ? "score-neg" : null)),
+            DIV($vote_form($image->id, 1, "⬆")),
+            DIV(["class" => "current-score $score_class", "title" => "Current score", "my_vote" => $i_vote], B($i_score)),
+            DIV($vote_form($image->id, -1, "⬇")),
             $fav,
             $voters,
         );
