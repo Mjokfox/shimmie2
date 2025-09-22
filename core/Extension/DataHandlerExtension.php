@@ -82,6 +82,7 @@ abstract class DataHandlerExtension extends Extension
             $filename = Filesystem::warehouse_path(Image::IMAGE_DIR, $event->hash);
             try {
                 $event->tmpname->copy($filename);
+                send_event(new ImageFinishedEvent($image));
             } catch (\Exception $e) {
                 throw new UploadException("Failed to copy file from uploads ({$event->tmpname->str()}) to archive ({$filename->str()}): ".$e->getMessage());
             }
