@@ -1,25 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
 	const id = $(".blotter").attr("data-id");
 	if (id){
-		const cookie = shm_cookie_get("ui-blotter-removed");
+		const cookie = ui_cookie_get("blotter-removed");
 		if (cookie == null || id > cookie){
 			$(".blotter").show()
 			$(".shm-blotter2-toggle").click(function() {
-				$(".shm-blotter2").slideToggle("slow", function() {
-					if($(".shm-blotter2").is(":hidden")) {
-						ui_cookie_set("ui-blotter2-hidden", 'true');
-					}
-					else {
-						ui_cookie_set("ui-blotter2-hidden", 'false');
-					}
-				});
+				$(".shm-blotter2").slideToggle("slow");
 			});
-			if(shm_cookie_get("ui-blotter2-hidden") === 'true') {
-				$(".shm-blotter2").hide();
-			}
 		
 			$("#blotter-hide").click(function() {
-				ui_cookie_set("ui-blotter-removed", id);
+				ui_cookie_set("blotter-removed", id);
 				$("#blotter, .blotter").remove()
 			})
 		} else {
