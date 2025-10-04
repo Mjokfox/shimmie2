@@ -8,15 +8,24 @@ final class DiscordBot extends Extension
 {
     public const KEY = "discord_bot";
     public const VERSION_KEY = "ext_comments_version";
-
+    /** @var array<array<string, mixed>> */
+    private array $data = [];
 
     public function get_priority(): int
     {
         return 51;
     }
+
+    public function onInitExt(InitExtEvent $event): void
+    {
+        $event->add_shutdown_handler(function () {
+            $this->send_all_data();
+        });
+    }
+
     public function onCommentPosting(CommentPostingEvent $event): void
     {
-        $this->send_data($this->data_builder(
+        $this->add_data($this->data_builder(
             "comment",
             "create",
             [
@@ -30,7 +39,7 @@ final class DiscordBot extends Extension
 
     public function onCommentEditing(CommentEditingEvent $event): void
     {
-        $this->send_data($this->data_builder(
+        $this->add_data($this->data_builder(
             "comment",
             "edit",
             [
@@ -44,7 +53,7 @@ final class DiscordBot extends Extension
 
     public function onCommentDeletion(CommentDeletionEvent $event): void
     {
-        $this->send_data($this->data_builder(
+        $this->add_data($this->data_builder(
             "comment",
             "delete",
             [
@@ -55,7 +64,7 @@ final class DiscordBot extends Extension
 
     public function onImageFinished(ImageFinishedEvent $event): void
     {
-        $this->send_data($this->data_builder(
+        $this->add_data($this->data_builder(
             "post",
             "create",
             [
@@ -70,7 +79,7 @@ final class DiscordBot extends Extension
 
     public function onImageReplace(ImageReplaceEvent $event): void
     {
-        $this->send_data($this->data_builder(
+        $this->add_data($this->data_builder(
             "post",
             "edit",
             [
@@ -85,7 +94,7 @@ final class DiscordBot extends Extension
 
     public function onImageDeletion(ImageDeletionEvent $event): void
     {
-        $this->send_data($this->data_builder(
+        $this->add_data($this->data_builder(
             "post",
             "delete",
             [
@@ -98,7 +107,7 @@ final class DiscordBot extends Extension
     public function onUserCreation(UserCreationEvent $event): void
     {
         $user = $event->get_user();
-        $this->send_data($this->data_builder(
+        $this->add_data($this->data_builder(
             "user",
             "create",
             [
@@ -109,7 +118,7 @@ final class DiscordBot extends Extension
 
     public function onUserDeletion(UserDeletionEvent $event): void
     {
-        $this->send_data($this->data_builder(
+        $this->add_data($this->data_builder(
             "user",
             "delete",
             [
@@ -129,6 +138,21 @@ final class DiscordBot extends Extension
             "type" => $type,
             "fields" => $fields
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function add_data(array $data): void
+    {
+        $this->data[] = $data;
+    }
+
+    private function send_all_data(): void
+    {
+        foreach ($this->data as $data) {
+            $this->send_data($data);
+        }
     }
 
     /**
