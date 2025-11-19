@@ -474,7 +474,6 @@ function updateUserInput(e){
 
 var changed_tags = {};
 function updateTags(self) {
-    console.log(self)
     var split_id = "";
     if (self.nodeName === "OPTION"){
         split_id = self.parentNode.id.split("_");
