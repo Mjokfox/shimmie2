@@ -104,15 +104,15 @@ function showPreview(file, url = "", background_color = "#0000") {
             } else {
                 mediaElement = document.createElement('img');
                 mediaElement.onload = function() {
-                    infob.textContent = `${mediaElement.naturalWidth} x ${mediaElement.naturalHeight}, ${size}`
+                    infob.textContent = `${mediaElement.naturalWidth} x ${mediaElement.naturalHeight}, ${size}`;
+                    mediaPreview.dataset.width = mediaElement.naturalWidth;
+                    mediaPreview.dataset.height = mediaElement.naturalHeight;
+                    mediaPreview.dataset.mime = file ? file.type : "image/jpeg";
+                    if (postPeekAddPeeker) postPeekAddPeeker();
                 };
             }
             if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    mediaElement.src = e.target.result;
-                }
-                reader.readAsDataURL(file);
+                mediaElement.src = URL.createObjectURL(file);
             } else {
                 mediaElement.src = url;
             }
@@ -446,68 +446,6 @@ async function distributefiles(){
     }
 }
 
-// tag handling
-const preset_tags = {
-    "red_fox":["red_fur","white_fur","black_nose","orange_eyes"],
-    "arctic_fox":["white_fur","black_nose","orange_eyes"],
-    "fennec_fox":["tan_fur","black_nose","black_eyes"],
-    "gray_fox":["red_fur","white_fur","gray_fur","black_nose","orange_eyes"],
-    "bat-eared_fox":["black_fur","gray_fur","black_nose","black_eyes"],
-    "bengal_fox":["tan_fur","gray_fur","black_nose","black_eyes"],
-    "blanford's_fox":["tan_fur","gray_fur","black_nose","black_eyes"],
-    "cape_fox":["tan_fur","gray_fur","black_nose","black_eyes"],
-    "corsac_fox":["red_fur","white_fur","gray_fur","black_nose","orange_eyes"],
-    "crab-eating_fox ":["black_fur","gray_fur","black_nose","black_eyes"],
-    "culpeo_fox":["red_fur","black_fur","gray_fur","black_nose","orange_eyes"],
-    "darwin's_fox":["red_fur","black_fur","gray_fur","black_nose","orange_eyes"],
-    "hoary_fox":["tan_fur","gray_fur","black_nose","orange_eyes"],
-    "island_fox":["red_fur","white_fur","gray_fur","black_nose","orange_eyes"],
-    "kit_fox":["tan_fur","white_fur","gray_fur","black_nose","orange_eyes"],
-    "pale_fox":["tan_fur","black_nose","orange_eyes"],
-    "pampas_fox":["red_fur","gray_fur","black_nose","orange_eyes"],
-    "ruppell's_fox":["tan_fur","black_nose","orange_eyes"],
-    "sechuran_fox":["white_fur","gray_fur","black_nose","orange_eyes"],
-    "south_american_gray_fox":["red_fur","white_fur","gray_fur","black_nose","orange_eyes"],
-    "swift_fox":["tan_fur","white_fur","black_nose","orange_eyes"],
-    "tibetan_fox":["tan_fur","white_fur","black_fur","gray_fur","black_nose","orange_eyes"],
-}
-
-var changed_tags = {};
-var previous_presettag = [];
-function presettags(self) {
-    var tag = "";
-    var add = false
-    var split_id = "";
-    if (self.nodeName === "OPTION"){
-        split_id = self.parentNode.id.split("_");
-    } else {split_id = self.id.split("_");}
-    const suffix = split_id[1];
-    if (split_id[0] === "tagsDropdown"){
-        tag = self.value;
-        add = true;
-    } else {
-        tag = self.value;
-        add = self.checked;
-    }
-    if (!(suffix in changed_tags)) changed_tags[suffix] = [];
-    if (self.type === "radio" || self.nodeName === "OPTION"){
-        if (suffix in previous_presettag){
-            preset_tags[previous_presettag[suffix]].forEach((tagg) =>{
-                if (!changed_tags[suffix].includes(tagg)){
-                    document.querySelector(`input[value="${tagg}"].tagsInput_${suffix}`).checked = false;
-                }
-            });
-        }
-    }
-    preset_tags[tag].forEach((tagg) =>{
-        if (!changed_tags[suffix].includes(tagg)){
-            document.querySelector(`input[value="${tagg}"].tagsInput_${suffix}`).checked = add;
-        }
-    });
-    previous_presettag[suffix] = tag;
-    updateTags(self)
-}
-
 function getUrlTag(url) {
     const mimeTypes = {
         'jpg': 'image',
@@ -534,7 +472,9 @@ function updateUserInput(e){
     updateTags(e.target);
 }
 
+var changed_tags = {};
 function updateTags(self) {
+    console.log(self)
     var split_id = "";
     if (self.nodeName === "OPTION"){
         split_id = self.parentNode.id.split("_");
@@ -628,57 +568,44 @@ function copyTagsTo(self, target){
     }
 }
 
-const makeCheckbox = {"multiple":["Age","EyesMouth1","EyesMouth2"],"multiple_species":["Species","Age","EyesMouth1","EyesMouth2"]};
-const makeRadio = {"single":["Species","Age","EyesMouth1","EyesMouth2"],"multiple":["Species"]};
-// const appears = {"red_fox":["Muzzle"]};
-
-function checkboxRadio(self){
-    const suffix = self.id.split("_")[1]
-    if (self.value in makeCheckbox){
-        makeCheckbox[self.value].forEach((name) => {
-            document.querySelectorAll(`input[var="${name}_${suffix}"]`).forEach((el) =>{
-                el.type = "checkbox";
-            });
-        });
-    } if (self.value in makeRadio){
-        makeRadio[self.value].forEach((name) => {
-            document.querySelectorAll(`input[var="${name}_${suffix}"]`).forEach((el) =>{
-                el.type = "radio";
-            });
-        });
-    } 
-    // if (self.value in appears){
-    //     appears[self.value].forEach((name) => {
-    //         document.querySelectorAll(`input[name="${name}_${suffix}"]`).forEach((el) =>{
-    //             el.disabled = !self.checked;
-    //             el.checked = false;
-    //         });
-    //     });
-    // }
-
-}
-
-function radio_unsetInit() {
-    document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach((radio) => {
+function clickInit() {
+    document.querySelectorAll('.upload-tags-grid input[type="checkbox"], .upload-tags-grid select:not([var]) option').forEach((e) => {
+        e.setAttribute("onClick", "updateTags(this);")
+    });
+    document.querySelectorAll('.upload-tags-grid input[type="radio"]').forEach((radio) => {
         radio.previousChecked = radio.checked;
         radio.addEventListener('click', function(event) {
-            if (radio.type === "radio"){
-                if (radio.previousChecked) {
-                    radio.checked = false;
-                    radio.previousChecked = false;
-                    updateTags(radio);
-                    event.preventDefault();
-                } else {
-                    document.querySelectorAll('input[var="' + radio.getAttribute("var") + '"]').forEach((r) => {
-                        r.checked = false;
-                        r.previousChecked = false;
-                    });
-                    radio.checked = true;
-                    radio.previousChecked = true;
+            if (radio.previousChecked) {
+                radio.checked = false;
+                radio.previousChecked = false;
+                updateTags(radio);
+                event.preventDefault();
+            } else {
+                var varattr = radio.getAttribute("var");
+                document.querySelectorAll('input[var="' + varattr + '"]').forEach((r) => {
+                    r.checked = false;
+                    r.previousChecked = false;
+                });
+                const dropdown = document.querySelector('select[var="' + varattr + '"]');
+                if (dropdown && dropdown.firstChild) {
+                    dropdown.value = "";
                 }
-            } else{
-                radio.previousChecked = radio.checked;
+                radio.checked = true;
+                radio.previousChecked = true;
+                updateTags(radio);
             }
+        });
+    });
+    document.querySelectorAll('select[var] option').forEach((dropdown) => {
+        dropdown.addEventListener('click', function(event) {
+            if (dropdown.value) {
+                var varattr = dropdown.parentElement.getAttribute("var");
+                document.querySelectorAll('input[var="' + varattr + '"]').forEach((r) => {
+                    r.checked = false;
+                    r.previousChecked = false;
+                });
+            }
+            updateTags(dropdown);
         });
     });
 }
@@ -833,7 +760,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     dropZoneInit();
     sliderInit();
-    radio_unsetInit();
+    clickInit();
     parse_params();
     // document.querySelectorAll(".disabledOnStartup").forEach((el) => {
     //     el.disabled = true;

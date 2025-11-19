@@ -20,10 +20,11 @@ function postPeekAddPeeker() {
 
     var peekerElement = document.createElement("DIV");
     peekerElement.style.position = "absolute";
+    peekerElement.style.zIndex = "2";
     peekerElement.style.border = "solid 1px black";
     peekerElement.style.boxShadow = "5px 5px 10px black";
 
-    var image_elements = document.querySelectorAll(".shm-image-list a img");
+    var image_elements = document.querySelectorAll(".shm-image-list a img, .media-preview img");
     image_elements.forEach(function (item) {
         var parent = item.parentElement;
         parent.style.position = "relative";

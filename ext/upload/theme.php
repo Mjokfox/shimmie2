@@ -46,7 +46,7 @@ class UploadTheme extends Themelet
         }
         if ($preview_enabled) {
             $preview_class = "media-preview".(!$split_view ? " upload-split-view" : "");
-            $preview_element = DIV(["id" => "mediaPreview", "class" => $preview_class]);
+            $preview_element = DIV(["id" => "mediaPreview", "class" => $preview_class, "data-mime" => ""]);
         } else {
             $preview_element = "";
         }

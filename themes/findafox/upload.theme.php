@@ -138,7 +138,7 @@ class CustomUploadTheme extends UploadTheme
     }
 }
 
-function make_input_label(int|string $suffix, string $tag, int|string $id, string $type = "radio", string $onclicks = "", string $class = "", bool $selected = false): HTMLElement
+function make_input_label(int|string $suffix, string $tag, int|string $id, string $type = "radio", string $class = "", bool $selected = false): HTMLElement
 {
     return LABEL(
         INPUT(
@@ -149,7 +149,6 @@ function make_input_label(int|string $suffix, string $tag, int|string $id, strin
                     "id" => "tagsInput_{$suffix}",
                     "class" => "tagsInput_{$suffix} {$class}",
                     "value" => $tag,
-                    "onClick" => "updateTags(this); {$onclicks}"
                 ],
                 $selected ? ["checked" => "true"] : []
             ),
@@ -177,7 +176,7 @@ function get_categories_html(string $suffix): HTMLElement
         "), 1);
     /** @var array{string:mixed} $tc_dict */
     $tc_dict = [];
-    $preselect_tags = ["mouth_closed","eyes_open","adult","photo","color","wild"];
+    $preselect_tags = ["mouth_closed","eyes_open"];
     foreach ($res as $row) {
         $group = $row['group'];
 
@@ -195,7 +194,10 @@ function get_categories_html(string $suffix): HTMLElement
     $type_table = [1 => ["cols" => 2, "class" => "grid-cell"],
     2 => ["cols" => 4, "class" => "grid-cell cell-wide"],
     3 => ["cols" => 1, "class" => "grid-cell cell-thin"],
-    4 => ["cols" => 4, "class" => "grid-cell cell-wide"]];
+    4 => ["cols" => 1, "class" => "grid-cell cell-thin"],
+    5 => ["cols" => 4, "class" => "grid-cell cell-wide"],
+    6 => ["cols" => 2, "class" => "grid-cell"],
+    7 => ["cols" => 4, "class" => "grid-cell cell-info"],];
     foreach (array_keys($tc_dict) as $group) {
         $type = $types[$group];
         if (!$type) {
@@ -209,32 +211,47 @@ function get_categories_html(string $suffix): HTMLElement
         $count_array[$group] = count($tc_dict[$group]);
 
         $stop = $count_array[$group] / $type_table[$type]["cols"];
-
-        if ($type === 4) {
+        if ($type >= 5) {
+            $overflow = $type === 5 ? 5 : 3;
             $i = 0;
             $dropdownHtml = emptyHTML();
             foreach ($tc_dict[$group] as $tag) {
-                if ($i++ < 4) {
-                    $input_array[$group]->appendChild(make_input_label($suffix, $tag, $group, "radio", "", $i < $stop && $i % 4 === 3 ? "label-margin" : "", in_array($tag, $preselect_tags)));
+                if ($i++ < $overflow) {
+                    $input_array[$group]->appendChild(make_input_label($suffix, $tag, $group, "radio", $i < $stop && $i % 4 === 3 ? "label-margin" : "", in_array($tag, $preselect_tags)));
                 } else {
                     $dropdownHtml->appendChild(
-                        OPTION(["value" => $tag, "onClick" => "presettags(this);"], $tag)
+                        OPTION(["value" => $tag], $tag)
                     );
                 }
             }
-            if ($i > 4) {
+            if ($i > $overflow) {
                 $input_array[$group]->appendChild(
                     SELECT(
-                        ["id" => "tagsDropdown_{$suffix}", "style" => "width:auto","onclick" => "updateTags(this);"],
+                        ["id" => "tagsDropdown_{$suffix}", "var" => "{$group}_{$suffix}", "style" => "width:auto"],
                         OPTION(["value" => ""], "More..."),
                         $dropdownHtml
                     )
                 );
             }
+        } else if ($type === 4) {
+            $i = 0;
+            $dropdownHtml = emptyHTML();
+            foreach ($tc_dict[$group] as $tag) {
+                $dropdownHtml->appendChild(
+                    OPTION(["value" => $tag], $tag)
+                );
+            }
+            $input_array[$group]->appendChild(
+                SELECT(
+                    ["id" => "tagsDropdown_{$suffix}", "style" => "width:auto"],
+                    OPTION(["value" => ""], "Select..."),
+                    $dropdownHtml
+                )
+            );
         } else {
             $i = 0;
             foreach ($tc_dict[$group] as $tag) {
-                $input_array[$group]->appendChild(make_input_label($suffix, $tag, $group, "checkbox", "", $i < $stop && $i % 4 === 3 ? "label-margin" : "", in_array($tag, $preselect_tags)));
+                $input_array[$group]->appendChild(make_input_label($suffix, $tag, $group, "checkbox", $i < $stop && $i % 4 === 3 ? "label-margin" : "", in_array($tag, $preselect_tags)));
                 $i++;
             }
         }
@@ -242,15 +259,24 @@ function get_categories_html(string $suffix): HTMLElement
 
     foreach (array_keys($input_array) as $group) {
         $type = $types[$group];
-        $rows = max(4, ceil($count_array[$group] / $type_table[$type]["cols"]));
-        $tworows = ceil($count_array[$group] / 2);
-        $tags_input->appendChild(
-            DIV(
-                ["class" => $type_table[$type]["class"]],
-                DIV(["class" => "grid-cell-separator"], DIV(["class" => "grid-cell-label"], $group), ),
-                DIV(["class" => "grid-cell-content" . ($type === 4 ? " dir-row" : ""), "style" => "--rows: $rows;--tworows: $tworows"], $input_array[$group], ),
-            )
-        );
+        if ($type === 7) {
+            $tags_input->appendChild(
+                DIV(
+                    ["class" => $type_table[$type]["class"]],
+                    DIV(["class" => "grid-cell-label"], $group)
+                )
+            );
+        } else {
+            $rows = max(4, ceil($count_array[$group] / $type_table[$type]["cols"]));
+            $tworows = ceil($count_array[$group] / 2);
+            $tags_input->appendChild(
+                DIV(
+                    ["class" => $type_table[$type]["class"]],
+                    DIV(["class" => "grid-cell-separator"], DIV(["class" => "grid-cell-label"], $group), ),
+                    DIV(["class" => "grid-cell-content" . ($type >= 5 ? " dir-row" : ""), "style" => "--rows: $rows;--tworows: $tworows"], $input_array[$group], ),
+                )
+            );
+        }
     }
     $upload_count = Ctx::$config->get(UploadConfig::COUNT) - 1;
     $output = emptyHTML();

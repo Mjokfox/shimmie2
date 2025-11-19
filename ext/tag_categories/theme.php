@@ -40,7 +40,7 @@ class TagCategoriesTheme extends Themelet
             $tag_color = $row['color'];
             $upload_page_type = $row['upload_page_type'] ?? 0;
             $upload_page_priority = $row['upload_page_priority'] ?? 0;
-            $type_map = ["hidden", "half width", "full width", "single column", "single row"];
+            $type_map = ["hidden", "half width", "full width", "single column", "dropdown", "single row", "single row (half width)", "info line"];
             $html[] = DIV(
                 ["class" => "tagcategoryblock tagcategorycategories"],
                 SHM_SIMPLE_FORM(
@@ -85,7 +85,10 @@ class TagCategoriesTheme extends Themelet
                                     OPTION(["value" => "1", ($upload_page_type === 1 ? "selected" : "") => true], "half width"),
                                     OPTION(["value" => "2", ($upload_page_type === 2 ? "selected" : "") => true], "full width"),
                                     OPTION(["value" => "3", ($upload_page_type === 3 ? "selected" : "") => true], "single column"),
-                                    OPTION(["value" => "4", ($upload_page_type === 4 ? "selected" : "") => true], "single row"),
+                                    OPTION(["value" => "4", ($upload_page_type === 4 ? "selected" : "") => true], "dropdown"),
+                                    OPTION(["value" => "5", ($upload_page_type === 5 ? "selected" : "") => true], "single row"),
+                                    OPTION(["value" => "6", ($upload_page_type === 6 ? "selected" : "") => true], "single row (half width)"),
+                                    OPTION(["value" => "7", ($upload_page_type === 7 ? "selected" : "") => true], "info line"),
                                 ),
                             ),
                         ),
@@ -186,7 +189,10 @@ class TagCategoriesTheme extends Themelet
                                 OPTION(["value" => "1"], "half width"),
                                 OPTION(["value" => "2"], "full width"),
                                 OPTION(["value" => "3"], "single column"),
-                                OPTION(["value" => "4"], "single row"),
+                                OPTION(["value" => "4"], "dropdown"),
+                                OPTION(["value" => "5"], "single row"),
+                                OPTION(["value" => "6"], "single row (half width)"),
+                                OPTION(["value" => "7"], "info line"),
                             ),
                         ),
                     ),
