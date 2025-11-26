@@ -93,13 +93,12 @@ final class PostScheduling extends DataHandlerExtension
             $interval = Ctx::$config->get(PostSchedulingConfig::SCHEDULE_INTERVAL, ConfigType::INT);
             $diff = time() - $latest;
 
-            if (self::count_scheduled_posts() === 0 && $diff > $interval) {
+            if (self::count_scheduled_posts() === 0 && $diff > $interval) { // Upload it immediatly
                 $meta = new QueryArray($event->metadata->toArray());
                 $meta->set("schedule", "");
                 $due = send_event(new DataUploadEvent($event->tmpname, $event->filename, $event->slot, $meta)); // this isnt cursed
                 $event->images = array_merge($event->images, $due->images);
-            } else {
-                // Create a new Image object
+            } else { // schedule it
                 $filename = $event->tmpname;
                 assert($filename->is_readable());
                 $image = new Image();
@@ -119,7 +118,7 @@ final class PostScheduling extends DataHandlerExtension
                     throw new UploadException("Unable to scan media properties {$filename->str()} / {$image->filename} / $image->hash: ".$e->getMessage());
                 }
 
-                $this->schedule_image($image, $event->metadata, $event->slot); // Ensure the image has a DB-assigned ID
+                $this->schedule_image($image, $event->metadata, $event->slot);
                 \Safe\exec("bash ext/post_scheduling/timer.sh -t $interval -d $interval > /dev/null 2>&1 &");
 
                 // If everything is OK, then move the file to the archive
@@ -130,7 +129,7 @@ final class PostScheduling extends DataHandlerExtension
                     throw new UploadException("Failed to copy file from uploads ({$event->tmpname->str()}) to archive ({$filename->str()}): ".$e->getMessage());
                 }
                 Ctx::$cache->delete("scheduled_post_count");
-
+                Ctx::$page->flash("Scheduled {$event->filename};");
                 $event->images[] = $image;
             }
             $event->stop_processing = true;
