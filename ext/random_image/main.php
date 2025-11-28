@@ -25,6 +25,9 @@ final class RandomImage extends Extension
                 case "download":
                     Ctx::$page->set_redirect($image->get_image_link());
                     break;
+                case "post":
+                    Ctx::$page->set_redirect(make_link("post/view/$image->id"));
+                    break;
                 case "view":
                     send_event(new DisplayingImageEvent($image));
                     break;
