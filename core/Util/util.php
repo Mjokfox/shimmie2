@@ -229,7 +229,7 @@ function require_all(array $files): void
 
 function _load_ext_files(): void
 {
-    Ctx::$tracer->begin("Load Ext Files");
+    $span = Ctx::$tracer->startSpan("Load Ext Files");
     require_all(array_merge(
         Filesystem::zglob("ext/*/info.php"),
         Filesystem::zglob("ext/*/config.php"),
@@ -237,16 +237,16 @@ function _load_ext_files(): void
         Filesystem::zglob("ext/*/theme.php"),
         Filesystem::zglob("ext/*/main.php"),
     ));
-    Ctx::$tracer->end();
+    $span->end();
 }
 
 function _load_theme_files(): void
 {
-    Ctx::$tracer->begin("Load Theme Files");
+    $span = Ctx::$tracer->startSpan("Load Theme Files");
     $theme = get_theme();
     require_once('themes/'.$theme.'/page.class.php');
     require_all(Filesystem::zglob('themes/'.$theme.'/*.theme.php'));
-    Ctx::$tracer->end();
+    $span->end();
 }
 
 function _set_up_shimmie_environment(): void
@@ -379,7 +379,7 @@ function make_form(Url $target, bool $multipart = false, string $form_id = "", s
 const BYTE_DENOMINATIONS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 function human_filesize(int $bytes, int $decimals = 2): string
 {
-    $factor = floor((strlen(strval($bytes)) - 1) / 3);
+    $factor = (int)floor((strlen(strval($bytes)) - 1) / 3);
     return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @BYTE_DENOMINATIONS[$factor];
 }
 

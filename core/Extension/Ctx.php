@@ -13,7 +13,8 @@ final class Ctx
     public static Database $database;
     public static EventBus $event_bus;
     public static Page $page;
-    public static \EventTracer $tracer;
+    public static \MicroOTLP\SpanBuilder $root_span;
+    public static \MicroOTLP\Client $tracer;
     public static User $user;
 
     public static function setCache(CacheInterface $_cache): CacheInterface
@@ -60,7 +61,13 @@ final class Ctx
         return $_page;
     }
 
-    public static function setTracer(\EventTracer $tracer): \EventTracer
+    public static function setRootSpan(\MicroOTLP\SpanBuilder $span): \MicroOTLP\SpanBuilder
+    {
+        self::$root_span = $span;
+        return $span;
+    }
+
+    public static function setTracer(\MicroOTLP\Client $tracer): \MicroOTLP\Client
     {
         self::$tracer = $tracer;
         return $tracer;

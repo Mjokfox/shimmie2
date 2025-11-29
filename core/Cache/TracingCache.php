@@ -6,14 +6,14 @@ namespace Shimmie2;
 
 use Psr\SimpleCache\CacheInterface;
 
-class EventTracingCache implements CacheInterface
+class TracingCache implements CacheInterface
 {
     private int $hits = 0;
     private int $misses = 0;
 
     public function __construct(
         private CacheInterface $engine,
-        private \EventTracer $tracer
+        private \MicroOTLP\Client $tracer
     ) {
     }
 
@@ -27,7 +27,7 @@ class EventTracingCache implements CacheInterface
         }
 
         $sentinel = "__etc_sentinel";
-        $this->tracer->begin("Cache Get", ["key" => $key]);
+        $span = $this->tracer->startSpan("Cache Get", ["key" => $key]);
         $val = $this->engine->get($key, $sentinel);
         if ($val !== $sentinel) {
             $res = "hit";
@@ -37,31 +37,31 @@ class EventTracingCache implements CacheInterface
             $val = $default;
             $this->misses++;
         }
-        $this->tracer->end(null, ["result" => $res]);
+        $span->end(attributes: ["result" => $res]);
         return $val;
     }
 
     public function set($key, $value, $ttl = null)
     {
-        $this->tracer->begin("Cache Set", ["key" => $key, "ttl" => $ttl]);
+        $span = $this->tracer->startSpan("Cache Set", ["key" => $key, "ttl" => $ttl]);
         $val = $this->engine->set($key, $value, $ttl);
-        $this->tracer->end();
+        $span->end();
         return $val;
     }
 
     public function delete($key)
     {
-        $this->tracer->begin("Cache Delete", ["key" => $key]);
+        $span = $this->tracer->startSpan("Cache Delete", ["key" => $key]);
         $val = $this->engine->delete($key);
-        $this->tracer->end();
+        $span->end();
         return $val;
     }
 
     public function clear()
     {
-        $this->tracer->begin("Cache Clear");
+        $span = $this->tracer->startSpan("Cache Clear");
         $val = $this->engine->clear();
-        $this->tracer->end();
+        $span->end();
         return $val;
     }
 
@@ -73,9 +73,9 @@ class EventTracingCache implements CacheInterface
     // @phpstan-ignore-next-line
     public function getMultiple($keys, $default = null)
     {
-        $this->tracer->begin("Cache Get Multiple", ["keys" => $keys]);
+        $span = $this->tracer->startSpan("Cache Get Multiple", ["keys" => $keys]);
         $val = $this->engine->getMultiple($keys, $default);
-        $this->tracer->end();
+        $span->end();
         return $val;
     }
 
@@ -85,9 +85,9 @@ class EventTracingCache implements CacheInterface
     // @phpstan-ignore-next-line
     public function setMultiple($values, $ttl = null)
     {
-        $this->tracer->begin("Cache Set Multiple", ["keys" => array_keys($values)]);
+        $span = $this->tracer->startSpan("Cache Set Multiple", ["keys" => array_keys($values)]);
         $val = $this->engine->setMultiple($values, $ttl);
-        $this->tracer->end();
+        $span->end();
         return $val;
     }
 
@@ -97,17 +97,17 @@ class EventTracingCache implements CacheInterface
     // @phpstan-ignore-next-line
     public function deleteMultiple($keys)
     {
-        $this->tracer->begin("Cache Delete Multiple", ["keys" => $keys]);
+        $span = $this->tracer->startSpan("Cache Delete Multiple", ["keys" => $keys]);
         $val = $this->engine->deleteMultiple($keys);
-        $this->tracer->end();
+        $span->end();
         return $val;
     }
 
     public function has($key)
     {
-        $this->tracer->begin("Cache Has", ["key" => $key]);
+        $span = $this->tracer->startSpan("Cache Has", ["key" => $key]);
         $val = $this->engine->has($key);
-        $this->tracer->end(null, ["exists" => $val]);
+        $span->end(attributes: ["exists" => $val]);
         return $val;
     }
 }

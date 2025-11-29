@@ -36,10 +36,11 @@
         "ifixit/php-akismet": "^1.0",
         "google/recaptcha": "^1.1",
         "shish/eventtracer-php": "^2.2",
-        "shish/ffsphp": "^1.3.4",
+        "shish/ffsphp": "^1.4",
         "shish/microbundler": "^1.0",
         "shish/microcrud": "^2.4",
         "shish/microhtml": "^2.5.0",
+        "shish/microotlp": "^0.0.11",
         "shish/gqla": "^1.1.1",
         "thecodingmachine/safe": "^3.0.2",
         "enshrined/svg-sanitize": "^0.22",
@@ -50,11 +51,12 @@
         "sabre/cache": "^2.0.1",
         "naroga/redis-cache": "^1.2",
         "symfony/console": "^7.2",
-        "symfony/yaml": "^7.2"
+        "symfony/yaml": "^7.2",
+        "jfcherng/php-diff": "^6.16"
     },
     "require-dev": {
         "phpunit/phpunit": "^11.5",
-        "friendsofphp/php-cs-fixer": "^3.86",
+        "friendsofphp/php-cs-fixer": "^3.89",
         "phpstan/phpstan": "^2.1",
         "thecodingmachine/phpstan-safe-rule": "^1.4",
         "phpstan/phpstan-strict-rules": "^2.0",
@@ -110,13 +112,12 @@
         "stan": [
             "@analyse"
         ],
-        "xstan": "rm -rf /tmp/phpstan/ && XDEBUG_MODE=debug phpstan --xdebug analyse --memory-limit 1G --error-format=raw | sed 's/:/ /g; s/ /:/'",
+        "xstan": "rm -rf /tmp/phpstan/ && php -d xdebug.mode=coverage vendor/bin/phpstan --xdebug analyse --memory-limit 1G --error-format=raw | sed 's/:/ /g; s/ /:/'",
         "format": "php-cs-fixer fix",
         "format-ci": "php-cs-fixer check --format=@auto",
         "analyse-ci": "phpstan analyse --memory-limit 1G --error-format=github",
         "analyse": "phpstan analyse --memory-limit 1G --error-format=raw | sed -E 's/:([0-9]+):/:\\1 /'",
-        "test-cover": "XDEBUG_MODE=coverage phpunit --coverage-html=./data/coverage",
-        "test": "phpunit",
+        "test": "php -d xdebug.mode=coverage vendor/bin/phpunit",
         "docker-run": "./.docker/run.php"
     }
 }

@@ -35,9 +35,19 @@ if (!file_exists("data/config/shimmie.conf.php")) {
 @include_once "data/config/extensions.conf.php";
 
 _set_up_shimmie_environment();
-Ctx::setTracer(new \EventTracer());
+Ctx::setTracer(new \MicroOTLP\Client(
+    resourceAttributes: [
+        'service.name' => 'shimmie2',
+        'service.instance.id' => gethostname() ?: 'unknown',
+    ],
+    scopeAttributes: [
+        'name' => 'shimmie2',
+        'version' => SysConfig::getVersion(),
+    ],
+));
 // Override TS to show that bootstrapping started in the past
-Ctx::$tracer->begin("Bootstrap", raw: ["ts" => $_SERVER["REQUEST_TIME_FLOAT"] * 1e6]);
+Ctx::setRootSpan(Ctx::$tracer->startSpan("Root", startTime: (int)($_SERVER["REQUEST_TIME_FLOAT"] * 1e9)));
+$sBoot = Ctx::$tracer->startSpan("Bootstrap", startTime: (int)($_SERVER["REQUEST_TIME_FLOAT"] * 1e9));
 _load_ext_files();
 // Depends on core files
 $cache = Ctx::setCache(load_cache(SysConfig::getCacheDsn()));
@@ -51,7 +61,7 @@ _load_theme_files();
 $page = Ctx::setPage(Themelet::get_theme_class(Page::class) ?? new Page());
 // $event_bus depends on ext/*/main.php being loaded
 Ctx::setEventBus(new EventBus());
-Ctx::$tracer->end();
+$sBoot->end();
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
 * Send events, display output                                               *
@@ -59,22 +69,23 @@ Ctx::$tracer->end();
 
 function main(): int
 {
+    // Ctx::$tracer->mark($_SERVER["REQUEST_URI"] ?? "No Request");
+    $sMain = Ctx::$tracer->startSpan(
+        "Main",
+        [
+            "enduser.id" => $_COOKIE["shm_user"] ?? "No User",
+            "net.peer.ip" => Network::get_real_ip(),
+            "http.uri" => $_SERVER["REQUEST_URI"] ?? "No URI",
+            "http.user_agent" => $_SERVER['HTTP_USER_AGENT'] ?? "No UA",
+        ]
+    );
+
     $iee = null;
     // nested try-catch blocks so that we can try to handle user-errors
     // in a pretty and theme-customisable way, but if that breaks, the
     // breakage will be handled by the server-error handler
     try {
         try {
-            // Ctx::$tracer->mark($_SERVER["REQUEST_URI"] ?? "No Request");
-            Ctx::$tracer->begin(
-                $_SERVER["REQUEST_URI"] ?? "No Request",
-                [
-                    "user" => $_COOKIE["shm_user"] ?? "No User",
-                    "ip" => Network::get_real_ip(),
-                    "user_agent" => $_SERVER['HTTP_USER_AGENT'] ?? "No UA",
-                ]
-            );
-
             if (!Ctx::$config->get(SetupConfig::NO_AUTO_DB_UPGRADE)) {
                 send_event(new DatabaseUpgradeEvent());
             }
@@ -108,6 +119,7 @@ function main(): int
             if (function_exists("fastcgi_finish_request")) {
                 fastcgi_finish_request();
             }
+            $sMain->end(success: true, attributes: ["http.status_code" => Ctx::$page->code]);
             $exit_code = 0;
         } catch (UserError $e) {
             if (Ctx::$database->is_transaction_open()) {
@@ -115,13 +127,17 @@ function main(): int
             }
             Ctx::$page->set_error($e);
             Ctx::$page->display();
+            // "User Error" is considered success from a system perspective
+            $sMain->end(success: true, message: (string)$e, attributes: ["http.status_code" => Ctx::$page->code]);
             $exit_code = 2;
         }
     } catch (\Throwable $e) {
         _fatal_error($e);
+        $code = is_a($e, SCoreException::class) ? $e->http_code : 500;
+        $sMain->end(success: false, message: (string)$e, attributes: ["http.status_code" => $code]);
         $exit_code = 1;
     } finally {
-        Ctx::$tracer->end();
+        Ctx::$root_span->end();
         $iee?->run_shutdown_handlers();
     }
     return $exit_code;
