@@ -216,11 +216,11 @@ final class Wiki extends Extension
         }
     }
 
-    public function onRobotsBuilding(RobotsBuildingEvent $event): void
-    {
-        // wiki doesnt have to be indexed
-        $event->add_disallow("wiki");
-    }
+    // public function onRobotsBuilding(RobotsBuildingEvent $event): void
+    // {
+    //     // wiki doesnt have to be indexed
+    //     $event->add_disallow("wiki");
+    // }
 
     public function onPageNavBuilding(PageNavBuildingEvent $event): void
     {
