@@ -58,6 +58,24 @@ final class XMLSitemap extends Extension
         //     );
         // }
 
+        if (WikiInfo::is_enabled()) {
+            $query = "SELECT w1.title, w1.date
+                FROM wiki_pages w1
+                LEFT JOIN wiki_pages w2 
+                ON (w1.title = w2.title and w1.date < w2.date)
+                WHERE w2.title IS NULL
+                ORDER BY w1.date DESC";
+            $wikis = $database->get_pairs($query);
+            foreach ($wikis as $title => $date) {
+                $urls[] = new XMLSitemapURL(
+                    make_link("wiki/$title"),
+                    "weekly",
+                    "0.9",
+                    date("Y-m-d", \Safe\strtotime($date))
+                );
+            }
+        }
+
         /* --- Add latest images to sitemap with higher priority --- */
         foreach (Search::find_images(limit: 50) as $image) {
             $urls[] = new XMLSitemapURL(

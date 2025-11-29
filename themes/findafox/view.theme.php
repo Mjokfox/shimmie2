@@ -4,12 +4,28 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A, DIV, FORM, INPUT, LINK, SPAN, TABLE, TD, TR, emptyHTML, rawHTML};
+use function MicroHTML\{A, DIV, FORM, INPUT, LINK, META, SPAN, TABLE, TD, TR, emptyHTML, rawHTML};
 
 use MicroHTML\HTMLElement;
 
 class CustomViewPostTheme extends ViewPostTheme
 {
+    public function display_meta_headers(Image $image): void
+    {
+        $page = Ctx::$page;
+        $h_metatags = str_replace(" ", ", ", $image->get_tag_list());
+        $page->add_html_header(META(["name" => "keywords", "content" => $h_metatags]));
+        $page->add_html_header(META(["property" => "og:title", "content" => $h_metatags]));
+        $page->add_html_header(META(["property" => "og:type", "content" => "article"]));
+        $page->add_html_header(META(["property" => "og:image", "content" => $image->get_image_link()->asAbsolute()]));
+        $page->add_html_header(META(["property" => "og:url", "content" => make_link("post/view/{$image->id}")->asAbsolute()]));
+        $page->add_html_header(META(["property" => "og:image:width", "content" => $image->width]));
+        $page->add_html_header(META(["property" => "og:image:height", "content" => $image->height]));
+        $page->add_html_header(META(["property" => "twitter:title", "content" => $h_metatags]));
+        $page->add_html_header(META(["property" => "twitter:card", "content" => "summary_large_image"]));
+        $page->add_html_header(META(["property" => "twitter:image:src", "content" => $image->get_image_link()->asAbsolute()]));
+        $page->add_html_header(META(["name" => "robots", "content" => "nofollow"]));
+    }
     /**
      * @param HTMLElement[] $editor_parts
      */

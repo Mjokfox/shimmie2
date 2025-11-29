@@ -94,9 +94,11 @@ class CustomIndexTheme extends IndexTheme
             $path = $matches[1];
         }
         if (count($this->search_terms) > 0) {
-            if ($this->page_number > 3) {
+            if (count($this->search_terms) > 1 || $this->page_number > 1) {
                 // only index the first pages of each term
                 $page->add_html_header(META(["name" => "robots", "content" => "noindex, nofollow"]));
+            } else {
+                $page->add_html_header(META(["name" => "robots", "content" => "nofollow"]));
             }
             $query = url_escape(Tag::implode($this->search_terms));
             $page->add_block(new Block("Posts ", $this->build_table($images, "search=$query"), "main", 10, "image-list"));

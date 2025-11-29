@@ -233,7 +233,7 @@ function get_categories_html(string $suffix): HTMLElement
                     )
                 );
             }
-        } else if ($type === 4) {
+        } elseif ($type === 4) {
             $i = 0;
             $dropdownHtml = emptyHTML();
             foreach ($tc_dict[$group] as $tag) {
