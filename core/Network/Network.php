@@ -138,7 +138,7 @@ final class Network
             fclose($fp_in);
             fclose($fp_out);
 
-            $headers = Network::http_parse_headers(implode("\n", $http_response_header));
+            $headers = Network::http_parse_headers(implode("\n", http_get_last_response_headers() ?? []));
         } else {
             throw new FetchException("No transload engine configured");
         }

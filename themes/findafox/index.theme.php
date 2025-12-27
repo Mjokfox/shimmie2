@@ -58,7 +58,7 @@ class CustomIndexTheme extends IndexTheme
     }
 
     /**
-     * @param string[] $search_terms
+     * @param search-term-array $search_terms
      */
     protected function build_navigation(int $page_number, int $total_pages, array $search_terms, string $class = ""): HTMLElement
     {

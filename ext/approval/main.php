@@ -54,15 +54,14 @@ final class Approval extends Extension
                 case "approve_all":
                     $database->set_timeout(null); // These updates can take a little bit
                     $database->execute(
-                        "UPDATE images SET approved = :true, approved_by_id = :approved_by_id WHERE approved = :false",
-                        ["approved_by_id" => Ctx::$user->id, "true" => true, "false" => false]
+                        "UPDATE images SET approved = TRUE, approved_by_id = :approved_by_id WHERE approved = FALSE",
+                        ["approved_by_id" => Ctx::$user->id]
                     );
                     break;
                 case "disapprove_all":
                     $database->set_timeout(null); // These updates can take a little bit
                     $database->execute(
-                        "UPDATE images SET approved = :false, approved_by_id = NULL WHERE approved = :true",
-                        ["true" => true, "false" => false]
+                        "UPDATE images SET approved = FALSE, approved_by_id = NULL WHERE approved = TRUE"
                     );
                     break;
                 default:
@@ -81,7 +80,7 @@ final class Approval extends Extension
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent === "posts") {
-            if (Ctx::$user->can(ApprovalPermission::APPROVE_IMAGE)) {
+            if (!Ctx::$user->is_anonymous()) {
                 $event->add_nav_link(search_link(['approved=no']), "Pending Approval", order: 60);
             }
         }
@@ -89,7 +88,7 @@ final class Approval extends Extension
 
     public function onUserBlockBuilding(UserBlockBuildingEvent $event): void
     {
-        if (Ctx::$user->can(ApprovalPermission::APPROVE_IMAGE)) {
+        if (!Ctx::$user->is_anonymous()) {
             $event->add_link("Pending Approval", search_link(["approved=no"]), 60);
         }
     }
@@ -97,15 +96,28 @@ final class Approval extends Extension
     public const SEARCH_REGEXP = "/^approved[=:](yes|no)/i";
     public function onSearchTermParse(SearchTermParseEvent $event): void
     {
-        if (is_null($event->term) && $this->no_approval_query($event->context) && !defined("UNITTEST")) {
-            $event->add_querylet(new Querylet("approved = :true", ["true" => true]));
+        if (is_null($event->term) && $this->no_approval_query($event->context)) {
+            $event->add_querylet(new Querylet("approved = TRUE"));
         }
 
         if ($matches = $event->matches(self::SEARCH_REGEXP)) {
-            if (Ctx::$user->can(ApprovalPermission::APPROVE_IMAGE) && strtolower($matches[1]) === "no") {
-                $event->add_querylet(new Querylet("approved != :true", ["true" => true]));
+            if (strtolower($matches[1]) === "no") {
+                // Admins can see all unapproved posts
+                if (Ctx::$user->can(ApprovalPermission::APPROVE_IMAGE)) {
+                    $event->add_querylet(new Querylet("approved != TRUE"));
+                }
+                // Regular users can see their own unapproved posts
+                elseif (!Ctx::$user->is_anonymous()) {
+                    $event->add_querylet(new Querylet(
+                        "approved != TRUE AND owner_id = :approval_owner_id",
+                        ["approval_owner_id" => Ctx::$user->id]
+                    ));
+                } else {
+                    // Anonymous users can't see unapproved posts
+                    $event->add_querylet(new Querylet("1=0"));
+                }
             } else {
-                $event->add_querylet(new Querylet("approved = :true", ["true" => true]));
+                $event->add_querylet(new Querylet("approved = TRUE"));
             }
         }
     }
@@ -113,7 +125,7 @@ final class Approval extends Extension
     public function onHelpPageBuilding(HelpPageBuildingEvent $event): void
     {
         if ($event->key === HelpPages::SEARCH) {
-            if (Ctx::$user->can(ApprovalPermission::APPROVE_IMAGE)) {
+            if (!Ctx::$user->is_anonymous()) {
                 $event->add_section("Approval", $this->theme->get_help_html());
             }
         }
@@ -137,8 +149,8 @@ final class Approval extends Extension
         global $database;
 
         $database->execute(
-            "UPDATE images SET approved = :true, approved_by_id = :approved_by_id WHERE id = :id AND approved = :false",
-            ["approved_by_id" => Ctx::$user->id, "id" => $image_id, "true" => true, "false" => false]
+            "UPDATE images SET approved = TRUE, approved_by_id = :approved_by_id WHERE id = :id AND approved = FALSE",
+            ["approved_by_id" => Ctx::$user->id, "id" => $image_id]
         );
     }
 
@@ -147,8 +159,8 @@ final class Approval extends Extension
         global $database;
 
         $database->execute(
-            "UPDATE images SET approved = :false, approved_by_id = NULL WHERE id = :id AND approved = :true",
-            ["id" => $image_id, "true" => true, "false" => false]
+            "UPDATE images SET approved = FALSE, approved_by_id = NULL WHERE id = :id AND approved = TRUE",
+            ["id" => $image_id]
         );
     }
 

@@ -77,7 +77,8 @@ final class PM
      *     subject: string,
      *     message: string,
      *     is_read: string|bool,
-     *     sent_date: string
+     *     sent_date: string,
+     *     archived_by: string|int
      * } $row
      */
     public static function from_row(array $row): PM
@@ -99,7 +100,7 @@ final class PM
      * @return PM[]
      */
     #[Field(extends: "User", name: "private_messages", type: "[PrivateMessage!]")]
-    public static function get_pms_to(User $to, int $limit = null): array
+    public static function get_pms_to(User $to, ?int $limit = null): array
     {
         $pms = [];
         $arr = Ctx::$database->get_all(
@@ -107,7 +108,7 @@ final class PM
             ["to_id" => $to->id, "limit" => $limit]
         );
         foreach ($arr as $pm) {
-            $pms[] = PM::from_row($pm);
+            $pms[] = PM::from_row($pm);  // @phpstan-ignore-line
         }
         return $pms;
     }
@@ -116,7 +117,7 @@ final class PM
      * @return PM[]
      */
     #[Field(extends: "User", name: "private_messages", type: "[PrivateMessage!]")]
-    public static function get_pms_by(User $by, int $limit = null): array
+    public static function get_pms_by(User $by, ?int $limit = null): array
     {
         $pms = [];
         $arr = Ctx::$database->get_all(
@@ -124,7 +125,7 @@ final class PM
             ["from_id" => $by->id, "limit" => $limit]
         );
         foreach ($arr as $pm) {
-            $pms[] = PM::from_row($pm);
+            $pms[] = PM::from_row($pm);  // @phpstan-ignore-line
         }
         return $pms;
     }
@@ -133,7 +134,7 @@ final class PM
      * @return PM[]
      */
     #[Field(extends: "User", name: "private_messages", type: "[PrivateMessage!]")]
-    public static function get_pms_to_and_by(User $to, User $from, int $limit = null): array
+    public static function get_pms_to_and_by(User $to, User $from, ?int $limit = null): array
     {
         $pms = [];
         $arr = Ctx::$database->get_all(
@@ -141,7 +142,7 @@ final class PM
             ["from_id" => $from->id,"to_id" => $to->id, "limit" => $limit]
         );
         foreach ($arr as $pm) {
-            $pms[] = PM::from_row($pm);
+            $pms[] = PM::from_row($pm);  // @phpstan-ignore-line
         }
         return $pms;
     }
@@ -150,7 +151,7 @@ final class PM
      * @return PM[]
      */
     #[Field(extends: "User", name: "private_messages", type: "[PrivateMessage!]")]
-    public static function get_pm_archive(User $of, int $limit = null): array
+    public static function get_pm_archive(User $of, ?int $limit = null): array
     {
         $pms = [];
         $arr = Ctx::$database->get_all(
@@ -158,7 +159,7 @@ final class PM
             ["of_id" => $of->id, "limit" => $limit]
         );
         foreach ($arr as $pm) {
-            $pms[] = PM::from_row($pm);
+            $pms[] = PM::from_row($pm);  // @phpstan-ignore-line
         }
         return $pms;
     }
@@ -319,7 +320,7 @@ final class PrivMsg extends Extension
                     $database->execute("UPDATE private_message SET is_read=true WHERE id = :id", ["id" => $pm_id]);
                     Ctx::$cache->delete("pm-count-".Ctx::$user->id);
                 }
-                $pmo = PM::from_row($pm);
+                $pmo = PM::from_row($pm);  // @phpstan-ignore-line
                 $this->theme->display_message($from_user, Ctx::$user, $pmo);
                 if ($user->can(PrivMsgPermission::SEND_PM)) {
                     if ($pm["from_id"] === $user->id) {
@@ -406,7 +407,7 @@ final class PrivMsg extends Extension
                 } else {
                     throw new PermissionDenied("This PM is already archived for you");
                 }
-                if (($pm["to_id"] === $user->id)) {
+                if ($pm["to_id"] === $user->id) {
                     Ctx::$cache->delete("pm-count-{$user->id}");
                 } else {
                     Ctx::$cache->delete("pm-count-".$pm["from_id"]);
@@ -449,7 +450,7 @@ final class PrivMsg extends Extension
             if (is_null($pm)) {
                 throw new ObjectNotFound("No such PM");
             } elseif ($pm["from_id"] === $user->id) {
-                $pmo = PM::from_row($pm);
+                $pmo = PM::from_row($pm);  // @phpstan-ignore-line
                 $subject = $pmo->subject;
                 if (substr($subject, -9) === " (edited)") {
                     $subject = substr($subject, 0, -9);
@@ -464,7 +465,7 @@ final class PrivMsg extends Extension
             if (is_null($pm)) {
                 throw new ObjectNotFound("No such PM");
             } elseif ($pm["from_id"] === $user->id) {
-                $pmo = PM::from_row($pm);
+                $pmo = PM::from_row($pm);  // @phpstan-ignore-line
                 $pmo->subject = $event->POST->req("subject");
                 $pmo->message = $event->POST->req("message");
                 $pmo->from_ip = Network::get_real_ip();
@@ -525,7 +526,7 @@ final class PrivMsg extends Extension
             UPDATE private_message SET 
             (from_ip,sent_date,subject,message,is_read) = (:fromip,now(),:subject,:message,false)
             WHERE id = :id;",
-            ["fromip" => $event->pm->from_ip,"subject" => $event->pm->subject. " (edited)", "message" => $event->pm->message, "id" => (string)$event->pm->id]
+            ["fromip" => (string)$event->pm->from_ip,"subject" => $event->pm->subject. " (edited)", "message" => $event->pm->message, "id" => (string)$event->pm->id]
         );
         Log::info("pm", "Edited PM #{$event->pm->id}");
     }

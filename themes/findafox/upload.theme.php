@@ -200,7 +200,7 @@ function get_categories_html(string $suffix): HTMLElement
     7 => ["cols" => 4, "class" => "grid-cell cell-info"],];
     foreach (array_keys($tc_dict) as $group) {
         $type = $types[$group];
-        if (!$type) {
+        if (!$type || !\array_key_exists($type, $type_table)) {
             continue;
         }
 
@@ -259,6 +259,9 @@ function get_categories_html(string $suffix): HTMLElement
 
     foreach (array_keys($input_array) as $group) {
         $type = $types[$group];
+        if (!\array_key_exists($type, $type_table)) {
+            $type = 1;
+        }
         if ($type === 7) {
             $tags_input->appendChild(
                 DIV(

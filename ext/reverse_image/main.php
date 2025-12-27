@@ -77,13 +77,15 @@ class ReverseImage extends Extension
             $page_size = $config->get(IndexConfig::IMAGES);
 
             $image_ids = $this->reverse_image_compare($feat, $page_size, ($page_number - 1) * $page_size);
+            if (empty($image_ids)) {
+                throw new PostNotFound("No posts were found to match the search criteria");
+            }
             $in = implode(",", array_keys($image_ids));
-
-            $res = Ctx::$database->get_all(
-                "SELECT images.* FROM images
+            $query = "SELECT images.* FROM images
                 WHERE id IN ($in)
-                order by array_position(array[$in], id);"
-            );
+                order by array_position(array[$in], id);";
+            // @phpstan-ignore-next-line
+            $res = Ctx::$database->get_all($query);
             $images = [];
             foreach ($res as $r) {
                 $images[] = new Image($r);
@@ -118,10 +120,15 @@ class ReverseImage extends Extension
                     $closest = null;
                 }
                 $tag_n = $this->tags_from_features_id($ids);
-                $json_input = ["tags" => $tag_n,"closest" => $closest];
-                $page->set_data(MimeType::JSON, json_encode($json_input), 'tag_occurrences.json');
+                $json_input = json_encode(["tags" => $tag_n,"closest" => $closest]);
+                if ($json_input !== false) {
+                    $page->set_data(MimeType::JSON, $json_input, 'tag_occurrences.json');
+                } else {
+                    throw new ServerError("Failed to serialize data");
+                }
+
             } else {
-                $page->set_data(MimeType::JSON, json_encode(["No similar images found, either the file was not uploaded properly or no url given"]), 'failed.json');
+                $page->set_data(MimeType::JSON, "No similar images found, either the file was not uploaded properly or no url given", 'failed.json');
             }
         } elseif ($event->page_matches("upload", method: "GET", permission: ImagePermission::CREATE_IMAGE)) {
             $user_config = $user->get_config();
@@ -259,7 +266,7 @@ class ReverseImage extends Extension
             WHERE b.image_id IN ($ids_array)
             GROUP BY a.tag
             ORDER BY n DESC";
-
+        // @phpstan-ignore-next-line
         return Ctx::$database->get_pairs($query, []);
     }
 
@@ -418,7 +425,7 @@ class ReverseImage extends Extension
      * @param float[] $features
      * @return array<string, mixed>
      */
-    private function reverse_image_compare(array $features, int|string $limit, int $offset = null): array
+    private function reverse_image_compare(array $features, int|string $limit, ?int $offset = null): array
     {
         $feature_array = "[" . implode(",", $features) . "]";
         $query = "SELECT image_id, features <=> :feature_array AS similarity
@@ -429,6 +436,7 @@ class ReverseImage extends Extension
             $query .= "\nOFFSET $offset";
         }
         $args = ["feature_array" => $feature_array, "limit" => $limit];
+        // @phpstan-ignore-next-line
         $image_ids = Ctx::$database->get_pairs($query, $args);
         return $image_ids;
     }

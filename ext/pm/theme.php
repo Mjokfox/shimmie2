@@ -99,7 +99,7 @@ class PrivMsgTheme extends Themelet
         Ctx::$page->add_block(new Block("Write a PM", $html, "main", 50));
     }
 
-    public function display_editor(int $pm_id, string $subject = "", string $message = "", int $to_id = null): void
+    public function display_editor(int $pm_id, string $subject = "", string $message = "", ?int $to_id = null): void
     {
         global $page;
         $html = SHM_SIMPLE_FORM(

@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use GQLA\{Field, Mutation, Type};
 
-use function MicroHTML\emptyHTML;
+use function MicroHTML\{emptyHTML};
 
 require_once "vendor/ifixit/php-akismet/akismet.class.php";
 
@@ -55,6 +55,19 @@ final class CommentDeletionEvent extends Event
 
 final class CommentPostingException extends InvalidInput
 {
+}
+
+/**
+ * Comment lock status is being changed on an image
+ */
+final class CommentLockSetEvent extends Event
+{
+    public function __construct(
+        public int $image_id,
+        public bool $locked
+    ) {
+        parent::__construct();
+    }
 }
 
 #[Type(name: "Comment")]
@@ -163,10 +176,15 @@ final class CommentList extends Extension
     public const KEY = "comment";
     public const VERSION_KEY = "ext_comments_version";
 
+    public function onInitExt(InitExtEvent $event): void
+    {
+        Image::$prop_types["comments_locked"] = ImagePropType::BOOL;
+    }
+
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         $database = Ctx::$database;
-        if ($this->get_version() < 3) {
+        if ($this->get_version() < 5) {
             // shortcut to latest
             if ($this->get_version() < 1) {
                 $database->create_table("comments", "
@@ -186,20 +204,6 @@ final class CommentList extends Extension
                 $this->set_version(4);
             }
 
-            // the whole history
-            if ($this->get_version() < 1) {
-                $database->create_table("comments", "
-					id SCORE_AIPK,
-					image_id INTEGER NOT NULL,
-					owner_id INTEGER NOT NULL,
-					owner_ip CHAR(16) NOT NULL,
-					posted TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-					comment TEXT NOT NULL
-				");
-                $database->execute("CREATE INDEX comments_image_id_idx ON comments(image_id)", []);
-                $this->set_version(1);
-            }
-
             if ($this->get_version() === 1) {
                 $database->execute("CREATE INDEX comments_owner_ip ON comments(owner_ip)");
                 $database->execute("CREATE INDEX comments_posted ON comments(posted)");
@@ -211,15 +215,20 @@ final class CommentList extends Extension
                 $database->execute("ALTER TABLE comments ADD FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE RESTRICT");
                 $this->set_version(3);
             }
-        }
+            if ($this->get_version() === 3) {
+                $database->execute("ALTER TABLE comments ADD COLUMN edited BOOLEAN DEFAULT FALSE NOT NULL;", []);
+                $database->execute("UPDATE comments
+                    SET comment = RTRIM(comment, '*(edited)*'),
+                    edited = TRUE
+                    WHERE comment LIKE '%*(edited)*';", []);
+                $this->set_version(4);
+            }
 
-        if ($this->get_version() === 3) {
-            $database->execute("ALTER TABLE comments ADD COLUMN edited BOOLEAN DEFAULT FALSE NOT NULL;", []);
-            $database->execute("UPDATE comments
-                SET comment = RTRIM(comment, '*(edited)*'),
-                edited = TRUE
-                WHERE comment LIKE '%*(edited)*';", []);
-            $this->set_version(4);
+            if ($this->get_version() === 4) {
+                $database->execute("ALTER TABLE images ADD COLUMN comments_locked BOOLEAN NOT NULL DEFAULT FALSE");
+                $database->execute("CREATE INDEX images_comments_locked_idx ON images(comments_locked)");
+                $this->set_version(5);
+            }
         }
     }
 
@@ -377,11 +386,43 @@ final class CommentList extends Extension
 
     public function onDisplayingImage(DisplayingImageEvent $event): void
     {
-        $this->theme->display_image_comments(
-            $event->image,
-            self::get_comments($event->image->id),
-            Ctx::$user->can(CommentPermission::CREATE_COMMENT)
+        $comments_locked = (bool)Ctx::$database->get_one(
+            "SELECT comments_locked FROM images WHERE id = :id",
+            ["id" => $event->image->id]
         );
+
+        $can_post = Ctx::$user->can(CommentPermission::CREATE_COMMENT) &&
+                    (!$comments_locked || Ctx::$user->can(CommentPermission::BYPASS_COMMENT_LOCK));
+
+        $comments = self::get_comments($event->image->id);
+        $this->theme->display_image_comments($event->image, $comments, $can_post, $comments_locked);
+    }
+
+    public function onImageInfoSet(ImageInfoSetEvent $event): void
+    {
+        if (Ctx::$user->can(CommentPermission::EDIT_COMMENT_LOCK)) {
+            $comments_locked = $event->get_param('comments_locked') === "on";
+            send_event(new CommentLockSetEvent($event->image->id, $comments_locked));
+        }
+    }
+
+    public function onCommentLockSet(CommentLockSetEvent $event): void
+    {
+        if (Ctx::$user->can(CommentPermission::EDIT_COMMENT_LOCK)) {
+            Ctx::$database->execute(
+                "UPDATE images SET comments_locked = :locked WHERE id = :id",
+                ["locked" => $event->locked, "id" => $event->image_id]
+            );
+        }
+    }
+
+    public function onImageInfoBoxBuilding(ImageInfoBoxBuildingEvent $event): void
+    {
+        $comments_locked = (bool)Ctx::$database->get_one(
+            "SELECT comments_locked FROM images WHERE id = :id",
+            ["id" => $event->image->id]
+        );
+        $event->add_part($this->theme->get_comments_lock_editor_html($comments_locked), 42);
     }
 
     // TODO: split akismet into a separate class, which can veto the event
@@ -636,9 +677,20 @@ final class CommentList extends Extension
         // basic sanity checks
         if (!Ctx::$user->can(CommentPermission::CREATE_COMMENT)) {
             throw new CommentPostingException("You do not have permission to add comments");
-        } elseif (is_null(Image::by_id($image_id))) {
+        }
+
+        $image = Image::by_id($image_id);
+        if (is_null($image)) {
             throw new CommentPostingException("The image does not exist");
-        } elseif (trim($comment) === "") {
+        }
+
+        // Check if comments are locked
+        $comments_locked = $image["comments_locked"];
+        if ($comments_locked && !Ctx::$user->can(CommentPermission::BYPASS_COMMENT_LOCK)) {
+            throw new CommentPostingException("Comments are locked on this post");
+        }
+
+        if (trim($comment) === "") {
             throw new CommentPostingException("Comments need text...");
         } elseif (strlen($comment) > 9000) {
             throw new CommentPostingException("Comment too long");

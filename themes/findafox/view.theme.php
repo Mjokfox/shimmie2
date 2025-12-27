@@ -29,7 +29,7 @@ class CustomViewPostTheme extends ViewPostTheme
     /**
      * @param HTMLElement[] $editor_parts
      */
-    public function display_page(Image $image, array $editor_parts): void
+    public function display_page(Image $image, array $editor_parts, array $sidebar_parts): void
     {
         global $page;
         $page->set_heading(html_escape($image->get_tag_list()));
@@ -37,7 +37,7 @@ class CustomViewPostTheme extends ViewPostTheme
         $page->add_block(new Block("Search with tags", $nav, "left", 0, "search-bar"));
         $page->add_block(new Block("Search with tags", $nav, "main", 5, "mobile-search"));
         $page->add_block(new Block("Information", $this->build_information($image), "left", 15));
-        $page->add_block(new Block(null, $this->build_info($image, $editor_parts), "main", 15));
+        $page->add_block(new Block(null, $this->build_info($image, $editor_parts, $sidebar_parts), "main", 15));
         $page->add_block(new Block(null, $this->build_pin($image), "main", 2, "post_controls"));
     }
 
@@ -118,7 +118,7 @@ class CustomViewPostTheme extends ViewPostTheme
         );
     }
 
-    protected function build_info(Image $image, array $editor_parts): HTMLElement
+    protected function build_info(Image $image, array $editor_parts, array $sidebar_parts = []): HTMLElement
     {
         global $user;
 
@@ -136,7 +136,6 @@ class CustomViewPostTheme extends ViewPostTheme
                 INPUT(["class" => "edit", "type" => "submit", "value" => "Set"])
             ));
         }
-
         return SHM_SIMPLE_FORM(
             make_link("post/set"),
             INPUT(["type" => "hidden", "name" => "image_id", "value" => $image->id]),

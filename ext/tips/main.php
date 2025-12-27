@@ -132,10 +132,10 @@ final class Tips extends Extension
         $tip = Ctx::$database->get_row("
             SELECT *
             FROM tips
-            WHERE enable = :true
+            WHERE enable = TRUE
             ORDER BY RANDOM()
             LIMIT 1
-        ", ["true" => true]);
+        ");
 
         if ($tip) {
             $this->theme->showTip($tip);

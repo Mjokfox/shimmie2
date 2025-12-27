@@ -56,7 +56,7 @@ class TagListTheme extends Themelet
      */
     public function display_split_related_block(array $tag_infos): void
     {
-        $search = array_key_exists("search", $_GET) ? explode(" ", $_GET["search"]) : [""];
+        $search = array_key_exists("search", $_GET) ? explode(" ", $_GET["search"]) : [];
 
         if (Ctx::$config->get(TagListConfig::RELATED_SORT) === TagListConfig::SORT_ALPHABETICAL) {
             usort($tag_infos, fn ($a, $b) => strcasecmp($a['tag'], $b['tag']));
@@ -85,7 +85,7 @@ class TagListTheme extends Themelet
             if (!isset($tag_categories_html[$group])) {
                 $tag_categories_html[$group] = $this->get_tag_list_preamble();
             }
-            $tag_categories_html[$group]->appendChild(self::build_tag_row($row, $search));
+            $tag_categories_html[$group]->appendChild(self::build_tag_row($row, $search));   // @phpstan-ignore-line
         }
 
         foreach (array_keys($tag_categories_html) as $group) {
