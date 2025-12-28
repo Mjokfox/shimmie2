@@ -1101,8 +1101,12 @@ FORM.full-width.search-bar input {
     width:3em
 }
 
-.shm-blotter2-toggle, .shm-blotter-hide {
+.shm-blotter-tools {
 	margin-left:auto;
+}
+
+.shm-blotter-tools A {
+	margin-left:1em;
 }
 
 table.pm-text {

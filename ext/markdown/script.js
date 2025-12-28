@@ -223,7 +223,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	})
 
-	document.querySelectorAll("TEXTAREA:not(.autocomplete_tags)").forEach(function(e) {
+	document.querySelectorAll("TEXTAREA.formattable").forEach(function(e) {
+		e.placeholder = "Markdown supported";
 		e.addEventListener("paste", urlPaste);
 		const A = document.createElement("input");
 		A.type = "button";
@@ -236,6 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		e.parentNode.insertBefore(document.createElement("br"),e);
 		if (e.nextSibling && e.nextElementSibling.nodeName != "BR")
 			e.parentNode.insertBefore(document.createElement("br"),e.nextSibling);
+		if (e.classList.contains("instant-preview")) preview_markdown(A);
 	})
 
 	document.querySelectorAll("widget").forEach(async function(el) {

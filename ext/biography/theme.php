@@ -20,7 +20,7 @@ class BiographyTheme extends Themelet
             make_link("user/{$duser->name}/biography"),
             TABLE(
                 ["class" => "form", "style" => "width: 100%"],
-                TR(TD(TEXTAREA(["rows" => "6", "name" => "biography"], $bio))),
+                TR(TD(TEXTAREA(["rows" => "6", "class" => "formattable instant-preview", "name" => "biography"], $bio))),
                 TR(TD(SHM_SUBMIT("Save")))
             ),
         );

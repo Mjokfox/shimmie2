@@ -148,7 +148,7 @@ class CustomCommentListTheme extends CommentListTheme
                 make_link("comment/add"),
                 INPUT(["type" => "hidden", "name" => "image_id", "value" => $image_id]),
                 INPUT(["type" => "hidden", "name" => "hash", "value" => $hash]),
-                TEXTAREA(["id" => "comment_on_$image_id", "name" => "comment", "rows" => 5, "cols" => 50]),
+                TEXTAREA(["id" => "comment_on_$image_id", "class" => "formattable", "name" => "comment", "rows" => 5, "cols" => 50]),
                 Captcha::get_html(CommentPermission::SKIP_CAPTCHA),
                 SHM_SUBMIT("Post Comment")
             )

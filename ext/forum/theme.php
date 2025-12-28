@@ -45,7 +45,7 @@ class ForumTheme extends Themelet
                 TR(
                     TH("Message"),
                     TD(TEXTAREA(
-                        ["id" => "message", "name" => "message"],
+                        ["id" => "message", "class" => "formattable", "name" => "message"],
                         $threadText
                     ))
                 ),
@@ -85,7 +85,7 @@ class ForumTheme extends Themelet
                 ["class" => "form"],
                 TR(
                     TH("Message"),
-                    TD(TEXTAREA(["id" => "message", "name" => "message"]))
+                    TD(TEXTAREA(["id" => "message", "class" => "formattable", "name" => "message"]))
                 ),
                 TR(
                     TD(),

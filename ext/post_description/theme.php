@@ -22,6 +22,7 @@ class PostDescriptionTheme extends Themelet
                 "type" => "text",
                 "name" => "description",
                 "id" => "description_editor",
+                "class" => "formattable",
                 ], $raw_description)
             : null
         );
@@ -35,7 +36,8 @@ class PostDescriptionTheme extends Themelet
                 TEXTAREA([
                     "type" => "text",
                     "name" => "description{$suffix}",
-                    "placeholder" => "Description"
+                    "placeholder" => "Description",
+                    "class" => "formattable",
                 ])
             )
         );

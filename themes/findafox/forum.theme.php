@@ -114,7 +114,7 @@ class CustomForumTheme extends ForumTheme
                 make_link("forum/answer"),
                 "Max characters allowed: $max_characters ",
                 INPUT(["type" => "hidden", "name" => "threadID", "value" => $threadID]),
-                TEXTAREA(["id" => "comment_on_$threadID", "name" => "message", "rows" => 5, "cols" => 50]),
+                TEXTAREA(["id" => "comment_on_$threadID", "class" => "formattable", "name" => "message", "rows" => 5, "cols" => 50]),
                 SHM_SUBMIT("Reply")
             )
         );

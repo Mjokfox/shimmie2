@@ -92,7 +92,7 @@ class PrivMsgTheme extends Themelet
                     TH("Subject"),
                     TD(INPUT(["type" => "text", "name" => "subject", "value" => $subject]))
                 ),
-                TR(TD(["colspan" => 2], TEXTAREA(["name" => "message", "rows" => 6]))),
+                TR(TD(["colspan" => 2], TEXTAREA(["name" => "message", "class" => "formattable", "rows" => 6]))),
                 TR(TD(["colspan" => 2], SHM_SUBMIT("Send")))
             ),
         );
@@ -111,7 +111,7 @@ class PrivMsgTheme extends Themelet
                     TH("Subject"),
                     TD(INPUT(["type" => "text", "name" => "subject", "value" => $subject]))
                 ),
-                TR(TD(["colspan" => 2], TEXTAREA(["name" => "message", "rows" => 6], $message))),
+                TR(TD(["colspan" => 2], TEXTAREA(["name" => "message", "class" => "formattable", "rows" => 6], $message))),
                 TR(TD(["colspan" => 2], SHM_SUBMIT("Edit")))
             ),
         );

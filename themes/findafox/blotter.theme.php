@@ -16,9 +16,8 @@ class CustomBlotterTheme extends BlotterTheme
      */
     public function display_blotter(array $entries): void
     {
-        global $page, $config;
         $html = $this->get_html_for_blotter($entries);
-        $page->add_block(new Block(null, rawHTML($html), "main", 1, "blotter"));
+        Ctx::$page->add_block(new Block(null, rawHTML($html), "main", 1, "blotter"));
     }
 
     /**
@@ -26,8 +25,6 @@ class CustomBlotterTheme extends BlotterTheme
      */
     private function get_html_for_blotter(array $entries): string
     {
-        global $config;
-
         $count = count($entries);
         if ($count === 1) {
             $entry = $entries[0];
@@ -35,7 +32,7 @@ class CustomBlotterTheme extends BlotterTheme
             $clean_date = date("m/d/y", \Safe\strtotime($messy_date));
             $cleaner_time = SHM_DATE($messy_date);
             $out_text = "Server news: {$clean_date} ($cleaner_time)";
-            $in_text = $entry['entry_text'];
+            $in_text = format_text($entry['entry_text']);
             $id = $entry['id'];
             $html = "
             <div class='blotter' data-id='$id' style='display:none;'>
@@ -45,18 +42,15 @@ class CustomBlotterTheme extends BlotterTheme
                     </div>
                     <div id='blotter2' class='shm-blotter2' style='display:none;'>$in_text</div>
                 </a>
-                <span>
+                <span class='shm-blotter-tools'>
                     <a href='".make_link("blotter/list")."'>Show All</a>
-                    
-                </span>
-                <span class='shm-blotter-hide'>
                     <a href='#' id='blotter-hide'>Hide forever</a>
                 </span>
             </div>
 		    ";
         } else {
-            $i_color = $config->get(BlotterConfig::COLOR);
-            $position = $config->get(BlotterConfig::POSITION);
+            $i_color = Ctx::$config->get(BlotterConfig::COLOR);
+            $position = Ctx::$config->get(BlotterConfig::POSITION);
             $entries_list = "";
             foreach ($entries as $entry) {
                 /**

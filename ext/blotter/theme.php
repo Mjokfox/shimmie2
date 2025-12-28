@@ -48,7 +48,7 @@ class BlotterTheme extends Themelet
                 TFOOT(
                     TR(SHM_SIMPLE_FORM(
                         make_link("blotter/add"),
-                        TD(["colspan" => 2], TEXTAREA(["name" => "entry_text", "rows" => 2])),
+                        TD(["colspan" => 2], TEXTAREA(["name" => "entry_text", "class" => "formattable", "rows" => 2])),
                         TD(INPUT(["type" => "checkbox", "name" => "important"])),
                         TD(SHM_SUBMIT("Add"))
                     ))

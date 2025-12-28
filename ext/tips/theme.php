@@ -40,7 +40,7 @@ class TipsTheme extends Themelet
                 ),
                 TR(
                     TH("Message"),
-                    TD(TEXTAREA(["name" => "text"]))
+                    TD(TEXTAREA(["name" => "text", "class" => "formattable"]))
                 ),
                 TR(
                     TD(["colspan" => 2], SHM_SUBMIT("Submit"))

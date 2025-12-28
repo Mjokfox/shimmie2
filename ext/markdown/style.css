@@ -16,7 +16,8 @@
 }
 
 DIV.md-preview {
-	border: 1px solid var(--text);
+	margin-top: 2px;
+	outline: 2px dotted #888;
+	min-height: 1em;
 	box-sizing: border-box;
-	padding: .5em;
 }

@@ -93,7 +93,7 @@ class PoolsTheme extends Themelet
         $form = SHM_SIMPLE_FORM(make_link("pool/create"), TABLE(
             TR(TD("Title:"), TD(INPUT(["type" => "text", "name" => "title"]))),
             TR(TD("Public?:"), TD("Yes", INPUT(["type" => "radio", "name" => "public", "value" => "Y", "checked" => "checked"]), "No", INPUT(["type" => "radio", "name" => "public", "value" => "N"]))),
-            TR(TD("Description:"), TD(TEXTAREA(["name" => "description"]))),
+            TR(TD("Description:"), TD(TEXTAREA(["name" => "description", "class" => "formattable"]))),
             TR(TD(["colspan" => "2"], SHM_SUBMIT("Create")))
         ));
 
@@ -266,7 +266,7 @@ class PoolsTheme extends Themelet
     {
         $desc_form = SHM_SIMPLE_FORM(
             make_link("pool/edit_description/{$pool->id}"),
-            TEXTAREA(["name" => "description"], $pool->description),
+            TEXTAREA(["name" => "description", "class" => "formattable"], $pool->description),
             BR(),
             SHM_SUBMIT("Change Description")
         );
