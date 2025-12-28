@@ -47,7 +47,7 @@ function markdown_format(text)
 	replacements = ["h4","h3","h2","h1"];
 	types.forEach((el, i) => {
 		let r = replacements[i];
-		let regex = new RegExp(`^${el}\\s(.+)`, "gm");
+		let regex = new RegExp(`^${el}\\s(.+)(?:\\n)?`, "gm");
 		text = text.replaceAll(regex, `<${r}>$1</${r}>`);
 	});
 	text = text.replaceAll(/^&gt;\((\S+)\)\s+(.+)/gm, "<blockquote><i><b>$1</b> said:</i><br><small>$2</small></blockquote>");

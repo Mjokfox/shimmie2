@@ -152,26 +152,33 @@ h1 {
 	margin-top: 0;
 	margin-bottom: 0;
 	padding: 0.35rem;
-	font-size: 2rem;
+	font-size: 2em;
 }
 
 h1 a {
 	color: var(--link-header);
 }
 
+h2 {
+	margin-top: 0;
+	margin-bottom: 0;
+	padding: 0.2rem;
+	font-size: 1.7em;
+}
+
 h3 {
 	margin-top: 0;
 	margin-bottom: 0;
 	padding: 0.2rem 0.2rem 0.2rem 0;
-	font-size: 1rem;
+	font-size: 1.35em;
 }
 
 h4 {
-	font-size: 1.4rem;
+	font-size: 1.2em;
 }
 
 h5 {
-	font-size: 1.2rem;
+	font-size: 1.1em;
 }
 
 table.zebra {
@@ -584,10 +591,6 @@ form+form {
 	FOOTER {
 		grid-column: 1;
 		grid-row: 4;
-	}
-
-	H3 {
-		font-size: 3rem;
 	}
 
 	SECTION#mobile-search, SECTION#text-mobile-search {

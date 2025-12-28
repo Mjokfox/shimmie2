@@ -21,3 +21,7 @@ DIV.md-preview {
 	min-height: 1em;
 	box-sizing: border-box;
 }
+
+.markdown H1, .markdown H2, .markdown H3, .markdown H4 {
+	padding: 0;
+}
