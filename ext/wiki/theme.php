@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use Jfcherng\Diff\{DiffHelper};
 
-use function MicroHTML\{A, BR, DIV, HR, INPUT, P, STYLE, TABLE, TD, TEXTAREA, TR, emptyHTML, rawHTML};
+use function MicroHTML\{A, BR, BUTTON, DIV, HR, INPUT, P, STYLE, TABLE, TD, TEXTAREA, TR, emptyHTML, rawHTML};
 
 use MicroHTML\HTMLElement;
 
@@ -198,12 +198,25 @@ class WikiTheme extends Themelet
                 TD(SHM_SIMPLE_FORM(
                     make_link("wiki/$u_title/delete_revision"),
                     INPUT(["type" => "hidden", "name" => "revision", "value" => $page->revision]),
-                    SHM_SUBMIT("Delete")
+                    BUTTON([
+                        "type" => "button",
+                        "onclick" => "$('#wiki-delete').show(); $(this).hide();",
+                    ], "Delete current revision"),
+                    BUTTON([
+                        "id" => "wiki-delete",
+                        "type" => "submit",
+                        "style" => "display:none;",
+                    ], "Are you sure you want to delete this revision?")
                 ))
             );
             $edit->appendChild(TD(SHM_SIMPLE_FORM(
                 make_link("wiki/$u_title/delete_all"),
-                SHM_SUBMIT("Delete All")
+                BUTTON([
+                    "type" => "button",
+                    "onclick" => "if(window.confirm('Are you sure you want to delete ALL revisions of this wiki page?') 
+                    && window.confirm('This will delete ALL history from this wiki page, not just the current revision. Are you sure you want to continue?'))
+                    {this.parentElement.submit()}",
+                ], "Delete all revisions")
             )));
         }
 
