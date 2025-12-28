@@ -16,3 +16,15 @@
 .diff-html TD {
     text-align: left;
 }
+.wiki-tools {
+	display: flex;
+	gap: 1em;
+}
+.wiki-admin-tools {
+	display: flex;
+	gap: 1em;
+	margin-left: auto;
+}
+.wiki-admin-tools * {
+	margin: 0;
+}

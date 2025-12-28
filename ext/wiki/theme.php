@@ -185,17 +185,18 @@ class WikiTheme extends Themelet
 
         $formatted_body = self::format_wiki_page($page);
 
-        $edit = TR();
+        $edit = DIV(["class" => "wiki-tools"]);
         if (Wiki::can_edit(Ctx::$user, $page)) {
-            $edit->appendChild(TD(SHM_SIMPLE_FORM(
+            $edit->appendChild(SHM_SIMPLE_FORM(
                 make_link("wiki/$u_title/edit"),
                 INPUT(["type" => "hidden", "name" => "revision", "value" => $page->revision]),
-                INPUT(["type" => "submit", "value" => "Edit"])
-            )));
+                INPUT(["type" => "submit", "value" => "Edit", "style" => "padding: 0px 2em"])
+            ));
         }
         if (Ctx::$user->can(WikiPermission::ADMIN)) {
-            $edit->appendChild(
-                TD(SHM_SIMPLE_FORM(
+            $edit->appendChild(DIV(
+                ["class" => "wiki-admin-tools"],
+                SHM_SIMPLE_FORM(
                     make_link("wiki/$u_title/delete_revision"),
                     INPUT(["type" => "hidden", "name" => "revision", "value" => $page->revision]),
                     BUTTON([
@@ -207,17 +208,17 @@ class WikiTheme extends Themelet
                         "type" => "submit",
                         "style" => "display:none;",
                     ], "Are you sure you want to delete this revision?")
-                ))
-            );
-            $edit->appendChild(TD(SHM_SIMPLE_FORM(
-                make_link("wiki/$u_title/delete_all"),
-                BUTTON([
+                ),
+                SHM_SIMPLE_FORM(
+                    make_link("wiki/$u_title/delete_all"),
+                    BUTTON([
                     "type" => "button",
                     "onclick" => "if(window.confirm('Are you sure you want to delete ALL revisions of this wiki page?') 
                     && window.confirm('This will delete ALL history from this wiki page, not just the current revision. Are you sure you want to continue?'))
                     {this.parentElement.submit()}",
                 ], "Delete all revisions")
-            )));
+                )
+            ));
         }
 
         return DIV(
@@ -230,7 +231,7 @@ class WikiTheme extends Themelet
                 " by ",
                 A(["href" => make_link("user/{$owner->name}")], $owner->name),
                 " at {$page->date}",
-                TABLE($edit),
+                $edit,
             )
         );
     }
