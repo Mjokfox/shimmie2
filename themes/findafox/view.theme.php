@@ -24,7 +24,7 @@ class CustomViewPostTheme extends ViewPostTheme
         $page->add_html_header(META(["property" => "twitter:title", "content" => $h_metatags]));
         $page->add_html_header(META(["property" => "twitter:card", "content" => "summary_large_image"]));
         $page->add_html_header(META(["property" => "twitter:image:src", "content" => $image->get_image_link()->asAbsolute()]));
-        $page->add_html_header(META(["name" => "robots", "content" => "nofollow"]));
+        $page->add_html_header(META(["name" => "robots", "content" => \array_key_exists('search', $_GET) ? "nofollow noindex" : 'nofollow']));
     }
     /**
      * @param HTMLElement[] $editor_parts
