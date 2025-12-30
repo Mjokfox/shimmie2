@@ -367,6 +367,7 @@ final class PrivMsg extends Extension
                         throw new ObjectNotFound("You have not sent anything to this user");
                     }
                 }
+                Ctx::$page->set_title('Private messages');
             } else {
                 throw new PermissionDenied("You are not allowed to see others' archives");
             }
@@ -391,6 +392,7 @@ final class PrivMsg extends Extension
                 } else {
                     throw new PermissionDenied("You are not allowed to see others' archives");
                 }
+                Ctx::$page->set_title('Archived PMs');
             } else {
                 throw new PermissionDenied("You are not allowed to see others' archives");
             }
@@ -472,36 +474,6 @@ final class PrivMsg extends Extension
                 send_event(new EditPMEvent($pmo));
                 $page->flash("PM edited");
                 $page->set_redirect(make_link("pm/read/$pm_id"));
-            }
-        }
-    }
-
-    public function onCommentPosting(CommentPostingEvent $event): void
-    {
-        preg_match_all('/@(\S+)/m', $event->comment, $matches);
-        if (count($matches[1]) < 1) {
-            return;
-        }
-        $res = array_unique($matches[1]);
-        $k = array_search($event->user->name, $res, true); // no need to pm yourself
-        if ($k !== false) {
-            unset($res[$k]);
-        }
-
-        foreach ($res as $name) {
-            try {
-                $user = User::by_name($name);
-                send_event(new SendPMEvent(new PM(
-                    $event->user->id,
-                    Network::get_real_ip(),
-                    $user->id,
-                    "{$event->user->name} mentioned you on post >>{$event->image_id}!",
-                    ">>{$event->image_id}" .
-                    (is_null($event->comment_id) ? "" : "#{$event->comment_id}") . "\n" .
-                    str_replace("\n", "\n> ", ">({$event->user->name}) {$event->comment}")
-                )));
-            } catch (UserNotFound $e) {
-                // username does not exist
             }
         }
     }

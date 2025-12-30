@@ -1,0 +1,31 @@
+.notif-main >* {
+    margin-bottom: .5em;
+}
+.notif-BA {
+    display: flex;
+}
+.notif-BA * {
+    margin: 0 1em 0 0;
+}
+.notif-container {
+    display: flex;
+    flex-direction: column;
+    row-gap: .5em
+}
+.notif-row {
+    display: flex;
+    gap: 1em;
+    border-bottom: 1px dashed #fff8;
+}
+.notif-actions {
+    margin-top: 1em;
+    display: flex;
+    gap: 1em;
+}
+.notif-unread {
+    font-weight: bold;
+}
+.notif-date {
+    font-size: .8em;
+    font-style: italic;
+}
