@@ -34,9 +34,9 @@ final class PostSource extends Extension
         if (is_null($source) && Ctx::$config->get(UploadConfig::TLSOURCE)) {
             $source = $event->get_param('url');
         }
-        if (Ctx::$user->can(PostSourcePermission::EDIT_IMAGE_SOURCE) && !is_null($source)) {
+        if (Ctx::$user->can(PostSourcePermission::EDIT_IMAGE_SOURCE)) {
             if ($event->params['tags'] ? !\Safe\preg_match('/source[=:]/', $event->params->req("tags")) : true) {
-                send_event(new SourceSetEvent($event->image, $source));
+                send_event(new SourceSetEvent($event->image, is_null($source) ? "" : $source));
             }
         }
     }
