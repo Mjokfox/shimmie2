@@ -203,9 +203,11 @@ final class PostScheduling extends DataHandlerExtension
 
     public function get_scheduled_post(): int
     {
+        $order = Ctx::$config->get(PostSchedulingConfig::SCHEDULE_ORDER);
+        // @phpstan-ignore-next-line
         $scheduled = Ctx::$database->get_row("
             SELECT * FROM scheduled_posts
-            ORDER BY id ASC
+            ORDER BY $order
             LIMIT 1;
         ");
         if (is_null($scheduled)) {

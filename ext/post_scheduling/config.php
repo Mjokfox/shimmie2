@@ -13,4 +13,6 @@ final class PostSchedulingConfig extends ConfigGroup
 
     #[ConfigMeta("Schedule interval", ConfigType::INT, default: 3600)]
     public const SCHEDULE_INTERVAL = "post_scheduling_interval";
+    #[ConfigMeta("Schedule posting order", ConfigType::STRING, default: "id ASC")]
+    public const SCHEDULE_ORDER = "post_scheduling_order";
 }
