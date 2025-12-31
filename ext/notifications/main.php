@@ -70,7 +70,6 @@ final class Notifications extends Extension
 				type INTEGER NOT NULL,
                 reference_id INTEGER,
                 reference_id2 INTEGER,
-				message TEXT,
 				is_read BOOLEAN NOT NULL DEFAULT FALSE,
 				FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 				FOREIGN KEY (from_id) REFERENCES users(id) ON DELETE CASCADE
@@ -99,24 +98,20 @@ final class Notifications extends Extension
         if ($event->page_matches("notifications")) {
             $notifications = Ctx::$database->get_all('SELECT * FROM notifications WHERE user_id = :user_id', ['user_id' => Ctx::$user->id]);
             $this->theme->display_notifs(array_map(fn ($e) => Notification::from_row($e), $notifications)); // @phpstan-ignore-line
-        } elseif ($event->page_matches("notif/read/{id}")) {
-            $id = $event->get_iarg('id');
+        } elseif ($event->page_matches("notif/read/{id}")) { // read notification, and forward to the right page from the GET query 'r'
             $r = $event->GET->req('r');
             Ctx::$database->execute('UPDATE notifications SET is_read = TRUE WHERE id = :id AND user_id = :user_id', ['id' => $event->get_iarg('id'), 'user_id' => Ctx::$user->id]);
             Ctx::$page->set_redirect(make_link($r));
             Ctx::$cache->delete('notif-count-'.Ctx::$user->id);
-
-            // from click, set is_read, defer to right page
         } elseif ($event->page_matches("notifications/action", method: "POST", authed:true)) {// from form, delete or read, go back to /notifications
             $this->action($event->POST);
             Ctx::$page->set_redirect(make_link('notifications'));
-
         } elseif ($event->page_matches("notifications/read_all", authed:true)) {// set all to is_read, go back to /notifications
             Ctx::$database->execute('UPDATE notifications SET is_read = TRUE WHERE user_id = :user_id', ['user_id' => Ctx::$user->id]);
             Ctx::$cache->delete('notif-count-'.Ctx::$user->id);
             Ctx::$page->flash('Set all notifications to read');
             Ctx::$page->set_redirect(make_link('notifications'));
-        } elseif ($event->page_matches("notifications/delete_all", authed:true)) {// delete all, go back(?)
+        } elseif ($event->page_matches("notifications/delete_all", authed:true)) {// delete all, go to user page
             Ctx::$database->execute('DELETE FROM notifications WHERE user_id = :user_id', ['user_id' => Ctx::$user->id]);
             Ctx::$cache->delete('notif-count-'.Ctx::$user->id);
             Ctx::$page->flash('Delete all notifications');

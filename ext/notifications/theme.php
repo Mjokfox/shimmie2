@@ -35,60 +35,16 @@ class NotificationsTheme extends Themelet
             $from = User::by_id_dangerously_cached($n->from_id);
             switch ($n->type) {
                 case Notification::TYPE_NEW_COMMENT_ON_POST:
-                    $container->appendChild($this->notification_row(
-                        SPAN(
-                            ['class' => $n->is_read ? 'notif-read' : 'notif-unread'],
-                            'User ',
-                            A(['href' => make_link("user/$from->name")], "@$from->name"),
-                            ' made a new comment on your post ',
-                            A(['href' => make_link("notif/read/$n->id", query: new QueryArray(['r' => "post/view/$n->ref_id"]), fragment: "c$n->ref_id2")], ">>$n->ref_id"),
-                            '!'
-                        ),
-                        $n->id,
-                        $n->date
-                    ));
+                    $container->appendChild($this->notification_row('made a new comment on your post', $n->is_read, $from->name, $n->id, "post/view/$n->ref_id", "c$n->ref_id2", ">>$n->ref_id", $n->date));
                     break;
                 case Notification::TYPE_MENTION_COMMENT:
-                    $container->appendChild($this->notification_row(
-                        SPAN(
-                            ['class' => $n->is_read ? 'notif-read' : 'notif-unread'],
-                            'User ',
-                            A(['href' => make_link("user/$from->name")], "@$from->name"),
-                            ' mentioned you on post ',
-                            A(['href' => make_link("notif/read/$n->id", query: new QueryArray(['r' => "post/view/$n->ref_id"]), fragment: "c$n->ref_id2")], ">>$n->ref_id"),
-                            '!'
-                        ),
-                        $n->id,
-                        $n->date
-                    ));
+                    $container->appendChild($this->notification_row('mentioned you on post', $n->is_read, $from->name, $n->id, "post/view/$n->ref_id", "c$n->ref_id2", ">>$n->ref_id", $n->date));
                     break;
                 case Notification::TYPE_NEW_COMMENT_ON_FORUM:
-                    $container->appendChild($this->notification_row(
-                        SPAN(
-                            ['class' => $n->is_read ? 'notif-read' : 'notif-unread'],
-                            'User ',
-                            A(['href' => make_link("user/$from->name")], "@$from->name"),
-                            ' made a new comment on your forum thread ',
-                            A(['href' => make_link("notif/read/$n->id", query: new QueryArray(['r' => "forum/view/$n->ref_id"]), fragment: "$n->ref_id2 ")], (string)$n->ref_id),
-                            '!'
-                        ),
-                        $n->id,
-                        $n->date
-                    ));
+                    $container->appendChild($this->notification_row('made a new comment on your forum thread', $n->is_read, $from->name, $n->id, "forum/view/$n->ref_id", "$n->ref_id2 ", (string)$n->ref_id, $n->date));
                     break;
                 case Notification::TYPE_MENTION_FORUM:
-                    $container->appendChild($this->notification_row(
-                        SPAN(
-                            ['class' => $n->is_read ? 'notif-read' : 'notif-unread'],
-                            'User ',
-                            A(['href' => make_link("user/$from->name")], "@$from->name"),
-                            ' mentioned you on a forum thread ',
-                            A(['href' => make_link("notif/read/$n->id", query: new QueryArray(['r' => "forum/view/$n->ref_id"]), fragment: "$n->ref_id2 ")], (string)$n->ref_id),
-                            '!'
-                        ),
-                        $n->id,
-                        $n->date
-                    ));
+                    $container->appendChild($this->notification_row('mentioned you on a forum thread', $n->is_read, $from->name, $n->id, "forum/view/$n->ref_id", "$n->ref_id2 ", (string)$n->ref_id, $n->date));
                     break;
                 default:
                     break;
@@ -108,13 +64,25 @@ class NotificationsTheme extends Themelet
         Ctx::$page->add_block(new Block("Notifications", DIV(['class' => 'notif-main'], $bulk_actions, $action_form)));
         Ctx::$page->set_title("notifications");
     }
-
-    private function notification_row(string|HTMLElement $content, int $id, string $date): HTMLElement
+    /** @param (fragment-string&non-empty-string) $fragment */
+    private function notification_row(string|HTMLElement $content, bool $read, string $from, int $id, string $view_link, string $fragment, string $link_text, string $date): HTMLElement
     {
-        return DIV(
+        return
+        DIV(
             ['class' => 'notif-row'],
             DIV(INPUT(['type' => 'checkbox', 'name' => 'sel[]', 'value' => $id])),
-            DIV(['class' => 'notif-row-content'], $content, DIV(['class' => 'notif-date'], SHM_DATE($date)))
+            DIV(
+                ['class' => 'notif-row-content'],
+                SPAN(
+                    ['class' => $read ? 'notif-read' : 'notif-unread'],
+                    'User ',
+                    A(['href' => make_link("user/$from")], "@$from"),
+                    " $content",
+                    A(['href' => make_link("notif/read/$id", query: new QueryArray(['r' => $view_link]), fragment: $fragment)], $link_text),
+                    '!'
+                ),
+                DIV(['class' => 'notif-date'], SHM_DATE($date))
+            )
         );
     }
 }
