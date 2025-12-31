@@ -47,5 +47,6 @@ class PostSchedulingTheme extends Themelet
             ));
         }
         Ctx::$page->add_block(new Block(null, $html, 'main'));
+        Ctx::$page->set_title('scheduled posts');
     }
 }

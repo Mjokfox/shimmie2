@@ -15,8 +15,6 @@ class CustomIndexTheme extends IndexTheme
      */
     public function display_page(array $images): void
     {
-        global $page;
-        global $config, $user;
         $this->display_shortwiki();
 
         $this->display_page_header($images);
@@ -24,7 +22,7 @@ class CustomIndexTheme extends IndexTheme
         if (\Safe\preg_match("/^\/post\/(list|search)\//", $_SERVER['REQUEST_URI'], $matches)) {
             $path = $matches[1];
         }
-        if ($config->get(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
+        if (Ctx::$config->get(ReverseImageConfig::SEARCH_ENABLE) && Ctx::$user->get_config()->get(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
             $pos = "main";
             $id = "search-bar-right";
             $class = "full-width";
@@ -36,19 +34,19 @@ class CustomIndexTheme extends IndexTheme
 
         $nav = $this->build_navigation($this->page_number, $this->total_pages, ($path === "list" ? $this->search_terms : []), $class);
 
-        $page->add_block(new Block("Search with tags", $nav, $pos, 2, $id));
+        Ctx::$page->add_block(new Block("Search with tags", $nav, $pos, 2, $id));
 
-        $page->add_block(new Block("Search with tags", $nav, "main", 5, "mobile-search"));
+        Ctx::$page->add_block(new Block("Search with tags", $nav, "main", 5, "mobile-search"));
 
         $next = $this->page_number + 1;
         $prev = $this->page_number - 1;
         $query = implode(" ", $this->search_terms);
 
         if ($next <= $this->total_pages) {
-            $page->add_html_header(LINK(["class" => "nextlink", "rel" => "next", "href" => make_link("post/$path".($query ? "/$query" : "")."/$next")]));
+            Ctx::$page->add_html_header(LINK(["class" => "nextlink", "rel" => "next", "href" => make_link("post/$path".($query ? "/$query" : "")."/$next")]));
         }
         if ($prev > 0) {
-            $page->add_html_header(LINK(["class" => "prevlink", "rel" => "previous", "href" => make_link("post/$path".($query ? "/$query" : "")."/$prev")]));
+            Ctx::$page->add_html_header(LINK(["class" => "prevlink", "rel" => "previous", "href" => make_link("post/$path".($query ? "/$query" : "")."/$prev")]));
         }
         if (count($images) > 0) {
             $this->display_page_images($images);
@@ -62,7 +60,6 @@ class CustomIndexTheme extends IndexTheme
      */
     protected function build_navigation(int $page_number, int $total_pages, array $search_terms, string $class = ""): HTMLElement
     {
-        global $user;
         $action = search_link();
         return FORM(
             [
@@ -71,7 +68,7 @@ class CustomIndexTheme extends IndexTheme
                 "class" => "search-bar $class"
             ],
             INPUT(["type" => "hidden", "name" => "q", "value" => $action->getPath()]),
-            INPUT(["type" => "hidden", "name" => "auth_token", "value" => $user->get_auth_token()]),
+            INPUT(["type" => "hidden", "name" => "auth_token", "value" => Ctx::$user->get_auth_token()]),
             INPUT([
                 "name" => 'search',
                 "type" => 'text',
@@ -88,7 +85,6 @@ class CustomIndexTheme extends IndexTheme
      */
     protected function display_page_images(array $images): void
     {
-        global $page;
         $path = "list";
         if (\Safe\preg_match("/^\/post\/(list|search)\//", $_SERVER['REQUEST_URI'], $matches)) {
             $path = $matches[1];
@@ -96,15 +92,15 @@ class CustomIndexTheme extends IndexTheme
         if (count($this->search_terms) > 0) {
             if (count($this->search_terms) > 1 || $this->page_number > 1) {
                 // only index the first pages of each term
-                $page->add_html_header(META(["name" => "robots", "content" => "noindex, nofollow"]));
+                Ctx::$page->add_html_header(META(["name" => "robots", "content" => "noindex, nofollow"]));
             } else {
-                $page->add_html_header(META(["name" => "robots", "content" => "nofollow"]));
+                Ctx::$page->add_html_header(META(["name" => "robots", "content" => "nofollow"]));
             }
             $query = url_escape(Tag::implode($this->search_terms));
-            $page->add_block(new Block("Posts ", $this->build_table($images, "search=$query"), "main", 10, "image-list"));
+            Ctx::$page->add_block(new Block("Posts ", $this->build_table($images, "search=$query"), "main", 10, "image-list"));
             $this->display_paginator("post/$path/$query", null, $this->page_number, $this->total_pages, true);
         } else {
-            $page->add_block(new Block("Posts ", $this->build_table($images, null), "main", 10, "image-list"));
+            Ctx::$page->add_block(new Block("Posts ", $this->build_table($images, null), "main", 10, "image-list"));
             $this->display_paginator("post/$path", null, $this->page_number, $this->total_pages, true);
         }
     }

@@ -12,18 +12,16 @@ class CustomReverseImageTheme extends ReverseImageTheme
 {
     public function list_search(string $search = ""): void
     {
-        global $page;
         $nav = $this->build_navigation($search, "full-width");
-        $page->add_block(new Block("Or describe an image", $nav, "main", 2, "text-search-right"));
-        $page->add_block(new Block("Or describe an image", $nav, "main", 6, "text-mobile-search"));
+        Ctx::$page->add_block(new Block("Or describe an image", $nav, "main", 2, "text-search-right"));
+        Ctx::$page->add_block(new Block("Or describe an image", $nav, "main", 6, "text-mobile-search"));
     }
 
     public function view_search(string $search = ""): void
     {
-        global $page;
         $nav = $this->build_navigation($search, "");
-        $page->add_block(new Block("Or describe an image", $nav, "left", 2, "text-search"));
-        $page->add_block(new Block("Or describe an image", $nav, "main", 6, "text-mobile-search"));
+        Ctx::$page->add_block(new Block("Or describe an image", $nav, "left", 2, "text-search"));
+        Ctx::$page->add_block(new Block("Or describe an image", $nav, "main", 6, "text-mobile-search"));
     }
 
     public function build_navigation(string $search_string = "", string $class = ""): HTMLElement

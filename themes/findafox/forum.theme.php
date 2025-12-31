@@ -19,8 +19,6 @@ class CustomForumTheme extends ForumTheme
      */
     public function display_thread(array $posts, string $threadTitle, int $threadID, int $pageNumber, int $totalPages): void
     {
-        global $config, $page, $user;
-
         $tbody = TBODY();
         foreach ($posts as $post) {
             $tbody->appendChild($this->post_to_html($post, $threadID));
@@ -49,18 +47,18 @@ class CustomForumTheme extends ForumTheme
 
         $this->display_paginator("forum/view/$threadID", null, $pageNumber, $totalPages);
 
-        $page->set_title($threadTitle);
+        Ctx::$page->set_title($threadTitle);
 
 
-        if ($user->can(ForumPermission::FORUM_CREATE)) {
+        if (Ctx::$user->can(ForumPermission::FORUM_CREATE)) {
             $html->appendChild($this->build_postbox($threadID));
         }
 
-        if ($user->can(ForumPermission::FORUM_ADMIN)) {
+        if (Ctx::$user->can(ForumPermission::FORUM_ADMIN)) {
             $html->appendChild($this->add_actions_block_custom($threadID));
         }
 
-        $page->add_block(new Block(null, $html, "main", 20));
+        Ctx::$page->add_block(new Block(null, $html, "main", 20));
 
     }
 
@@ -69,8 +67,6 @@ class CustomForumTheme extends ForumTheme
      */
     protected function post_to_html(array $post, int $threadID): HTMLElement
     {
-        global $user, $cache;
-
         $tfe = send_event(new TextFormattingEvent($post["message"]));
         $h_comment = $tfe->getFormattedHTML();
 
@@ -84,14 +80,14 @@ class CustomForumTheme extends ForumTheme
         $BAE = send_event(new BuildAvatarEvent($duser));
         $h_avatar = $BAE->html;
         $h_del = null;
-        if ($user->can(ForumPermission::FORUM_ADMIN)) {
+        if (Ctx::$user->can(ForumPermission::FORUM_ADMIN)) {
             $h_del = SHM_SIMPLE_FORM(
                 make_link("forum/delete/$threadID/" . $post['id']),
                 SHM_SUBMIT("Delete"),
             );
         }
         $h_edit = null;
-        if ($user->can(CommentPermission::DELETE_COMMENT) || ($user->can(CommentPermission::CREATE_COMMENT) && $user->id === $duser->id)) {
+        if (Ctx::$user->can(CommentPermission::DELETE_COMMENT) || (Ctx::$user->can(CommentPermission::CREATE_COMMENT) && Ctx::$user->id === $duser->id)) {
             $h_edit = $this->edit_button($threadID, $post["id"]);
         }
         return TABLE(
@@ -106,8 +102,7 @@ class CustomForumTheme extends ForumTheme
 
     protected function build_postbox(int $threadID): HTMLElement
     {
-        global $config;
-        $max_characters = $config->get(ForumConfig::MAX_CHARS_PER_POST);
+        $max_characters = Ctx::$config->get(ForumConfig::MAX_CHARS_PER_POST);
         return DIV(
             ["class" => "comment comment_add", "id" => "cadd$threadID"],
             SHM_SIMPLE_FORM(

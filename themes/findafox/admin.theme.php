@@ -8,8 +8,7 @@ class CustomAdminPageTheme extends AdminPageTheme
 {
     public function display_page(): void
     {
-        global $page;
-        $page->set_layout("no-left");
+        Ctx::$page->set_layout("no-left");
         parent::display_page();
     }
 }

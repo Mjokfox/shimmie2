@@ -15,11 +15,9 @@ class CustomCommentListTheme extends CommentListTheme
      */
     public function display_comment_list(array $images, int $page_number, int $total_pages, bool $can_post): void
     {
-        global $config, $page, $user;
+        Ctx::$page->set_layout("no-left");
 
-        $page->set_layout("no-left");
-
-        $page->set_title("Comments");
+        Ctx::$page->set_title("Comments");
         $this->display_navigation([
             ($page_number <= 1) ? null : make_link('comment/list/'.($page_number - 1)),
             make_link(),
@@ -30,7 +28,7 @@ class CustomCommentListTheme extends CommentListTheme
         // parts for each image
         $position = 10;
 
-        $comment_limit = $config->get(CommentConfig::LIST_COUNT);
+        $comment_limit = Ctx::$config->get(CommentConfig::LIST_COUNT);
 
         foreach ($images as $pair) {
             $image = $pair[0];
@@ -79,7 +77,7 @@ class CustomCommentListTheme extends CommentListTheme
                 )
             );
 
-            $page->add_block(new Block(null, $html, "main", $position++));
+            Ctx::$page->add_block(new Block(null, $html, "main", $position++));
         }
     }
 
@@ -90,8 +88,6 @@ class CustomCommentListTheme extends CommentListTheme
 
     protected function comment_to_html(Comment $comment, bool $trim = false): HTMLElement
     {
-        global $user;
-
         $tfe = send_event(new TextFormattingEvent($comment->comment));
 
         if ($trim) {
@@ -107,11 +103,11 @@ class CustomCommentListTheme extends CommentListTheme
         $BAE = send_event(new BuildAvatarEvent($duser));
         $h_avatar = $BAE->html;
         $h_del = null;
-        if ($user->can(CommentPermission::DELETE_COMMENT) || $user->id === $comment->owner_id) {
+        if (Ctx::$user->can(CommentPermission::DELETE_COMMENT) || Ctx::$user->id === $comment->owner_id) {
             $h_del = emptyHTML(" - ", $this->delete_link($comment->comment_id, $comment->image_id, $comment->owner_name, $tfe->stripped));
         }
         $h_edit = null;
-        if ($user->can(CommentPermission::DELETE_COMMENT) || ($user->can(CommentPermission::CREATE_COMMENT) && $user->id === $comment->owner_id)) {
+        if (Ctx::$user->can(CommentPermission::DELETE_COMMENT) || (Ctx::$user->can(CommentPermission::CREATE_COMMENT) && Ctx::$user->id === $comment->owner_id)) {
             $h_edit = emptyHTML(" - ", $this->edit_button($comment->comment_id, $comment->image_id));
         }
         $h_edited = $comment->edited ? emptyHTML(BR(), EM("edited")) : null;
@@ -139,8 +135,6 @@ class CustomCommentListTheme extends CommentListTheme
 
     protected function build_postbox(int $image_id): HTMLElement
     {
-        global $config;
-
         $hash = CommentList::get_hash();
         return DIV(
             ["class" => "comment comment_add", "id" => "cadd$image_id"],

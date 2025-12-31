@@ -21,10 +21,8 @@ final class PostDescription extends Extension
 
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
-        global $database;
-
         if ($this->get_version() < 1) {
-            $database->create_table("image_descriptions", "
+            Ctx::$database->create_table("image_descriptions", "
                 image_id INTEGER NOT NULL,
                 description TEXT,
                 UNIQUE(image_id),
@@ -44,14 +42,12 @@ final class PostDescription extends Extension
 
     public function onPostDescriptionSet(PostDescriptionSetEvent $event): void
     {
-        global $database;
-
-        $database->execute("
+        Ctx::$database->execute("
             DELETE
             FROM image_descriptions
             WHERE image_id=:id
         ", ["id" => $event->image_id]);
-        $database->execute("
+        Ctx::$database->execute("
             INSERT
             INTO image_descriptions
             VALUES (:id, :description)
@@ -60,9 +56,7 @@ final class PostDescription extends Extension
 
     public function onImageInfoBoxBuilding(ImageInfoBoxBuildingEvent $event): void
     {
-        global $database;
-
-        $description = (string) $database->get_one(
+        $description = (string)Ctx::$database->get_one(
             "SELECT description FROM image_descriptions WHERE image_id = :id",
             ["id" => $event->image->id]
         ) ?: "None";

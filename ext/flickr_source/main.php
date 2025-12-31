@@ -33,8 +33,7 @@ class FlickrSource extends Extension
     // }
     public function onAdminBuilding(AdminBuildingEvent $event): void
     {
-        global $page, $database;
-        $start_id = $database->get_one("SELECT max(id)-100 from images;");
+        $start_id = Ctx::$database->get_one("SELECT max(id)-100 from images;");
         $html = (string)SHM_SIMPLE_FORM(
             make_link("admin/flickr_source"),
             TABLE(
@@ -49,7 +48,7 @@ class FlickrSource extends Extension
             ),
             SHM_SUBMIT('Find all flickr sources'),
         );
-        $page->add_block(new Block("Flickr Source", rawHTML($html)));
+        Ctx::$page->add_block(new Block("Flickr Source", rawHTML($html)));
     }
 
     public function onAdminAction(AdminActionEvent $event): void

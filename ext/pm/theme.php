@@ -101,7 +101,6 @@ class PrivMsgTheme extends Themelet
 
     public function display_editor(int $pm_id, string $subject = "", string $message = "", ?int $to_id = null): void
     {
-        global $page;
         $html = SHM_SIMPLE_FORM(
             make_link("pm/edit"),
             INPUT(["type" => "hidden", "name" => "to_id", "value" => $pm_id]),
@@ -115,13 +114,12 @@ class PrivMsgTheme extends Themelet
                 TR(TD(["colspan" => 2], SHM_SUBMIT("Edit")))
             ),
         );
-        $page->add_block(new Block("Editing PM" . ($to_id ? " to ".User::by_id($to_id)->name : ""), $html, "main", 50));
+        Ctx::$page->add_block(new Block("Editing PM" . ($to_id ? " to ".User::by_id($to_id)->name : ""), $html, "main", 50));
     }
 
     public function display_edit_button(int $pm_id): void
     {
-        global $page;
-        $page->add_block(new Block("", A(["href" => make_link("pm/edit/$pm_id")], "Edit"), "main", 49));
+        Ctx::$page->add_block(new Block("", A(["href" => make_link("pm/edit/$pm_id")], "Edit"), "main", 49));
     }
 
     public function display_message(User $from, User $to, PM $pm): void

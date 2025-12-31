@@ -12,7 +12,6 @@ class CustomhomeTheme extends HomeTheme
 {
     protected function build_search(): HTMLElement
     {
-        global $config, $user;
         $search_html = DIV(
             ["class" => "space search-bar", "id" => "search"],
             SHM_FORM(
@@ -25,7 +24,7 @@ class CustomhomeTheme extends HomeTheme
                 ]
             )
         );
-        if (ReverseImageInfo::is_enabled() && $config->get(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
+        if (ReverseImageInfo::is_enabled() && Ctx::$config->get(ReverseImageConfig::SEARCH_ENABLE) && Ctx::$user->get_config()->get(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
             $search_html->appendChild(A(["href" => "#", "onclick" => "$(\".search-bar\").toggle();"], "Or describe an image"));
             $search_html = emptyHTML(
                 $search_html,

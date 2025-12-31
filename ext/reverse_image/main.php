@@ -378,7 +378,6 @@ class ReverseImage extends Extension
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         /** @var false|string $result */
         $result = curl_exec($ch);
-        curl_close($ch);
         if (!$result) {
             return false;
         }
@@ -408,7 +407,6 @@ class ReverseImage extends Extension
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         /** @var false|string $result */
         $result = curl_exec($ch);
-        curl_close($ch);
         if (!$result) {
             return false;
         }

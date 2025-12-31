@@ -13,16 +13,14 @@ class GitPull extends Extension
     }
     public function onAdminBuilding(AdminBuildingEvent $event): void
     {
-        global $page;
         $html = SHM_SIMPLE_FORM(
             make_link("admin/git_pull"),
             SHM_SUBMIT('Pull from git'),
         );
-        $page->add_block(new Block("Git Pull", $html));
+        Ctx::$page->add_block(new Block("Git Pull", $html));
     }
     public function onAdminAction(AdminActionEvent $event): void
     {
-        global $database;
         switch ($event->action) {
             case "git_pull":
                 $output = $this->execGitPull();

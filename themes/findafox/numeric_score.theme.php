@@ -12,8 +12,6 @@ class CustomNumericScoreTheme extends NumericScoreTheme
 {
     public function get_voter(Image $image): void
     {
-        global $user, $page, $database;
-
         $vote_form = function (int $image_id, int $vote, string $text): HTMLElement {
             return SHM_SIMPLE_FORM(
                 make_link("numeric_score/vote"),
@@ -23,7 +21,7 @@ class CustomNumericScoreTheme extends NumericScoreTheme
             );
         };
         $voters = null;
-        if ($user->can(NumericScorePermission::EDIT_OTHER_VOTE)) {
+        if (Ctx::$user->can(NumericScorePermission::EDIT_OTHER_VOTE)) {
             $voters = emptyHTML(
                 BR(),
                 DIV(
@@ -40,14 +38,14 @@ class CustomNumericScoreTheme extends NumericScoreTheme
         }
 
         $i_score = $image['numeric_score'];
-        $i_vote = $this->get_my_vote($user->id, $image->id);
+        $i_vote = $this->get_my_vote(Ctx::$user->id, $image->id);
         $score_class = $i_score > 0 ? "score-pos" : ($i_score < 0 ? "score-neg" : "score-zero");
 
         $fav = null;
         if (FavoritesInfo::is_enabled()) {
-            $is_favorited = $database->get_one(
+            $is_favorited = Ctx::$database->get_one(
                 "SELECT COUNT(*) AS ct FROM user_favorites WHERE user_id = :user_id AND image_id = :image_id",
-                ["user_id" => $user->id, "image_id" => $image->id]
+                ["user_id" => Ctx::$user->id, "image_id" => $image->id]
             ) > 0;
 
             if ($is_favorited) {
@@ -73,13 +71,12 @@ class CustomNumericScoreTheme extends NumericScoreTheme
             $voters,
         );
 
-        $page->add_block(new Block("", $html, "main", 10, "Post_Scoremain"));
+        Ctx::$page->add_block(new Block("", $html, "main", 10, "Post_Scoremain"));
     }
 
     private function get_my_vote(int $user_id, int $image_id): int
     {
-        global $database;
-        return $database->get_one("SELECT score 
+        return Ctx::$database->get_one("SELECT score 
             FROM numeric_score_votes 
             WHERE user_id = :user_id 
             AND image_id = :image_id;", ["user_id" => $user_id,"image_id" => $image_id]) | 0;

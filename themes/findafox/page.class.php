@@ -116,10 +116,9 @@ class customPage extends Page
 
     protected function footer_html(): HTMLElement
     {
-        global $config;
         $debug = get_debug_info();
         $contact_link = contact_link() ?? "";
-        $footer_html = $config->get(SetupConfig::FOOTER_HTML);
+        $footer_html = Ctx::$config->get(SetupConfig::FOOTER_HTML);
         if (!empty($footer_html)) {
             $footer_html = str_replace('%d', $debug, $footer_html);
             $footer_html = str_replace('%c', $contact_link, $footer_html);

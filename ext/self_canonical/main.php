@@ -16,9 +16,8 @@ class SelfCanonical extends Extension
 
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page,$config;
-        $page->add_html_header(rawHTML(
-            '<link rel="canonical" href="'.$config->get(SelfCanonicalConfig::DOMAIN).''.$event->path.'" >'
+        Ctx::$page->add_html_header(rawHTML(
+            '<link rel="canonical" href="'.Ctx::$config->get(SelfCanonicalConfig::DOMAIN).''.$event->path.'" >'
         ));
     }
 }

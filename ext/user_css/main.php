@@ -11,9 +11,8 @@ class UserCSS extends Extension
     public const KEY = "user_css";
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page,$user;
-        $page->add_html_header(STYLE(
-            rawHTML(htmlentities($user->get_config()->get(UserCSSUserConfig::CSS) ?? "", ENT_NOQUOTES, "UTF-8"))
+        Ctx::$page->add_html_header(STYLE(
+            rawHTML(htmlentities(Ctx::$user->get_config()->get(UserCSSUserConfig::CSS) ?? "", ENT_NOQUOTES, "UTF-8"))
         ));
     }
 }

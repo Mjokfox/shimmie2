@@ -31,14 +31,13 @@ class CustomViewPostTheme extends ViewPostTheme
      */
     public function display_page(Image $image, array $editor_parts, array $sidebar_parts): void
     {
-        global $page;
-        $page->set_heading(html_escape($image->get_tag_list()));
+        Ctx::$page->set_heading(html_escape($image->get_tag_list()));
         $nav = $this->build_navigation($image);
-        $page->add_block(new Block("Search with tags", $nav, "left", 0, "search-bar"));
-        $page->add_block(new Block("Search with tags", $nav, "main", 5, "mobile-search"));
-        $page->add_block(new Block("Information", $this->build_information($image), "left", 15));
-        $page->add_block(new Block(null, $this->build_info($image, $editor_parts, $sidebar_parts), "main", 15));
-        $page->add_block(new Block(null, $this->build_pin($image), "main", 2, "post_controls"));
+        Ctx::$page->add_block(new Block("Search with tags", $nav, "left", 0, "search-bar"));
+        Ctx::$page->add_block(new Block("Search with tags", $nav, "main", 5, "mobile-search"));
+        Ctx::$page->add_block(new Block("Information", $this->build_information($image), "left", 15));
+        Ctx::$page->add_block(new Block(null, $this->build_info($image, $editor_parts, $sidebar_parts), "main", 15));
+        Ctx::$page->add_block(new Block(null, $this->build_pin($image), "main", 2, "post_controls"));
     }
 
     private function build_information(Image $image): HTMLElement
@@ -50,8 +49,7 @@ class CustomViewPostTheme extends ViewPostTheme
         $h_date = SHM_DATE($image->posted);
         $h_filesize = to_shorthand_int($image->filesize);
 
-        global $user;
-        if ($user->can(IPBanPermission::VIEW_IP)) {
+        if (Ctx::$user->can(IPBanPermission::VIEW_IP)) {
             $h_ownerlink .= " ($h_ip)";
         }
 
@@ -97,7 +95,6 @@ class CustomViewPostTheme extends ViewPostTheme
 
     protected function build_navigation(Image $image): HTMLElement
     {
-        global $user;
         $action = search_link();
         return FORM(
             [
@@ -106,7 +103,7 @@ class CustomViewPostTheme extends ViewPostTheme
                 "class" => "search-bar"
             ],
             INPUT(["type" => "hidden", "name" => "q", "value" => $action->getPath()]),
-            INPUT(["type" => "hidden", "name" => "auth_token", "value" => $user->get_auth_token()]),
+            INPUT(["type" => "hidden", "name" => "auth_token", "value" => Ctx::$user->get_auth_token()]),
             INPUT([
                 "name" => 'search',
                 "type" => 'text',
@@ -120,15 +117,13 @@ class CustomViewPostTheme extends ViewPostTheme
 
     protected function build_info(Image $image, array $editor_parts, array $sidebar_parts = []): HTMLElement
     {
-        global $user;
-
         if (count($editor_parts) === 0) {
             return emptyHTML($image->is_locked() ? "[Post Locked]" : "");
         }
 
         if (
-            (!$image->is_locked() || $user->can(PostLockPermission::EDIT_IMAGE_LOCK)) &&
-            $user->can(PostTagsPermission::EDIT_IMAGE_TAG)
+            (!$image->is_locked() || Ctx::$user->can(PostLockPermission::EDIT_IMAGE_LOCK)) &&
+            Ctx::$user->can(PostTagsPermission::EDIT_IMAGE_TAG)
         ) {
             $editor_parts[] = TR(TD(
                 ["colspan" => 4],
@@ -150,10 +145,9 @@ class CustomViewPostTheme extends ViewPostTheme
 
     protected function build_pin(Image $image): HTMLElement
     {
-        global $page;
         $query = $this->get_query();
-        $page->add_html_header(LINK(["class" => "nextlink", "rel" => "next", "href" => make_link("post/next/{$image->id}", $query)]));
-        $page->add_html_header(LINK(["class" => "prevlink", "rel" => "previous", "href" => make_link("post/prev/{$image->id}", $query)]));
+        Ctx::$page->add_html_header(LINK(["class" => "nextlink", "rel" => "next", "href" => make_link("post/next/{$image->id}", $query)]));
+        Ctx::$page->add_html_header(LINK(["class" => "prevlink", "rel" => "previous", "href" => make_link("post/prev/{$image->id}", $query)]));
         return DIV(
             ["class" => "post-controls"],
             A(["href" => make_link("post/prev/{$image->id}", $query), "class" => "prevlink"], "<< Next"),

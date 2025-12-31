@@ -17,8 +17,6 @@ class CustomtipsTheme extends TipsTheme
      */
     public function showTip(array $tip): void
     {
-        global $page;
-
         $url = Url::base()."/ext/tips/images/";
         $html = DIV(
             ["id" => "tips"],
@@ -30,6 +28,6 @@ class CustomtipsTheme extends TipsTheme
                     SPAN("Tip!")
                 )
         );
-        $page->add_block(new Block(null, $html, "left", 75));
+        Ctx::$page->add_block(new Block(null, $html, "left", 75));
     }
 }

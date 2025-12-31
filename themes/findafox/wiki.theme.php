@@ -12,8 +12,6 @@ class CustomWikiTheme extends WikiTheme
 {
     public function display_page(WikiPage $wiki_page, ?WikiPage $nav_page = null): void
     {
-        global $user, $page;
-
         if (is_null($nav_page)) {
             $nav_page = new WikiPage();
             $nav_page->body = "";
@@ -22,7 +20,7 @@ class CustomWikiTheme extends WikiTheme
         $tfe = send_event(new TextFormattingEvent($nav_page->body));
 
         // only the admin can edit the sidebar
-        if ($user->can(WikiPermission::ADMIN)) {
+        if (Ctx::$user->can(WikiPermission::ADMIN)) {
             $nav = emptyHTML($tfe->getFormattedHTML(), BR(), A(["href" => make_link("wiki/wiki:sidebar/edit")], "Edit"));
         } else {
             $nav = $tfe->getFormattedHTML();
@@ -32,19 +30,18 @@ class CustomWikiTheme extends WikiTheme
         $title_html = html_escape($wiki_page->title);
 
         if (!$wiki_page->exists) {
-            $page->set_code(404);
+            Ctx::$page->set_code(404);
         }
 
-        $page->set_title(html_escape($wiki_page->title));
+        Ctx::$page->set_title(html_escape($wiki_page->title));
         $this->display_navigation();
-        $page->add_block(new Block("Wiki Index", $nav, "left", 20));
-        $page->add_block(new Block("Recent wiki changes", $this->get_recent_changes(), "left", 21));
-        $page->add_block(new Block($title_html, $this->create_display_html($wiki_page)));
+        Ctx::$page->add_block(new Block("Wiki Index", $nav, "left", 20));
+        Ctx::$page->add_block(new Block("Recent wiki changes", $this->get_recent_changes(), "left", 21));
+        Ctx::$page->add_block(new Block($title_html, $this->create_display_html($wiki_page)));
     }
 
     public function display_list_page(?WikiPage $nav_page = null): void
     {
-        global $database, $page;
         if (is_null($nav_page)) {
             $nav_page = new WikiPage();
             $nav_page->body = "";
@@ -54,21 +51,20 @@ class CustomWikiTheme extends WikiTheme
 
         $query = "SELECT DISTINCT title FROM wiki_pages
                 ORDER BY title ASC";
-        $titles = $database->get_col($query);
+        $titles = Ctx::$database->get_col($query);
         $html = DIV(["class" => "wiki-all-grid"]);
         foreach ($titles as $title) {
             $html->appendChild(DIV(A(["href" => make_link("wiki/$title")], $title)));
         }
-        $page->set_title("Wiki page list");
-        $page->add_block(new Block("Wiki Index", $body_html, "left", 20));
-        $page->add_block(new Block("Recent wiki changes", $this->get_recent_changes(), "left", 21));
-        $page->add_block(new Block("All Wiki Pages", $html));
+        Ctx::$page->set_title("Wiki page list");
+        Ctx::$page->add_block(new Block("Wiki Index", $body_html, "left", 20));
+        Ctx::$page->add_block(new Block("Recent wiki changes", $this->get_recent_changes(), "left", 21));
+        Ctx::$page->add_block(new Block("All Wiki Pages", $html));
     }
 
     public function get_recent_changes(): HTMLElement
     {
-        global $database;
-        $data = $database->get_all(
+        $data = Ctx::$database->get_all(
             "SELECT title, date
             FROM wiki_pages
             WHERE id IN (

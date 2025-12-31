@@ -12,7 +12,6 @@ class ReverseImageTheme extends Themelet
 {
     public function build_navigation(string $search_string = "", string $class = ""): HTMLElement
     {
-        global $user;
         $action = make_link("post/search/1");
         return FORM(
             [
@@ -21,7 +20,7 @@ class ReverseImageTheme extends Themelet
                 "class" => "search-bar $class"
             ],
             INPUT(["type" => "hidden", "name" => "q", "value" => $action->getPath()]),
-            INPUT(["type" => "hidden", "name" => "auth_token", "value" => $user->get_auth_token()]),
+            INPUT(["type" => "hidden", "name" => "auth_token", "value" => Ctx::$user->get_auth_token()]),
             INPUT([
                 "name" => 'search',
                 "type" => 'text',
@@ -35,22 +34,19 @@ class ReverseImageTheme extends Themelet
 
     public function list_search(string $search = ""): void
     {
-        global $page;
         $nav = $this->build_navigation($search, "full-width");
-        $page->add_block(new Block("Text Search", $nav, "left", 2, "text-search"));
+        Ctx::$page->add_block(new Block("Text Search", $nav, "left", 2, "text-search"));
     }
 
     public function view_search(string $search = ""): void
     {
-        global $page;
         $nav = $this->build_navigation($search, "");
-        $page->add_block(new Block("Text Search", $nav, "left", 2, "text-search-view"));
+        Ctx::$page->add_block(new Block("Text Search", $nav, "left", 2, "text-search-view"));
     }
     public function display_page(string|null $r_i_l = null): void
     {
-        global $page, $config;
-        $max_reverse_result_limit = $config->get(ReverseImageConfig::CONF_MAX_LIMIT);
-        $default_reverse_result_limit = $config->get(ReverseImageConfig::CONF_DEFAULT_AMOUNT);
+        $max_reverse_result_limit = Ctx::$config->get(ReverseImageConfig::CONF_MAX_LIMIT);
+        $default_reverse_result_limit = Ctx::$config->get(ReverseImageConfig::CONF_DEFAULT_AMOUNT);
         $url = $_POST["url"] ?? "";
         $html = SHM_FORM(make_link("reverse_image_search"), multipart: true, id: "reverse_image_search");
         $html->appendChild(
@@ -113,7 +109,8 @@ class ReverseImageTheme extends Themelet
                 )
             )
         );
-        $page->add_block(new Block(null, $html, "main", 20));
+        Ctx::$page->add_block(new Block(null, $html, "main", 20));
+        Ctx::$page->set_title('Reverse image search');
     }
 
     /**
@@ -121,7 +118,6 @@ class ReverseImageTheme extends Themelet
      */
     public function display_results(array $ids): void
     {
-        global $page;
         $src = null;
         if ((isset($_POST["url"]) && $_POST["url"])) {
             $src = $_POST["url"];
@@ -156,12 +152,11 @@ class ReverseImageTheme extends Themelet
             }
         }
         $html->appendChild($table);
-        $page->add_block(new Block(null, $html, "main", 20));
+        Ctx::$page->add_block(new Block(null, $html, "main", 20));
     }
 
     public function display_admin(): void
     {
-        global $page;
         $html = SHM_SIMPLE_FORM(
             make_link("admin/reverse_image"),
             TABLE(
@@ -176,6 +171,6 @@ class ReverseImageTheme extends Themelet
             ),
             SHM_SUBMIT('Extract features into database'),
         );
-        $page->add_block(new Block("Extract Features", $html));
+        Ctx::$page->add_block(new Block("Extract Features", $html));
     }
 }
