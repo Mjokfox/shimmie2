@@ -213,7 +213,7 @@ class UploadTheme extends Themelet
                             "id" => "showinputdata{$i}",
                             "style" => "display:inline;margin-right:5px;font-size:15px;visibility:hidden;",
                             "onclick" => "inputdiv(this,document.getElementById('inputdivdata{$i}'),'data{$i}','$color');",
-                        ], "Show Input"),
+                        ], "Show"),
                     ),
                     $preview_enabled ? TD(
                         DIV([

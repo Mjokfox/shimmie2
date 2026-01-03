@@ -36,8 +36,9 @@ final class ImageIO extends Extension
     public function onPageRequest(PageRequestEvent $event): void
     {
         $thumb_width = Ctx::$config->get(ThumbnailConfig::WIDTH);
+        $thumb_min_width = Ctx::$config->get(ThumbnailConfig::MIN_WIDTH);
         $thumb_height = Ctx::$config->get(ThumbnailConfig::HEIGHT);
-        Ctx::$page->add_html_header(STYLE(":root {--thumb-width: {$thumb_width}px; --thumb-height: {$thumb_height}px;}"));
+        Ctx::$page->add_html_header(STYLE(":root {--thumb-width: {$thumb_width}px;--thumb-min-width: {$thumb_min_width}px;--thumb-height: {$thumb_height}px;}"));
 
         if ($event->page_matches("image/delete", method: "POST")) {
             $image = Image::by_id_ex(int_escape($event->POST->req('image_id')));

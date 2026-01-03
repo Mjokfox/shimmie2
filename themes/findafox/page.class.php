@@ -142,6 +142,11 @@ class customPage extends Page
         $data_href = (string)Url::base();
         $theme_name = get_theme();
 
+        $this->add_html_header(META([
+            "name" => "viewport",
+            "content" => "width=device-width,initial-scale=1"
+        ]), 40);
+
         # static handler will map these to themes/foo/static/bar.ico or ext/static_files/static/bar.ico
         $this->add_html_header(LINK([
             'rel' => 'icon', 'type' => 'image/png',

@@ -42,8 +42,10 @@ class CustomUploadTheme extends UploadTheme
         $upload_list->appendChild(
             TR(
                 ["class" => "header"],
-                TH(["colspan" => 2], "Select File"),
+                TH("Select File"),
                 TH($tl_enabled ? "or URL" : null),
+                TH('input'),
+                TH('preview'),
                 // $headers,
             )
         );
@@ -61,7 +63,7 @@ class CustomUploadTheme extends UploadTheme
                 TR(
                     ["id" => "rowdata{$i}","style" => "background-color:".$color],
                     TD(
-                        ["colspan" => 2, "style" => "white-space: nowrap;"],
+                        ["class" => "upload-file-select", "colspan" => 2, "style" => "white-space: nowrap;"],
                         SPAN("{$i} "),
                         DIV([
                             "id" => "canceldata{$i}",
@@ -98,7 +100,7 @@ class CustomUploadTheme extends UploadTheme
                             "id" => "showinputdata{$i}",
                             "class" => "showInputButton",
                             "onclick" => "input_button_handler($i,this,'$color');",
-                        ], "Show Input"),
+                        ], "Show"),
                     ),
                     $preview_enabled ? TD(
                         ["style" => "text-align:center"],

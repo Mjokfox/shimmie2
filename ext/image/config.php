@@ -54,11 +54,17 @@ final class ThumbnailConfig extends ConfigGroup
     ])]
     public const MIME = 'thumb_mime';
 
-    #[ConfigMeta("Max width", ConfigType::INT, default: 192)]
+    #[ConfigMeta("Max width", ConfigType::INT, default: 256)]
     public const WIDTH = 'thumb_width';
 
-    #[ConfigMeta("Max height", ConfigType::INT, default: 192)]
+    #[ConfigMeta("Min width", ConfigType::INT, default: 192)]
+    public const MIN_WIDTH = 'thumb_min_width';
+
+    #[ConfigMeta("Max height", ConfigType::INT, default: 256)]
     public const HEIGHT = 'thumb_height';
+
+    #[ConfigMeta("Min height", ConfigType::INT, default: 192)]
+    public const MIN_HEIGHT = 'thumb_min_height';
 
     #[ConfigMeta("High-DPI Scale %", ConfigType::INT, default: 100, advanced: true)]
     public const SCALING = 'thumb_scaling';

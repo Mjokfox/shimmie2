@@ -4,12 +4,64 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A,B,DIV,joinHTML};
+use function MicroHTML\{A,B,DIV,IMG,joinHTML};
 
 use MicroHTML\HTMLElement;
 
 class CustomCommonElementsTheme extends CommonElementsTheme
 {
+        public function build_thumb(Image $image): HTMLElement
+    {
+        $id = $image->id;
+        $view_link = make_link('post/view/'.$id);
+        $thumb_link = $image->get_thumb_link();
+        $tip = $image->get_tooltip();
+        $tags = strtolower($image->get_tag_list());
+
+        $custom_classes = "";
+        if (RelationshipsInfo::is_enabled()) {
+            if ($image['parent_id'] !== null) {
+                $custom_classes .= "shm-thumb-has_parent ";
+            }
+            if ($image['has_children']) {
+                $custom_classes .= "shm-thumb-has_child ";
+            }
+        }
+        if (RatingsInfo::is_enabled() && RatingsBlurInfo::is_enabled()) {
+            $rb = new RatingsBlur();
+            if ($rb->blur($image['rating'])) {
+                $custom_classes .= "blur ";
+            }
+        }
+
+        $attrs = [
+            "href" => $view_link,
+            "class" => "thumb shm-thumb shm-thumb-link $custom_classes",
+            "data-tags" => $tags,
+            "data-height" => $image->height,
+            "data-width" => $image->width,
+            "data-mime" => $image->get_mime(),
+            "data-post-id" => $id,
+        ];
+        if (RatingsInfo::is_enabled()) {
+            $attrs["data-rating"] = $image['rating'];
+        }
+        if (NotesInfo::is_enabled()) {
+            $attrs["data-notes"] = $image['notes'];
+        }
+
+        return A(
+            $attrs,
+            IMG(
+                [
+                    "id" => "thumb_$id",
+                    "title" => $tip,
+                    "alt" => $tip,
+                    "src" => $thumb_link,
+                ]
+            )
+        );
+    }
     public function display_paginator(string $base, ?QueryArray $query, int $page_number, int $total_pages, bool $show_random = false): void
     {
         if ($total_pages === 0) {

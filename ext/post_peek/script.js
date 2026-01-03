@@ -33,6 +33,7 @@ function postPeekAddPeeker() {
         if (mime.match(mimeRegex)) {
             var linkElement = document.createElement("DIV");
 
+            linkElement.classList.add("post-peek");
             linkElement.style.position = "absolute";
             linkElement.style.top = "4px";
             linkElement.style.left = "4px";

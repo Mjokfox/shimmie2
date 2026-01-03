@@ -70,21 +70,22 @@ HEADER h1 {
 	text-align: left;
 }
 
-HEADER #site-title {
-	margin-left: 30px;
+#site-title {
+	padding: 0 0 0 2rem;
 	font-family: "Tahoma", "Verdana", "Helvetica", sans-serif;
 }
+
 HEADER #site-title IMG {
 	vertical-align: middle;
 	margin-right: .5rem;
 }
-/* my changes */
+
 HEADER ul#navbar,
 HEADER ul#subnavbar {
 	font-family: "Verdana", "Helvetica", sans-serif;
 	font-size:110%;
 }
-/* end of changes */
+
 HEADER ul#navbar {
 	margin: 0;
 	padding: 0 30px 0 30px;
@@ -140,14 +141,7 @@ BODY.layout-grid {
 BODY.layout-no-left NAV {
 	display: none;
 }
-BODY.layout-no-left ARTICLE {
-	margin-left: 2rem;
-}
-/* my changes */
-BODY:not(.layout-no-left) ARTICLE {
-	margin-left: 1rem;
-}
-/* end of changes */
+
 h1 {
 	margin-top: 0;
 	margin-bottom: 0;
@@ -249,7 +243,6 @@ FOOTER>DIV {
 	margin: 1rem 2rem;
 }
 
-/* my changes */
 .bbcode BLOCKQUOTE { 
 	border: 1px solid #AAA;
 	padding: 8px;
@@ -288,7 +281,6 @@ CODE {
 	font-family: monospace;
   	line-height: 1em;
 }
-/* end of changes */
 
 form {
 	margin: 0;
@@ -558,14 +550,103 @@ form+form {
 	display: none;
 }
 
-/* My changes */
-@media only screen and (min-resolution: 2dppx) and (orientation: portrait) {
-	:root {
-		--rowm: 2;
+@media (hover: none) {
+	.post-peek{
+		display: none;
 	}
-	body:not(.layout-front-page) {
-		font-size: 3em;
+}
+
+DIV.shm-image-list {
+	justify-content: center;
+	gap: 8px;
+	grid-auto-rows: min-content;
+	grid-template-columns: repeat(auto-fill,minmax(var(--thumb-min-width, 180px),1fr))
+}
+
+A.thumb IMG {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;	
+}
+
+@media not (max-width:800px) {
+	BODY.layout-no-left ARTICLE {
+	margin-left: 2rem;
 	}
+	BODY:not(.layout-no-left) ARTICLE {
+		margin-left: 1rem;
+	}
+
+		.grid-cell-content{
+		--num-rows: var(--rows);
+	}
+	DIV.grid-cell {
+		border-right: 1px var(--text) dashed;
+		border-bottom: 1px var(--text) dotted;
+		padding: 5px 0;
+		display: grid;
+		grid-template-columns: 10ch var(--upload-c-width) calc(var(--upload-c-width) - 10ch);;
+	}
+
+	DIV.grid-cell.cell-info {
+		display: flex;
+	}
+
+	DIV.grid-cell.cell-wide {
+		grid-template-columns: 10ch repeat(3, var(--upload-c-width)) calc(var(--upload-c-width) - 10ch);;
+	}
+
+	DIV.grid-cell.cell-thin {
+		grid-template-columns: 10ch calc(var(--upload-c-width) - 10ch);
+	}
+
+	.grid-cell .grid-cell-content {
+		grid-column: span 2;
+	}
+
+	.cell-wide .grid-cell-content {
+		grid-column: span 4;
+	}
+
+	.cell-thin .grid-cell-content {
+		grid-column: span 1;
+		justify-items: baseline;
+	}
+
+	DIV.grid-cell-content.dir-row {
+		display: flex;
+		flex-direction: row;
+		width: fit-content;
+		column-gap: 1ch;
+	}
+
+	.upload-split-view {
+		overflow: scroll;
+  		max-height: 95vh;
+	}
+
+	.upload-split-view > DIV {
+		margin-bottom: 1em;
+	}
+}
+
+@media only screen and (max-width:1700px) {
+	DIV.upload-tags-grid {
+		--upload-c-width: 20ch;
+	}
+}
+/* just get as compact as possible */
+@media only screen and (max-width:1300px) {
+	DIV.upload-tags-grid {
+		--upload-c-width: 16ch;
+	}
+}
+
+@media (max-width: 800px) {
+	DIV.shm-image-list {
+		grid-template-columns: repeat(3, 1fr);
+	}
+
 	BODY.layout-grid {
 		grid-template-columns: auto;
 	}
@@ -578,7 +659,7 @@ form+form {
 	ARTICLE {
 		grid-column: 1;
 		grid-row: 3;
-		margin: 0 16px;
+		margin: 0 1vw;
 	}
 
 	NAV {
@@ -630,11 +711,6 @@ form+form {
 
 	#image-list .blockbody {
 		margin: 0;
-	}
-
-	.shm-image-list {
-		justify-content: center;
-		grid-template-columns: repeat( auto-fill, calc(var(--thumb-width) + 8px) );
 	}
 
 	NAV:has(:not(#Tagsleft)) #Bulk_Actionsleft {
@@ -701,7 +777,8 @@ form+form {
 	DIV.grid-cell {
 		border-right-width: 1px dashed;
 		display: grid;
-		grid-template-columns: 10ch var(--upload-c-width) calc(var(--upload-c-width) - 10ch);;
+		grid-template-columns: 10ch var(--upload-c-width) calc(var(--upload-c-width) - 10ch);
+		padding: 1vh 0;
 	}
 
 	DIV.upload-tags-grid {
@@ -712,6 +789,12 @@ form+form {
 		justify-content: start;
 		grid-auto-flow: dense;
 		grid-template-columns: 20ch auto;
+	}
+
+	DIV DIV.grid-cell-content LABEL {
+		width: max-content;
+		display: flex;
+		margin-bottom: .3em;
 	}
 
 	DIV.grid-cell-content LABEL INPUT {
@@ -731,8 +814,9 @@ form+form {
 		width: 48px;
 		margin-right: 32px;
 	}
-
-	#site-title {
+	
+	HEADER #site-title {
+		padding: 0 0 0 1vw;
 		font-size: 1.5em;
 	}
 
@@ -763,17 +847,9 @@ form+form {
 	.comment IMG.avatar {
 		max-height: 192px;
 	}
-}
 
-@media only screen and (max-width:1700px) {
-	DIV.upload-tags-grid {
-		--upload-c-width: 20ch;
-	}
-}
-/* just get as compact as possible */
-@media only screen and (max-width:1300px) {
-	DIV.upload-tags-grid {
-		--upload-c-width: 16ch;
+	.container {
+   		margin: 0;
 	}
 }
 
@@ -908,67 +984,9 @@ DIV.grid-cell-separator {
 	grid-template-columns: var(--upload-c-width);
 }
 
-@media not all and (min-resolution: 2dppx) and (orientation: portrait) {
-	.grid-cell-content{
-		--num-rows: var(--rows);
-	}
-	DIV.grid-cell {
-		border-right: 1px var(--text) dashed;
-		border-bottom: 1px var(--text) dotted;
-		padding: 5px 0;
-		display: grid;
-		grid-template-columns: 10ch var(--upload-c-width) calc(var(--upload-c-width) - 10ch);;
-	}
-
-	DIV.grid-cell.cell-info {
-		display: flex;
-	}
-
-	DIV.grid-cell.cell-wide {
-		grid-template-columns: 10ch repeat(3, var(--upload-c-width)) calc(var(--upload-c-width) - 10ch);;
-	}
-
-	DIV.grid-cell.cell-thin {
-		grid-template-columns: 10ch calc(var(--upload-c-width) - 10ch);
-	}
-
-	.grid-cell .grid-cell-content {
-		grid-column: span 2;
-	}
-
-	.cell-wide .grid-cell-content {
-		grid-column: span 4;
-	}
-
-	.cell-thin .grid-cell-content {
-		grid-column: span 1;
-		justify-items: baseline;
-	}
-
-	DIV.grid-cell-content.dir-row {
-		display: flex;
-		flex-direction: row;
-		width: fit-content;
-		column-gap: 1ch;
-	}
-
-	.upload-split-view {
-		overflow: scroll;
-  		max-height: 95vh;
-	}
-
-	.upload-split-view > DIV {
-		margin-bottom: 1em;
-	}
-}
-
 DIV.grid-cell-content LABEL {
 	padding-right:5px;
 	width: fit-content;
-}
-
-DIV.grid-cell-content.dir-row LABEL {
-	margin: auto;
 }
 
 .grid-cell-content LABEL INPUT {
@@ -983,6 +1001,24 @@ DIV.showInputButton, DIV.showPreviewButton, DIV.uploadCancelButton{
 
 DIV.uploadCancelButton {
 	margin-right:5px;
+}
+
+.upload-file-select {
+	display: flex;
+	align-items: center;
+}
+
+.upload-file-select SPAN {
+	margin: 0 auto 0 .3em;
+}
+
+TABLE.form TD.upload-file-select INPUT[type="button"] {
+    width: unset;
+    padding: 0 .2em;
+}
+
+TABLE.form .grid-cell SELECT {
+	overflow: hidden;
 }
 
 .tag_list {
@@ -1148,4 +1184,3 @@ DIV.wiki-all-grid {
 div.zoom-container {
     max-width: minmax(0, calc(100vw - 11.5rem));;
 }
-/* end of changes */

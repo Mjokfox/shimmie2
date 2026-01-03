@@ -160,7 +160,7 @@ function full_input_handler(file_input,url_input,preview_button,input_button,bac
         if(input_button){
             input_button.style.visibility = 'hidden';
             input_button.style.border = 'none';
-            input_button.textContent = 'Show Input';
+            input_button.textContent = 'Show';
         }
         return false;
     }
@@ -178,7 +178,7 @@ function onlyVisibility(file_input,url_input,preview_button,input_button){
         } else{
             input_button.style.visibility = 'hidden';
             input_button.style.border = 'none';
-            input_button.textContent = 'Show Input';
+            input_button.textContent = 'Show';
         }
     }
 }
@@ -203,14 +203,14 @@ function input_button_handler(suffix,input_button,background_color="#0000") {
         });
         // reset other input buttons
         document.querySelectorAll("DIV.showInputButton").forEach((e) => {
-            e.textContent = 'Show Input';
+            e.textContent = 'Show';
             e.style.border = 'none';
         });
         input_button.style.border = '2px dotted white';
     }
     if (input_div.style.display === 'none' || input_div.style.display === '') {
         input_div.style.display = 'block';
-        input_button.textContent = 'Hide Input';
+        input_button.textContent = 'Hide';
         
         full_input_handler(file_input,url_input,preview_button,input_button,background_color);
 
@@ -220,7 +220,7 @@ function input_button_handler(suffix,input_button,background_color="#0000") {
         }
     } else {
         input_div.style.display = 'none';
-        self.textContent = 'Show Input';
+        self.textContent = 'Show';
         input_button.style.border = 'none';
     }
 }
@@ -236,14 +236,14 @@ function show_input_div(input_button,suffix,background_color="#0000"){
         });
         // reset other input buttons
         document.querySelectorAll("DIV.showInputButton").forEach((e) => {
-            e.textContent = 'Show Input';
+            e.textContent = 'Show';
             e.style.border = 'none';
         });
         input_button.style.border = '2px dotted white';
     }
 
     input_div.style.display = 'block';
-    input_button.textContent = 'Hide Input';
+    input_button.textContent = 'Hide';
 
     const right_column = document.querySelector(".right-column");
     if (right_column) {
