@@ -43,13 +43,6 @@ function markdown_format(text)
 		let regex = new RegExp(`${el}(.*?)${el}`, "g");
 		text = text.replaceAll(regex, `<${r}>$1</${r}>`);
 	});
-	types = ["####","###","##","#",]; // b, i, u, sub, s, sup
-	replacements = ["h4","h3","h2","h1"];
-	types.forEach((el, i) => {
-		let r = replacements[i];
-		let regex = new RegExp(`^${el}\\s(.+)(?:\\n)?`, "gm");
-		text = text.replaceAll(regex, `<${r}>$1</${r}>`);
-	});
 	text = text.replaceAll(/^&gt;\((\S+)\)\s+(.+)/gm, "<blockquote><i><b>$1</b> said:</i><br><small>$2</small></blockquote>");
 	text = text.replaceAll(/^&gt;\s+(.+)/gm, '<blockquote><small>$1</small></blockquote>');
 	text = text.replaceAll(/blockquote>\n/gs, 'blockquote>');
@@ -62,6 +55,13 @@ function markdown_format(text)
 	text = text.replaceAll(/\!wiki:(\S+)/gs, '<a href="/wiki/$1">wiki:$1</a>');
 	text = text.replaceAll(/^(?:\*|-|\+)\s(.*)/gm, "<li>$1</li>");
 	text = text.replaceAll(/^(\d+)\.\s(.*)/gm, "<ol start=\"$1\"><li>$2</li></ol>");
+	types = ["####","###","##","#",];
+	replacements = ["h4","h3","h2","h1"];
+	types.forEach((el, i) => {
+		let r = replacements[i];
+		let regex = new RegExp(`^${el}\\s(.+)(?:\\n)?`, "gm");
+		text = text.replaceAll(regex, `<${r}>$1</${r}>`);
+	});
 	text = text.replaceAll(/\n\s*\n/g, "\n\n");
 	text = text.replaceAll("\n", "\n<br>");
 	while (/\[list\](.*?)\[\/list\]/gs.test(text)) {

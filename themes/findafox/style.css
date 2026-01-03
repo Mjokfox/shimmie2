@@ -335,10 +335,10 @@ NAV h3 {
 	text-align: left;
 }
 
-SPAN.comment-info SPAN {
+SPAN.comment-info SPAN:not(.markdown) {
     margin-right: 2em;
 }
-SPAN.comment-info SPAN B {
+SPAN.comment-info SPAN:not(.markdown) B {
     margin-right: 0.5em;
 }
 
