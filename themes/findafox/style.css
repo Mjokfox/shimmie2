@@ -811,8 +811,8 @@ A.thumb IMG {
 	}
 
 	.reverse_image_link IMG {
-		width: 48px;
-		margin-right: 32px;
+		width: 1.5em;
+		margin-right: .5em;
 	}
 	
 	HEADER #site-title {

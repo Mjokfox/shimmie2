@@ -95,7 +95,7 @@ class ReverseImage extends Extension
 
             $image_count = Ctx::$database->get_one("SELECT count(id) from images;");
 
-
+            send_event(new PostListBuildingEvent([$search]));
             /** @var IndexTheme $IT */
             $IT = Themelet::get_theme_class(IndexTheme::class);
             $IT->set_page($page_number, (int)ceil($image_count / $page_size), [$search]);
