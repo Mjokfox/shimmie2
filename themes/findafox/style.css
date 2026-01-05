@@ -564,6 +564,8 @@ DIV.shm-image-list {
 }
 
 A.thumb IMG {
+	max-width: var(--thumb-height);
+  	max-height: var(--thumb-height);
 	width: 100%;
 	height: 100%;
 	object-fit: cover;	
