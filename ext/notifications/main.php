@@ -14,7 +14,6 @@ final class Notification
         public int $type,
         public ?int $ref_id,
         public ?int $ref_id2,
-        public ?string $message = null,
         public bool $is_read = false
     ) {
     }
@@ -32,7 +31,6 @@ final class Notification
      *     type: string,
      *     reference_id: string,
      *     reference_id2: string|bool,
-     *     message: string,
      *     is_read: string|int,
      *     date: string
      * } $row
@@ -45,7 +43,6 @@ final class Notification
             (int)$row["type"],
             (int)$row["reference_id"],
             (int)$row["reference_id2"],
-            $row["message"],
             bool_escape($row["is_read"]),
         );
         $n->id = (int)$row["id"];
@@ -194,14 +191,13 @@ final class Notifications extends Extension
     private function create_notification(Notification $notif): void
     {
         Ctx::$database->execute(
-            'INSERT INTO notifications(user_id, from_id, type, reference_id, reference_id2, message)
-            VALUES(:user_id, :from_id, :type, :reference_id, :reference_id2, :message)',
+            'INSERT INTO notifications(user_id, from_id, type, reference_id, reference_id2)
+            VALUES(:user_id, :from_id, :type, :reference_id, :reference_id2)',
             ['user_id' => $notif->user_id,
              'from_id' => $notif->from_id,
              'type' => $notif->type,
              'reference_id' => $notif->ref_id,
              'reference_id2' => $notif->ref_id2,
-             'message' => $notif->message
             ]
         );
     }
