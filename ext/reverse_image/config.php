@@ -28,6 +28,7 @@ class ReverseImageConfig extends ConfigGroup
 class ReverseImageUserConfig extends UserConfigGroup
 {
     public const KEY = "reverse_image";
+    protected ?string $title = "Tag prediction";
 
     #[ConfigMeta("Enable automatic predicting: ", ConfigType::BOOL, default: true)]
     public const USER_ENABLE_AUTO = "reverse_image_automatic";
