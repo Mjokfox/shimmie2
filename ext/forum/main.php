@@ -114,7 +114,7 @@ final class ForumPost
         /** @var ?Post */
         $row = Ctx::$database->get_row(
             'SELECT * FROM forum_posts
-            WHERE id = :id;
+            WHERE id = :id
             AND thread_id = :thread_id',
             ['id' => $id, 'thread_id' => $thread_id]
         );
