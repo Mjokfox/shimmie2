@@ -93,7 +93,7 @@ final class Notifications extends Extension
         } // anonymous doesnt get notifications
 
         if ($event->page_matches("notifications")) {
-            $notifications = Ctx::$database->get_all('SELECT * FROM notifications WHERE user_id = :user_id', ['user_id' => Ctx::$user->id]);
+            $notifications = Ctx::$database->get_all('SELECT * FROM notifications WHERE user_id = :user_id ORDER BY date DESC', ['user_id' => Ctx::$user->id]);
             $this->theme->display_notifs(array_map(fn ($e) => Notification::from_row($e), $notifications)); // @phpstan-ignore-line
         } elseif ($event->page_matches("notif/read/{id}")) { // read notification, and forward to the right page from the GET query 'r'
             $r = $event->GET->req('r');
@@ -130,18 +130,9 @@ final class Notifications extends Extension
             ));
         }
 
-        // @ mentions in the comment
-        preg_match_all('/@(\S+)/m', $event->comment, $matches);
-        if (count($matches[1]) < 1) {
-            return;
-        }
-        $res = array_unique($matches[1]);
-        $k = array_search($event->user->name, $res, true); // no need to notify yourself
-        if ($k !== false) {
-            unset($res[$k]);
-        }
+        $mentions = $this->find_mentions($event->comment, $event->user->name);
 
-        foreach ($res as $name) {
+        foreach ($mentions as $name) {
             try {
                 $user = User::by_name($name);
                 $this->create_notification(new Notification(
@@ -155,6 +146,52 @@ final class Notifications extends Extension
                 // username does not exist
             }
         }
+    }
+
+    public function onForumPostPosting(ForumPostPostingEvent $event): void
+    {
+        // For the thread owner
+        $thread = ForumThread::by_id($event->thread_id);
+        if ($event->user->id !== $thread->owner_id) {
+            $this->create_notification(new Notification(
+                $thread->owner_id,
+                $event->user->id,
+                Notification::TYPE_NEW_COMMENT_ON_FORUM,
+                $event->thread_id,
+                $event->id,
+            ));
+        }
+
+        $mentions = $this->find_mentions($event->message, $event->user->name);
+        foreach ($mentions as $name) {
+            try {
+                $user = User::by_name($name);
+                $this->create_notification(new Notification(
+                    $user->id,
+                    $event->user->id,
+                    Notification::TYPE_MENTION_FORUM,
+                    $event->thread_id,
+                    $event->id,
+                ));
+            } catch (UserNotFound $e) {
+                // username does not exist
+            }
+        }
+    }
+
+    /** @return string[] */
+    private function find_mentions(string $message, ?string $avoid = null): array
+    {
+        preg_match_all('/@(\S+)/m', $message, $matches);
+        if (count($matches[1]) < 1) {
+            return [];
+        }
+        $res = array_unique($matches[1]);
+        $k = array_search($avoid, $res, true);
+        if ($k !== false) {
+            unset($res[$k]);
+        }
+        return $res;
     }
 
     private function action(QueryArray $POST): void

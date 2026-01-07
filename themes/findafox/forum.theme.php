@@ -8,20 +8,14 @@ use function MicroHTML\{A, BR, DIV, H1, H3, INPUT, TABLE, TBODY, TD, TEXTAREA, T
 
 use MicroHTML\HTMLElement;
 
-/**
- * @phpstan-type Thread array{id:int,title:string,sticky:bool,user_name:string,uptodate:string,response_count:int}
- * @phpstan-type Post array{id:int,user_name:string,user_class:string,date:string,message:string}
- */
 class CustomForumTheme extends ForumTheme
 {
-    /**
-     * @param array<Post> $posts
-     */
-    public function display_thread(array $posts, string $threadTitle, int $threadID, int $pageNumber, int $totalPages): void
+    /** @param ForumPost[] $posts */
+    public function display_thread(ForumThread $thread, array $posts, bool $showAdminOptions, int $thread_id, int $pageNumber, int $totalPages): void
     {
         $tbody = TBODY();
         foreach ($posts as $post) {
-            $tbody->appendChild($this->post_to_html($post, $threadID));
+            $tbody->appendChild($this->post_to_html($post, $thread_id));
         }
 
         $html = emptyHTML(
@@ -31,7 +25,7 @@ class CustomForumTheme extends ForumTheme
             ),
             BR(),
             BR(),
-            H1($threadTitle),
+            H1($thread->title),
             BR(),
             TABLE(
                 ["id" => "threadPosts", "class" => "zebra"],
@@ -45,36 +39,32 @@ class CustomForumTheme extends ForumTheme
             )
         );
 
-        $this->display_paginator("forum/view/$threadID", null, $pageNumber, $totalPages);
+        $this->display_paginator("forum/view/$thread_id", null, $pageNumber, $totalPages);
 
-        Ctx::$page->set_title($threadTitle);
+        Ctx::$page->set_title($thread->title);
 
 
         if (Ctx::$user->can(ForumPermission::FORUM_CREATE)) {
-            $html->appendChild($this->build_postbox($threadID));
+            $html->appendChild($this->build_postbox($thread_id));
         }
 
         if (Ctx::$user->can(ForumPermission::FORUM_ADMIN)) {
-            $html->appendChild($this->add_actions_block_custom($threadID));
+            $html->appendChild($this->add_actions_block_custom($thread_id));
         }
 
         Ctx::$page->add_block(new Block(null, $html, "main", 20));
-
     }
 
-    /**
-     * @param array{id:int,user_name:string,date:string,message:string} $post
-     */
-    protected function post_to_html(array $post, int $threadID): HTMLElement
+    protected function post_to_html(ForumPost $post, int $thread_id): HTMLElement
     {
-        $tfe = send_event(new TextFormattingEvent($post["message"]));
+        $tfe = send_event(new TextFormattingEvent($post->message));
         $h_comment = $tfe->getFormattedHTML();
 
-        $h_name = html_escape($post["user_name"]);
+        $h_name = html_escape($post->owner->name);
 
-        $h_posted = SHM_DATE($post["date"]);
+        $h_posted = SHM_DATE($post->date);
 
-        $duser = User::by_name($post["user_name"]);
+        $duser = User::by_name($post->owner->name);
         $h_userlink = emptyHTML(A(["class" => "username", "href" => make_link("user/$h_name")], $h_name), BR(), $duser->class->name);
         /** @var BuildAvatarEvent $BAE */
         $BAE = send_event(new BuildAvatarEvent($duser));
@@ -82,16 +72,16 @@ class CustomForumTheme extends ForumTheme
         $h_del = null;
         if (Ctx::$user->can(ForumPermission::FORUM_ADMIN)) {
             $h_del = SHM_SIMPLE_FORM(
-                make_link("forum/delete/$threadID/" . $post['id']),
+                make_link("forum/delete/$thread_id/$post->id"),
                 SHM_SUBMIT("Delete"),
             );
         }
         $h_edit = null;
         if (Ctx::$user->can(CommentPermission::DELETE_COMMENT) || (Ctx::$user->can(CommentPermission::CREATE_COMMENT) && Ctx::$user->id === $duser->id)) {
-            $h_edit = $this->edit_button($threadID, $post["id"]);
+            $h_edit = $this->edit_button($thread_id, $post->id);
         }
         return TABLE(
-            ["class" => "comment", "id" => $post["id"]],
+            ["class" => "comment", "id" => $post->id],
             TR(
                 TD(["class" => "meta"], $h_userlink, BR(), $h_avatar, br(), $h_posted, $h_del),
                 TD(["class" => "c_body"], $h_comment, BR(), BR(), $h_edit)
@@ -100,31 +90,31 @@ class CustomForumTheme extends ForumTheme
 
     }
 
-    protected function build_postbox(int $threadID): HTMLElement
+    protected function build_postbox(int $thread_id): HTMLElement
     {
         $max_characters = Ctx::$config->get(ForumConfig::MAX_CHARS_PER_POST);
         return DIV(
-            ["class" => "comment comment_add", "id" => "cadd$threadID"],
+            ["class" => "comment comment_add", "id" => "cadd$thread_id"],
             SHM_SIMPLE_FORM(
                 make_link("forum/answer"),
                 "Max characters allowed: $max_characters ",
-                INPUT(["type" => "hidden", "name" => "threadID", "value" => $threadID]),
-                TEXTAREA(["id" => "comment_on_$threadID", "class" => "formattable", "name" => "message", "rows" => 5, "cols" => 50]),
+                INPUT(["type" => "hidden", "name" => "thread_id", "value" => $thread_id]),
+                TEXTAREA(["id" => "comment_on_$thread_id", "class" => "formattable", "name" => "message", "rows" => 5, "cols" => 50]),
                 SHM_SUBMIT("Reply")
             )
         );
     }
 
-    public function add_actions_block_custom(int $threadID): HTMLElement
+    public function add_actions_block_custom(int $thread_id): HTMLElement
     {
         return DIV(
             H3("Admin Actions"),
-            A(["href" => make_link("forum/nuke/".$threadID)], "Delete this thread and its posts.")
+            A(["href" => make_link("forum/nuke/$thread_id")], "Delete this thread and its posts.")
         );
     }
 
-    protected function edit_button(int $threadID, int $postID): HTMLElement
+    protected function edit_button(int $thread_id, int $post_id): HTMLElement
     {
-        return A(["class" => "c-edit", "onclick" => "forum_edit_box(this,$threadID,$postID);"], " Edit");
+        return A(["class" => "c-edit", "onclick" => "forum_edit_box(this,$thread_id,$post_id);"], " Edit");
     }
 }

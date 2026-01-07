@@ -35,16 +35,16 @@ class NotificationsTheme extends Themelet
             $from = User::by_id_dangerously_cached($n->from_id);
             switch ($n->type) {
                 case Notification::TYPE_NEW_COMMENT_ON_POST:
-                    $container->appendChild($this->notification_row('made a new comment on your post', $n->is_read, $from->name, $n->id, "post/view/$n->ref_id", "c$n->ref_id2", ">>$n->ref_id", $n->date));
+                    $container->appendChild($this->notification_row('made a new comment on your post ', $n->is_read, $from->name, $n->id, "post/view/$n->ref_id", "c$n->ref_id2", ">>$n->ref_id", $n->date));
                     break;
                 case Notification::TYPE_MENTION_COMMENT:
-                    $container->appendChild($this->notification_row('mentioned you on post', $n->is_read, $from->name, $n->id, "post/view/$n->ref_id", "c$n->ref_id2", ">>$n->ref_id", $n->date));
+                    $container->appendChild($this->notification_row('mentioned you on post ', $n->is_read, $from->name, $n->id, "post/view/$n->ref_id", "c$n->ref_id2", ">>$n->ref_id", $n->date));
                     break;
                 case Notification::TYPE_NEW_COMMENT_ON_FORUM:
-                    $container->appendChild($this->notification_row('made a new comment on your forum thread', $n->is_read, $from->name, $n->id, "forum/view/$n->ref_id", "$n->ref_id2 ", (string)$n->ref_id, $n->date));
+                    $container->appendChild($this->notification_row('made a new comment on your forum thread ', $n->is_read, $from->name, $n->id, "forum/view/$n->ref_id", "$n->ref_id2 ", (string)$n->ref_id, $n->date));
                     break;
                 case Notification::TYPE_MENTION_FORUM:
-                    $container->appendChild($this->notification_row('mentioned you on a forum thread', $n->is_read, $from->name, $n->id, "forum/view/$n->ref_id", "$n->ref_id2 ", (string)$n->ref_id, $n->date));
+                    $container->appendChild($this->notification_row('mentioned you on a forum thread ', $n->is_read, $from->name, $n->id, "forum/view/$n->ref_id", "$n->ref_id2 ", (string)$n->ref_id, $n->date));
                     break;
                 default:
                     break;
