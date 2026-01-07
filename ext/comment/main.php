@@ -165,6 +165,7 @@ final class Comment
     #[Mutation(name: "create_comment")]
     public static function create_comment(int $post_id, string $comment): bool
     {
+        send_event(new CheckStringContentEvent($comment));
         send_event(new CommentPostingEvent($post_id, Ctx::$user, $comment));
         return true;
     }
@@ -251,6 +252,7 @@ final class CommentList extends Extension
         $page = Ctx::$page;
         if ($event->page_matches("comment/add", method: "POST", permission: CommentPermission::CREATE_COMMENT)) {
             $i_iid = int_escape($event->POST->req('image_id'));
+            send_event(new CheckStringContentEvent($event->POST->req('comment')));
             send_event(new CommentPostingEvent($i_iid, Ctx::$user, $event->POST->req('comment')));
             $page->set_redirect(make_link("post/view/$i_iid", null, "comment_on_$i_iid"));
         } elseif ($event->page_matches("comment/delete/{comment_id}/{image_id}")) {
@@ -332,7 +334,9 @@ final class CommentList extends Extension
             $comment = Comment::by_id($cid);
             if (!is_null($comment) && (Ctx::$user->can(CommentPermission::DELETE_COMMENT) || $comment->owner_id === Ctx::$user->id)) {
                 $i_iid = int_escape($event->POST->req('image_id'));
-                send_event(new CommentEditingEvent($i_iid, $cid, Ctx::$user, $event->POST->req('comment')));
+                $comment = $event->POST->req('comment');
+                send_event(new CheckStringContentEvent($comment));
+                send_event(new CommentEditingEvent($i_iid, $cid, Ctx::$user, $comment));
                 $page->set_redirect(make_link("post/view/$i_iid", null, "c$cid"));
 
             } else {
@@ -582,32 +586,7 @@ final class CommentList extends Extension
         return in_array($hash, $valid_hashes);
     }
 
-    private function is_spam_akismet(string $text): bool
-    {
-        $key = Ctx::$config->get(CommentConfig::WORDPRESS_KEY);
-        if (!is_null($key) && strlen($key) > 0) {
-            $comment = [
-                'author'       => Ctx::$user->name,
-                'email'        => Ctx::$user->email,
-                'website'      => '',
-                'body'         => $text,
-                'permalink'    => '',
-                'referrer'     => $_SERVER['HTTP_REFERER'] ?? 'none',
-                'user_agent'   => $_SERVER['HTTP_USER_AGENT'] ?? 'none',
-            ];
 
-            // @phpstan-ignore-next-line
-            $akismet = new \Akismet($_SERVER['SERVER_NAME'], $key, $comment);
-
-            if ($akismet->errorsExist()) {
-                return false;
-            } else {
-                return $akismet->isSpam();
-            }
-        }
-
-        return false;
-    }
 
     private function is_dupe(int $image_id, string $comment): bool
     {
@@ -620,15 +599,13 @@ final class CommentList extends Extension
 
     private function add_comment_wrapper(int $image_id, User $user, string $comment): int
     {
-        if (!$user->can(CommentPermission::BYPASS_COMMENT_CHECKS)) {
-            // will raise an exception if anything is wrong
-            $this->comment_checks($image_id, $user, $comment);
-        }
+        // will raise an exception if anything is wrong
+        $this->comment_checks($image_id, $user, $comment);
 
         // all checks passed
         Ctx::$database->execute(
-            "INSERT INTO comments(image_id, owner_id, owner_ip, posted, comment) ".
-                "VALUES(:image_id, :user_id, :remote_addr, now(), :comment)",
+            "INSERT INTO comments(image_id, owner_id, owner_ip, posted, comment) 
+            VALUES(:image_id, :user_id, :remote_addr, now(), :comment)",
             ["image_id" => $image_id, "user_id" => $user->id, "remote_addr" => (string)Network::get_real_ip(), "comment" => $comment]
         );
         $cid = Ctx::$database->get_last_insert_id('comments_id_seq');
@@ -641,10 +618,9 @@ final class CommentList extends Extension
 
     private function edit_comment(int $image_id, int $comment_id, User $user, string $comment): void
     {
-        if (!$user->can(CommentPermission::BYPASS_COMMENT_CHECKS)) {
-            // will raise an exception if anything is wrong
-            $this->comment_checks($image_id, $user, $comment);
-        }
+        // will raise an exception if anything is wrong
+        $this->comment_checks($image_id, $user, $comment);
+
         global $database;
         $edit_query = $database->get_driver_id() === DatabaseDriverID::PGSQL ?
             "CASE 
@@ -704,17 +680,15 @@ final class CommentList extends Extension
         }
 
         // database-querying checks
-        elseif ($this->is_comment_limit_hit()) {
+        elseif (!$user->can(UserAccountsPermission::BYPASS_CONTENT_CHECKS) && $this->is_comment_limit_hit()) {
             throw new CommentPostingException("You've posted several comments recently; wait a minute and try again...");
-        } elseif ($this->is_dupe($image_id, $comment)) {
+        } elseif (!$user->can(UserAccountsPermission::BYPASS_CONTENT_CHECKS) && $this->is_dupe($image_id, $comment)) {
             throw new CommentPostingException("Someone already made that comment on that image -- try and be more original?");
         }
 
         // rate-limited external service checks last
         elseif (!Captcha::check(CommentPermission::SKIP_CAPTCHA)) {
             throw new CommentPostingException("Error in captcha");
-        } elseif (Ctx::$user->is_anonymous() && $this->is_spam_akismet($comment)) {
-            throw new CommentPostingException("Akismet thinks that your comment is spam. Try rewriting the comment, or logging in.");
         }
     }
 }
