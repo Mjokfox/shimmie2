@@ -77,27 +77,25 @@ class ReverseImage extends Extension
             $page_size = $config->get(IndexConfig::IMAGES);
 
             $image_ids = $this->reverse_image_compare($feat, $page_size, ($page_number - 1) * $page_size);
-            if (empty($image_ids)) {
-                throw new PostNotFound("No posts were found to match the search criteria");
-            }
-            $in = implode(",", array_keys($image_ids));
-            $query = "SELECT images.* FROM images
-                WHERE id IN ($in)
-                order by array_position(array[$in], id);";
-            // @phpstan-ignore-next-line
-            $res = Ctx::$database->get_all($query);
+            /** @var IndexTheme $IT */
+            $IT = Themelet::get_theme_class(IndexTheme::class);
             $images = [];
-            foreach ($res as $r) {
-                $images[] = new Image($r);
+            if (!empty($image_ids)) {
+                $in = implode(",", array_keys($image_ids));
+                $query = "SELECT images.* FROM images
+                    WHERE id IN ($in)
+                    order by array_position(array[$in], id);";
+                // @phpstan-ignore-next-line
+                $res = Ctx::$database->get_all($query);
+                foreach ($res as $r) {
+                    $images[] = new Image($r);
+                }
             }
-
             $this->theme->list_search($search);
 
             $image_count = Ctx::$database->get_one("SELECT count(id) from images;");
 
             send_event(new PostListBuildingEvent([$search]));
-            /** @var IndexTheme $IT */
-            $IT = Themelet::get_theme_class(IndexTheme::class);
             $IT->set_page($page_number, (int)ceil($image_count / $page_size), [$search]);
             $IT->display_page($images);
 
