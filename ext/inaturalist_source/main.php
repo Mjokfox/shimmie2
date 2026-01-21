@@ -6,19 +6,29 @@ namespace Shimmie2;
 
 use function MicroHTML\{B, INPUT, TABLE, TD, TR, rawHTML};
 
-class FlickrSource extends Extension
+class INatSource extends Extension
 {
-    public const KEY = "flickr_source";
+    public const KEY = "inaturalist_source";
+    private const REGEX = "/inaturalist_(\d+)_(\d+)_(\d+)\./";
     public function get_priority(): int
     {
         return 2;
     }
-
+    public function onImageInfoSet(ImageInfoSetEvent $event): void
+    {
+        if (!($event->params["source"] || $event->params["source{$event->slot}"])) {
+            $image = $event->image;
+            if (\Safe\preg_match(self::REGEX, \basename($image->filename), $matches)) {
+                $source = $this->shapeSource($matches[1]);
+                send_event(new SourceSetEvent($image, $source));
+            }
+        }
+    }
     public function onAdminBuilding(AdminBuildingEvent $event): void
     {
         $start_id = Ctx::$database->get_one("SELECT max(id)-100 from images;");
         $html = (string)SHM_SIMPLE_FORM(
-            make_link("admin/flickr_source"),
+            make_link("admin/inaturalist_source"),
             TABLE(
                 TR(
                     TD(["style" => "padding-right:5px"], B("Start id")),
@@ -29,28 +39,29 @@ class FlickrSource extends Extension
                     TD(INPUT(["type" => 'number', "name" => 'limit', "value" => "100", "style" => "width:5em"])),
                 ),
             ),
-            SHM_SUBMIT('Find all flickr sources'),
+            SHM_SUBMIT('Find all INaturalist sources'),
         );
-        Ctx::$page->add_block(new Block("Flickr Source", rawHTML($html)));
+        Ctx::$page->add_block(new Block("INaturalist Source", rawHTML($html)));
     }
 
     public function onAdminAction(AdminActionEvent $event): void
     {
         switch ($event->action) {
-            case "flickr_source":
+            case "inaturalist_source":
                 $start_time = ftime();
                 $offset = $event->params['id_offset'] ?: "0";
                 $limit = $event->params['limit'] ?: "100";
                 /** @var array{array{id:int,filename:string}} $files  */
                 $files = Ctx::$database->get_all(
                     "SELECT * FROM images
-                    WHERE (source IS NULL OR source LIKE '%live.staticflickr%')
+                    WHERE source IS NULL
                     AND mime LIKE 'image/%'
                     AND id > :id_offset
                     LIMIT :limit;",
                     ["id_offset" => $offset, "limit" => $limit]
                 );
-                $res = $this->findSources($files, [$this, "imageUpdate"]);
+                $total = \count($files);
+                $found = $this->findSources($files, [$this, "imageUpdate"]);
 
                 if (PostSchedulingInfo::is_enabled()) {
                     /** @var array{array{id:int,filename:string}} $files  */
@@ -59,14 +70,12 @@ class FlickrSource extends Extension
                         LEFT JOIN scheduled_posts_metadata spm ON spm.schedule_id = sp.id AND spm.key = 'source'
                         WHERE spm.schedule_id IS NULL;"
                     );
-                    $res1 = $this->findSources($files, [$this, "scheduleImageUpdate"]);
-                    $res["passed"] += $res1["passed"];
-                    $res["failed"] = array_merge($res["failed"], $res1["failed"]);
-                    $res["not"] += $res1["not"];
+                    $total += count($files);
+                    $found += $this->findSources($files, [$this, "scheduleImageUpdate"]);
                 }
-
                 $exec_time = round(ftime() - $start_time, 2);
-                $message = "Found valid sources for {$res["passed"]} images, invalid sources for ".count($res["failed"]).", and skipped {$res["not"]} non flickr images, which took $exec_time seconds." . (count($res["failed"]) > 0 ? " Failed: " . implode(", ", $res["failed"]) : "");
+                $not = $total - $found;
+                $message = "Found new sources for $found images and skipped $not images which did not seem like they came from inaturalist. Which took $exec_time seconds.";
                 Log::info("admin", $message, $message);
                 $event->redirect = true;
                 break;
@@ -75,29 +84,23 @@ class FlickrSource extends Extension
 
     /**
      * @param array{array{id:int,filename:string}} $files
-     * @return array{passed:int,failed:array<int>,not:int}
      */
-    private function findSources(array $files, callable $func): array
+    private function findSources(array $files, callable $func): int
     {
-        $passed = 0;
-        $failed = [];
-        $not = 0;
+        $found = 0;
         foreach ($files as $file) {
-            if (!\Safe\preg_match("/(\d{7,13})_[a-f0-9]{7,13}_[a-z0-9]{1,2}(?:_d)?(?:\.jpg|\.png)$/", $file["filename"], $matches)) {
-                if (!\Safe\preg_match("/[a-zA-Z\-]+_(\d{7,13})_o(?:_d)?(?:\.jpg|\.png)$/", $file["filename"], $matches)) {
-                    $not++;
-                    continue;
-                }
-            }
-            $source = $this->getFlickrUrl($matches[1]);
-            if ($source !== "https://flickr.com/photos///") {
+            if (\Safe\preg_match(self::REGEX, \basename($file["filename"]), $matches)) {
+                $source = $this->shapeSource($matches[1]);
                 $func($file, $source);
-                $passed++;
-            } else {
-                $failed[] = $file["id"];
+                $found++;
             }
         }
-        return ["passed" => $passed, "failed" => $failed, "not" => $not];
+        return $found;
+    }
+
+    private function shapeSource(int|string $observation_id): string
+    {
+        return "https://www.inaturalist.org/observations/$observation_id";
     }
 
     /** @param array{id:int,filename:string} $file */
@@ -115,25 +118,5 @@ class FlickrSource extends Extension
             VALUES (:id, 'source', :value)",
             ["id" => $file["id"], "value" => $source]
         );
-    }
-
-    private function getFlickrUrl(int|string $id): string
-    {
-        $url = "https://flickr.com/photo.gne?id={$id}";
-
-        $ch = curl_init($url);
-
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_HEADER, true);
-        curl_setopt($ch, CURLOPT_NOBODY, true);
-
-        curl_exec($ch);
-
-        $redirectedUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
-
-        curl_close($ch);
-
-        return $redirectedUrl;
     }
 }
