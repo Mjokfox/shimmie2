@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+use MicroHTML\HTMLElement;
+
+use function MicroHTML\rawHTML;
+
 /** @extends Extension<TagCategoriesTheme> */
 final class TagCategories extends Extension
 {
@@ -89,38 +93,6 @@ final class TagCategories extends Extension
         }
     }
 
-    /*public function onSearchTermParse(SearchTermParseEvent $event): void
-    {
-        global $database;
-
-        if ($matches = $event->matches("/^(.+)_?tags(:|<=|<|=|>|>=)([0-9]+)$/i")) {
-            $type = strtolower($matches[1]);
-            $cmp = ltrim($matches[2], ":") ?: "=";
-            $count = $matches[3];
-
-            $types = $database->get_col(
-                'SELECT LOWER(category) FROM image_tag_categories'
-            );
-            if (in_array($type, $types)) {
-                $event->add_querylet(
-                    new Querylet("(
-                        SELECT count(distinct t.id)
-                        FROM tags t
-                        INNER JOIN image_tags it ON it.tag_id = t.id AND images.id = it.image_id
-                        WHERE SCORE_ILIKE(t.tag, :cat{$event->id}) $cmp :count{$event->id}
-                    ", ["cat{$event->id}" => '$type:%', "count{$event->id}" => $count])
-                );
-            }
-        }
-    }
-
-    public function onHelpPageBuilding(HelpPageBuildingEvent $event): void
-    {
-        if ($event->key === HelpPages::SEARCH) {
-            $event->add_section("Tag Categories", $this->theme->get_help_html());
-        }
-    }*/
-
     public function onAdminBuilding(AdminBuildingEvent $event): void
     {
         $this->theme->display_admin_form();
@@ -128,7 +100,6 @@ final class TagCategories extends Extension
 
     public function onAdminAction(AdminActionEvent $event): void
     {
-        global $database;
         switch ($event->action) {
             case "count_categories_tags":
                 $event->redirect = false;
@@ -187,12 +158,7 @@ final class TagCategories extends Extension
         return null;
     }
 
-    public static function get_tag_body(string $tag): string
-    {
-        return $tag;
-    }
-
-    public static function getTagHtml(string $h_tag, string $extra_text = ''): string
+    public static function getTagHtml(string $h_tag, string $extra_text = ''): HTMLElement
     {
         $h_tag_no_underscores = str_replace("_", " ", $h_tag);
 
@@ -203,17 +169,17 @@ final class TagCategories extends Extension
         if (!is_null($tag_category_dict)) {
             if (array_key_exists($h_tag, $tag_category_dict)) {
                 $category = $tag_category_dict[$h_tag];
-                $tag_category_css = ' tag_category_'.$category;
+                $tag_category_css = " tag_category_$category";
                 $tag_category_style = 'style="color:'.html_escape($keyed_dict[$category]['color']).';" ';
                 $h_tag_no_underscores = str_replace("_", " ", $h_tag);
 
-                $h_tag_no_underscores = '<span class="'.$tag_category_css.'" '.$tag_category_style.'>'.$h_tag_no_underscores.$extra_text.'</span>';
+                $h_tag_no_underscores = "<span class=\"$tag_category_css\"$tag_category_style>$h_tag_no_underscores$extra_text</span>";
             } else {
                 $h_tag_no_underscores .= $extra_text;
             }
         }
 
-        return $h_tag_no_underscores;
+        return rawHTML($h_tag_no_underscores);
     }
 
     private function add_tags_to_category(string $category, string $tags): void

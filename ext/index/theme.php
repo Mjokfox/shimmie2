@@ -97,16 +97,16 @@ class IndexTheme extends Themelet
         if (WikiInfo::is_enabled() && Ctx::$config->get(WikiConfig::TAG_SHORTWIKIS)) {
             if (count($this->search_terms) === 1) {
                 $st = SearchTerm::implode($this->search_terms);
-                $wikiPage = Wiki::get_page($st);
+                $wikiPage = Wiki::get_page($st, default: false);
                 if ($wikiPage->id !== -1) {
                     if (TagCategoriesInfo::is_enabled()) {
-                        $st = TagCategories::getTagHtml($st);
+                        $sth = TagCategories::getTagHtml($st);
                     }
                     $short_wiki_description = emptyHTML(
-                        H2($st, " ", A(["href" => make_link("wiki/$st")], SUP("ⓘ"))),
+                        H2($sth ?? null, " ", A(["href" => make_link("wiki/$st")], SUP("ⓘ"))),
                         format_text(explode("\n", $wikiPage->body, 2)[0])
                     );
-                    Ctx::$page->add_block(new Block(null, $short_wiki_description, "main", 0, "short-wiki-description"));
+                    Ctx::$page->add_block(new Block(null, $short_wiki_description, "main", 6, "short-wiki-description"));
                 }
             }
         }

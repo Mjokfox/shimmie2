@@ -271,7 +271,8 @@ class TagCategoriesTheme extends Themelet
                     THEAD(
                         TH("tag"),
                         TH("count"),
-                    )
+                    ),
+                    $tbody
                 )
             );
             $html->appendChild($thtml);

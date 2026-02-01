@@ -323,7 +323,7 @@ final class Wiki extends Extension
     }
 
     #[Query(name: "wiki")]
-    public static function get_page(string $title, ?int $revision = null): WikiPage
+    public static function get_page(string $title, ?int $revision = null, bool $default = true): WikiPage
     {
         // first try and get the actual page
         $row = Ctx::$database->get_row(
@@ -339,15 +339,17 @@ final class Wiki extends Extension
 
         // fall back to wiki:default
         if (empty($row)) {
-            $row = Ctx::$database->get_row("
+            if ($default) {
+                $row = Ctx::$database->get_row("
                 SELECT *
                 FROM wiki_pages
                 WHERE title = :title
                 ORDER BY revision DESC
 			", ["title" => "wiki:default"]);
+            }
 
             // fall further back to manual
-            if (empty($row)) {
+            if (!$default || empty($row)) {
                 $row = [
                     "id" => -1,
                     "owner_ip" => "0.0.0.0",

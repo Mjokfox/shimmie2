@@ -12,10 +12,8 @@ final class TagCategoriesTest extends ShimmiePHPUnitTestCase
         $_POST = ['tc_status' => "new", 'tc_category' => "artist", 'tc_up_group' => "artist", 'tc_lo_group' => "artist", 'tc_tag_list' => "bob", 'tc_color' => "#888888", "tc_up_type" => 0, "tc_up_prio" => 0];
         $tc->page_update();
         self::assertEquals("artist", TagCategories::get_tag_category("bob"));
-        self::assertEquals("bob", TagCategories::get_tag_body("bob"));
 
         self::assertEquals(null, TagCategories::get_tag_category("alice"));
-        self::assertEquals("alice", TagCategories::get_tag_body("alice"));
 
         $_POST = ['tc_status' => "edit", 'tc_category' => "artist", 'tc_up_group' => "artist", 'tc_lo_group' => "artist", 'tc_tag_list' => "alice joe", 'tc_color' => "#888888", "tc_up_type" => 0, "tc_up_prio" => 0];
         $tc->page_update();
@@ -24,6 +22,5 @@ final class TagCategoriesTest extends ShimmiePHPUnitTestCase
         // self::assertEquals("artist", TagCategories::get_tag_category("alice"));
 
         self::assertEquals(null, TagCategories::get_tag_category("notacategory:bob"));
-        self::assertEquals("notacategory:bob", TagCategories::get_tag_body("notacategory:bob"));
     }
 }
