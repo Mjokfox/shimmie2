@@ -17,7 +17,7 @@ class CustomBlotterTheme extends BlotterTheme
     public function display_blotter(array $entries): void
     {
         $html = $this->get_html_for_blotter($entries);
-        Ctx::$page->add_block(new Block(null, rawHTML($html), "main", 0, "blotter"));
+        Ctx::$page->add_block(new Block(null, rawHTML($html), "main", 0, "blotter", false));
     }
 
     /**
