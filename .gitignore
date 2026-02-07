@@ -1,6 +1,6 @@
 backup
 data
-/themes/*/static
+/themes/*/static*
 *.old
 .docker/entrypoint.d/config.json
 .sl

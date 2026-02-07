@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+use function MicroHTML\rawHTML;
+
 final class StaticFiles extends Extension
 {
     public const KEY = "static_files";
@@ -12,8 +14,22 @@ final class StaticFiles extends Extension
     public function onPageRequest(PageRequestEvent $event): void
     {
         $page = Ctx::$page;
+
+        if ($event->page_matches("static/{p}")) {
+            $page = $event->get_arg("p");
+            $f_pagename = \Safe\preg_replace("/[^a-z\d_\-\.]+/", "_", $page);
+            $theme_name = Ctx::$config->get(SetupConfig::THEME);
+
+            $theme_file = "themes/$theme_name/static_html/$f_pagename.html";
+            $static_file = "ext/static_files/static_html/$f_pagename.html";
+            if (file_exists($theme_file) || file_exists($static_file)) {
+                $file = new Path(file_exists($theme_file) ? $theme_file : $static_file);
+                $html = $file->get_contents();
+                Ctx::$page->add_block(new Block(null, rawHTML($html)));
+            }
+        }
         // hax.
-        if ($page->mode === PageMode::PAGE && $this->count_main($page->blocks) === 0) {
+        elseif ($page->mode === PageMode::PAGE && $this->count_main($page->blocks) === 0) {
             $h_pagename = html_escape(implode('/', $event->args));
             $f_pagename = \Safe\preg_replace("/[^a-z\d_\-\.]+/", "_", $h_pagename);
             $theme_name = Ctx::$config->get(SetupConfig::THEME);
