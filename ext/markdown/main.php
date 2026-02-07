@@ -31,4 +31,12 @@ class Markdown extends FormatterExtension
         $text = \Safe\preg_replace('/\|\|(.*?)\|\|/s', '$1', $text); // spoiler
         return $text;
     }
+    public function onPageRequest(PageRequestEvent $event): void
+    {
+        if ($event->page_matches("api/internal/tag_count")) {
+            $s = $event->GET->req('s');
+            $count = cache_get_or_set("md-count-$s", fn () => Search::count_images(SearchTerm::explode($s)), 60);
+            Ctx::$page->set_data(MimeType::HTML, (string)$count);
+        }
+    }
 }

@@ -50,7 +50,10 @@ function markdown_format(text)
 	text = text.replaceAll(/\!&gt;&gt;(\d+)/gs, '<widget type="thumb" post-id="$1"></widget>');
 	text = text.replaceAll(/&gt;&gt;(\d+)(#c?\d+)?/gs, '<a class="shm-clink" data-clink-sel="$2" href="/post/view/$1$2">&gt;&gt;$1$2</a>');
 	text = text.replaceAll(/\[anchor=(.*?)\](.*?)\[\/anchor\]/gs, '<span class="anchor">$2 <a class="alink" href="#bb-$1" name="bb-$1" title="link to this anchor"> ¶ </a></span>');  // add "bb-" to avoid clashing with eg #top
-	text = text.replaceAll(/search\((.+?)\)/gs, '<a href="/post/list/$1">$1</a>');
+	text = text.replaceAll(/search\((\S+)\)(\s?)/gs, '<a href="/post/list/$1">$1</a>$2');
+	text = text.replaceAll(/search\{(.+?)\}/gs, '<a href="/post/list/$1">$1</a>');
+	text = text.replaceAll(/count\((\S+)\)(\s?)/gs, '<tagcount tags="$1">$1</tagcount>$2');
+	text = text.replaceAll(/count\{(.+?)\}/gs, '<tagcount tags="$1">$1</tagcount>');
 	text = text.replaceAll(/(^|[^\!])wiki:(\S+)/gs, '$1<a href="/wiki/$2">$2</a>');
 	text = text.replaceAll(/\!wiki:(\S+)/gs, '<a href="/wiki/$1">wiki:$1</a>');
 	text = text.replaceAll(/^(?:\*|-|\+)\s(.*)/gm, "<li>$1</li>");
@@ -84,8 +87,8 @@ function markdown_format(text)
 }
 
 function encode_links(text) {
-	text = text.replaceAll(/\(((?:(?:https?|ftp|irc|site):\/\/|mailto:))([^\)\[\]]+)\)/gm, function(m, c, c1) {return "({url!}"+safe_btoa(c+c1.replaceAll(" ","%20",c1))+"{/url!})";});
-	text = text.replaceAll(/((?:(?:https?|ftp|irc|site):\/\/|mailto:)[^\s\)\[\]]+)/gm, function(m, c) {return "{url!}"+safe_btoa(c)+"{/url!}";});
+	text = text.replaceAll(/\(((?:(?:https?|ftp|irc|site):\/\/|mailto:)\S+)\)(\s?)/gm, function(m, c, c1) {return"({url!}"+safe_btoa(c)+"{/url!})"+(c1??"");;});
+	text = text.replaceAll(/((?:(?:https?|ftp|irc|site):\/\/|mailto:)\S+)(\s?)/gm, function(m, c, c1) {return"{url!}"+safe_btoa(c)+"{/url!}"+(c1??"");});
 	text = text.replaceAll(/@(\S+)/gm, function(m, c) {return "{usr!}"+safe_btoa(c)+"{/usr!}";});
 	text = text.replaceAll(/\[(.+?)\]\(/gm, function(m, c) {return "[{alt!}"+safe_btoa(c)+"{/alt!}](";});
 	return text;
@@ -94,12 +97,12 @@ function insert_links(text) {
 	text = text.replaceAll(/\{alt!\}(.+?)\{\/alt!\}/gm,function(m, c) {return  safe_atob(c);});
 	text = text.replaceAll(/\{usr!\}(.+?)\{\/usr!\}/gm,function(m, c) {let u = safe_atob(c); return `<a href="/user/${u}">@${u}</a>`;});
 	text = text.replaceAll(/\#\{url!\}(.+?)\{\/url!\}/gm,function(m, c) {return  safe_atob(c);});
-	text = text.replaceAll(/!\[(.+?)\]\(\{url!\}(.+?)\{\/url!\}\)/gm,function(m, c, c1) {return "<img alt='"+ c +"' src='"+safe_atob(c1)+"'>";}); // image
-	text = text.replaceAll(/\[(.+?)\]\(\{url!\}(.+?)\{\/url!\}\)/gm,function(m, c,c1) {return "<a href='"+ safe_atob(c1)+"'>"+c+"</a>";}); // []()
+	text = text.replaceAll(/!\[(.+?)\]\(\{url!\}(.+?)\{\/url!\}\)/gm,function(m, c, c1) {return "<img alt='"+c+"' src='"+safe_atob(c1)+"'>";}); // image
+	text = text.replaceAll(/\[(.+?)\]\(\{url!\}(.+?)\{\/url!\}\)/gm,function(m, c, c1) {return "<a href='"+safe_atob(c1)+"'>"+c+"</a>";}); // []()
 	text = text.replaceAll(/!\{url!\}(.+?)\{\/url!\}/gm,function(m, c) {return "<img alt='user image' src='"+safe_atob(c)+"'>";}); // image
 	text = text.replaceAll(/\{url!\}(.+?)\{\/url!\}/gm, function(m, c) {let url =  safe_atob(c);return `<a href='${url}'>${url}</a>`;});
 	text = text.replaceAll(/\{url!\}(.+?)\{\/url!\}/gm, function(m, c) {let url =  safe_atob(c);return `<a href='${url}'>${url}</a>`;});
-	text = text.replaceAll(/site:\/\/([^\s\)\[\]\'\"\>\<]+)/gm,"/$1");
+	text = text.replaceAll(/site:\/\/([^\s\)\[\]\'\"\>\<]+)/gm,function(m, c) {return shm_make_link(c);});
 	return text;
 }
 
@@ -120,14 +123,39 @@ function insert_code(text)
 
 async function get_widget(type, post_id)
 {
-	const url = `/post/${type}/${post_id}`
 	try {
-		const response = await fetch(url);
+		const response = await fetch(shm_make_link(`post/${type}/${post_id}`));
 		if (!response.ok) return null;
 		else if (type == "widget") return await response.text();
 		return `<img alt='user image' src='${response.url}'>`
 	} catch (error) {
-		console.error(`Error fetching the HTML page for ${url}: ${error}`);
+		console.error(`Error fetching the widget for post ${post_id}: ${error}`);
+		return null;
+	}
+}
+
+const count_cache = [];
+
+async function get_count_html(tags) {
+	if (count_cache[tags]) {
+		var count = await count_cache[tags];
+	} else {
+		const promise = get_count(tags);
+		count_cache[tags] = promise;
+		var count = await promise;
+	}
+
+	return `<a href="${shm_make_link(`post/list/${tags}`)}">${tags}</a> (${count})`;
+}
+
+async function get_count(tags) {
+	try {
+		const response = await fetch(shm_make_link("api/internal/tag_count", { s: tags }));
+		if (!response.ok) return null;
+		const count =  await response.text();
+		return count;
+	} catch (error) {
+		console.error(`Error fetching the tag count ${tags}: ${error}`);
 		return null;
 	}
 }
@@ -164,6 +192,11 @@ function preview_markdown(el) {
 			preview_div.querySelectorAll("widget").forEach(async function(el) {
 				if (el.hasAttribute("type") && el.hasAttribute("post-id")){
 					el.outerHTML = await get_widget(el.getAttribute("type"), el.getAttribute("post-id"));
+				}
+			})
+			preview_div.querySelectorAll("tagcount").forEach(async function(el) {
+				if (el.hasAttribute("tags")){
+					el.outerHTML = await get_count_html(el.getAttribute("tags"));
 				}
 			})
 			el.value = "Edit";
@@ -243,6 +276,11 @@ document.addEventListener('DOMContentLoaded', () => {
 	document.querySelectorAll("widget").forEach(async function(el) {
 		if (el.hasAttribute("type") && el.hasAttribute("post-id")){
 			el.outerHTML = await get_widget(el.getAttribute("type"), el.getAttribute("post-id"));
+		}
+	})
+	document.querySelectorAll("tagcount").forEach(async function(el) {
+		if (el.hasAttribute("tags")){
+			el.outerHTML = await get_count_html(el.getAttribute("tags"));
 		}
 	})
 });

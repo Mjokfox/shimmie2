@@ -129,6 +129,11 @@ final class Tag
 
     public static function sanitize(string $tag): string
     {
+        static $forbidden = null;
+        if (is_null($forbidden)) {
+            $forbidden = str_split(Ctx::$config->get(PostTagsConfig::FORBIDDEN_CHARACTERS, ConfigType::STRING) ?? "");
+        }
+        $tag = str_replace($forbidden, "", $tag);
         $tag = \Safe\preg_replace("/\s/", "", $tag);                # whitespace
         $tag = \Safe\preg_replace('/\x20[\x0e\x0f]/', '', $tag);    # unicode RTL
         $tag = \Safe\preg_replace("/\.+/", ".", $tag);              # strings of dots?
