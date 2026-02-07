@@ -48,7 +48,7 @@ function markdown_format(text)
 	text = text.replaceAll(/blockquote>\n/gs, 'blockquote>');
 	text = text.replaceAll(/\$&gt;&gt;(\d+)/gs, '<widget type="widget" post-id="$1"></widget>');
 	text = text.replaceAll(/\!&gt;&gt;(\d+)/gs, '<widget type="thumb" post-id="$1"></widget>');
-	text = text.replaceAll(/&gt;&gt;(\d+)(#c?\d+)?/gs, '<a class="shm-clink" data-clink-sel="$2" href="/post/view/$1$2">&gt;&gt;$1$2</a>');
+	text = text.replaceAll(/&gt;&gt;(\d+)#(c?\d+)?/gs, '<a class="shm-clink" data-clink-sel="$2" href="/post/view/$1#$2">&gt;&gt;$1#$2</a>');
 	text = text.replaceAll(/\[anchor=(.*?)\](.*?)\[\/anchor\]/gs, '<span class="anchor">$2 <a class="alink" href="#bb-$1" name="bb-$1" title="link to this anchor"> ¶ </a></span>');  // add "bb-" to avoid clashing with eg #top
 	text = text.replaceAll(/search\((\S+)\)(\s?)/gs, '<a href="/post/list/$1">$1</a>$2');
 	text = text.replaceAll(/search\{(.+?)\}/gs, '<a href="/post/list/$1">$1</a>');
@@ -238,20 +238,19 @@ document.addEventListener('DOMContentLoaded', () => {
 		e.innerHTML = markdown_format(e.innerHTML);
 		e.querySelectorAll(".shm-clink").forEach(function(el) {
 			var target_id = el.getAttribute("data-clink-sel");
-			if(target_id && document.getElementById(target_id.replace("#",""))) {
+			if(target_id && document.getElementById(target_id)) {
 				// if the target comment is already on this page, don't bother
 				// switching pages
 				// el.setAttribute("href", target_id);
 	
 				// highlight it when clicked
 				el.addEventListener("click", function(e) {
-					// This needs jQuery UI
-					$(target_id).highlight();
+					shm_blink(document.getElementById(target_id));
 				});
 	
 				// vanilla target name should already be in the URL tag, but this
 				// will include the anon ID as displayed on screen
-				el.innerHTML = "Replying to: @"+document.querySelector(target_id+" .username").innerHTML;
+				el.innerHTML = "Replying to: @"+document.getElementById(target_id).parentElement.querySelector(".username").innerHTML;
 			}
 		});
 	})

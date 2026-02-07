@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // will include the anon ID as displayed on screen
             el.innerHTML =
                 "@" +
-                document.querySelector(target_id + " .username").innerHTML;
+                document.getElementById(target_id).parentElement.querySelector(".username").innerHTML;
         }
     });
 });

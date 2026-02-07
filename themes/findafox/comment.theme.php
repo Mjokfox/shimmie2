@@ -97,18 +97,18 @@ class CustomCommentListTheme extends CommentListTheme
         }
         $h_posted = SHM_DATE($comment->posted);
 
-        $duser = $comment->get_owner();
-        $h_userlink = emptyHTML(A(["class" => "username", "href" => make_link("user/{$comment->owner_name}")], $comment->owner_name), BR(), $duser->class->name);
+        $duser = $comment->owner;
+        $h_userlink = emptyHTML(A(["class" => "username", "href" => make_link("user/{$comment->owner->name}")], $comment->owner->name), BR(), $duser->class->name);
         /** @var BuildAvatarEvent $BAE */
         $BAE = send_event(new BuildAvatarEvent($duser));
         $h_avatar = $BAE->html;
         $h_del = null;
         if (Ctx::$user->can(CommentPermission::DELETE_COMMENT) || Ctx::$user->id === $comment->owner_id) {
-            $h_del = emptyHTML(" - ", $this->delete_link($comment->comment_id, $comment->image_id, $comment->owner_name, $tfe->stripped));
+            $h_del = emptyHTML(" - ", $this->delete_link($comment->id, $comment->image_id, $comment->owner->name, $tfe->stripped));
         }
         $h_edit = null;
         if (Ctx::$user->can(CommentPermission::DELETE_COMMENT) || (Ctx::$user->can(CommentPermission::CREATE_COMMENT) && Ctx::$user->id === $comment->owner_id)) {
-            $h_edit = emptyHTML(" - ", $this->edit_button($comment->comment_id, $comment->image_id));
+            $h_edit = emptyHTML(" - ", $this->edit_button($comment->id, $comment->image_id, $comment->comment));
         }
         $h_edited = $comment->edited ? emptyHTML(BR(), EM("edited")) : null;
         if ($trim) {
@@ -122,12 +122,12 @@ class CustomCommentListTheme extends CommentListTheme
                 $h_comment
             );
         } else {
-            $h_reply = A(["href" => "javascript: replyTo({$comment->image_id}, {$comment->comment_id}, \"{$comment->owner_name}\");"], "Reply");
+            $h_reply = A(["href" => "javascript: ShmComment.replyTo({$comment->image_id}, {$comment->id}, \"{$comment->owner->name}\");"], "Reply");
             return TABLE(
-                ["class" => "comment", "id" => "c{$comment->comment_id}"],
+                ["class" => "comment"],
                 TR(
                     TD(["class" => "meta"], $h_userlink, BR(), $h_avatar, br(), $h_posted, $h_del, $h_edited),
-                    TD(["class" => "c_body"], $h_comment, BR(), BR(), $h_reply, $h_edit)
+                    TD(["class" => "c_body", "id" => "c{$comment->id}"], $h_comment, BR(), BR(), $h_reply, $h_edit)
                 )
             );
         }
@@ -137,7 +137,7 @@ class CustomCommentListTheme extends CommentListTheme
     {
         $hash = CommentList::get_hash();
         return DIV(
-            ["class" => "comment comment_add", "id" => "cadd$image_id"],
+            ["class" => "comment comment_add", "id" => "comment_add_$image_id"],
             SHM_SIMPLE_FORM(
                 make_link("comment/add"),
                 INPUT(["type" => "hidden", "name" => "image_id", "value" => $image_id]),
@@ -147,9 +147,5 @@ class CustomCommentListTheme extends CommentListTheme
                 SHM_SUBMIT("Post Comment")
             )
         );
-    }
-    protected function edit_button(int $comment_id, int $image_id): HTMLElement
-    {
-        return A(["class" => "c-edit", "onclick" => "comment_edit_box(this,$image_id,$comment_id);"], " Edit");
     }
 }

@@ -32,6 +32,7 @@ final class Tips extends Extension
 {
     public const KEY = "tips";
 
+    #[EventListener]
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         $database = Ctx::$database;
@@ -52,6 +53,7 @@ final class Tips extends Extension
         }
     }
 
+    #[EventListener]
     public function onPageRequest(PageRequestEvent $event): void
     {
         $this->getTip();
@@ -79,6 +81,7 @@ final class Tips extends Extension
         }
     }
 
+    #[EventListener]
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent === "system") {
@@ -88,6 +91,7 @@ final class Tips extends Extension
         }
     }
 
+    #[EventListener]
     public function onUserBlockBuilding(UserBlockBuildingEvent $event): void
     {
         if (Ctx::$user->can(TipsPermission::ADMIN)) {
@@ -116,6 +120,7 @@ final class Tips extends Extension
         $this->theme->manageTips($images);
     }
 
+    #[EventListener]
     public function onCreateTip(CreateTipEvent $event): void
     {
         Ctx::$database->execute(
@@ -158,6 +163,7 @@ final class Tips extends Extension
         );
     }
 
+    #[EventListener]
     public function onDeleteTip(DeleteTipEvent $event): void
     {
         Ctx::$database->execute("DELETE FROM tips WHERE id = :id", ["id" => $event->tip_id]);

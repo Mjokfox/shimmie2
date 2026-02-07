@@ -198,6 +198,7 @@ final class PrivMsg extends Extension
     public const KEY = "pm";
     public const VERSION_KEY = "pm_version";
 
+    #[EventListener]
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         // shortcut to latest
@@ -244,6 +245,7 @@ final class PrivMsg extends Extension
         }
     }
 
+    #[EventListener]
     public function onPageNavBuilding(PageNavBuildingEvent $event): void
     {
         if (Ctx::$user->can(PrivMsgPermission::READ_PM)) {
@@ -254,6 +256,7 @@ final class PrivMsg extends Extension
         }
     }
 
+    #[EventListener]
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent === "user") {
@@ -265,6 +268,7 @@ final class PrivMsg extends Extension
         }
     }
 
+    #[EventListener]
     public function onUserBlockBuilding(UserBlockBuildingEvent $event): void
     {
         if (Ctx::$user->can(PrivMsgPermission::READ_PM)) {
@@ -274,6 +278,7 @@ final class PrivMsg extends Extension
         }
     }
 
+    #[EventListener]
     public function onUserPageBuilding(UserPageBuildingEvent $event): void
     {
         $duser = $event->display_user;
@@ -304,6 +309,7 @@ final class PrivMsg extends Extension
     }
 
 
+    #[EventListener]
     public function onPageRequest(PageRequestEvent $event): void
     {
         $database = Ctx::$database;
@@ -478,6 +484,7 @@ final class PrivMsg extends Extension
         }
     }
 
+    #[EventListener]
     public function onSendPM(SendPMEvent $event): void
     {
         Ctx::$database->execute(
@@ -491,6 +498,7 @@ final class PrivMsg extends Extension
         Log::info("pm", "Sent PM to User #{$event->pm->to_id}");
     }
 
+    #[EventListener]
     public function onEditPM(EditPMEvent $event): void
     {
         Ctx::$database->execute(

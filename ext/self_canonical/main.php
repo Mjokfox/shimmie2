@@ -14,6 +14,7 @@ class SelfCanonical extends Extension
         return 1;
     }
 
+    #[EventListener]
     public function onPageRequest(PageRequestEvent $event): void
     {
         Ctx::$page->add_html_header(rawHTML(

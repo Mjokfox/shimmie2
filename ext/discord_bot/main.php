@@ -16,6 +16,7 @@ final class DiscordBot extends Extension
         return 51;
     }
 
+    #[EventListener]
     public function onInitExt(InitExtEvent $event): void
     {
         $event->add_shutdown_handler(function () {
@@ -23,6 +24,7 @@ final class DiscordBot extends Extension
         });
     }
 
+    #[EventListener(priority: 51)]
     public function onCommentPosting(CommentPostingEvent $event): void
     {
         $this->add_data($this->data_builder(
@@ -31,12 +33,13 @@ final class DiscordBot extends Extension
             [
                 "username" => $event->user->name,
                 "post_id" => $event->image_id,
-                "comment_id" => $event->comment_id,
+                "comment_id" => $event->id,
                 "message" => $event->comment,
             ]
         ));
     }
 
+    #[EventListener(priority: 51)]
     public function onCommentEditing(CommentEditingEvent $event): void
     {
         $this->add_data($this->data_builder(
@@ -51,6 +54,7 @@ final class DiscordBot extends Extension
         ));
     }
 
+    #[EventListener(priority: 51)]
     public function onCommentDeletion(CommentDeletionEvent $event): void
     {
         $this->add_data($this->data_builder(
@@ -62,6 +66,7 @@ final class DiscordBot extends Extension
         ));
     }
 
+    #[EventListener(priority: 51)]
     public function onImageFinished(ImageFinishedEvent $event): void
     {
         $this->add_data($this->data_builder(
@@ -77,6 +82,7 @@ final class DiscordBot extends Extension
         ));
     }
 
+    #[EventListener(priority: 51)]
     public function onImageReplace(ImageReplaceEvent $event): void
     {
         $this->add_data($this->data_builder(
@@ -92,6 +98,7 @@ final class DiscordBot extends Extension
         ));
     }
 
+    #[EventListener(priority: 51)]
     public function onImageDeletion(ImageDeletionEvent $event): void
     {
         $this->add_data($this->data_builder(
@@ -104,6 +111,7 @@ final class DiscordBot extends Extension
         ));
     }
 
+    #[EventListener(priority: 51)]
     public function onUserCreation(UserCreationEvent $event): void
     {
         $user = $event->get_user();
@@ -116,6 +124,7 @@ final class DiscordBot extends Extension
         ));
     }
 
+    #[EventListener(priority: 51)]
     public function onUserDeletion(UserDeletionEvent $event): void
     {
         $this->add_data($this->data_builder(

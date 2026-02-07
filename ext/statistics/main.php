@@ -12,6 +12,7 @@ final class Statistics extends Extension
     /** @var string[] */
     private array $unlisted = ['anonymous', 'ghost'];
 
+    #[EventListener]
     public function onPageRequest(PageRequestEvent $event): void
     {
         if ($event->page_matches("stats") || $event->page_matches("stats/100")) {
@@ -70,11 +71,13 @@ final class Statistics extends Extension
         }
     }
 
+    #[EventListener]
     public function onPageNavBuilding(PageNavBuildingEvent $event): void
     {
         $event->add_nav_link(make_link('stats'), "Stats", category: "stats");
     }
 
+    #[EventListener]
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent === "stats") {

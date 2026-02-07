@@ -13,6 +13,7 @@ class ReverseImage extends Extension
 {
     public const KEY = "reverse_image";
 
+    #[EventListener]
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         if ($this->get_version() < 1) {
@@ -29,12 +30,15 @@ class ReverseImage extends Extension
         }
     }
 
+    #[EventListener]
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent === "posts") {
             $event->add_nav_link(make_link('reverse_image_search'), "Reverse Image Search", order:51);
         }
     }
+
+    #[EventListener]
     public function onPageRequest(PageRequestEvent $event): void
     {
         $page = Ctx::$page;
@@ -165,11 +169,13 @@ class ReverseImage extends Extension
         }
     }
 
+    #[EventListener]
     public function onAdminBuilding(AdminBuildingEvent $event): void
     {
         $this->theme->display_admin();
     }
 
+    #[EventListener]
     public function onImageAdminBlockBuilding(ImageAdminBlockBuildingEvent $event): void
     {
         $event->add_part(
@@ -185,6 +191,7 @@ class ReverseImage extends Extension
         );
     }
 
+    #[EventListener]
     public function onImageInfoSet(ImageInfoSetEvent $event): void
     {
         $exists = Ctx::$database->get_one("SELECT 1 FROM image_features WHERE image_id = :id", ["id" => $event->image->id]);
@@ -196,6 +203,7 @@ class ReverseImage extends Extension
         }
     }
 
+    #[EventListener]
     public function onImageReplace(ImageReplaceEvent $event): void
     {
         $exists = Ctx::$database->get_one("SELECT 1 FROM image_features WHERE image_id = :id", ["id" => $event->image->id]);
@@ -209,6 +217,7 @@ class ReverseImage extends Extension
         }
     }
 
+    #[EventListener]
     public function onAdminAction(AdminActionEvent $event): void
     {
         switch ($event->action) {

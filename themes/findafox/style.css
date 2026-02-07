@@ -1043,7 +1043,7 @@ TD.tag_info_link_cell{
 	color: var(--link-default)
 }
 
-.c-edit {
+.comment_edit, .forum_edit {
 	color: var(--link-default);
 }
 

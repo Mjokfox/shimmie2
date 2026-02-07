@@ -27,7 +27,7 @@ final class ForumThreadDeletionEvent extends Event
 
 final class ForumPostPostingEvent extends Event
 {
-    public ?int $id = null;
+    public int $id;
     public function __construct(
         public User $user,
         public int $thread_id,

@@ -11,11 +11,8 @@ require_once "config.php";
 class SillyCookies extends Extension
 {
     public const KEY = "silly_cookies";
-    public function get_priority(): int
-    {
-        return 49;
-    }
 
+    #[EventListener(priority: 49)]
     public function onPageRequest(PageRequestEvent $event): void
     {
         global $page, $config;

@@ -9,11 +9,7 @@ class SiteCaptcha extends Extension
 {
     public const KEY = "site_captcha";
 
-    public function get_priority(): int
-    {
-        return 10;
-    }
-
+    #[EventListener(priority: 10)]
     public function onPageRequest(PageRequestEvent $event): void
     {
         $image_cookie = Ctx::$page->get_cookie("captcha_image");

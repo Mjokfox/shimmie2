@@ -56,6 +56,7 @@ final class Notifications extends Extension
 {
     public const KEY = "notifications";
 
+    #[EventListener]
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         if ($this->get_version() < 1) {
@@ -76,6 +77,7 @@ final class Notifications extends Extension
         }
     }
 
+    #[EventListener]
     public function onPageNavBuilding(PageNavBuildingEvent $event): void
     {
         if (!Ctx::$user->is_anonymous()) {
@@ -86,6 +88,7 @@ final class Notifications extends Extension
         }
     }
 
+    #[EventListener]
     public function onPageRequest(PageRequestEvent $event): void
     {
         if (Ctx::$user->is_anonymous()) {
@@ -116,6 +119,7 @@ final class Notifications extends Extension
         }
     }
 
+    #[EventListener]
     public function onCommentPosting(CommentPostingEvent $event): void
     {
         // For the post owner
@@ -126,7 +130,7 @@ final class Notifications extends Extension
                 $event->user->id,
                 Notification::TYPE_NEW_COMMENT_ON_POST,
                 $event->image_id,
-                $event->comment_id,
+                $event->id,
             ));
         }
 
@@ -140,7 +144,7 @@ final class Notifications extends Extension
                     $event->user->id,
                     Notification::TYPE_MENTION_COMMENT,
                     $event->image_id,
-                    $event->comment_id,
+                    $event->id,
                 ));
             } catch (UserNotFound $e) {
                 // username does not exist
@@ -148,6 +152,7 @@ final class Notifications extends Extension
         }
     }
 
+    #[EventListener]
     public function onForumPostPosting(ForumPostPostingEvent $event): void
     {
         // For the thread owner

@@ -9,11 +9,8 @@ use function MicroHTML\{emptyHTML, rawHTML};
 class EmailVerification extends Extension
 {
     public const KEY = "email_verification";
-    public function get_priority(): int
-    {
-        return 71; // after perm_manager
-    }
 
+    #[EventListener(priority: 71)]
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         if ($this->get_version() < 1) {
@@ -25,6 +22,7 @@ class EmailVerification extends Extension
         }
     }
 
+    #[EventListener]
     public function onPageRequest(PageRequestEvent $event): void
     {
         if ($event->page_matches("email_verification", method:"GET")) {
@@ -67,13 +65,15 @@ class EmailVerification extends Extension
         }
     }
 
-    public function onUserCreation(UserCreationEvent $event): void
-    {
-        $title = Ctx::$config->get(SetupConfig::TITLE);
-        Ctx::$page->flash("Welcome to $title, {$event->username}!");
-        $this->send_verification_mail($this->get_email_token($event->get_user(), $event->email), $event->email);
-    }
+    // #[EventListener]
+    // public function onUserCreation(UserCreationEvent $event): void
+    // {
+    //     $title = Ctx::$config->get(SetupConfig::TITLE);
+    //     Ctx::$page->flash("Welcome to $title, {$event->username}!");
+    //     $this->send_verification_mail($this->get_email_token($event->get_user(), $event->email), $event->email);
+    // }
 
+    #[EventListener]
     public function onUserPageBuilding(UserPageBuildingEvent $event): void
     {
         $ruser = User::by_name(Ctx::$user->name);

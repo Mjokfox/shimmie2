@@ -10,10 +10,8 @@ class INatSource extends Extension
 {
     public const KEY = "inaturalist_source";
     private const REGEX = "/inaturalist_(\d+)_(\d+)_(\d+)\./";
-    public function get_priority(): int
-    {
-        return 2;
-    }
+
+    #[EventListener]
     public function onImageInfoSet(ImageInfoSetEvent $event): void
     {
         if (!($event->params["source"] || $event->params["source{$event->slot}"])) {
@@ -24,6 +22,8 @@ class INatSource extends Extension
             }
         }
     }
+
+    #[EventListener(priority: 2)]
     public function onAdminBuilding(AdminBuildingEvent $event): void
     {
         $start_id = Ctx::$database->get_one("SELECT max(id)-100 from images;");
@@ -44,6 +44,7 @@ class INatSource extends Extension
         Ctx::$page->add_block(new Block("INaturalist Source", rawHTML($html)));
     }
 
+    #[EventListener]
     public function onAdminAction(AdminActionEvent $event): void
     {
         switch ($event->action) {

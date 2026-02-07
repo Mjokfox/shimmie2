@@ -31,6 +31,8 @@ class Markdown extends FormatterExtension
         $text = \Safe\preg_replace('/\|\|(.*?)\|\|/s', '$1', $text); // spoiler
         return $text;
     }
+
+    #[EventListener]
     public function onPageRequest(PageRequestEvent $event): void
     {
         if ($event->page_matches("api/internal/tag_count")) {

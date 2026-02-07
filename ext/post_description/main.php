@@ -19,6 +19,7 @@ final class PostDescription extends Extension
 {
     public const KEY = "post_description";
 
+    #[EventListener]
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         if ($this->get_version() < 1) {
@@ -32,6 +33,7 @@ final class PostDescription extends Extension
         }
     }
 
+    #[EventListener]
     public function onImageInfoSet(ImageInfoSetEvent $event): void
     {
         $description = $event->get_param("description");
@@ -40,6 +42,7 @@ final class PostDescription extends Extension
         }
     }
 
+    #[EventListener]
     public function onPostDescriptionSet(PostDescriptionSetEvent $event): void
     {
         Ctx::$database->execute("
@@ -54,6 +57,7 @@ final class PostDescription extends Extension
         ", ["id" => $event->image_id, "description" => $event->description]);
     }
 
+    #[EventListener]
     public function onImageInfoBoxBuilding(ImageInfoBoxBuildingEvent $event): void
     {
         $description = (string)Ctx::$database->get_one(
@@ -63,6 +67,7 @@ final class PostDescription extends Extension
         $event->add_part($this->theme->get_description_editor_html($description), 35);
     }
 
+    #[EventListener]
     public function onUploadSpecificBuilding(UploadSpecificBuildingEvent $event): void
     {
         $event->add_part($this->theme->get_upload_specific_html($event->suffix), 51);

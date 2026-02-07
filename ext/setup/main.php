@@ -81,6 +81,7 @@ final class Setup extends Extension
 {
     public const KEY = "setup";
 
+    #[EventListener]
     public function onPageRequest(PageRequestEvent $event): void
     {
         $config = Ctx::$config;
@@ -121,6 +122,7 @@ final class Setup extends Extension
         }
     }
 
+    #[EventListener]
     public function onConfigSave(ConfigSaveEvent $event): void
     {
         $config = $event->config;
@@ -163,6 +165,7 @@ final class Setup extends Extension
         Log::critical("setup", "Configuration updated: $message");
     }
 
+    #[EventListener]
     public function onCliGen(CliGenEvent $event): void
     {
         $event->app->register('config:defaults')
@@ -191,6 +194,7 @@ final class Setup extends Extension
             });
     }
 
+    #[EventListener]
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent === "system") {
@@ -200,6 +204,7 @@ final class Setup extends Extension
         }
     }
 
+    #[EventListener]
     public function onUserBlockBuilding(UserBlockBuildingEvent $event): void
     {
         if (Ctx::$user->can(SetupPermission::CHANGE_SETTING)) {
@@ -207,6 +212,7 @@ final class Setup extends Extension
         }
     }
 
+    #[EventListener]
     public function onParseLinkTemplate(ParseLinkTemplateEvent $event): void
     {
         $event->replace('$title', Ctx::$config->get(SetupConfig::TITLE));

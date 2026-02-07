@@ -14,6 +14,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 final class PostScheduling extends DataHandlerExtension
 {
     public const KEY = "post_scheduling";
+
+    #[EventListener]
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         if ($this->get_version() < 1) {
@@ -52,6 +54,7 @@ final class PostScheduling extends DataHandlerExtension
         }
     }
 
+    #[EventListener(priority: 30)]
     public function onDataUpload(DataUploadEvent $event): void
     {
         if ($event->metadata->get("schedule") === "on") {
@@ -136,6 +139,7 @@ final class PostScheduling extends DataHandlerExtension
         }
     }
 
+    #[EventListener]
     public function onPageRequest(PageRequestEvent $event): void
     {
         if ($event->page_matches("post_schedule/list", permission: ReplaceFilePermission::REPLACE_IMAGE)) {
@@ -175,11 +179,13 @@ final class PostScheduling extends DataHandlerExtension
         }
     }
 
+    #[EventListener]
     public function onAdminBuilding(AdminBuildingEvent $event): void
     {
         $this->theme->display_admin_block($this->count_scheduled_posts());
     }
 
+    #[EventListener]
     public function onCliGen(CliGenEvent $event): void
     {
         $event->app->register('check-post-scheduler')
@@ -270,6 +276,7 @@ final class PostScheduling extends DataHandlerExtension
         );
     }
 
+    #[EventListener]
     public function onUploadCommonBuilding(UploadCommonBuildingEvent $event): void
     {
         $interval = Ctx::$config->get(PostSchedulingConfig::SCHEDULE_INTERVAL);
@@ -363,11 +370,6 @@ final class PostScheduling extends DataHandlerExtension
                 ["id" => $schedule_id, "key" => $key, "value" => $value]
             );
         }
-    }
-
-    public function get_priority(): int
-    {
-        return 30;
     }
 
     // we don't do this

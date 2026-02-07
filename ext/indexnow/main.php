@@ -7,6 +7,8 @@ namespace Shimmie2;
 class IndexNow extends Extension
 {
     public const KEY = "indexnow";
+
+    #[EventListener]
     public function onPageRequest(PageRequestEvent $event): void
     {
         if (!empty(Ctx::$config->get(IndexNowConfig::APIKEY))) {

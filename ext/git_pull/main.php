@@ -7,10 +7,8 @@ namespace Shimmie2;
 class GitPull extends Extension
 {
     public const KEY = "git_pull";
-    public function get_priority(): int
-    {
-        return 1;
-    }
+
+    #[EventListener(priority: 1)]
     public function onAdminBuilding(AdminBuildingEvent $event): void
     {
         $html = SHM_SIMPLE_FORM(
@@ -19,6 +17,8 @@ class GitPull extends Extension
         );
         Ctx::$page->add_block(new Block("Git Pull", $html));
     }
+
+    #[EventListener]
     public function onAdminAction(AdminActionEvent $event): void
     {
         switch ($event->action) {

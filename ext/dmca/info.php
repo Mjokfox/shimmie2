@@ -7,6 +7,7 @@ namespace Shimmie2;
 class DmcaInfo extends ExtensionInfo
 {
     public const KEY = "dmca";
+    public bool $beta = true;
 
     public string $key = self::KEY;
     public string $name = "Dmca";

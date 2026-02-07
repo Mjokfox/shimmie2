@@ -9,11 +9,8 @@ use function MicroHTML\{B, INPUT, TABLE, TD, TR, rawHTML};
 class FlickrSource extends Extension
 {
     public const KEY = "flickr_source";
-    public function get_priority(): int
-    {
-        return 2;
-    }
 
+    #[EventListener(priority: 2)]
     public function onAdminBuilding(AdminBuildingEvent $event): void
     {
         $start_id = Ctx::$database->get_one("SELECT max(id)-100 from images;");
@@ -34,6 +31,7 @@ class FlickrSource extends Extension
         Ctx::$page->add_block(new Block("Flickr Source", rawHTML($html)));
     }
 
+    #[EventListener]
     public function onAdminAction(AdminActionEvent $event): void
     {
         switch ($event->action) {

@@ -78,13 +78,13 @@ class CustomForumTheme extends ForumTheme
         }
         $h_edit = null;
         if (Ctx::$user->can(CommentPermission::DELETE_COMMENT) || (Ctx::$user->can(CommentPermission::CREATE_COMMENT) && Ctx::$user->id === $duser->id)) {
-            $h_edit = $this->edit_button($thread_id, $post->id);
+            $h_edit = $this->edit_button($post->id, $thread_id, $post->message);
         }
         return TABLE(
-            ["class" => "comment", "id" => $post->id],
+            ["class" => "comment", "id" => "p{$post->id}"],
             TR(
-                TD(["class" => "meta"], $h_userlink, BR(), $h_avatar, br(), $h_posted, $h_del),
-                TD(["class" => "c_body"], $h_comment, BR(), BR(), $h_edit)
+                TD(["class" => "meta"], $h_userlink, BR(), $h_avatar, br(), $h_posted, $post->edited ? " (edited)" : null, $h_del),
+                TD(["class" => "c_body", "id" => "$post->id"], $h_comment, BR(), BR(), $h_edit)
             )
         );
 
@@ -94,7 +94,7 @@ class CustomForumTheme extends ForumTheme
     {
         $max_characters = Ctx::$config->get(ForumConfig::MAX_CHARS_PER_POST);
         return DIV(
-            ["class" => "comment comment_add", "id" => "cadd$thread_id"],
+            ["class" => "comment comment_add", "id" => "post_composer"],
             SHM_SIMPLE_FORM(
                 make_link("forum/answer"),
                 "Max characters allowed: $max_characters ",
@@ -113,8 +113,8 @@ class CustomForumTheme extends ForumTheme
         );
     }
 
-    protected function edit_button(int $thread_id, int $post_id): HTMLElement
+    public function display_new_post_composer(int $thread_id): void
     {
-        return A(["class" => "c-edit", "onclick" => "forum_edit_box(this,$thread_id,$post_id);"], " Edit");
+
     }
 }

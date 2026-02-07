@@ -10,6 +10,8 @@ use function MicroHTML\LINK;
 class UserThemes extends Extension
 {
     public const KEY = "user_themes";
+
+    #[EventListener]
     public function onPageRequest(PageRequestEvent $event): void
     {
         $utheme = Ctx::$user->get_config()->get(UserThemesUserConfig::THEME);
@@ -38,6 +40,7 @@ class UserThemes extends Extension
         }
     }
 
+    #[EventListener]
     public function onAdminBuilding(AdminBuildingEvent $event): void
     {
         $themes = self::get_user_themes();
@@ -45,6 +48,7 @@ class UserThemes extends Extension
         $this->theme->admin_actions($themes);
     }
 
+    #[EventListener]
     public function onAdminAction(AdminActionEvent $event): void
     {
         switch ($event->action) {

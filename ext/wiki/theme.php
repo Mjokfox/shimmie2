@@ -182,6 +182,7 @@ class WikiTheme extends Themelet
     {
         $u_title = url_escape($page->title);
         $owner = $page->get_owner();
+        $revisions_enabled = Ctx::$config->get(WikiConfig::ENABLE_REVISIONS);
 
         $formatted_body = self::format_wiki_page($page);
 
@@ -227,11 +228,15 @@ class WikiTheme extends Themelet
             HR(),
             P(
                 ["class" => "wiki-footer"],
-                A(["href" => make_link("wiki/$u_title/history")], "Revision {$page->revision}"),
-                " by ",
-                A(["href" => make_link("user/{$owner->name}")], $owner->name),
-                " at {$page->date}",
-                $edit,
+                ... $revisions_enabled ? [
+                    A(["href" => make_link("wiki/$u_title/history")], "Revision {$page->revision}"),
+                    " by ",
+                ] : [],
+                ... [
+                    A(["href" => make_link("user/{$owner->name}")], $owner->name),
+                    " at {$page->date}",
+                    $edit,
+                ]
             )
         );
     }

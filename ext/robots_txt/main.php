@@ -23,6 +23,7 @@ final class RobotsTxt extends Extension
 {
     public const KEY = "robots_txt";
 
+    #[EventListener]
     public function onPageRequest(PageRequestEvent $event): void
     {
         if ($event->page_matches("robots.txt")) {
@@ -41,6 +42,7 @@ final class RobotsTxt extends Extension
     }
 
 
+    #[EventListener]
     public function onRobotsBuilding(RobotsBuildingEvent $event): void
     {
         $domain = Ctx::$config->get(RobotsTxtConfig::CANONICAL_DOMAIN);
