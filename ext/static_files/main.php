@@ -26,6 +26,7 @@ final class StaticFiles extends Extension
                 $file = new Path(file_exists($theme_file) ? $theme_file : $static_file);
                 $html = $file->get_contents();
                 Ctx::$page->add_block(new Block(null, rawHTML($html)));
+                Ctx::$page->set_title(str_replace("_", " ",$f_pagename));
             }
         }
         // hax.
