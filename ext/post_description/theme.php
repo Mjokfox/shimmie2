@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{TD, TEXTAREA, TR};
+use function MicroHTML\{B, TD, TEXTAREA, TR};
 
 class PostDescriptionTheme extends Themelet
 {
@@ -33,6 +33,7 @@ class PostDescriptionTheme extends Themelet
         return TR(
             TD(
                 ["colspan" => "100%"],
+                B("Description "),
                 TEXTAREA([
                     "type" => "text",
                     "name" => "description{$suffix}",
