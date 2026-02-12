@@ -48,7 +48,7 @@ function markdown_format(text)
 	text = text.replaceAll(/blockquote>\n/gs, 'blockquote>');
 	text = text.replaceAll(/\$&gt;&gt;(\d+)/gs, '<widget type="widget" post-id="$1"></widget>');
 	text = text.replaceAll(/\!&gt;&gt;(\d+)/gs, '<widget type="thumb" post-id="$1"></widget>');
-	text = text.replaceAll(/&gt;&gt;(\d+)#(c?\d+)?/gs, '<a class="shm-clink" data-clink-sel="$2" href="/post/view/$1#$2">&gt;&gt;$1#$2</a>');
+	text = text.replaceAll(/&gt;&gt;(\d+)(#)?(c?\d+)?/gs, '<a class="shm-clink" data-clink-sel="$2" href="/post/view/$1$2$3">&gt;&gt;$1$2$3</a>');
 	text = text.replaceAll(/\[anchor=(.*?)\](.*?)\[\/anchor\]/gs, '<span class="anchor">$2 <a class="alink" href="#bb-$1" name="bb-$1" title="link to this anchor"> ¶ </a></span>');  // add "bb-" to avoid clashing with eg #top
 	text = text.replaceAll(/search\((\S+)\)(\s?)/gs, '<a href="/post/list/$1">$1</a>$2');
 	text = text.replaceAll(/search\{(.+?)\}/gs, '<a href="/post/list/$1">$1</a>');
@@ -89,8 +89,8 @@ function markdown_format(text)
 function encode_links(text) {
 	text = text.replaceAll(/\(((?:(?:https?|ftp|irc|site):\/\/|mailto:)\S+)\)(\s?)/gm, function(m, c, c1) {return"({url!}"+safe_btoa(c)+"{/url!})"+(c1??"");;});
 	text = text.replaceAll(/((?:(?:https?|ftp|irc|site):\/\/|mailto:)\S+)(\s?)/gm, function(m, c, c1) {return"{url!}"+safe_btoa(c)+"{/url!}"+(c1??"");});
-	text = text.replaceAll(/@(\S+)/gm, function(m, c) {return "{usr!}"+safe_btoa(c)+"{/usr!}";});
 	text = text.replaceAll(/\[(.+?)\]\(/gm, function(m, c) {return "[{alt!}"+safe_btoa(c)+"{/alt!}](";});
+	text = text.replaceAll(/@(\S+)/gm, function(m, c) {return "{usr!}"+safe_btoa(c)+"{/usr!}";});
 	return text;
 }
 function insert_links(text) {
