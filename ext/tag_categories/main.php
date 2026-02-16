@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\rawHTML;
+use function MicroHTML\SPAN;
 
 /** @extends Extension<TagCategoriesTheme> */
 final class TagCategories extends Extension
@@ -163,28 +163,37 @@ final class TagCategories extends Extension
         return null;
     }
 
+    public static function get_tag_body(string $tag): string
+    {
+        $tag_category_dict = static::getKeyedDict();
+        $tag_split = explode(':', $tag, 2);
+        if (count($tag_split) > 1 && array_key_exists($tag_split[0], $tag_category_dict)) {
+            return $tag_split[1];
+        }
+        return $tag;
+    }
+
     public static function getTagHtml(string $h_tag, string $extra_text = ''): HTMLElement
     {
-        $h_tag_no_underscores = str_replace("_", " ", $h_tag);
+        $h_tag_no_underscores = str_replace("_", " ", $h_tag).$extra_text;
 
         $keyed_dict = static::getKeyedDict();
 
         // we found a tag, see if it's valid!
         $tag_category_dict = static::getCategorizedTags();
-        if (!is_null($tag_category_dict)) {
-            if (array_key_exists($h_tag, $tag_category_dict)) {
-                $category = $tag_category_dict[$h_tag];
-                $tag_category_css = " tag_category_$category";
-                $tag_category_style = 'style="color:'.html_escape($keyed_dict[$category]['color']).';" ';
-                $h_tag_no_underscores = str_replace("_", " ", $h_tag);
+        if (!is_null($tag_category_dict) && \array_key_exists($h_tag, $tag_category_dict)) {
+            $category = $tag_category_dict[$h_tag];
 
-                $h_tag_no_underscores = "<span class=\"$tag_category_css\"$tag_category_style>$h_tag_no_underscores$extra_text</span>";
-            } else {
-                $h_tag_no_underscores .= $extra_text;
-            }
+            return SPAN(
+                [
+                    "class" => " tag_category_$category",
+                    "style" => "color:".$keyed_dict[$category]['color'].";"
+                ],
+                $h_tag_no_underscores
+            );
+
         }
-
-        return rawHTML($h_tag_no_underscores);
+        return SPAN($h_tag_no_underscores);
     }
 
     private function add_tags_to_category(string $category, string $tags): void

@@ -60,7 +60,7 @@ class CustomForumTheme extends ForumTheme
         $tfe = send_event(new TextFormattingEvent($post->message));
         $h_comment = $tfe->getFormattedHTML();
 
-        $h_name = html_escape($post->owner->name);
+        $h_name = $post->owner->name;
 
         $h_posted = SHM_DATE($post->date);
 

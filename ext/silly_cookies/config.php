@@ -10,7 +10,7 @@ class SillyCookiesConfig extends ConfigGroup
 
     public const VERSION = "ext_silly_cookies_version";
 
-    #[ConfigMeta("Image url: ", ConfigType::STRING)]
+    #[ConfigMeta("Image url: ", ConfigType::STRING, default: "")]
     public const IMAGE_URL = "silly_cookies_image_url";
 
     #[ConfigMeta("The title above", ConfigType::STRING, default: "Shimmie", input: ConfigInput::TEXTAREA)]

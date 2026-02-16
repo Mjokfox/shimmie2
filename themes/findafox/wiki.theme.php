@@ -26,18 +26,15 @@ class CustomWikiTheme extends WikiTheme
             $nav = $tfe->getFormattedHTML();
         }
 
-        // see if title is a category'd tag
-        $title_html = html_escape($wiki_page->title);
-
         if (!$wiki_page->exists) {
             Ctx::$page->set_code(404);
         }
 
-        Ctx::$page->set_title(html_escape($wiki_page->title));
+        Ctx::$page->set_title($wiki_page->title);
         $this->display_navigation();
         Ctx::$page->add_block(new Block("Wiki Index", $nav, "left", 20));
         Ctx::$page->add_block(new Block("Recent wiki changes", $this->get_recent_changes(), "left", 21));
-        Ctx::$page->add_block(new Block($title_html, $this->create_display_html($wiki_page)));
+        Ctx::$page->add_block(new Block($wiki_page->title, $this->create_display_html($wiki_page)));
     }
 
     public function display_list_page(?WikiPage $nav_page = null): void

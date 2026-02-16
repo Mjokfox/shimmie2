@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+/**
+ * @phpstan-type BulkExportMetaData = array<string, mixed>
+ */
 final class BulkImportExport extends DataHandlerExtension
 {
     public const KEY = "bulk_import_export";
@@ -17,77 +20,87 @@ final class BulkImportExport extends DataHandlerExtension
         global $database;
 
         if (
-            $this->supported_mime($event->mime)
-            && Ctx::$user->can(BulkImportExportPermission::BULK_IMPORT)
+            !$this->supported_mime($event->mime)
+            || !Ctx::$user->can(BulkImportExportPermission::BULK_IMPORT)
         ) {
-            $zip = new \ZipArchive();
+            return;
+        }
 
-            if ($zip->open($event->tmpname->str())) {
-                $json_data = $this->get_export_data($zip);
+        $zip = new \ZipArchive();
+        if (!$zip->open($event->tmpname->str())) {
+            throw new UserError("Could not open zip archive");
+        }
 
-                if (empty($json_data)) {
-                    return;
+        $json_data = $this->get_export_data($zip);
+        if ($json_data === null) {
+            return;
+        }
+
+        $total = 0;
+        $skipped = 0;
+        $failed = 0;
+
+        foreach ($json_data as $metadata) {
+            $item = (object)$metadata;
+            try {
+                $image = Image::by_hash($item->hash);
+                if ($image !== null) {
+                    $skipped++;
+                    Log::info(BulkImportExportInfo::KEY, "Post $item->hash already present, skipping");
+                    continue;
                 }
 
-                $total = 0;
-                $skipped = 0;
-                $failed = 0;
+                $tmpfile = shm_tempnam("bulk_import");
+                $stream = $zip->getStream($item->hash);
+                if ($stream === false) {
+                    throw new UserError("Could not import " . $item->hash . ": File not in zip");
+                }
 
-                while (!empty($json_data)) {
-                    $item = array_pop($json_data);
-                    try {
-                        $image = Image::by_hash($item->hash);
-                        if ($image !== null) {
-                            $skipped++;
-                            Log::info(BulkImportExportInfo::KEY, "Post $item->hash already present, skipping");
-                            continue;
-                        }
+                $tmpfile->put_contents($stream);
 
-                        $tmpfile = shm_tempnam("bulk_import");
-                        $stream = $zip->getStream($item->hash);
-                        if ($stream === false) {
-                            throw new UserError("Could not import " . $item->hash . ": File not in zip");
-                        }
-
-                        $tmpfile->put_contents($stream);
-
-                        $database->with_savepoint(function () use ($item, $tmpfile, $event) {
-                            $images = send_event(new DataUploadEvent($tmpfile, basename($item->filename), 0, new QueryArray([
-                                'tags' => $item->new_tags,
-                            ])))->images;
-
-                            if (count($images) === 0) {
-                                throw new UserError("Unable to import file $item->hash");
-                            }
-                            foreach ($images as $image) {
-                                $event->images[] = $image;
-                                if ($item->source !== null) {
-                                    $image->set_source($item->source);
-                                }
-                                send_event(new BulkImportEvent($image, $item));
-                            }
-                        });
-
-                        $total++;
-                    } catch (\Exception $ex) {
-                        $failed++;
-                        Log::error(BulkImportExportInfo::KEY, "Could not import " . $item->hash . ": " . $ex->getMessage(), "Could not import " . $item->hash . ": " . $ex->getMessage());
-                    } finally {
-                        if (!empty($tmpfile) && $tmpfile->is_file()) {
-                            $tmpfile->unlink();
+                $database->with_savepoint(function () use ($item, $metadata, $tmpfile, $event) {
+                    // Convert metadata to QueryArray compatible format
+                    /** @var array<string, string|string[]> $query_metadata */
+                    $query_metadata = [];
+                    foreach ($metadata as $key => $value) {
+                        if ($key === 'tags' && is_array($value)) {
+                            $query_metadata[$key] = Tag::implode($value);
+                        } elseif ($value !== null) {
+                            $query_metadata[$key] = $value;
                         }
                     }
-                }
 
-                Log::info(
-                    BulkImportExportInfo::KEY,
-                    "Imported $total items, skipped $skipped, $failed failed",
-                    "Imported $total items, skipped $skipped, $failed failed"
-                );
-            } else {
-                throw new UserError("Could not open zip archive");
+                    $images = send_event(new DataUploadEvent(
+                        $tmpfile,
+                        basename($item->filename),
+                        0,
+                        new QueryArray($query_metadata)
+                    ))->images;
+
+                    if (count($images) === 0) {
+                        throw new UserError("Unable to import file $item->hash");
+                    }
+                    foreach ($images as $image) {
+                        $event->images[] = $image;
+                    }
+                });
+
+                $total++;
+            } catch (\Exception $ex) {
+                $failed++;
+                Log::error(BulkImportExportInfo::KEY, "Could not import " . $item->hash . ": " . $ex->getMessage(), "Could not import " . $item->hash . ": " . $ex->getMessage());
+            } finally {
+                if (!empty($tmpfile) && $tmpfile->is_file()) {
+                    $tmpfile->unlink();
+                }
             }
         }
+
+        Log::info(
+            BulkImportExportInfo::KEY,
+            "Imported $total items, skipped $skipped, $failed failed",
+            "Imported $total items, skipped $skipped, $failed failed"
+        );
     }
 
     #[EventListener]
@@ -109,15 +122,10 @@ final class BulkImportExport extends DataHandlerExtension
 
             if ($zip->open($zip_filename->str(), \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
                 foreach ($event->items as $image) {
-                    $export_event = send_event(new BulkExportEvent($image));
-                    $data = $export_event->fields;
-                    $data["hash"] = $image->hash;
-                    $data["tags"] = $image->get_tag_array();
-                    $data["filename"] = $image->filename;
-                    $data["source"] = $image->source;
-
-                    $json_data[] = $data;
-
+                    $image_info = send_event(new ImageInfoGetEvent($image))->params;
+                    $image_info["hash"] = $image->hash;
+                    $image_info["filename"] = $image->filename;
+                    $json_data[] = $image_info;
                     $zip->addFile($image->get_image_filename()->str(), $image->hash);
                 }
 
@@ -150,7 +158,7 @@ final class BulkImportExport extends DataHandlerExtension
     }
 
     /**
-     * @return array<mixed>
+     * @return null|array<BulkExportMetaData>
      */
     private function get_export_data(\ZipArchive $zip): ?array
     {
@@ -158,7 +166,7 @@ final class BulkImportExport extends DataHandlerExtension
         if ($info !== false) {
             try {
                 $json_string = \Safe\stream_get_contents($info);
-                $json_data = json_decode($json_string);
+                $json_data = \Safe\json_decode($json_string, flags: JSON_OBJECT_AS_ARRAY);
                 return $json_data;
             } finally {
                 fclose($info);

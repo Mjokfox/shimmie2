@@ -15,13 +15,12 @@ class SillyCookies extends Extension
     #[EventListener(priority: 49)]
     public function onPageRequest(PageRequestEvent $event): void
     {
-        global $page, $config;
         if ($event->page_matches("home")) {
-            $url = html_escape($config->get(SillyCookiesConfig::IMAGE_URL));
-            $title = html_escape($config->get(SillyCookiesConfig::COOKIES_TITLE));
-            $text = html_escape($config->get(SillyCookiesConfig::COOKIES_TEXT));
-            $gib = $config->get(SillyCookiesConfig::GIB) ? "true" : "false";
-            $page->add_html_header(rawHTML("<script>window.silly_cookies_url = '$url';window.silly_cookies_title = '$title'; window.silly_cookies_text = '$text'; window.silly_cookies_gib = $gib;</script>"));
+            $url = htmlentities(Ctx::$config->get(SillyCookiesConfig::IMAGE_URL), ENT_QUOTES, "UTF-8");
+            $title = htmlentities(Ctx::$config->get(SillyCookiesConfig::COOKIES_TITLE), ENT_QUOTES, "UTF-8");
+            $text = htmlentities(Ctx::$config->get(SillyCookiesConfig::COOKIES_TEXT), ENT_QUOTES, "UTF-8");
+            $gib = Ctx::$config->get(SillyCookiesConfig::GIB) ? "true" : "false";
+            Ctx::$page->add_html_header(rawHTML("<script>window.silly_cookies_url = '$url';window.silly_cookies_title = '$title'; window.silly_cookies_text = '$text'; window.silly_cookies_gib = $gib;</script>"));
         }
     }
 }

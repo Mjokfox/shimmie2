@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A, DIV, FORM, INPUT, LINK, META, SPAN, TABLE, TD, TR, emptyHTML, rawHTML};
+use function MicroHTML\{A, BR, DIV, FORM, INPUT, LINK, META, SPAN, TABLE, TD, TR, emptyHTML, joinHTML};
 
 use MicroHTML\HTMLElement;
 
@@ -31,66 +31,43 @@ class CustomViewPostTheme extends ViewPostTheme
      */
     public function display_page(Image $image, array $editor_parts, array $sidebar_parts): void
     {
-        Ctx::$page->set_heading(html_escape($image->get_tag_list()));
+        Ctx::$page->set_heading($image->get_tag_list());
         $nav = $this->build_navigation($image);
         Ctx::$page->add_block(new Block("Search with tags", $nav, "left", 0, "search-bar"));
         Ctx::$page->add_block(new Block("Search with tags", $nav, "main", 5, "mobile-search"));
-        Ctx::$page->add_block(new Block("Information", $this->build_information($image), "left", 15));
+        Ctx::$page->add_block(new Block("Information", $this->build_stats($image), "left", 15));
         Ctx::$page->add_block(new Block(null, $this->build_info($image, $editor_parts, $sidebar_parts), "main", 15));
         Ctx::$page->add_block(new Block(null, $this->build_pin($image), "main", 2, "post_controls"));
     }
 
-    private function build_information(Image $image): HTMLElement
+    protected function build_stats(Image $image): HTMLElement
     {
-        $h_owner = html_escape($image->get_owner()->name);
-        $h_ownerlink = "<a href='".make_link("user/$h_owner")."'>$h_owner</a>";
-        $h_ip = html_escape($image->owner_ip);
-        $h_type = html_escape($image->get_mime()->base);
-        $h_date = SHM_DATE($image->posted);
-        $h_filesize = to_shorthand_int($image->filesize);
+        $owner = $image->get_owner()->name;
+        $ip = Ctx::$user->can(IPBanPermission::VIEW_IP) ? " ({$image->owner_ip})" : null;
 
-        if (Ctx::$user->can(IPBanPermission::VIEW_IP)) {
-            $h_ownerlink .= " ($h_ip)";
+        $parts = [
+            "ID: {$image->id}",
+            emptyHTML("Uploader: ", A(["href" => make_link("user/$owner")], $owner), $ip),
+            emptyHTML("Date: ", SHM_DATE($image->posted)),
+            "Size: ".to_shorthand_int($image->filesize)." ({$image->width}x{$image->height})",
+            "Type: {$image->get_mime()}",
+        ];
+        if ($image->video_codec !== null) {
+            $parts[] = "Video Codec: {$image->video_codec->name}";
         }
-
-        $html = "
-		ID: {$image->id}
-		<br>Uploader: $h_ownerlink
-		<br>Date: $h_date
-		<br>Size: $h_filesize ({$image->width}x{$image->height})
-		<br>Type: $h_type
-		";
-
-        if (!is_null($image->length)) {
-            $h_length = format_milliseconds($image->length);
-            $html .= "<br/>Length: $h_length";
+        if ($image->length !== null) {
+            $parts[] = "Length: " . format_milliseconds($image->length);
         }
-
-
-        if (!is_null($image->source)) {
-            $source = $image->source;
-            if (!str_contains($source, "://")) {
-                $source = "https://" . $source;
-            }
-            $html .= "<br>Source: <a href='$source'>link</a>";
+        if ($image->source !== null) {
+            $parts[] = emptyHTML("Source: ", A(["href" => $image->source], "link"));
         }
-
         if (RatingsInfo::is_enabled()) {
-            $rating = $image['rating'];
-            if ($rating === null) {
-                $rating = "?";
-            }
+            $rating = $image['rating'] ?? "?";
             $h_rating = Ratings::rating_to_human($rating);
-            $html .= "<br>Rating: <a href='".search_link(["rating=$rating"])."'>$h_rating</a>";
+            $parts[] = emptyHTML("Rating: ", A(["href" => search_link(["rating=$rating"])], $h_rating));
         }
 
-        if (NumericScoreInfo::is_enabled()) {
-            $h_score = (int)$image['numeric_score'];
-            $score_color = $h_score > 0 ? "lime" : ($h_score < 0 ? "red" : "gray");
-            $html .= "<br>Score: <span style='color:$score_color'>$h_score</span>";
-        }
-
-        return rawHTML($html);
+        return joinHTML(BR(), $parts);
     }
 
     protected function build_navigation(Image $image): HTMLElement

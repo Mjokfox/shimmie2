@@ -30,7 +30,7 @@ final class BrowserSearch extends Extension
             // First, we need to build all the variables we'll need
             $search_title = Ctx::$config->get(SetupConfig::TITLE);
             $search_form_url =  search_link(['{searchTerms}']);
-            $suggenton_url = make_link('browser_search/')."{searchTerms}";
+            $suggention_url = make_link('browser_search/')."{searchTerms}";
             $icon_b64 = base64_encode(\Safe\file_get_contents("ext/static_files/static/favicon.ico"));
 
             // Now for the XML
@@ -40,10 +40,10 @@ final class BrowserSearch extends Extension
 				<os:InputEncoding>UTF-8</os:InputEncoding>
 				<os:Image width='16' height='16'>data:image/x-icon;base64,$icon_b64</os:Image>
 				<os:SearchForm>$search_form_url</os:SearchForm>
-				<os:Url type='text/html' method='GET' template='".html_escape($search_form_url->getPath())."'>
+				<os:Url type='text/html' method='GET' template='".htmlentities($search_form_url->getPath(), ENT_QUOTES, "UTF-8")."'>
 				  <os:Param name='search' value='{searchTerms}'/>
 				</os:Url>
-				<os:Url type='application/x-suggestions+json' template='".html_escape($suggenton_url)."'/>
+				<os:Url type='application/x-suggestions+json' template='".htmlentities($suggention_url, ENT_QUOTES, "UTF-8")."'/>
 				</SearchPlugin>
 			";
 

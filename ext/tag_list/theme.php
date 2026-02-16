@@ -103,7 +103,7 @@ class TagListTheme extends Themelet
 
         $tagshtml = emptyHTML();
         foreach (array_keys($tag_categories_html) as $group) {
-            $tagshtml->appendChild(H3(html_escape($group)));
+            $tagshtml->appendChild(H3($group));
             $tagshtml->appendChild($tag_categories_html[$group]);
         }
 

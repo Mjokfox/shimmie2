@@ -57,6 +57,15 @@ final class PostTitles extends Extension
     }
 
     #[EventListener]
+    public function onImageInfoGet(ImageInfoGetEvent $event): void
+    {
+        $title = $event->image['title'];
+        if ($title !== null) {
+            $event->params["title"] = $title;
+        }
+    }
+
+    #[EventListener]
     public function onImageInfoSet(ImageInfoSetEvent $event): void
     {
         $title = $event->get_param('title');
@@ -81,20 +90,6 @@ final class PostTitles extends Extension
     public function onUploadSpecificBuilding(UploadSpecificBuildingEvent $event): void
     {
         $event->add_part($this->theme->get_upload_specific_html($event->suffix), 12);
-    }
-
-    #[EventListener]
-    public function onBulkExport(BulkExportEvent $event): void
-    {
-        $event->fields["title"] = $event->image['title'];
-    }
-
-    #[EventListener]
-    public function onBulkImport(BulkImportEvent $event): void
-    {
-        if (array_key_exists("title", $event->fields) && $event->fields['title'] !== null) {
-            $this->set_title($event->image->id, $event->fields['title']);
-        }
     }
 
     #[EventListener(priority: 60)]
