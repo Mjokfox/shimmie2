@@ -107,7 +107,7 @@ class CustomCommentListTheme extends CommentListTheme
             $h_del = emptyHTML(" - ", $this->delete_link($comment->id, $comment->image_id, $comment->owner->name, $tfe->stripped));
         }
         $h_edit = null;
-        if (Ctx::$user->can(CommentPermission::DELETE_COMMENT) || (Ctx::$user->can(CommentPermission::CREATE_COMMENT) && Ctx::$user->id === $comment->owner_id)) {
+        if (Ctx::$user->can(CommentPermission::EDIT_COMMENT) && Ctx::$user->id === $comment->owner_id) {
             $h_edit = emptyHTML(" - ", $this->edit_button($comment->id, $comment->image_id, $comment->comment));
         }
         $h_edited = $comment->edited ? emptyHTML(BR(), EM("edited")) : null;
