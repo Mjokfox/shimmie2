@@ -94,7 +94,8 @@ class FutabaCommentListTheme extends CommentListTheme
         $userlink = A(["class" => "username", "href" => make_link("user/$name")], $name);
         $h_date = $comment->posted;
         $del = null;
-        if (Ctx::$user->can(CommentPermission::DELETE_COMMENT)) {
+        if (Ctx::$user->can(CommentPermission::DELETE_OTHERS_COMMENT)
+            || (Ctx::$user->can(CommentPermission::DELETE_COMMENT) && Ctx::$user->id === $comment->owner_id)) {
             $comment_preview = substr($tfe->stripped, 0, 50);
             $j_delete_confirm_message = json_encode("Delete comment by {$comment->owner->name}:\n$comment_preview");
             $h_delete_script = "return confirm($j_delete_confirm_message);";

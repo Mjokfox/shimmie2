@@ -103,7 +103,8 @@ class CustomCommentListTheme extends CommentListTheme
         $BAE = send_event(new BuildAvatarEvent($duser));
         $h_avatar = $BAE->html;
         $h_del = null;
-        if (Ctx::$user->can(CommentPermission::DELETE_COMMENT) || Ctx::$user->id === $comment->owner_id) {
+        if (Ctx::$user->can(CommentPermission::DELETE_OTHERS_COMMENT)
+            || (Ctx::$user->can(CommentPermission::DELETE_COMMENT) && Ctx::$user->id === $comment->owner_id)) {
             $h_del = emptyHTML(" - ", $this->delete_link($comment->id, $comment->image_id, $comment->owner->name, $tfe->stripped));
         }
         $h_edit = null;

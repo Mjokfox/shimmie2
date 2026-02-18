@@ -14,8 +14,11 @@ final class CommentPermission extends PermissionGroup
     #[PermissionMeta("Edit")]
     public const EDIT_COMMENT = "edit_comment";
 
-    #[PermissionMeta("Delete")]
+    #[PermissionMeta("Delete own comment")]
     public const DELETE_COMMENT = "delete_comment";
+
+    #[PermissionMeta("Delete others' comment")]
+    public const DELETE_OTHERS_COMMENT = "delete_others_comment";
 
     #[PermissionMeta("Skip CAPTCHA")]
     public const SKIP_CAPTCHA = "bypass_comment_captcha";

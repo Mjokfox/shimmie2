@@ -264,11 +264,18 @@ final class CommentList extends Extension
             send_event(new CheckStringContentEvent($new_comment));
             send_event(new CommentEditingEvent($image_id, $comment_id, Ctx::$user, $new_comment));
             $page->set_redirect(make_link("post/view/$image_id", null, "c$comment_id"));
-        } elseif ($event->page_matches("comment/delete/{comment_id}/{image_id}", permission: CommentPermission::DELETE_COMMENT)) {
+        } elseif ($event->page_matches("comment/delete/{comment_id}/{image_id}")) {
             // FIXME: post, not args
-            send_event(new CommentDeletionEvent($event->get_iarg('comment_id')));
-            $page->flash("Deleted comment");
-            $page->set_redirect(Url::referer_or(make_link("post/view/" . $event->get_iarg('image_id'))));
+            $id = $event->get_iarg('comment_id');
+            $comment = Comment::by_id($id);
+            if (Ctx::$user->can(CommentPermission::DELETE_OTHERS_COMMENT)
+                || (Ctx::$user->can(CommentPermission::DELETE_COMMENT) && $comment->owner->id === Ctx::$user->id)) {
+                send_event(new CommentDeletionEvent($event->get_iarg('comment_id')));
+                $page->flash("Deleted comment");
+                $page->set_redirect(Url::referer_or(make_link("post/view/" . $event->get_iarg('image_id'))));
+            } else {
+                throw new PermissionDenied("You are not allowed to delete this comment");
+            }
         } elseif ($event->page_matches("comment/bulk_delete", method: "POST", permission: CommentPermission::DELETE_COMMENT)) {
             $ip = $event->POST->req('ip');
 
