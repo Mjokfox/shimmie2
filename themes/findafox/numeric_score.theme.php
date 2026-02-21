@@ -10,7 +10,7 @@ use MicroHTML\HTMLElement;
 
 class CustomNumericScoreTheme extends NumericScoreTheme
 {
-    public function get_voter(Image $image): void
+    public function get_voter(Post $image): void
     {
         $vote_form = function (int $image_id, int $vote, string $text): HTMLElement {
             return SHM_SIMPLE_FORM(

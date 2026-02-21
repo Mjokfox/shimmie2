@@ -92,7 +92,7 @@ class ReverseImage extends Extension
                 // @phpstan-ignore-next-line
                 $res = Ctx::$database->get_all($query);
                 foreach ($res as $r) {
-                    $images[] = new Image($r);
+                    $images[] = new Post($r);
                 }
             }
             $this->theme->list_search($search);
@@ -108,7 +108,7 @@ class ReverseImage extends Extension
             if (count($ids) > 0) {
                 $threshold = $config->get(ReverseImageConfig::SIMILARITY_DUPLICATE) / 100;
                 $first = array_key_first($ids);
-                $image = Image::by_id((int)$first);
+                $image = Post::by_id((int)$first);
                 if (!is_null($image)) {
                     $closest = [
                         "id" => $first,
@@ -176,7 +176,7 @@ class ReverseImage extends Extension
     }
 
     #[EventListener]
-    public function onImageAdminBlockBuilding(ImageAdminBlockBuildingEvent $event): void
+    public function onImageAdminBlockBuilding(PostAdminBlockBuildingEvent $event): void
     {
         $event->add_part(
             SHM_SIMPLE_FORM(
@@ -192,11 +192,11 @@ class ReverseImage extends Extension
     }
 
     #[EventListener]
-    public function onImageInfoSet(ImageInfoSetEvent $event): void
+    public function onImageInfoSet(PostInfoSetEvent $event): void
     {
         $exists = Ctx::$database->get_one("SELECT 1 FROM image_features WHERE image_id = :id", ["id" => $event->image->id]);
         if (is_null($exists)) {
-            $features = $this->get_image_features($event->image->get_image_filename()->str());
+            $features = $this->get_image_features($event->image->get_media_filename()->str());
             if ($features) {
                 $this->add_features_to_db($features, $event->image->id);
             }
@@ -204,10 +204,10 @@ class ReverseImage extends Extension
     }
 
     #[EventListener]
-    public function onImageReplace(ImageReplaceEvent $event): void
+    public function onImageReplace(MediaReplaceEvent $event): void
     {
         $exists = Ctx::$database->get_one("SELECT 1 FROM image_features WHERE image_id = :id", ["id" => $event->image->id]);
-        $features = $this->get_image_features($event->image->get_image_filename()->str());
+        $features = $this->get_image_features($event->image->get_media_filename()->str());
         if ($features) {
             if ($exists) {
                 $this->edit_features_to_db($features, $event->image->id);
@@ -325,7 +325,7 @@ class ReverseImage extends Extension
         if (isset($_POST["url"]) && $_POST["url"]) {
             $file = $this->transload($_POST["url"]);
         } elseif (isset($_POST["hash"]) && $_POST["hash"]) {
-            $file = Filesystem::warehouse_path(Image::IMAGE_DIR, $_POST["hash"], false);
+            $file = Filesystem::warehouse_path(Post::MEDIA_DIR, $_POST["hash"], false);
         } elseif (isset($_FILES['file'])) {
             if ($_FILES['file']['error']) {
                 throw new UploadException("Upload failed: ".$_FILES['file']['error']);
@@ -359,7 +359,7 @@ class ReverseImage extends Extension
      */
     public function get_image_features_by_hash(string $hash): array|false
     {
-        return $this->get_image_features($_SERVER['DOCUMENT_ROOT'] ."/" . Filesystem::warehouse_path(Image::IMAGE_DIR, $hash)->str());
+        return $this->get_image_features($_SERVER['DOCUMENT_ROOT'] ."/" . Filesystem::warehouse_path(Post::MEDIA_DIR, $hash)->str());
     }
 
     // makes the post request to the engine.py, returns the features as array[512] or false if it failed

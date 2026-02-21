@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use MicroHTML\HTMLElement;
 
-use function MicroHTML\{INPUT, TABLE, TD, TEXTAREA, TH, TR, joinHTML};
+use function MicroHTML\{INPUT, LABEL, TABLE, TD, TEXTAREA, TH, TR, emptyHTML, joinHTML};
 
 class PostTagsTheme extends Themelet
 {
@@ -24,7 +24,7 @@ class PostTagsTheme extends Themelet
         Ctx::$page->add_block(new Block("Mass Tag Edit", $html));
     }
 
-    public function get_tag_editor_html(Image $image): HTMLElement
+    public function get_tag_editor_html(Post $image): HTMLElement
     {
         $tag_links = [];
         foreach ($image->get_tag_array() as $tag) {
@@ -64,6 +64,14 @@ class PostTagsTheme extends Themelet
                 "class" => "autocomplete_tags",
                 "value" => ($suffix === "0") ? @$_GET['tags'] : null,
             ])
+        );
+    }
+
+    public function render_tag_input(): HTMLElement
+    {
+        return emptyHTML(
+            LABEL(INPUT(["type" => "checkbox", "style" => 'width:13px;', "name" => "bulk_tags_replace", "value" => "true"]), "Replace tags"),
+            INPUT(["type" => "text", "name" => "bulk_tags", "class" => "autocomplete_tags", "required" => true, "placeholder" => "Enter tags here"]),
         );
     }
 }

@@ -19,7 +19,7 @@ class PostSchedulingTheme extends Themelet
     }
 
     /**
-     * @param Image[] $scheduled_posts
+     * @param Post[] $scheduled_posts
      */
     public function display_scheduled_posts(array $scheduled_posts): void
     {
@@ -28,7 +28,7 @@ class PostSchedulingTheme extends Themelet
             $html->appendChild("No posts queued");
         }
         foreach ($scheduled_posts as $i => $post) {
-            $iibbe = send_event(new ImageInfoBoxBuildingEvent($post, $post->get_owner()));
+            $iibbe = send_event(new PostInfoBoxBuildingEvent($post, $post->get_owner()));
             $html->appendChild(DIV(
                 ["class" => "scheduled-post"],
                 DIV(

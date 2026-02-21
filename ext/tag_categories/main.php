@@ -138,7 +138,7 @@ final class TagCategories extends Extension
     {
         global $database;
         static $tc_category_dict = null;
-        if ($tc_category_dict === null) {
+        if ($tc_category_dict === null || defined('UNITTEST')) {
             $query = "
             SELECT t.tag, c.category
             FROM image_tag_categories_tags ct

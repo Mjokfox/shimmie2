@@ -43,9 +43,9 @@ final class ImageIO extends Extension
         Ctx::$page->add_html_header(STYLE(":root {--thumb-width: {$thumb_width}px;--thumb-min-width: {$thumb_min_width}px;--thumb-height: {$thumb_height}px;}"));
 
         if ($event->page_matches("image/delete", method: "POST")) {
-            $image = Image::by_id_ex(int_escape($event->POST->req('image_id')));
+            $image = Post::by_id_ex(int_escape($event->POST->req('image_id')));
             if ($this->can_user_delete_image(Ctx::$user, $image)) {
-                send_event(new ImageDeletionEvent($image));
+                send_event(new PostDeletionEvent($image));
 
                 if (Ctx::$config->get(ImageConfig::ON_DELETE) === 'next') {
                     $this->redirect_to_next_image($image, $event->GET->get('search'));
@@ -72,9 +72,9 @@ final class ImageIO extends Extension
     }
 
     #[EventListener]
-    public function onImageAdminBlockBuilding(ImageAdminBlockBuildingEvent $event): void
+    public function onPostAdminBlockBuilding(PostAdminBlockBuildingEvent $event): void
     {
-        $image = Image::by_id_ex($event->image->id);
+        $image = Post::by_id_ex($event->image->id);
         if ($this->can_user_delete_image(Ctx::$user, $image)) {
             $event->add_part(SHM_FORM(
                 action: make_link("image/delete"),
@@ -83,7 +83,7 @@ final class ImageIO extends Extension
                     INPUT(["type" => 'hidden', "name" => 'image_id', "value" => $event->image->id]),
                     INPUT(["type" => 'submit', "value" => 'Delete', "onclick" => 'return confirm("Delete the image?");', "id" => "image_delete_button"]),
                 ]
-            ));
+            ), position: 9999);
         }
     }
 
@@ -95,21 +95,21 @@ final class ImageIO extends Extension
             ->setDescription('Delete a specific post')
             ->setCode(function (InputInterface $input, OutputInterface $output): int {
                 $post_id = (int)$input->getArgument('id');
-                $image = Image::by_id_ex($post_id);
-                send_event(new ImageDeletionEvent($image));
+                $image = Post::by_id_ex($post_id);
+                send_event(new PostDeletionEvent($image));
                 return Command::SUCCESS;
             });
     }
 
     #[EventListener]
-    public function onImageAddition(ImageAdditionEvent $event): void
+    public function onPostAddition(PostAdditionEvent $event): void
     {
         send_event(new ThumbnailGenerationEvent($event->image));
         Log::info("image", "Uploaded >>{$event->image->id} ({$event->image->hash})");
     }
 
     #[EventListener]
-    public function onImageDeletion(ImageDeletionEvent $event): void
+    public function onPostDeletion(PostDeletionEvent $event): void
     {
         $event->image->delete();
     }
@@ -117,7 +117,7 @@ final class ImageIO extends Extension
     #[EventListener]
     public function onUserPageBuilding(UserPageBuildingEvent $event): void
     {
-        $i_image_count = Search::count_images(["user={$event->display_user->name}"]);
+        $i_image_count = Search::count_posts(["user={$event->display_user->name}"]);
         $i_days_old = ((time() - \Safe\strtotime($event->display_user->join_date)) / 86400) + 1;
         $h_image_rate = sprintf("%.1f", ($i_image_count / $i_days_old));
         $images_link = search_link(["user={$event->display_user->name}"]);
@@ -146,7 +146,7 @@ final class ImageIO extends Extension
         $event->replace("\\n", "\n");
     }
 
-    private function redirect_to_next_image(Image $image, ?string $search = null): void
+    private function redirect_to_next_image(Post $image, ?string $search = null): void
     {
         if (!is_null($search)) {
             $terms = SearchTerm::explode($search);
@@ -167,7 +167,7 @@ final class ImageIO extends Extension
         Ctx::$page->set_redirect($redirect_target);
     }
 
-    private function can_user_delete_image(User $user, Image $image): bool
+    private function can_user_delete_image(User $user, Post $image): bool
     {
         if ($user->can(ImagePermission::DELETE_OWN_IMAGE) && $image->owner_id === $user->id) {
             return true;
@@ -178,14 +178,14 @@ final class ImageIO extends Extension
     private function send_file(int $image_id, string $type, QueryArray $params): void
     {
         $page = Ctx::$page;
-        $image = Image::by_id_ex($image_id);
+        $image = Post::by_id_ex($image_id);
 
         if ($type === "thumb") {
             $mime = new MimeType(Ctx::$config->get(ThumbnailConfig::MIME));
             $file = $image->get_thumb_filename();
         } else {
             $mime = $image->get_mime();
-            $file = $image->get_image_filename();
+            $file = $image->get_media_filename();
         }
         if (!$file->exists()) {
             throw new PostNotFound("Image not found");
@@ -206,7 +206,7 @@ final class ImageIO extends Extension
             if ($type === "thumb") {
                 $page->set_file($mime, $file);
             } else {
-                $page->set_file($mime, $file, filename: $image->get_nice_image_name(), disposition: "inline");
+                $page->set_file($mime, $file, filename: $image->get_nice_media_name(), disposition: "inline");
             }
 
             if (Ctx::$config->get(ImageConfig::EXPIRES)) {
@@ -217,6 +217,6 @@ final class ImageIO extends Extension
             $page->add_http_header('Expires: ' . $expires);
         }
 
-        send_event(new ImageDownloadingEvent($image, $file, $mime, $params));
+        send_event(new MediaDownloadingEvent($image, $file, $mime, $params));
     }
 }

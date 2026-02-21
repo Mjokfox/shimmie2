@@ -34,7 +34,20 @@ final class PostDescription extends Extension
     }
 
     #[EventListener]
-    public function onImageInfoSet(ImageInfoSetEvent $event): void
+    public function onPostInfoGet(PostInfoGetEvent $event): void
+    {
+        global $database;
+        $description = (string) $database->get_one(
+            "SELECT description FROM image_descriptions WHERE image_id = :id",
+            ["id" => $event->image->id]
+        ) ?: null;
+        if ($description !== null) {
+            $event->params["description"] = $description;
+        }
+    }
+
+    #[EventListener]
+    public function onPostInfoSet(PostInfoSetEvent $event): void
     {
         $description = $event->get_param("description");
         if (Ctx::$user->can(PostDescriptionPermission::EDIT_IMAGE_DESCRIPTIONS) && $description) {
@@ -58,7 +71,7 @@ final class PostDescription extends Extension
     }
 
     #[EventListener]
-    public function onImageInfoBoxBuilding(ImageInfoBoxBuildingEvent $event): void
+    public function onPostInfoBoxBuilding(PostInfoBoxBuildingEvent $event): void
     {
         $description = (string)Ctx::$database->get_one(
             "SELECT description FROM image_descriptions WHERE image_id = :id",

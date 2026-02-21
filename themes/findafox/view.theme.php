@@ -10,26 +10,26 @@ use MicroHTML\HTMLElement;
 
 class CustomViewPostTheme extends ViewPostTheme
 {
-    public function display_meta_headers(Image $image): void
+    public function display_meta_headers(Post $image): void
     {
         $page = Ctx::$page;
         $h_metatags = str_replace(" ", ", ", $image->get_tag_list());
         $page->add_html_header(META(["name" => "keywords", "content" => $h_metatags]));
         $page->add_html_header(META(["property" => "og:title", "content" => $h_metatags]));
         $page->add_html_header(META(["property" => "og:type", "content" => "article"]));
-        $page->add_html_header(META(["property" => "og:image", "content" => $image->get_image_link()->asAbsolute()]));
+        $page->add_html_header(META(["property" => "og:image", "content" => $image->get_media_link()->asAbsolute()]));
         $page->add_html_header(META(["property" => "og:url", "content" => make_link("post/view/{$image->id}")->asAbsolute()]));
         $page->add_html_header(META(["property" => "og:image:width", "content" => $image->width]));
         $page->add_html_header(META(["property" => "og:image:height", "content" => $image->height]));
         $page->add_html_header(META(["property" => "twitter:title", "content" => $h_metatags]));
         $page->add_html_header(META(["property" => "twitter:card", "content" => "summary_large_image"]));
-        $page->add_html_header(META(["property" => "twitter:image:src", "content" => $image->get_image_link()->asAbsolute()]));
+        $page->add_html_header(META(["property" => "twitter:image:src", "content" => $image->get_media_link()->asAbsolute()]));
         $page->add_html_header(META(["name" => "robots", "content" => \array_key_exists('search', $_GET) ? "nofollow noindex" : 'nofollow']));
     }
     /**
      * @param HTMLElement[] $editor_parts
      */
-    public function display_page(Image $image, array $editor_parts, array $sidebar_parts): void
+    public function display_page(Post $image, array $editor_parts, array $sidebar_parts): void
     {
         Ctx::$page->set_heading($image->get_tag_list());
         $nav = $this->build_navigation($image);
@@ -40,7 +40,7 @@ class CustomViewPostTheme extends ViewPostTheme
         Ctx::$page->add_block(new Block(null, $this->build_pin($image), "main", 2, "post_controls"));
     }
 
-    protected function build_stats(Image $image): HTMLElement
+    protected function build_stats(Post $image): HTMLElement
     {
         $owner = $image->get_owner()->name;
         $ip = Ctx::$user->can(IPBanPermission::VIEW_IP) ? " ({$image->owner_ip})" : null;
@@ -70,7 +70,7 @@ class CustomViewPostTheme extends ViewPostTheme
         return joinHTML(BR(), $parts);
     }
 
-    protected function build_navigation(Image $image): HTMLElement
+    protected function build_navigation(Post $image): HTMLElement
     {
         $action = search_link();
         return FORM(
@@ -92,7 +92,7 @@ class CustomViewPostTheme extends ViewPostTheme
         );
     }
 
-    protected function build_info(Image $image, array $editor_parts, array $sidebar_parts = []): HTMLElement
+    protected function build_info(Post $image, array $editor_parts, array $sidebar_parts = []): HTMLElement
     {
         if (count($editor_parts) === 0) {
             return emptyHTML($image->is_locked() ? "[Post Locked]" : "");
@@ -120,7 +120,7 @@ class CustomViewPostTheme extends ViewPostTheme
         );
     }
 
-    protected function build_pin(Image $image): HTMLElement
+    protected function build_pin(Post $image): HTMLElement
     {
         $query = $this->get_query();
         Ctx::$page->add_html_header(LINK(["class" => "nextlink", "rel" => "next", "href" => make_link("post/next/{$image->id}", $query)]));

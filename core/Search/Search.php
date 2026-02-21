@@ -23,7 +23,7 @@ final class Search
      *
      * @param search-term-array $terms
      */
-    private static function find_images_internal(int $start = 0, ?int $limit = null, array $terms = []): \FFSPHP\PDOStatement
+    private static function find_posts_internal(int $start = 0, ?int $limit = null, array $terms = []): \FFSPHP\PDOStatement
     {
         if ($start < 0) {
             $start = 0;
@@ -53,16 +53,16 @@ final class Search
      * Search for an array of images
      *
      * @param search-term-array $terms
-     * @return Image[]
+     * @return Post[]
      */
     #[Query(name: "posts", type: "[Post!]!", args: ["terms" => "[string!]"])]
-    public static function find_images(int $offset = 0, ?int $limit = null, array $terms = []): array
+    public static function find_posts(int $offset = 0, ?int $limit = null, array $terms = []): array
     {
-        $result = self::find_images_internal($offset, $limit, $terms);
+        $result = self::find_posts_internal($offset, $limit, $terms);
 
         $images = [];
         foreach ($result as $row) {
-            $images[] = new Image($row);
+            $images[] = new Post($row);
         }
         return $images;
     }
@@ -71,13 +71,13 @@ final class Search
      * Search for an array of images, returning a iterable object of Image
      *
      * @param search-term-array $terms
-     * @return \Generator<Image>
+     * @return \Generator<Post>
      */
-    public static function find_images_iterable(int $start = 0, ?int $limit = null, array $terms = []): \Generator
+    public static function find_posts_iterable(int $start = 0, ?int $limit = null, array $terms = []): \Generator
     {
-        $result = self::find_images_internal($start, $limit, $terms);
+        $result = self::find_posts_internal($start, $limit, $terms);
         foreach ($result as $row) {
-            yield new Image($row);
+            yield new Post($row);
         }
     }
 
@@ -86,12 +86,12 @@ final class Search
      * with all the search stuff (rating filters etc) taken into account
      *
      * @param int[] $ids
-     * @return Image[]
+     * @return Post[]
      */
-    public static function get_images(array $ids): array
+    public static function get_posts(array $ids): array
     {
         $visible_images = [];
-        foreach (Search::find_images(terms: ["id=" . implode(",", $ids)]) as $image) {
+        foreach (Search::find_posts(terms: ["id=" . implode(",", $ids)]) as $image) {
             $visible_images[$image->id] = $image;
         }
         $visible_ids = array_keys($visible_images);
@@ -116,7 +116,7 @@ final class Search
         );
     }
 
-    private static function count_total_images(): int
+    private static function count_total_posts(): int
     {
         return cache_get_or_set("image-count", fn () => (int)Ctx::$database->get_one("SELECT COUNT(*) FROM images"), 600);
     }
@@ -126,7 +126,7 @@ final class Search
      *
      * @param search-term-array $terms
      */
-    public static function count_images(array $terms = []): int
+    public static function count_posts(array $terms = []): int
     {
         $term_count = count($terms);
 
@@ -135,13 +135,13 @@ final class Search
         $limit_complex = (Ctx::$config->get(IndexConfig::LIMIT_COMPLEX));
         if ($limit_complex && $term_count === 0) {
             // total number of images in the DB
-            $total = self::count_total_images();
+            $total = self::count_total_posts();
         } elseif ($limit_complex && $term_count === 1 && !\Safe\preg_match("/[:=><\*\?]/", $terms[0])) {
             if (str_starts_with($terms[0], "-")) {
                 // one negative tag - subtract from the total
                 $tag = substr($terms[0], 1);
                 assert(strlen($tag) > 0);
-                $total = self::count_total_images() - self::count_tag($tag);
+                $total = self::count_total_posts() - self::count_tag($tag);
             } else {
                 // one positive tag - we can look that up directly
                 $total = self::count_tag($terms[0]);
@@ -207,7 +207,7 @@ final class Search
             // we're going to apply the offset / limit to the image_tags
             // subquery, and applying extra conditions to the top-level
             // query might reduce the total results below the target limit
-            && empty($params->img_conditions)
+            && empty($params->metadata_conditions)
             // We can only do this if we're sorting by ID, because
             // we're going to be using the image_tags table, which
             // only has image_id and tag_id, not any other columns
@@ -356,11 +356,11 @@ final class Search
          * Merge all the image metadata searches into one generic querylet
          * and append to the base querylet with "AND blah"
          */
-        if (!empty($params->img_conditions)) {
+        if (!empty($params->metadata_conditions)) {
             $n = 0;
             $img_sql = "";
             $img_vars = [];
-            foreach ($params->img_conditions as $iq) {
+            foreach ($params->metadata_conditions as $iq) {
                 if ($n++ > 0) {
                     $img_sql .= " AND";
                 }

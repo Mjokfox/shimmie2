@@ -63,7 +63,7 @@ final class PostScheduling extends DataHandlerExtension
                 throw new UploadException("Invalid or corrupted file");
             }
             $hash = $event->tmpname->md5();
-            $existing = Image::by_hash($hash);
+            $existing = Post::by_hash($hash);
             if (!is_null($existing)) {
                 if (Ctx::$config->get(UploadConfig::COLLISION_HANDLER) === 'merge') {
                     // Right now tags are the only thing that get merged, so
@@ -73,7 +73,7 @@ final class PostScheduling extends DataHandlerExtension
                         $tags = Tag::explode($existing->get_tag_list() . " " . $event->metadata['tags']);
                         send_event(new TagSetEvent($existing, $tags));
                     }
-                    $event->images[] = $existing;
+                    $event->posts[] = $existing;
                     return;
                 } else {
                     throw new UploadException(">>{$existing->id} already has hash {$existing->hash}");
@@ -95,16 +95,15 @@ final class PostScheduling extends DataHandlerExtension
             $latest = $this->get_latest();
             $interval = Ctx::$config->get(PostSchedulingConfig::SCHEDULE_INTERVAL, ConfigType::INT);
             $diff = time() - $latest;
-
             if (self::count_scheduled_posts() === 0 && $diff > $interval) { // Upload it immediatly
                 $meta = new QueryArray($event->metadata->toArray());
                 $meta->set("schedule", "");
                 $due = send_event(new DataUploadEvent($event->tmpname, $event->filename, $event->slot, $meta)); // this isnt cursed
-                $event->images = array_merge($event->images, $due->images);
+                $event->posts = array_merge($event->posts, $due->posts);
             } else { // schedule it
                 $filename = $event->tmpname;
                 assert($filename->is_readable());
-                $image = new Image();
+                $image = new Post();
                 $image->tmp_file = $filename;
                 $filesize = $filename->filesize();
                 if ($filesize === 0) {
@@ -133,7 +132,7 @@ final class PostScheduling extends DataHandlerExtension
                 }
                 Ctx::$cache->delete("scheduled_post_count");
                 Ctx::$page->flash("Scheduled {$event->filename};");
-                $event->images[] = $image;
+                $event->posts[] = $image;
             }
             $event->stop_processing = true;
         }
@@ -153,9 +152,9 @@ final class PostScheduling extends DataHandlerExtension
                 }
                 $metadata[$row["schedule_id"]][$row["key"]] = $row["value"];
             }
-            $images = array_map(function ($row) use ($metadata): Image {
-                $row = array_merge($row, $metadata[$row["id"]] ?? []);
-                $image = new Image($row);
+            $images = array_map(function ($row) use ($metadata): Post {
+                $row = array_merge($row, $metadata[$row["id"]] ?? [], ["comments_locked" => false]);
+                $image = new Post($row);
                 $image->tag_array = Tag::explode($row["tags"] ?? "");
                 return $image;
             }, $posts);
@@ -204,7 +203,7 @@ final class PostScheduling extends DataHandlerExtension
             SELECT posted FROM images
             ORDER BY $order
             LIMIT 1;
-        "));
+        ") ?? "1970-01-01");
     }
 
     public function get_scheduled_post(): int
@@ -247,7 +246,7 @@ final class PostScheduling extends DataHandlerExtension
             try {
                 Ctx::$database->with_savepoint(function () use ($path, $scheduled, $metadata) {
                     $event = send_event(new DataUploadEvent($path, $scheduled["filename"], 0, $metadata));
-                    if (count($event->images) === 0) {
+                    if (count($event->posts) === 0) {
                         throw new UploadException("MIME type not supported: " . $event->mime);
                     }
                 });
@@ -304,7 +303,7 @@ final class PostScheduling extends DataHandlerExtension
         ), 10);
     }
 
-    private function schedule_image(Image $image, QueryArray $metadata, int $slot): void
+    private function schedule_image(Post $image, QueryArray $metadata, int $slot): void
     {
         $props_to_save = [
             "filename" => substr($image->filename, 0, 255),
@@ -373,7 +372,7 @@ final class PostScheduling extends DataHandlerExtension
     }
 
     // we don't do this
-    protected function media_check_properties(Image $image): ?MediaProperties
+    protected function media_check_properties(Post $post): ?MediaProperties
     {
         return null;
     }
@@ -383,7 +382,7 @@ final class PostScheduling extends DataHandlerExtension
         return true;
     }
 
-    protected function create_thumb(Image $image): bool
+    protected function create_thumb(Post $post): bool
     {
         return true;
     }

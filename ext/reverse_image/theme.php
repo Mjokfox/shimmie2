@@ -122,9 +122,9 @@ class ReverseImageTheme extends Themelet
         if ((isset($_POST["url"]) && $_POST["url"])) {
             $src = $_POST["url"];
         } elseif (isset($_POST["hash"]) && $_POST["hash"]) {
-            $image = Image::by_hash($_POST["hash"]);
+            $image = Post::by_hash($_POST["hash"]);
             if ($image) {
-                $src = $image->get_image_link();
+                $src = $image->get_media_link();
             }
         } elseif (isset($_FILES['file'])) {
             $fileType = mime_content_type($_FILES['file']['tmp_name']);
@@ -143,7 +143,7 @@ class ReverseImageTheme extends Themelet
         $table = DIV(["class" => 'shm-image-list']);
         foreach (array_keys($ids) as $id) {
             $similarity = 100 * round(1 - $ids[$id], 2);
-            $image = Image::by_id($id);
+            $image = Post::by_id($id);
             if ($image) {
                 $table->appendChild(LABEL(
                     "Similarity: $similarity%",

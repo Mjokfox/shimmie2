@@ -123,7 +123,7 @@ final class Notifications extends Extension
     public function onCommentPosting(CommentPostingEvent $event): void
     {
         // For the post owner
-        $post = Image::by_id($event->image_id);
+        $post = Post::by_id($event->image_id);
         if (!is_null($post) && $event->user->id !== $post->owner_id) {
             $this->create_notification(new Notification(
                 $post->owner_id,

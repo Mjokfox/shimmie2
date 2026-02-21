@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A};
-
 use MicroHTML\HTMLElement;
 
 /**
@@ -13,8 +11,10 @@ use MicroHTML\HTMLElement;
  *
  * A basic chunk of a page.
  */
-class Block
+readonly class Block
 {
+    public ?string $id;
+
     /**
      * @param ?string $header The block's title
      * @param HTMLElement $body The content of the block
@@ -31,7 +31,7 @@ class Block
         public HTMLElement $body,
         public string $section = "main",
         public int $position = 50,
-        public ?string $id = null,
+        ?string $id = null,
         public bool $is_content = true,
         public bool $hidable = false
     ) {

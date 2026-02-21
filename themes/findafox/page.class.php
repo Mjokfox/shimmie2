@@ -10,8 +10,6 @@ use MicroHTML\HTMLElement;
 
 class customPage extends Page
 {
-    use Page_Page;
-
     protected function body_html(): HTMLElement
     {
         list($nav_links, $sub_links) = $this->get_nav_links();
@@ -33,9 +31,6 @@ class customPage extends Page
                     $sub_block_html[] = $block->body;
                     break;
                 case "main":
-                    if ($block->header === "Posts") {
-                        $block->header = "&nbsp;";
-                    }
                     $main_block_html[] = $this->block_html($block, false);
                     break;
                 default:

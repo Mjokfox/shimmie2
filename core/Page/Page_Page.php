@@ -15,16 +15,16 @@ trait Page_Page
 {
     abstract public function set_mode(PageMode $mode): void;
 
-    public string $title = "";
-    public string $heading = "";
-    public string $subheading = "";
-    protected string $layout = "grid";
+    public private(set) string $title = "";
+    public private(set) string $heading = "";
+    public private(set) string $subheading = "";
+    public private(set) string $layout = "grid";
 
     /** @var HTMLElement[] */
-    public array $html_headers = [];
+    public private(set) array $html_headers = [];
 
     /** @var Block[] */
-    public array $blocks = [];
+    public private(set) array $blocks = [];
 
     public function set_title(string $title): void
     {
@@ -157,7 +157,7 @@ trait Page_Page
     /**
      * @param Path[] $files
      */
-    private function get_cache_file(string $type, string $ext, string $theme_name, int $timestamp, array $files): Path
+    protected function get_cache_file(string $type, string $ext, string $theme_name, int $timestamp, array $files): Path
     {
         foreach ($files as $file) {
             $timestamp = max($timestamp, $file->filemtime());
@@ -174,7 +174,7 @@ trait Page_Page
         return $cache_file;
     }
 
-    private function get_css_cache_file(string $theme_name, int $config_latest): Path
+    protected function get_css_cache_file(string $theme_name, int $config_latest): Path
     {
         $files = array_merge(
             Filesystem::zglob("ext/{" . Extension::get_enabled_extensions_as_string() . "}/style.css"),
@@ -183,7 +183,7 @@ trait Page_Page
         return self::get_cache_file('style', 'css', $theme_name, $config_latest, $files);
     }
 
-    private function get_initjs_cache_file(string $theme_name, int $config_latest): Path
+    protected function get_initjs_cache_file(string $theme_name, int $config_latest): Path
     {
         $files = array_merge(
             [
@@ -195,7 +195,7 @@ trait Page_Page
         return self::get_cache_file('initscript', 'js', $theme_name, $config_latest, $files);
     }
 
-    private function get_js_cache_file(string $theme_name, int $config_latest): Path
+    protected function get_js_cache_file(string $theme_name, int $config_latest): Path
     {
         $files = array_merge(
             [

@@ -179,13 +179,13 @@ final class DanbooruApi extends Extension
             $md5list = explode(",", $params['md5']);
             foreach ($md5list as $md5) {
                 assert($md5 !== '');
-                $results[] = Image::by_hash($md5);
+                $results[] = Post::by_hash($md5);
             }
             $count = count($results);
         } elseif (isset($params['id'])) {
             $idlist = explode(",", $params['id']);
             foreach ($idlist as $id) {
-                $results[] = Image::by_id(int_escape($id));
+                $results[] = Post::by_id(int_escape($id));
             }
             $count = count($results);
         } else {
@@ -206,8 +206,8 @@ final class DanbooruApi extends Extension
                 return $element !== "*";
             });
             $tags = array_values($tags); // reindex array because count_images() expects a 0-based array
-            $count = Search::count_images($tags);
-            $results = Search::find_images(max($start, 0), min($limit, 100), $tags);
+            $count = Search::count_posts($tags);
+            $results = Search::find_posts(max($start, 0), min($limit, 100), $tags);
         }
 
         // Now we have the array $results filled with Image objects
@@ -226,7 +226,7 @@ final class DanbooruApi extends Extension
                 "id" => $img->id,
                 "md5" => $img->hash,
                 "file_name" => $img->filename,
-                "file_url" => $img->get_image_link(),
+                "file_url" => $img->get_media_link(),
                 "height" => $img->height,
                 "width" => $img->width,
                 "preview_url" => $img->get_thumb_link(),
@@ -336,7 +336,7 @@ final class DanbooruApi extends Extension
         // It is also currently broken due to some confusion over file variable ($tmp_filename?)
 
         // Does it exist already?
-        $existing = Image::by_hash($hash);
+        $existing = Post::by_hash($hash);
         if (!is_null($existing)) {
             $page->set_code(409);
             $page->add_http_header("X-Danbooru-Errors: duplicate");
@@ -358,7 +358,7 @@ final class DanbooruApi extends Extension
 
                 //Log::debug("danbooru_api", "send_event(".var_export($nevent,TRUE).")");
                 // If it went ok, grab the id for the newly uploaded image and pass it in the header
-                return $dae->images[0];
+                return $dae->posts[0];
             });
 
             $newid = make_link("post/view/" . $newimg->id)->asAbsolute();

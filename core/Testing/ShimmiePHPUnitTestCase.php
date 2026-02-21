@@ -63,7 +63,7 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
         // Rolling back the transaction will remove any metadata,
         // but we also want to delete any uploaded files.
         foreach (Ctx::$database->get_col("SELECT id FROM images") as $image_id) {
-            send_event(new ImageDeletionEvent(Image::by_id_ex((int)$image_id), true));
+            send_event(new PostDeletionEvent(Post::by_id_ex((int)$image_id), true));
         }
 
         Ctx::$database->execute("ROLLBACK TO test_start");
@@ -107,7 +107,7 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
         Ctx::setPage(new Page());
         send_event(new PageRequestEvent($method, $page_name, $get_args, $post_args));
         if (Ctx::$page->mode === PageMode::REDIRECT) {
-            Ctx::$page->code = 302;
+            Ctx::$page->set_code(302);
         }
         return Ctx::$page;
     }
@@ -212,7 +212,7 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
      */
     protected function assert_search_results(array $tags, array $results, string $message = ''): void
     {
-        $images = Search::find_images(0, null, $tags);
+        $images = Search::find_posts(0, null, $tags);
         $ids = [];
         foreach ($images as $image) {
             $ids[] = $image->id;
@@ -252,25 +252,31 @@ abstract class ShimmiePHPUnitTestCase extends \PHPUnit\Framework\TestCase
         send_event(new UserLoginEvent(User::get_anonymous()));
     }
 
-    // post things
-    protected function post_image(string $filename, string $tags): int
+
+
+    /**
+     * post things
+     * @param array<string, string|string[]> $metadata
+     */
+    protected function create_post(string $filename, string $tags, array $metadata = []): int
     {
         $file = new Path($filename);
         $dae = send_event(new DataUploadEvent($file, $file->basename()->str(), 0, new QueryArray([
             "filename" => $file->basename()->str(),
             "tags" => $tags,
+            ...$metadata
         ])));
-        if (count($dae->images) === 0) {
+        if (count($dae->posts) === 0) {
             throw new \Exception("No handler found for {$dae->mime}");
         }
-        return $dae->images[0]->id;
+        return $dae->posts[0]->id;
     }
 
-    protected function delete_image(int $image_id): void
+    protected function delete_post(int $image_id): void
     {
-        $img = Image::by_id($image_id);
+        $img = Post::by_id($image_id);
         if ($img) {
-            send_event(new ImageDeletionEvent($img, true));
+            send_event(new PostDeletionEvent($img, true));
         }
     }
 }

@@ -9,9 +9,9 @@ final class IcoFileHandler extends DataHandlerExtension
     public const KEY = "handle_ico";
     public const SUPPORTED_MIME = [MimeType::ICO];
 
-    protected function media_check_properties(Image $image): MediaProperties
+    protected function media_check_properties(Post $image): MediaProperties
     {
-        $fp = \Safe\fopen($image->get_image_filename()->str(), "r");
+        $fp = \Safe\fopen($image->get_media_filename()->str(), "r");
         try {
             fseek($fp, 6); // skip header
             $subheader = \Safe\unpack("Cwidth/Cheight/Ccolours/Cnull/Splanes/Sbpp/Lsize/loffset", \Safe\fread($fp, 16));
@@ -35,7 +35,7 @@ final class IcoFileHandler extends DataHandlerExtension
         );
     }
 
-    protected function create_thumb(Image $image): bool
+    protected function create_thumb(Post $image): bool
     {
         try {
             $engine = defined("UNITTEST") ? MediaEngine::STATIC : MediaEngine::IMAGICK;

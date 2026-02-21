@@ -50,7 +50,7 @@ class _SafeOuroborosImage
     public string $sample_url = '';
     public ?int $sample_width = null;
 
-    public function __construct(Image $img)
+    public function __construct(Post $img)
     {
         // author
         $author = $img->get_owner();
@@ -62,7 +62,7 @@ class _SafeOuroborosImage
         $this->width = intval($img->width);
         $this->file_ext = $img->get_ext();
         $this->file_size = intval($img->filesize);
-        $this->file_url = (string)$img->get_image_link()->asAbsolute();
+        $this->file_url = (string)$img->get_media_link()->asAbsolute();
         $this->md5 = $img->hash;
 
         // meta
@@ -97,7 +97,7 @@ class _SafeOuroborosImage
         // sample (use the full image here)
         $this->sample_height = intval($img->height);
         $this->sample_width = intval($img->width);
-        $this->sample_url = (string)$img->get_image_link()->asAbsolute();
+        $this->sample_url = (string)$img->get_media_link()->asAbsolute();
     }
 }
 
@@ -229,7 +229,7 @@ final class OuroborosAPI extends Extension
     #[EventListener]
     public function onPageRequest(PageRequestEvent $event): void
     {
-        if (\Safe\preg_match("%(.*)\.(xml|json)$%", implode('/', $event->args), $matches)) {
+        if (\Safe\preg_match("%(.*)\.(xml|json)$%", $event->path, $matches)) {
             $event_args = $matches[1];
             $this->type = $matches[2];
 
@@ -279,7 +279,7 @@ final class OuroborosAPI extends Extension
                 $this->tagIndex($limit, $p, $order, $name, $name_pattern);
             }
         } elseif ($event->page_matches('post/show')) {
-            Ctx::$page->set_redirect(make_link(str_replace('post/show', 'post/view', implode('/', $event->args))));
+            Ctx::$page->set_redirect(make_link(str_replace('post/show', 'post/view', $event->path)));
         }
     }
 
@@ -294,7 +294,7 @@ final class OuroborosAPI extends Extension
     {
         $handler = Ctx::$config->get(UploadConfig::COLLISION_HANDLER);
         if (!empty($md5) && !($handler === 'merge')) {
-            $img = Image::by_hash($md5);
+            $img = Post::by_hash($md5);
             if (!is_null($img)) {
                 $this->sendResponse(420, self::ERROR_POST_CREATE_DUPE);
                 return;
@@ -330,7 +330,7 @@ final class OuroborosAPI extends Extension
             return;
         }
         // @phpstan-ignore-next-line
-        $img = Image::by_hash($meta->req('hash'));
+        $img = Post::by_hash($meta->req('hash'));
         if (!is_null($img)) {
             $handler = Ctx::$config->get(UploadConfig::COLLISION_HANDLER);
             if ($handler === 'merge') {
@@ -357,7 +357,7 @@ final class OuroborosAPI extends Extension
                     0,
                     $meta
                 ));
-                return $dae->images[0];
+                return $dae->posts[0];
             });
             $this->sendResponse(200, (string)make_link('post/view/' . $image->id), true);
         } catch (UploadException $e) {
@@ -372,7 +372,7 @@ final class OuroborosAPI extends Extension
     protected function postShow(?int $id = null): void
     {
         if (!is_null($id)) {
-            $post = new _SafeOuroborosImage(Image::by_id_ex($id));
+            $post = new _SafeOuroborosImage(Post::by_id_ex($id));
             $this->sendData('post', [$post]);
         } else {
             $this->sendResponse(424, 'ID is mandatory');
@@ -386,7 +386,7 @@ final class OuroborosAPI extends Extension
     protected function postIndex(int $limit, int $page, array $terms): void
     {
         $start = ($page - 1) * $limit;
-        $results = Search::find_images(max($start, 0), min($limit, 100), $terms);
+        $results = Search::find_posts(max($start, 0), min($limit, 100), $terms);
         $posts = [];
         foreach ($results as $img) {
             $posts[] = new _SafeOuroborosImage($img);

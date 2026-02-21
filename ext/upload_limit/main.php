@@ -101,7 +101,7 @@
 //             global $config, $page;
 //             $user_config = $user->get_config();
 //             // code shamelessly stolen from extension.php, need to do this check to not decrement the counter on an otherwise failed upload
-//             $existing = Image::by_hash(\Safe\md5_file($event->tmpname));
+//             $existing = Post::by_hash(\Safe\md5_file($event->tmpname));
 //             if (!is_null($existing)) {
 //                 if ($config->get(ImageConfig::UPLOAD_COLLISION_HANDLER) == ImageConfig::COLLISION_MERGE) {
 //                     // Right now tags are the only thing that get merged, so

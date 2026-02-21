@@ -9,7 +9,7 @@ final class ReplaceFileTest extends ShimmiePHPUnitTestCase
     public function testReplacePage(): void
     {
         self::log_in_as_admin();
-        $image_id = $this->post_image("tests/pbx_screenshot.jpg", "pbx computer screenshot");
+        $image_id = $this->create_post("tests/pbx_screenshot.jpg", "pbx computer screenshot");
         self::get_page("replace/$image_id");
         self::assert_title("Replace File");
     }
@@ -19,10 +19,10 @@ final class ReplaceFileTest extends ShimmiePHPUnitTestCase
         self::log_in_as_admin();
 
         // upload an image
-        $image_id = $this->post_image("tests/pbx_screenshot.jpg", "pbx computer screenshot");
+        $image_id = $this->create_post("tests/pbx_screenshot.jpg", "pbx computer screenshot");
 
         // check that the image is original
-        $image = Image::by_id_ex($image_id);
+        $image = Post::by_id_ex($image_id);
         $old_hash = \Safe\md5_file("tests/pbx_screenshot.jpg");
         //self::assertEquals("pbx_screenshot.jpg", $image->filename);
         self::assertEquals("image/jpeg", $image->get_mime());
@@ -52,7 +52,7 @@ final class ReplaceFileTest extends ShimmiePHPUnitTestCase
         self::assertEquals(1, $database->get_one("SELECT COUNT(*) FROM images"));
 
         // check that the image was replaced
-        $image = Image::by_id_ex($image_id);
+        $image = Post::by_id_ex($image_id);
         // self::assertEquals("favicon.png", $image->filename); // TODO should we update filename?
         self::assertEquals("image/png", $image->get_mime());
         self::assertEquals(246, $image->filesize);
@@ -60,9 +60,9 @@ final class ReplaceFileTest extends ShimmiePHPUnitTestCase
         self::assertEquals(md5_file("tests/favicon.png"), $image->hash);
 
         // check that new files exist and old files don't
-        self::assertFalse(Filesystem::warehouse_path(Image::IMAGE_DIR, $old_hash)->exists());
-        self::assertFalse(Filesystem::warehouse_path(Image::THUMBNAIL_DIR, $old_hash)->exists());
-        self::assertTrue(Filesystem::warehouse_path(Image::IMAGE_DIR, $new_hash)->exists());
-        self::assertTrue(Filesystem::warehouse_path(Image::THUMBNAIL_DIR, $new_hash)->exists());
+        self::assertFalse(Filesystem::warehouse_path(Post::MEDIA_DIR, $old_hash)->exists());
+        self::assertFalse(Filesystem::warehouse_path(Post::THUMBNAIL_DIR, $old_hash)->exists());
+        self::assertTrue(Filesystem::warehouse_path(Post::MEDIA_DIR, $new_hash)->exists());
+        self::assertTrue(Filesystem::warehouse_path(Post::THUMBNAIL_DIR, $new_hash)->exists());
     }
 }

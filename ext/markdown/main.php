@@ -37,7 +37,7 @@ class Markdown extends FormatterExtension
     {
         if ($event->page_matches("api/internal/tag_count")) {
             $s = $event->GET->req('s');
-            $count = cache_get_or_set("md-count-$s", fn () => Search::count_images(SearchTerm::explode($s)), 60);
+            $count = cache_get_or_set("md-count-$s", fn () => Search::count_posts(SearchTerm::explode($s)), 60);
             Ctx::$page->set_data(MimeType::HTML, (string)$count);
         }
     }

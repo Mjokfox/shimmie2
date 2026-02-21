@@ -11,7 +11,7 @@ use MicroHTML\HTMLElement;
 class CustomIndexTheme extends IndexTheme
 {
     /**
-     * @param Image[] $images
+     * @param Post[] $images
      */
     public function display_page(array $images): void
     {
@@ -81,7 +81,7 @@ class CustomIndexTheme extends IndexTheme
     }
 
     /**
-     * @param Image[] $images
+     * @param Post[] $images
      */
     protected function display_page_images(array $images): void
     {
@@ -97,16 +97,16 @@ class CustomIndexTheme extends IndexTheme
                 Ctx::$page->add_html_header(META(["name" => "robots", "content" => "nofollow"]));
             }
             $query = url_escape(Tag::implode($this->search_terms));
-            Ctx::$page->add_block(new Block("Posts ", $this->build_table($images, "search=$query"), "main", 10, "image-list"));
+            Ctx::$page->add_block(new Block(null, $this->build_table($images, "search=$query"), "main", 10, "image-list"));
             $this->display_paginator("post/$path/$query", null, $this->page_number, $this->total_pages, true);
         } else {
-            Ctx::$page->add_block(new Block("Posts ", $this->build_table($images, null), "main", 10, "image-list"));
+            Ctx::$page->add_block(new Block(null, $this->build_table($images, null), "main", 10, "image-list"));
             $this->display_paginator("post/$path", null, $this->page_number, $this->total_pages, true);
         }
     }
 
     /**
-     * @param Image[] $images
+     * @param Post[] $images
      */
     protected function build_table(array $images, ?string $query): HTMLElement
     {

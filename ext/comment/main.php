@@ -132,7 +132,7 @@ final class Comment
      * @return Comment[]
      */
     #[Field(extends: "Post", name: "comments", type: "[Comment!]!")]
-    public static function get_comments(Image $post): array
+    public static function get_comments(Post $post): array
     {
         return self::get_all_from_image($post->id);
     }
@@ -155,7 +155,7 @@ final class CommentList extends Extension
     #[EventListener]
     public function onInitExt(InitExtEvent $event): void
     {
-        Image::$prop_types["comments_locked"] = ImagePropType::BOOL;
+        Post::$prop_types["comments_locked"] = PostPropType::BOOL;
     }
 
     #[EventListener]
@@ -320,7 +320,7 @@ final class CommentList extends Extension
 
             $images = [];
             while ($row = $result->fetch()) {
-                $image = Image::by_id((int)$row["image_id"]);
+                $image = Post::by_id((int)$row["image_id"]);
                 if (
                     RatingsInfo::is_enabled() && !is_null($image) &&
                     !in_array($image['rating'], $user_ratings)
@@ -391,12 +391,9 @@ final class CommentList extends Extension
     }
 
     #[EventListener]
-    public function onDisplayingImage(DisplayingImageEvent $event): void
+    public function onDisplayingPost(DisplayingPostEvent $event): void
     {
-        $comments_locked = (bool)Ctx::$database->get_one(
-            "SELECT comments_locked FROM images WHERE id = :id",
-            ["id" => $event->image->id]
-        );
+        $comments_locked = $event->image["comments_locked"];
 
         $can_post = Ctx::$user->can(CommentPermission::CREATE_COMMENT) &&
                     (!$comments_locked || Ctx::$user->can(CommentPermission::BYPASS_COMMENT_LOCK));
@@ -406,7 +403,7 @@ final class CommentList extends Extension
     }
 
     #[EventListener]
-    public function onImageInfoSet(ImageInfoSetEvent $event): void
+    public function onPostInfoSet(PostInfoSetEvent $event): void
     {
         if (Ctx::$user->can(CommentPermission::EDIT_COMMENT_LOCK)) {
             $comments_locked = $event->get_param('comments_locked') === "on";
@@ -426,13 +423,9 @@ final class CommentList extends Extension
     }
 
     #[EventListener]
-    public function onImageInfoBoxBuilding(ImageInfoBoxBuildingEvent $event): void
+    public function onPostInfoBoxBuilding(PostInfoBoxBuildingEvent $event): void
     {
-        $comments_locked = (bool)Ctx::$database->get_one(
-            "SELECT comments_locked FROM images WHERE id = :id",
-            ["id" => $event->image->id]
-        );
-        $event->add_part($this->theme->get_comments_lock_editor_html($comments_locked), 42);
+        $event->add_part($this->theme->get_comments_lock_editor_html($event->image["comments_locked"]), 42);
     }
 
     #[EventListener]
@@ -570,7 +563,7 @@ final class CommentList extends Extension
             throw new CommentPostingException("You do not have permission to add comments");
         }
 
-        $image = Image::by_id($image_id);
+        $image = Post::by_id($image_id);
         if (is_null($image)) {
             throw new CommentPostingException("The image does not exist");
         }

@@ -27,12 +27,12 @@ final class ExtraImageFileHandlerTest extends ShimmiePHPUnitTestCase
 
         // check that it can be uploaded
         self::log_in_as_user();
-        $image_id = $this->post_image($tmp->str().".bmp", "pbx computer screenshot");
+        $image_id = $this->create_post($tmp->str().".bmp", "pbx computer screenshot");
         $page = self::get_page("post/view/$image_id");
         self::assertEquals(200, $page->code);
 
         // check that it was converted to png
-        $image = Image::by_id_ex($image_id);
+        $image = Post::by_id_ex($image_id);
         self::assertEquals("image/png", $image->get_mime());
     }
 }

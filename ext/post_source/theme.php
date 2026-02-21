@@ -20,7 +20,7 @@ class PostSourceTheme extends Themelet
         );
     }
 
-    public function get_source_editor_html(Image $image): HTMLElement
+    public function get_source_editor_html(Post $image): HTMLElement
     {
         return SHM_POST_INFO(
             "Source Link",
@@ -66,5 +66,14 @@ class PostSourceTheme extends Themelet
                 "value" => null,
             ])
         );
+    }
+
+    public function render_source_input(): HTMLElement
+    {
+        return INPUT([
+            "type" => "text",
+            "name" => "bulk_source",
+            "placeholder" => "Enter source here"
+        ]);
     }
 }

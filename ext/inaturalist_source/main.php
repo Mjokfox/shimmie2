@@ -12,7 +12,7 @@ class INatSource extends Extension
     private const REGEX = "/inaturalist_(\d+)_(\d+)_(\d+)\./";
 
     #[EventListener]
-    public function onImageInfoSet(ImageInfoSetEvent $event): void
+    public function onImageInfoSet(PostInfoSetEvent $event): void
     {
         if (!($event->params["source"] || $event->params["source{$event->slot}"])) {
             $image = $event->image;
@@ -107,7 +107,7 @@ class INatSource extends Extension
     /** @param array{id:int,filename:string} $file */
     private function imageUpdate(array $file, string $source): void
     {
-        $image = new Image($file);
+        $image = new Post($file);
         send_event(new SourceSetEvent($image, $source));
     }
 

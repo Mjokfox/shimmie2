@@ -18,19 +18,19 @@ final class RandomImage extends Extension
         ) {
             $action = $event->get_arg('action');
             $search_terms = SearchTerm::explode($event->get_arg('search', ""));
-            $image = Image::by_random($search_terms);
+            $image = Post::by_random($search_terms);
             if (!$image) {
                 throw new PostNotFound("Couldn't find any posts randomly");
             }
             switch ($action) {
                 case "download":
-                    Ctx::$page->set_redirect($image->get_image_link());
+                    Ctx::$page->set_redirect($image->get_media_link());
                     break;
                 case "post":
                     Ctx::$page->set_redirect(make_link("post/view/$image->id"));
                     break;
                 case "view":
-                    send_event(new DisplayingImageEvent($image));
+                    send_event(new DisplayingPostEvent($image));
                     break;
                 case "thumb":
                     Ctx::$page->set_redirect($image->get_thumb_link());
@@ -39,7 +39,7 @@ final class RandomImage extends Extension
                     Ctx::$page->set_data(MimeType::HTML, (string)$this->theme->build_thumb($image));
                     break;
                 default:
-                    send_event(new ImageDownloadingEvent($image, $image->get_image_filename(), $image->get_mime(), $event->GET));
+                    send_event(new MediaDownloadingEvent($image, $image->get_media_filename(), $image->get_mime(), $event->GET));
             }
         }
     }
@@ -48,7 +48,7 @@ final class RandomImage extends Extension
     public function onPostListBuilding(PostListBuildingEvent $event): void
     {
         if (Ctx::$config->get(RandomImageConfig::SHOW_RANDOM_BLOCK)) {
-            $image = Image::by_random($event->search_terms);
+            $image = Post::by_random($event->search_terms);
             if (!is_null($image)) {
                 $this->theme->display_random($image);
             }

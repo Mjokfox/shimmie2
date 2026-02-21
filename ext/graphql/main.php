@@ -28,15 +28,15 @@ final class MetadataInput
      * @param array<MetadataInput> $metadata
      */
     #[\GQLA\Mutation(args: ["post_id" => "Int!", "metadata" => "[MetadataInput!]!"])]
-    public static function update_post_metadata(int $post_id, array $metadata): Image
+    public static function update_post_metadata(int $post_id, array $metadata): Post
     {
-        $image = Image::by_id_ex($post_id);
+        $image = Post::by_id_ex($post_id);
         $pairs = new QueryArray([]);
         foreach ($metadata as $m) {
             $pairs[$m->key] = $m->value;
         }
-        send_event(new ImageInfoSetEvent($image, 0, $pairs));
-        return Image::by_id_ex($post_id);
+        send_event(new PostInfoSetEvent($image, 0, $pairs));
+        return Post::by_id_ex($post_id);
     }
 }
 
@@ -190,7 +190,7 @@ final class GraphQL extends Extension
             return send_event(new DataUploadEvent($tmpname, $filename, $n, $post));
         });
 
-        return array_map(fn ($im) => $im->id, $event->images);
+        return array_map(fn ($im) => $im->id, $event->posts);
     }
 
     #[EventListener]

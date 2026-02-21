@@ -16,9 +16,9 @@ final class ResolutionLimitTest extends ShimmiePHPUnitTestCase
         $config->set("upload_ratios", "4:3 16:9");
 
         self::log_in_as_user();
-        $image_id = $this->post_image("tests/pbx_screenshot.jpg", "pbx computer screenshot");
+        $image_id = $this->create_post("tests/pbx_screenshot.jpg", "pbx computer screenshot");
         //self::assert_response(302);
-        self::assertNotNull(Image::by_id($image_id));
+        self::assertNotNull(Post::by_id($image_id));
     }
 
     public function testResLimitSmall(): void
@@ -32,7 +32,7 @@ final class ResolutionLimitTest extends ShimmiePHPUnitTestCase
 
         self::log_in_as_user();
         $e = self::assertException(UploadException::class, function () {
-            $this->post_image("tests/pbx_screenshot.jpg", "pbx computer screenshot");
+            $this->create_post("tests/pbx_screenshot.jpg", "pbx computer screenshot");
         });
         self::assertEquals("Post too small", $e->getMessage());
     }
@@ -47,7 +47,7 @@ final class ResolutionLimitTest extends ShimmiePHPUnitTestCase
         $config->set("upload_ratios", "4:3 16:9");
 
         $e = self::assertException(UploadException::class, function () {
-            $this->post_image("tests/pbx_screenshot.jpg", "pbx computer screenshot");
+            $this->create_post("tests/pbx_screenshot.jpg", "pbx computer screenshot");
         });
         self::assertEquals("Post too large", $e->getMessage());
     }
@@ -62,7 +62,7 @@ final class ResolutionLimitTest extends ShimmiePHPUnitTestCase
         $config->set("upload_ratios", "16:9");
 
         $e = self::assertException(UploadException::class, function () {
-            $this->post_image("tests/pbx_screenshot.jpg", "pbx computer screenshot");
+            $this->create_post("tests/pbx_screenshot.jpg", "pbx computer screenshot");
         });
         self::assertEquals("Post needs to be in one of these ratios: 16:9", $e->getMessage());
     }

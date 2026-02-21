@@ -25,7 +25,7 @@ final class ViewPost extends Extension
                 $query = null;
             }
 
-            $image = Image::by_id_ex($image_id);
+            $image = Post::by_id_ex($image_id);
 
             if ($event->page_matches("post/next/{image_id}")) {
                 $image = $image->get_next($search_terms);
@@ -48,35 +48,35 @@ final class ViewPost extends Extension
             }
 
             $image_id = $event->get_iarg('image_id');
-            $image = Image::by_id_ex($image_id);
+            $image = Post::by_id_ex($image_id);
             $page->set_title(str_replace("_", " ", implode(", ", $image->get_tag_array())));
-            send_event(new DisplayingImageEvent($image));
+            send_event(new DisplayingPostEvent($image));
         } elseif ($event->page_matches("post/download/{image_id}")) {
             if (!is_numeric($event->get_arg('image_id'))) {
                 throw new PostNotFound("Invalid post ID");
             }
             $image_id = $event->get_iarg('image_id');
-            $image = Image::by_id_ex($image_id);
-            $page->set_redirect($image->get_image_link());
+            $image = Post::by_id_ex($image_id);
+            $page->set_redirect($image->get_media_link());
         } elseif ($event->page_matches("post/thumb/{image_id}")) {
             if (!is_numeric($event->get_arg('image_id'))) {
                 throw new PostNotFound("Invalid post ID");
             }
             $image_id = $event->get_iarg('image_id');
-            $image = Image::by_id_ex($image_id);
+            $image = Post::by_id_ex($image_id);
             $page->set_redirect($image->get_thumb_link());
         } elseif ($event->page_matches("post/widget/{image_id}")) {
             if (!is_numeric($event->get_arg('image_id'))) {
                 throw new PostNotFound("Invalid post ID");
             }
             $image_id = $event->get_iarg('image_id');
-            $image = Image::by_id_ex($image_id);
+            $image = Post::by_id_ex($image_id);
             $page->set_data(MimeType::HTML, (string)$this->theme->build_thumb($image));
         } elseif ($event->page_matches("post/set", method: "POST")) {
             $image_id = int_escape($event->POST->req('image_id'));
-            $image = Image::by_id_ex($image_id);
+            $image = Post::by_id_ex($image_id);
             if (!$image->is_locked() || Ctx::$user->can(PostLockPermission::EDIT_IMAGE_LOCK)) {
-                send_event(new ImageInfoSetEvent($image, 0, $event->POST));
+                send_event(new PostInfoSetEvent($image, 0, $event->POST));
 
                 if ($event->GET->get('search')) {
                     $fragment = "search=" . url_escape($event->GET->get('search'));
@@ -100,19 +100,19 @@ final class ViewPost extends Extension
     }
 
     #[EventListener]
-    public function onDisplayingImage(DisplayingImageEvent $event): void
+    public function onDisplayingPost(DisplayingPostEvent $event): void
     {
         $this->theme->display_meta_headers($event->image);
 
-        $iibbe = send_event(new ImageInfoBoxBuildingEvent($event->image, Ctx::$user));
+        $iibbe = send_event(new PostInfoBoxBuildingEvent($event->image, Ctx::$user));
         $this->theme->display_page($event->image, $iibbe->get_parts(), $iibbe->get_sidebar_parts());
 
-        $iabbe = send_event(new ImageAdminBlockBuildingEvent($event->image, Ctx::$user, "view"));
+        $iabbe = send_event(new PostAdminBlockBuildingEvent($event->image, Ctx::$user, "view"));
         $this->theme->display_admin_block($iabbe->get_parts());
     }
 
     #[EventListener]
-    public function onImageInfoBoxBuilding(ImageInfoBoxBuildingEvent $event): void
+    public function onPostInfoBoxBuilding(PostInfoBoxBuildingEvent $event): void
     {
         $image_info = Ctx::$config->get(ImageConfig::INFO);
         if ($image_info) {

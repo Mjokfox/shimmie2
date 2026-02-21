@@ -12,8 +12,8 @@ final class SearchTest extends ShimmiePHPUnitTestCase
     public function testWeirdTags(): void
     {
         self::log_in_as_user();
-        $image_id_1 = $this->post_image("tests/pbx_screenshot.jpg", "question? colon:thing exclamation!");
-        $image_id_2 = $this->post_image("tests/bedroom_workshop.jpg", "question. colon_thing exclamation%");
+        $image_id_1 = $this->create_post("tests/pbx_screenshot.jpg", "question? colon:thing exclamation!");
+        $image_id_2 = $this->create_post("tests/bedroom_workshop.jpg", "question. colon_thing exclamation%");
 
         self::assert_search_results(["question?"], [$image_id_1]);
         self::assert_search_results(["question."], [$image_id_2]);
@@ -26,19 +26,19 @@ final class SearchTest extends ShimmiePHPUnitTestCase
     public function testOrder(): void
     {
         self::log_in_as_user();
-        $this->post_image("tests/pbx_screenshot.jpg", "question? colon:thing exclamation!");
-        $this->post_image("tests/bedroom_workshop.jpg", "question. colon_thing exclamation%");
-        $this->post_image("tests/favicon.png", "another");
+        $this->create_post("tests/pbx_screenshot.jpg", "question? colon:thing exclamation!");
+        $this->create_post("tests/bedroom_workshop.jpg", "question. colon_thing exclamation%");
+        $this->create_post("tests/favicon.png", "another");
 
-        $is1 = Search::find_images(0, null, ["order=random_4123"]);
+        $is1 = Search::find_posts(0, null, ["order=random_4123"]);
         $ids1 = array_map(fn ($image) => $image->id, $is1);
         self::assertEquals(3, count($ids1));
 
-        $is2 = Search::find_images(0, null, ["order=random_4123"]);
+        $is2 = Search::find_posts(0, null, ["order=random_4123"]);
         $ids2 = array_map(fn ($image) => $image->id, $is2);
         self::assertEquals(3, count($ids1));
 
-        $is3 = Search::find_images(0, null, ["order=random_6543"]);
+        $is3 = Search::find_posts(0, null, ["order=random_6543"]);
         $ids3 = array_map(fn ($image) => $image->id, $is3);
         self::assertEquals(3, count($ids3));
 
@@ -52,8 +52,8 @@ final class SearchTest extends ShimmiePHPUnitTestCase
     public function testUpload(): array
     {
         self::log_in_as_user();
-        $image_id_1 = $this->post_image("tests/pbx_screenshot.jpg", "thing computer screenshot pbx phone");
-        $image_id_2 = $this->post_image("tests/bedroom_workshop.jpg", "thing computer computing bedroom workshop");
+        $image_id_1 = $this->create_post("tests/pbx_screenshot.jpg", "thing computer screenshot pbx phone");
+        $image_id_2 = $this->create_post("tests/bedroom_workshop.jpg", "thing computer computing bedroom workshop");
         self::log_out();
 
         # make sure both uploads were ok
@@ -348,7 +348,7 @@ final class SearchTest extends ShimmiePHPUnitTestCase
     * Meta Search        *
     * * * * * * * * * * */
     #[Depends('testUpload')]
-    public function testBSQ_ImgCond_NoResults(): void
+    public function testBSQ_MetaCond_NoResults(): void
     {
         $this->testUpload();
         self::assert_BSQ(
@@ -364,7 +364,7 @@ final class SearchTest extends ShimmiePHPUnitTestCase
     }
 
     #[Depends('testUpload')]
-    public function testBSQ_ImgCond_OneResult(): void
+    public function testBSQ_MetaCond_OneResult(): void
     {
         $image_ids = $this->testUpload();
         self::assert_BSQ(
@@ -385,7 +385,7 @@ final class SearchTest extends ShimmiePHPUnitTestCase
     }
 
     #[Depends('testUpload')]
-    public function testBSQ_ImgCond_ManyResults(): void
+    public function testBSQ_MetaCond_ManyResults(): void
     {
         $image_ids = $this->testUpload();
 
@@ -410,7 +410,7 @@ final class SearchTest extends ShimmiePHPUnitTestCase
     * Mixed              *
     * * * * * * * * * * */
     #[Depends('testUpload')]
-    public function testBSQ_TagCondWithImgCond(): void
+    public function testBSQ_TagCondWithMetaCond(): void
     {
         $image_ids = $this->testUpload();
         // multiple tags, many results
@@ -430,10 +430,10 @@ final class SearchTest extends ShimmiePHPUnitTestCase
     {
         $image_ids = $this->testUpload();
 
-        $res = Search::get_images($image_ids);
+        $res = Search::get_posts($image_ids);
         self::assertGreaterThan($res[0]->id, $res[1]->id);
 
-        $res = Search::get_images(array_reverse($image_ids));
+        $res = Search::get_posts(array_reverse($image_ids));
         self::assertLessThan($res[0]->id, $res[1]->id);
     }
 }

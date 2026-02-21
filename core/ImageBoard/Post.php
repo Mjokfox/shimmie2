@@ -7,8 +7,6 @@ namespace Shimmie2;
 use GQLA\{Field, Query, Type};
 
 /**
- * Class Image
- *
  * An object representing an entry in the images table.
  *
  * As of 2.2, this no longer necessarily represents an
@@ -18,9 +16,9 @@ use GQLA\{Field, Query, Type};
  * @implements \ArrayAccess<string, mixed>
  */
 #[Type(name: "Post")]
-final class Image implements \ArrayAccess
+final class Post implements \ArrayAccess
 {
-    public const IMAGE_DIR = "images";
+    public const MEDIA_DIR = "images";
     public const THUMBNAIL_DIR = "thumbs";
 
     private bool $in_db = false;
@@ -63,7 +61,7 @@ final class Image implements \ArrayAccess
     public ?int $length = null;
     public ?Path $tmp_file = null;
 
-    /** @var array<string, ImagePropType> */
+    /** @var array<string, PostPropType> */
     public static array $prop_types = [];
     /** @var array<string, mixed> */
     private array $dynamic_props = [];
@@ -105,9 +103,9 @@ final class Image implements \ArrayAccess
                         $value = null;
                     } else {
                         $value = match(static::$prop_types[$name]) {
-                            ImagePropType::BOOL => bool_escape((string)$value),
-                            ImagePropType::INT => int_escape((string)$value),
-                            ImagePropType::STRING => (string)$value,
+                            PostPropType::BOOL => bool_escape((string)$value),
+                            PostPropType::INT => int_escape((string)$value),
+                            PostPropType::STRING => (string)$value,
                         };
                     }
                     $this->dynamic_props[$name] = $value;
@@ -165,17 +163,17 @@ final class Image implements \ArrayAccess
     }
 
     #[Query(name: "post")]
-    public static function by_id(int $post_id): ?Image
+    public static function by_id(int $post_id): ?Post
     {
         if ($post_id > 2 ** 32) {
             // for some reason bots query huge numbers and pollute the DB error logs...
             return null;
         }
         $row = Ctx::$database->get_row("SELECT * FROM images WHERE images.id=:id", ["id" => $post_id]);
-        return ($row ? new Image($row) : null);
+        return ($row ? new Post($row) : null);
     }
 
-    public static function by_id_ex(int $post_id): Image
+    public static function by_id_ex(int $post_id): Post
     {
         $maybe_post = static::by_id($post_id);
         if (!is_null($maybe_post)) {
@@ -187,27 +185,27 @@ final class Image implements \ArrayAccess
     /**
      * @param hash-string $hash
      */
-    public static function by_hash(string $hash): ?Image
+    public static function by_hash(string $hash): ?Post
     {
         $hash = strtolower($hash);
         $row = Ctx::$database->get_row("SELECT images.* FROM images WHERE hash=:hash", ["hash" => $hash]);
-        return ($row ? new Image($row) : null);
+        return ($row ? new Post($row) : null);
     }
 
     /**
      * @param numeric-string|hash-string $id
      */
-    public static function by_id_or_hash(string $id): ?Image
+    public static function by_id_or_hash(string $id): ?Post
     {
-        return (is_numberish($id) && strlen($id) !== 32) ? Image::by_id((int)$id) : Image::by_hash($id);
+        return (is_numberish($id) && strlen($id) !== 32) ? Post::by_id((int)$id) : Post::by_hash($id);
     }
 
     /**
      * @param search-term-array $terms
      */
-    public static function by_random(array $terms = [], int $limit_range = 0): ?Image
+    public static function by_random(array $terms = [], int $limit_range = 0): ?Post
     {
-        $max = Search::count_images($terms);
+        $max = Search::count_posts($terms);
         if ($max < 1) {
             return null;
         }        // From Issue #22 - opened by HungryFeline on May 30, 2011.
@@ -215,7 +213,7 @@ final class Image implements \ArrayAccess
             $max = $limit_range;
         }
         $rand = mt_rand(0, $max - 1);
-        $set = Search::find_images($rand, 1, $terms);
+        $set = Search::find_posts($rand, 1, $terms);
         if (count($set) > 0) {
             return $set[0];
         } else {
@@ -235,7 +233,7 @@ final class Image implements \ArrayAccess
      *
      * @param search-term-array $terms
      */
-    public function get_next(array $terms = [], bool $next = true): ?Image
+    public function get_next(array $terms = [], bool $next = true): ?Post
     {
         if ($next) {
             $gtlt = "<";
@@ -247,7 +245,7 @@ final class Image implements \ArrayAccess
 
         $terms[] = 'id'. $gtlt . $this->id;
         $terms[] = 'order:id_'. strtolower($dir);
-        $images = Search::find_images(0, 1, $terms);
+        $images = Search::find_posts(0, 1, $terms);
         return (count($images) > 0) ? $images[0] : null;
     }
 
@@ -256,7 +254,7 @@ final class Image implements \ArrayAccess
      *
      * @param search-term-array $terms
      */
-    public function get_prev(array $terms = []): ?Image
+    public function get_prev(array $terms = []): ?Post
     {
         return $this->get_next($terms, false);
     }
@@ -392,15 +390,15 @@ final class Image implements \ArrayAccess
     /**
      * Get the URL for the full size image
      */
-    public function get_image_link(): Url
+    public function get_media_link(): Url
     {
-        return $this->get_link(ImageConfig::ILINK, '_images/$hash/$id%20-%20$tags.$ext', 'image/$id/$id%20-%20$tags.$ext');
+        return $this->get_link(ImageConfig::MEDIA_LINK, '_images/$hash/$id%20-%20$tags.$ext', 'image/$id/$id%20-%20$tags.$ext');
     }
 
     #[Field(name: "image_link")]
-    public function graphql_image_link(): string
+    public function graphql_media_link(): string
     {
-        return (string)$this->get_image_link();
+        return (string)$this->get_media_link();
     }
 
     /**
@@ -408,7 +406,7 @@ final class Image implements \ArrayAccess
      * in a filesystem-safe manner
      */
     #[Field(name: "nice_name")]
-    public function get_nice_image_name(): string
+    public function get_nice_media_name(): string
     {
         $text = send_event(new ParseLinkTemplateEvent('$id - $tags.$ext', $this))->text;
         $text = str_replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], '_', $text);
@@ -424,7 +422,7 @@ final class Image implements \ArrayAccess
     {
         $mime = new MimeType(Ctx::$config->get(ThumbnailConfig::MIME));
         $ext = FileExtension::get_for_mime($mime);
-        return $this->get_link(ImageConfig::TLINK, '_thumbs/$hash/thumb.'.$ext, 'thumb/$id/thumb.'.$ext);
+        return $this->get_link(ImageConfig::THUMBNAIL_LINK, '_thumbs/$hash/thumb.'.$ext, 'thumb/$id/thumb.'.$ext);
     }
 
     #[Field(name: "thumb_link")]
@@ -472,12 +470,12 @@ final class Image implements \ArrayAccess
     /**
      * Figure out where the full size image is on disk.
      */
-    public function get_image_filename(): Path
+    public function get_media_filename(): Path
     {
         if (!is_null($this->tmp_file)) {
             return $this->tmp_file;
         }
-        return Filesystem::warehouse_path(self::IMAGE_DIR, $this->hash);
+        return Filesystem::warehouse_path(self::MEDIA_DIR, $this->hash);
     }
 
     /**
@@ -594,7 +592,7 @@ final class Image implements \ArrayAccess
      *
      * Normally in preparation to set them to a new set.
      */
-    public function delete_tags_from_image(): void
+    public function delete_tags(): void
     {
         Ctx::$database->execute("
             UPDATE tags
@@ -638,7 +636,7 @@ final class Image implements \ArrayAccess
 
         if (strtolower(Tag::implode($tags)) !== strtolower($this->get_tag_list())) {
             // delete old
-            $this->delete_tags_from_image();
+            $this->delete_tags();
 
             // insert each new tags
             $ids = array_map(fn ($tag) => Tag::get_or_create_id($tag), $tags);
@@ -665,19 +663,19 @@ final class Image implements \ArrayAccess
      */
     public function delete(): void
     {
-        $this->delete_tags_from_image();
+        $this->delete_tags();
         Ctx::$database->execute("DELETE FROM images WHERE id=:id", ["id" => $this->id]);
         Log::info("core_image", 'Deleted Post #'.$this->id.' ('.$this->hash.')');
-        $this->remove_image_only(quiet: true);
+        $this->delete_media(quiet: true);
     }
 
     /**
      * This function removes an image (and thumbnail) from the DISK ONLY.
      * It DOES NOT remove anything from the database.
      */
-    public function remove_image_only(bool $quiet = false): void
+    public function delete_media(bool $quiet = false): void
     {
-        $img = $this->get_image_filename();
+        $img = $this->get_media_filename();
         if ($img->exists()) {
             $img->unlink();
         }

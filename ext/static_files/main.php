@@ -31,7 +31,7 @@ final class StaticFiles extends Extension
         }
         // hax.
         elseif ($page->mode === PageMode::PAGE && $this->count_main($page->blocks) === 0) {
-            $f_pagename = \Safe\preg_replace("/[^a-z\d_\-\.]+/", "_", implode('/', $event->args));
+            $f_pagename = \Safe\preg_replace("/[^a-z\d_\-\.]+/", "_", $event->path);
             $theme_name = Ctx::$config->get(SetupConfig::THEME);
 
             $theme_file = "themes/$theme_name/static/$f_pagename";

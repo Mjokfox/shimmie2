@@ -8,13 +8,13 @@ use function MicroHTML\{BR, IMG, joinHTML};
 
 class ImageFileHandlerTheme extends Themelet
 {
-    public function build_media(Image $image): \MicroHTML\HTMLElement
+    public function build_media(Post $image): \MicroHTML\HTMLElement
     {
         return IMG([
             'id' => 'main_image',
             'class' => 'shm-main-image',
             'alt' => 'main image',
-            'src' => $image->get_image_link(),
+            'src' => $image->get_media_link(),
             'data-width' => $image->width,
             'data-height' => $image->height,
             'data-mime' => $image->get_mime(),
@@ -22,11 +22,11 @@ class ImageFileHandlerTheme extends Themelet
         ]);
     }
 
-    public function display_metadata(Image $image): void
+    public function display_metadata(Post $image): void
     {
         if (function_exists("exif_read_data")) {
             # FIXME: only read from jpegs?
-            $exif = @exif_read_data($image->get_image_filename()->str(), "IFD0", true);
+            $exif = @exif_read_data($image->get_media_filename()->str(), "IFD0", true);
             if ($exif) {
                 $info = [];
                 foreach ($exif as $key => $section) {

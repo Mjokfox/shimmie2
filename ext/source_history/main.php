@@ -18,10 +18,10 @@ final class SourceHistory extends Extension
     #[EventListener]
     public function onPageRequest(PageRequestEvent $event): void
     {
-        if ($event->page_matches("source_history/revert", method: "POST", permission: PostTagsPermission::EDIT_IMAGE_TAG)) {
+        if ($event->page_matches("source_history/revert", method: "POST", permission: PostSourcePermission::EDIT_IMAGE_SOURCE)) {
             // this is a request to revert to a previous version of the source
             $this->process_revert_request((int)$event->POST->req('revert'));
-        } elseif ($event->page_matches("source_history/bulk_revert", method: "POST", permission: BulkActionsPermission::BULK_EDIT_IMAGE_TAG)) {
+        } elseif ($event->page_matches("source_history/bulk_revert", method: "POST", permission: PostSourcePermission::BULK_EDIT_IMAGE_SOURCE)) {
             $this->process_bulk_revert_request();
         } elseif ($event->page_matches("source_history/all/{page}")) {
             $page_id = $event->get_iarg('page');
@@ -40,7 +40,7 @@ final class SourceHistory extends Extension
     }
 
     #[EventListener]
-    public function onImageAdminBlockBuilding(ImageAdminBlockBuildingEvent $event): void
+    public function onPostAdminBlockBuilding(PostAdminBlockBuildingEvent $event): void
     {
         $event->add_button("View Source History", "source_history/{$event->image->id}", 20);
     }
@@ -55,7 +55,7 @@ final class SourceHistory extends Extension
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent === "system") {
-            if (Ctx::$user->can(BulkActionsPermission::BULK_EDIT_IMAGE_TAG)) {
+            if (Ctx::$user->can(PostSourcePermission::BULK_EDIT_IMAGE_SOURCE)) {
                 $event->add_nav_link(make_link('source_history/all/1'), "Source Changes", ["source_history"]);
             }
         }
@@ -64,7 +64,7 @@ final class SourceHistory extends Extension
     #[EventListener]
     public function onUserBlockBuilding(UserBlockBuildingEvent $event): void
     {
-        if (Ctx::$user->can(BulkActionsPermission::BULK_EDIT_IMAGE_TAG)) {
+        if (Ctx::$user->can(PostSourcePermission::BULK_EDIT_IMAGE_SOURCE)) {
             $event->add_link("Source Changes", make_link("source_history/all/1"));
         }
     }
@@ -129,7 +129,7 @@ final class SourceHistory extends Extension
 
         Log::debug("source_history", 'Reverting source of >>'.$stored_image_id.' to ['.$stored_source.']');
 
-        $image = Image::by_id_ex($stored_image_id);
+        $image = Post::by_id_ex($stored_image_id);
 
         // all should be ok so we can revert by firing the SetUserSources event.
         send_event(new SourceSetEvent($image, $stored_source));
@@ -299,7 +299,7 @@ final class SourceHistory extends Extension
 
                 Log::debug("source_history", 'Reverting source of >>'.$stored_image_id.' to ['.$stored_source.']');
 
-                $image = Image::by_id_ex($stored_image_id);
+                $image = Post::by_id_ex($stored_image_id);
 
                 // all should be ok so we can revert by firing the SetSources event.
                 send_event(new SourceSetEvent($image, $stored_source));
@@ -313,7 +313,7 @@ final class SourceHistory extends Extension
     /**
      * This function is called just before an images source is changed.
      */
-    private function add_source_history(Image $image, string $source): void
+    private function add_source_history(Post $image, string $source): void
     {
         global $database;
 

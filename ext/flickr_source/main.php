@@ -101,7 +101,7 @@ class FlickrSource extends Extension
     /** @param array{id:int,filename:string} $file */
     private function imageUpdate(array $file, string $source): void
     {
-        $image = new Image($file);
+        $image = new Post($file);
         send_event(new SourceSetEvent($image, $source));
     }
 

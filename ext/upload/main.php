@@ -18,8 +18,8 @@ final class DataUploadEvent extends Event
     public MimeType $mime;
     public int $size;
 
-    /** @var Image[] */
-    public array $images = [];
+    /** @var Post[] */
+    public array $posts = [];
     public bool $handled = false;
     public bool $merged = false;
 
@@ -181,7 +181,7 @@ final class Upload extends Extension
                         'tags' => Tag::implode($tags),
                     ])));
                     $results = [];
-                    foreach ($dae->images as $image) {
+                    foreach ($dae->posts as $image) {
                         $results[] = new UploadSuccess($filename, $image->id);
                     }
                     return $results;
@@ -217,7 +217,7 @@ final class Upload extends Extension
                 /** @var array<string,string> $arr */
                 $metadata = new QueryArray($arr);
                 $event = send_event(new DataUploadEvent($file_path, $file_path->basename()->str(), 0, $metadata));
-                $images = $event->images;
+                $images = $event->posts;
                 if (count($images) === 0) {
                     $output->writeln("<error>No crash, but no posts uploaded</error>");
                     return Command::FAILURE;
@@ -274,7 +274,7 @@ final class Upload extends Extension
         if ($event->page_matches("upload_duplicate", method: "POST", authed: false)) {
             /** @var string $hash */
             $hash = $event->POST->req("md5");
-            $image = Image::by_hash($hash); // @phpstan-ignore-line
+            $image = Post::by_hash($hash); // @phpstan-ignore-line
             if ($image) {
                 Ctx::$page->set_data(MimeType::JSON, json_encode(["dup" => "1","id" => $image->id])); // @phpstan-ignore-line
             } else {
@@ -337,10 +337,10 @@ final class Upload extends Extension
 
                 $new_images = $database->with_savepoint(function () use ($tmp_name, $name, $slot, $metadata) {
                     $event = send_event(new DataUploadEvent($tmp_name, basename($name), $slot, $metadata));
-                    if (count($event->images) === 0) {
+                    if (count($event->posts) === 0) {
                         throw new UploadException("MIME type not supported: " . $event->mime);
                     }
-                    return $event->images;
+                    return $event->posts;
                 });
                 foreach ($new_images as $image) {
                     $results[] = new UploadSuccess($name, $image->id);
@@ -378,10 +378,10 @@ final class Upload extends Extension
 
             $new_images = Ctx::$database->with_savepoint(function () use ($tmp_filename, $filename, $slot, $metadata) {
                 $event = send_event(new DataUploadEvent($tmp_filename, $filename, $slot, $metadata));
-                if (count($event->images) === 0) {
+                if (count($event->posts) === 0) {
                     throw new UploadException("File type not supported: " . $event->mime);
                 }
-                return $event->images;
+                return $event->posts;
             });
             foreach ($new_images as $image) {
                 $results[] = new UploadSuccess($url, $image->id);

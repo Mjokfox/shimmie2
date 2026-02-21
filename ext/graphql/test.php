@@ -29,8 +29,8 @@ final class GraphQLTest extends ShimmiePHPUnitTestCase
     public function testQuery(): void
     {
         self::log_in_as_user();
-        $image_id = $this->post_image("tests/pbx_screenshot.jpg", "test");
-        $image = Image::by_id_ex($image_id);
+        $image_id = $this->create_post("tests/pbx_screenshot.jpg", "test");
+        $image = Post::by_id_ex($image_id);
 
         $result = $this->graphql('{
             posts(limit: 3, offset: 0) {
@@ -68,7 +68,7 @@ final class GraphQLTest extends ShimmiePHPUnitTestCase
     public function testMutation(): void
     {
         self::log_in_as_user();
-        $image_id = $this->post_image("tests/pbx_screenshot.jpg", "test");
+        $image_id = $this->create_post("tests/pbx_screenshot.jpg", "test");
 
         $result = $this->graphql("mutation {
             update_post_metadata(

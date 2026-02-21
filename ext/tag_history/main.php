@@ -21,7 +21,7 @@ final class TagHistory extends Extension
         if ($event->page_matches("tag_history/revert", method: "POST", permission: PostTagsPermission::EDIT_IMAGE_TAG)) {
             // this is a request to revert to a previous version of the tags
             $this->process_revert_request((int)$event->POST->req('revert'));
-        } elseif ($event->page_matches("tag_history/bulk_revert", method: "POST", permission: BulkActionsPermission::BULK_EDIT_IMAGE_TAG)) {
+        } elseif ($event->page_matches("tag_history/bulk_revert", method: "POST", permission: PostTagsPermission::BULK_EDIT_IMAGE_TAG)) {
             $this->process_bulk_revert_request();
         } elseif ($event->page_matches("tag_history/all/{page}")) {
             $page_id = $event->get_iarg('page');
@@ -40,7 +40,7 @@ final class TagHistory extends Extension
     }
 
     #[EventListener]
-    public function onImageAdminBlockBuilding(ImageAdminBlockBuildingEvent $event): void
+    public function onPostAdminBlockBuilding(PostAdminBlockBuildingEvent $event): void
     {
         $event->add_button("View Tag History", "tag_history/{$event->image->id}", 20);
     }
@@ -113,7 +113,7 @@ final class TagHistory extends Extension
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent === "system") {
-            if (Ctx::$user->can(BulkActionsPermission::BULK_EDIT_IMAGE_TAG)) {
+            if (Ctx::$user->can(PostTagsPermission::BULK_EDIT_IMAGE_TAG)) {
                 $event->add_nav_link(make_link('tag_history/all/1'), "Tag Changes", ["tag_history"]);
             }
         }
@@ -122,7 +122,7 @@ final class TagHistory extends Extension
     #[EventListener]
     public function onUserBlockBuilding(UserBlockBuildingEvent $event): void
     {
-        if (Ctx::$user->can(BulkActionsPermission::BULK_EDIT_IMAGE_TAG)) {
+        if (Ctx::$user->can(PostTagsPermission::BULK_EDIT_IMAGE_TAG)) {
             $event->add_link("Tag Changes", make_link("tag_history/all/1"));
         }
     }
@@ -184,7 +184,7 @@ final class TagHistory extends Extension
         $stored_image_id = (int)$result['image_id'];
         $stored_tags = $result['tags'];
 
-        $image = Image::by_id_ex($stored_image_id);
+        $image = Post::by_id_ex($stored_image_id);
 
         Log::debug("tag_history", 'Reverting tags of >>'.$stored_image_id.' to ['.$stored_tags.']');
         // all should be ok so we can revert by firing the SetUserTags event.
@@ -369,7 +369,7 @@ final class TagHistory extends Extension
                 $stored_image_id = (int)$result['image_id'];
                 $stored_tags = $result['tags'];
 
-                $image = Image::by_id($stored_image_id);
+                $image = Post::by_id($stored_image_id);
                 if (is_null($image)) {
                     continue;
                 }

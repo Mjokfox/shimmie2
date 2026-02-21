@@ -67,23 +67,23 @@ final class DiscordBot extends Extension
     }
 
     #[EventListener(priority: 51)]
-    public function onImageFinished(ImageFinishedEvent $event): void
+    public function onImageFinished(MediaFinishedEvent $event): void
     {
         $this->add_data($this->data_builder(
             "post",
             "create",
             [
-                "post_id" => $event->image->id,
+                "post_id" => $event->post->id,
                 "username" => Ctx::$user->name,
-                "hash" => $event->image->hash,
-                "mime" => $event->image->get_mime()->__toString(),
-                "size" => $event->image->filesize
+                "hash" => $event->post->hash,
+                "mime" => $event->post->get_mime()->__toString(),
+                "size" => $event->post->filesize
             ]
         ));
     }
 
     #[EventListener(priority: 51)]
-    public function onImageReplace(ImageReplaceEvent $event): void
+    public function onImageReplace(MediaReplaceEvent $event): void
     {
         $this->add_data($this->data_builder(
             "post",
@@ -99,7 +99,7 @@ final class DiscordBot extends Extension
     }
 
     #[EventListener(priority: 51)]
-    public function onImageDeletion(ImageDeletionEvent $event): void
+    public function onImageDeletion(PostDeletionEvent $event): void
     {
         $this->add_data($this->data_builder(
             "post",
