@@ -37,7 +37,7 @@
     right: 0;
     padding: 20px;
     border: 1px solid var(--link-default);
-    background-color: #00f1;
+    background-color: var(--header-selected);
     border-radius: 10px;
     -webkit-touch-callout: none;
     -webkit-user-select: none;

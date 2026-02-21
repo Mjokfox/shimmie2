@@ -1,50 +1,70 @@
 :root {
 	color-scheme: light dark;
 
-	--page: #FFFFFF;
-	--text: black;
+	--page: light-dark(#F6F5ED, #221B19);
+	--text: light-dark(black, #E8E8EC);
 
-	--danger-color: #000;
-	--danger-background: #FAA;
+	--danger-color: light-dark(#000, #E8E8EC);
+	--danger-background: light-dark(#FAA, #955);
 
-	--link-first: #FF3333;
-	--link-default: #006FFA;
-	--link-hover: #33CFFF;
-	--link-header: black;
+	--link-first: light-dark(#009CF9, #EE5542);
+	--link-default: light-dark(#A4620A, #EC9851);
+	--link-hover: light-dark(#EA8301, white);
+	--link-header: #825519;
 
-	--header-selected: #EEEEFF;
-	--footer-fg: #555555;
-	--tag-count: #AAAAAA;
+	--header-selected: light-dark(#FFF, #443A36);
+	--footer-fg: light-dark(#555555, gray);
+	--tag-count: light-dark(#825519, gray);
 	--comment-meta: gray;
 
-	--paginator-border: #EEEEEE;
-	--paginator-hover-bg: blue;
-	--paginator-hover-fg: white;
+	--hover-bg: light-dark(#825519, #bb7552);
+	--hover-fg: white;
 
-	--block-border: #AAAAAA;
-
-	--zebra-heading-fg: #171BB3;
-	--zebra-hover-bg: #FFD;
+	--block-border: light-dark(#825519, lightgray);
+	--zebra-heading-fg: light-dark(#825519, #E8E8EC);
+	--zebra-hover-bg: light-dark(#E1D4C2, #443A36);
 }
 
 @media (prefers-color-scheme: dark) {
 	:root {
-		--page: #1E1E2C;
-		--text: #E8E8EC;
+		accent-color: var(--hover-bg);
+	}
 
-		--danger-color: #E8E8EC;
-		--danger-background: #955;
+	table.zebra td {
+		border-color: gray;
+	}
 
-		--link-first: #FF5A5B;
-		--link-default: #009BE9;
+	BODY CODE {
+		border: 1px solid #221b19;
+		background: #221b1980;
+	}
 
-		--header-selected: #2C2D3F;
+	::-moz-selection {
+		color: black;
+		background: #EC9851;
+	}
 
-		--paginator-hover-bg: #009BE9;
-		--paginator-hover-fg: white;
+	::selection {
+		color: black;
+		background: #EC9851;
+	}
 
-		--zebra-heading-fg: #E8E8EC;
-		--zebra-hover-bg: #2C2D3F;
+	INPUT, TEXTAREA, SELECT, BUTTON {
+		background: #312a28;
+		border: 1px solid gray
+	}
+
+	option:checked, option:hover {
+		color: var(--hover-fg);
+		background: var(--hover-bg);
+	}
+
+	input[type="submit"]:hover, input[type="button"]:hover, button:hover, select:not([multiple]):hover {
+		background: var(--hover-bg);
+	}
+
+	input:hover, button:hover, select:hover, textarea:hover {
+		border: 1px solid lightgray
 	}
 }
 
@@ -400,8 +420,8 @@ div#paginator a {
 }
 
 div#paginator a:hover {
-	background: var(--paginator-hover-bg) none repeat scroll 0 0;
-	color: var(--paginator-hover-fg);
+	background: var(--hover-bg) none repeat scroll 0 0;
+	color: var(--hover-fg);
 }
 
 #pagelist {
@@ -871,17 +891,18 @@ DIV.numeric-score DIV {
 	padding-right: 5px;
 }
 
-.vote-button {
+.numeric-score .vote-button {
 	border-radius: 3px;
 	background: #fff0;
 	cursor: pointer;
 }
 
-.vote-button:hover {
+.numeric-score .vote-button:hover {
 	background: #fff3;
+	border: none;
 }
 
- .vote-button, DIV.numeric-score DIV B {
+.numeric-score .vote-button, DIV.numeric-score DIV B {
 	font-size:1.5em;
 	padding-left: 5px;
 	padding-right: 5px;
