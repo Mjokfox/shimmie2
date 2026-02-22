@@ -169,23 +169,27 @@ final class DiscordBot extends Extension
      */
     private function send_data(array $data): void
     {
-        $host = Ctx::$config->get(DiscordBotConfig::HOST);
-        if (!$host) {
+        $hosts = Ctx::$config->get(DiscordBotConfig::HOST);
+        if (!$hosts) {
             return;
         }
 
-        try {
-            $parts = explode(":", $host);
-            $host = $parts[0];
-            $port = (int)$parts[1];
-            $fp = fsockopen("udp://$host", $port, $errno, $errstr);
-            if (!$fp) {
-                return;
+        $hosts = explode(";", $hosts);
+
+        foreach ($hosts as $host) {
+            try {
+                $parts = explode(":", $host);
+                $addr = $parts[0];
+                $port = (int)$parts[1];
+                $fp = fsockopen("udp://$addr", $port, $errno, $errstr);
+                if (!$fp) {
+                    return;
+                }
+                fwrite($fp, \Safe\json_encode($data));
+                fclose($fp);
+            } catch (\Exception $e) {
+                // nah we dont care
             }
-            fwrite($fp, \Safe\json_encode($data));
-            fclose($fp);
-        } catch (\Exception $e) {
-            // nah we dont care
         }
     }
 }

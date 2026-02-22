@@ -8,7 +8,7 @@ final class DiscordBotConfig extends ConfigGroup
 {
     public const KEY = "discord_bot";
 
-    #[ConfigMeta("host:port", ConfigType::STRING, default: "127.0.0.1:10003")]
+    #[ConfigMeta("host:port", ConfigType::STRING, default: "127.0.0.1:10003", help:"addr:port;addr2;port2 can be multiple, spaced with a semicolon")]
     public const HOST = "discord_bot_host";
 
 }
