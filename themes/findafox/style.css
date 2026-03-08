@@ -239,13 +239,8 @@ td {
 	font-size: 0.75em;
 }
 
-#short-wiki-description {
-	padding: 0 2em;
-	font-size: 1.2em;
-}
-
-#short-wiki-description h2 {
-	padding-bottom: 0.2em;
+#short-wiki-description, #image-list {
+	margin-top: .1em;
 }
 
 FOOTER {

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{DIV, FORM, INPUT, LINK, META};
+use function MicroHTML\{A, B, DIV, FORM, INPUT, LINK, META};
 
 use MicroHTML\HTMLElement;
 
@@ -15,7 +15,9 @@ class CustomIndexTheme extends IndexTheme
      */
     public function display_page(array $images): void
     {
-        $this->display_shortwiki();
+        if (\count($images) > 0) {
+            $this->display_shortwiki();
+        }
 
         $this->display_page_header($images);
         $path = "list";
@@ -116,4 +118,22 @@ class CustomIndexTheme extends IndexTheme
         }
         return $table;
     }
+
+    protected function display_shortwiki(): void
+    {
+        if (WikiInfo::is_enabled() && Ctx::$config->get(WikiConfig::TAG_SHORTWIKIS)) {
+            if (\count($this->search_terms) === 1) {
+                $st = SearchTerm::implode($this->search_terms);
+                $wikiPage = Wiki::get_page($st, default: false);
+                if ($wikiPage->id !== -1) {
+                    $short_wiki_description = B(
+                        "> Open wiki page: ",
+                        A(["href" => make_link("wiki/$st")], $st)
+                    );
+                    Ctx::$page->add_block(new Block(null, $short_wiki_description, "main", 7, "short-wiki-description"));
+                }
+            }
+        }
+    }
+
 }

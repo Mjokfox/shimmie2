@@ -143,6 +143,8 @@ class WikiTheme extends Themelet
         if (!is_null($tag)) {
             $text = Ctx::$config->get(WikiConfig::TAG_PAGE_TEMPLATE);
 
+            $text = str_replace("{tag}", $tag, $text);
+
             if (AliasEditorInfo::is_enabled()) {
                 $aliases = $database->get_col("
                     SELECT oldtag
