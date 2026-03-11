@@ -22,6 +22,7 @@ final class RandomImage extends Extension
             if (!$image) {
                 throw new PostNotFound("Couldn't find any posts randomly");
             }
+            Ctx::$page->add_http_header("Access-Control-Allow-Origin: *");
             switch ($action) {
                 case "download":
                     Ctx::$page->set_redirect($image->get_media_link());
