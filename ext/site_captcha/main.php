@@ -46,7 +46,7 @@ class SiteCaptcha extends Extension
             }
             Ctx::$page->set_redirect(Url::parse($ref));
             $event->stop_processing = true;
-        } elseif (!$event->page_matches("robots.txt") && ($image_cookie !== $image_token || $css_cookie !== $css_token)) {
+        } elseif (!($event->page_matches("robots.txt") || $event->page_starts_with("api")) && ($image_cookie !== $image_token || $css_cookie !== $css_token)) {
             if (!($this->is_useragent_whitelisted() || $this->is_ip_whitelisted())) {
                 $this->theme->display_page();
                 $event->stop_processing = true;

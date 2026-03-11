@@ -13,7 +13,9 @@ final class RandomImage extends Extension
     public function onPageRequest(PageRequestEvent $event): void
     {
         if (
-            $event->page_matches("random_image/{action}")
+            $event->page_matches("api/random_image/{action}")
+            || $event->page_matches("api/random_image/{action}/{search}")
+            || $event->page_matches("random_image/{action}")
             || $event->page_matches("random_image/{action}/{search}")
         ) {
             $action = $event->get_arg('action');
