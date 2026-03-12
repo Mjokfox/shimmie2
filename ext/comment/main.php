@@ -493,13 +493,18 @@ final class CommentList extends Extension
 
     private function edit_comment(User $user, int $comment_id, int $image_id, string $comment): void
     {
+        $edit_query = Ctx::$database->get_driver_id() === DatabaseDriverID::PGSQL ?
+            "CASE
+                WHEN posted < CURRENT_TIMESTAMP - INTERVAL '5 minutes' THEN TRUE
+                ELSE edited
+            END" : "TRUE";
         Ctx::$database->execute(
-            'UPDATE comments
+            "UPDATE comments
             SET comment = :comment,
             owner_ip = :ip,
-            edited = TRUE
+            edited = $edit_query
             WHERE id = :id
-            AND image_id = :image_id',
+            AND image_id = :image_id",
             ['comment' => $comment, 'ip' => (string)Network::get_real_ip(), 'id' => $comment_id, 'image_id' => $image_id]
         );
 

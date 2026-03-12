@@ -438,14 +438,18 @@ final class Forum extends Extension
     private function edit_post(User $user, int $thread_id, int $post_id, string $message): void
     {
         $message = substr($message, 0, Ctx::$config->get(ForumConfig::MAX_CHARS_PER_POST));
-
+        $edit_query = Ctx::$database->get_driver_id() === DatabaseDriverID::PGSQL ?
+            "CASE
+                WHEN date < CURRENT_TIMESTAMP - INTERVAL '5 minutes' THEN TRUE
+                ELSE edited
+            END" : "TRUE";
         Ctx::$database->execute(
-            'UPDATE forum_posts
+            "UPDATE forum_posts
             SET message = :message,
             user_ip = :user_ip,
-            edited = TRUE
+            edited = $edit_query
             WHERE id = :id
-            AND thread_id = :thread_id',
+            AND thread_id = :thread_id",
             ['message' => $message, 'user_ip' => (string)Network::get_real_ip(), 'id' => $post_id, 'thread_id' => $thread_id]
         );
 
