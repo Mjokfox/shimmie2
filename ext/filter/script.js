@@ -67,18 +67,17 @@ Filter.parse_entry = function (string) {
 };
 
 Filter.parse_entries = function () {
-    var entries = document
+    document
         .getElementById("filter-tags")
         .getAttribute("tags")
         .replace(/(rating:\w)\w+/gi, "$1")
         .toLowerCase()
-        .split(/[,\n]/);
-    entries = entries.filter((e) => e.trim() !== "");
-
-    entries.forEach(function (tags) {
-        var entry = Filter.parse_entry(tags);
-        Filter.entries.push(entry);
-    });
+        .split(/[,\n]/)
+        .forEach((e) => {
+            let tag = e.trim();
+            if (tag !== "")
+                Filter.entries.push(Filter.parse_entry(tag));
+        });
 };
 
 Filter.toggle_entry = function (e) {
