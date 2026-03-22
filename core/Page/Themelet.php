@@ -74,9 +74,9 @@ class Themelet
         return self::get_common()->build_tag($tag, $show_underscores, $show_category, $style);
     }
 
-    public function build_thumb(Post $image): HTMLElement
+    public function build_thumb(Post $image, ?string $id_append = null): HTMLElement
     {
-        return self::get_common()->build_thumb($image);
+        return self::get_common()->build_thumb($image, $id_append);
     }
 
     public function display_paginator(string $base, ?QueryArray $query, int $page_number, int $total_pages, bool $show_random = false): void

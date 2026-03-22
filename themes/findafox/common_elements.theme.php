@@ -10,7 +10,7 @@ use MicroHTML\HTMLElement;
 
 class CustomCommonElementsTheme extends CommonElementsTheme
 {
-    public function build_thumb(Post $image): HTMLElement
+    public function build_thumb(Post $image, ?string $id_append = null): HTMLElement
     {
         $id = $image->id;
         $view_link = make_link('post/view/'.$id);
@@ -54,7 +54,7 @@ class CustomCommonElementsTheme extends CommonElementsTheme
             $attrs,
             IMG(
                 [
-                    "id" => "thumb_$id",
+                    "id" => "thumb_$id$id_append",
                     "title" => $tip,
                     "alt" => $tip,
                     "src" => $thumb_link,
