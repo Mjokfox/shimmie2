@@ -77,7 +77,7 @@ final class TagMap extends Extension
     }
 
     /**
-     * @return array<array{tag:tag-string,count:int}>
+     * @return array{string: int}
      */
     private function get_alphabetic_data(string $starts_with, int $tags_min): array
     {

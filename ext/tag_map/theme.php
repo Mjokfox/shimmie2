@@ -36,7 +36,7 @@ class TagMapTheme extends Themelet
     }
 
     /**
-     * @param array<array{tag:tag-string,count:int}> $tag_data
+     * @param array{string: int} $tag_data
      */
     public function display_alphabetic(string $starts_with, int $tags_min, array $tag_data): void
     {
@@ -66,9 +66,6 @@ class TagMapTheme extends Themelet
         ksort($tag_data, SORT_STRING | SORT_FLAG_CASE);
         $n = 0;
         foreach ($tag_data as $tag => $count) {
-            // In PHP, $array["10"] sets the array key as int(10), not string("10")...
-            /** @var tag-string $tag */
-            $tag = (string)$tag;
             if ($lastLetter !== mb_strtolower(substr($tag, 0, strlen($starts_with) + 1))) {
                 $lastLetter = mb_strtolower(substr($tag, 0, strlen($starts_with) + 1));
                 if ($n++ > 0) {
@@ -77,8 +74,10 @@ class TagMapTheme extends Themelet
                 }
                 $html->appendChild($lastLetter);
                 $html->appendChild(BR());
+            } else {
+                $html->appendChild(", ");
             }
-            $html->appendChild($this->build_tag($tag));
+            $html->appendChild($this->build_tag($tag), " ($count)");
         }
 
         $page = Ctx::$page;
