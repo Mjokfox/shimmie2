@@ -4,13 +4,34 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\rawHTML;
+use function MicroHTML\{BR, SPAN, emptyHTML, rawHTML};
 
 /**
  * @phpstan-type BlotterEntry array{id:int,entry_date:string,entry_text:string,important:bool}
  */
 class CustomBlotterTheme extends BlotterTheme
 {
+    /**
+     * @param BlotterEntry[] $entries
+     */
+    public function display_blotter_page(array $entries): void
+    {
+        $i_color = Ctx::$config->get(BlotterConfig::COLOR);
+
+        $html = emptyHTML();
+        foreach ($entries as $entry) {
+            $clean_date = date("Y/m/d", \Safe\strtotime($entry['entry_date']));
+            $entry_text = $entry['entry_text'];
+            $msg = emptyHTML("$clean_date: ", format_text($entry_text));
+            if ($entry['important']) {
+                $msg = SPAN(["style" => "color: $i_color;"], $msg);
+            }
+            $html->appendChild($msg, BR(), BR());
+        }
+
+        Ctx::$page->set_title("Blotter");
+        Ctx::$page->add_block(new Block("Blotter Entries", $html, "main", 10));
+    }
     /**
      * @param BlotterEntry[] $entries
      */
@@ -44,7 +65,7 @@ class CustomBlotterTheme extends BlotterTheme
                 </a>
                 <span class='shm-blotter-tools'>
                     <a href='".make_link("blotter/list")."'>Show All</a>
-                    <a href='#' id='blotter-hide'>Hide forever</a>
+                    <a href='#' id='blotter-hide'>Dismiss</a>
                 </span>
             </div>
 		    ";

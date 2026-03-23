@@ -43,6 +43,12 @@ final class Blotter extends Extension
     }
 
     #[EventListener]
+    public function onPageNavBuilding(PageNavBuildingEvent $event): void
+    {
+        $event->add_nav_link(make_link('blotter/list'), "News", category: "news", order: 60);
+    }
+
+    #[EventListener]
     public function onPageSubNavBuilding(PageSubNavBuildingEvent $event): void
     {
         if ($event->parent === "system") {
