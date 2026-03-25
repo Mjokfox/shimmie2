@@ -34,7 +34,7 @@ class CustomIndexTheme extends IndexTheme
             $class = "";
         }
 
-        $nav = $this->build_navigation($this->page_number, $this->total_pages, ($path === "list" ? $this->search_terms : []), $class);
+        $nav = $this->build_navigation($path === "list" ? $this->search_terms : [], $class);
 
         Ctx::$page->add_block(new Block("Search with tags", $nav, $pos, 2, $id));
 
@@ -60,7 +60,7 @@ class CustomIndexTheme extends IndexTheme
     /**
      * @param search-term-array $search_terms
      */
-    protected function build_navigation(int $page_number, int $total_pages, array $search_terms, string $class = ""): HTMLElement
+    protected function build_navigation(array $search_terms, string $class = ""): HTMLElement
     {
         $action = search_link();
         return FORM(
@@ -70,7 +70,6 @@ class CustomIndexTheme extends IndexTheme
                 "class" => "search-bar $class"
             ],
             INPUT(["type" => "hidden", "name" => "q", "value" => $action->getPath()]),
-            INPUT(["type" => "hidden", "name" => "auth_token", "value" => Ctx::$user->get_auth_token()]),
             INPUT([
                 "name" => 'search',
                 "type" => 'text',

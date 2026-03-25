@@ -13,17 +13,17 @@ class CustomCommentListTheme extends CommentListTheme
     /**
      * @param array<array{0: Post, 1: Comment[]}> $images
      */
-    public function display_comment_list(array $images, int $page_number, int $total_pages, bool $can_post): void
+    public function display_comment_list(array $images, int $page_number, int $total_pages, ?string $search = null): void
     {
-        Ctx::$page->set_layout("no-left");
 
-        Ctx::$page->set_title("Comments");
+        Ctx::$page->set_title($search ? "Comment search: $search" : "Comments");
+        $navigation_link = is_null($search) ? "list" : "search/$search";
         $this->display_navigation([
-            ($page_number <= 1) ? null : make_link('comment/list/'.($page_number - 1)),
-            make_link(),
-            ($page_number >= $total_pages) ? null : make_link('comment/list/'.($page_number + 1))
-        ]);
-        $this->display_paginator("comment/list", null, $page_number, $total_pages);
+            ($page_number <= 1) ? null : make_link("comment/$navigation_link/".($page_number - 1)),
+            make_link("comment/list"),
+            ($page_number >= $total_pages) ? null : make_link("comment/$navigation_link/".($page_number + 1))
+        ], $this->build_search_box($search));
+        $this->display_paginator("comment/$navigation_link", null, $page_number, $total_pages);
 
         // parts for each image
         $position = 10;
@@ -86,6 +86,11 @@ class CustomCommentListTheme extends CommentListTheme
         // no recent comments in this theme
     }
 
+    public function display_recent_user_comments(User $user): void
+    {
+        // no left..
+    }
+
     protected function comment_to_html(Comment $comment, bool $trim = false): HTMLElement
     {
         $tfe = send_event(new TextFormattingEvent($comment->comment));
@@ -117,7 +122,9 @@ class CustomCommentListTheme extends CommentListTheme
                 ["class" => "comment"],
                 $h_userlink,
                 $h_del,
+                $h_edited,
                 BR(),
+                A(["href" => make_link("post/view/{$comment->image_id}")], ">>$comment->image_id "),
                 $h_posted,
                 BR(),
                 $h_comment
@@ -147,6 +154,23 @@ class CustomCommentListTheme extends CommentListTheme
                 Captcha::get_html(CommentPermission::SKIP_CAPTCHA),
                 SHM_SUBMIT("Post Comment")
             )
+        );
+    }
+
+    protected function build_search_box(?string $search = null): HTMLElement
+    {
+        return SHM_FORM(
+            action: make_link("comment/search/1"),
+            method: "GET",
+            children: [
+                INPUT([
+                    "type" => "search",
+                    "name" => "search",
+                    "value" => $search ?? "",
+                    "placeholder" => "Search comments",
+                ]),
+                SHM_SUBMIT("Search"),
+            ],
         );
     }
 }

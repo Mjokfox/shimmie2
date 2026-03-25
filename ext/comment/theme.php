@@ -20,16 +20,18 @@ class CommentListTheme extends Themelet
      *
      * @param array<array{0: Post, 1: Comment[]}> $images
      */
-    public function display_comment_list(array $images, int $page_number, int $total_pages, bool $can_post): void
+    public function display_comment_list(array $images, int $page_number, int $total_pages, ?string $search = null): void
     {
         $page = Ctx::$page;
         $page->set_title("Comments");
+        $navigation_link = is_null($search) ? "list" : "search/$search";
+
         $this->display_navigation([
-            make_link('comment/list/'.($page_number - 1)),
+            make_link("comment/$navigation_link/".($page_number - 1)),
             make_link(),
-            make_link('comment/list/'.($page_number + 1))
-        ]);
-        $this->display_paginator("comment/list", null, $page_number, $total_pages);
+            make_link("comment/$navigation_link/".($page_number + 1))
+        ], $this->build_search_box($search));
+        $this->display_paginator("comment/$navigation_link", null, $page_number, $total_pages);
 
         // parts for each image
         $position = 10;
@@ -137,13 +139,9 @@ class CommentListTheme extends Themelet
         Ctx::$page->add_block(new Block("Comments", $html, "main", 30, "comment-list-image"));
     }
 
-    /**
-     * Show comments made by a user.
-     *
-     * @param Comment[] $comments
-     */
-    public function display_recent_user_comments(array $comments, User $user): void
+    public function display_recent_user_comments(User $user): void
     {
+        $comments = Comment::get_all_from_user($user->id, 10);
         $html = emptyHTML();
         foreach ($comments as $comment) {
             $html->appendChild($this->comment_to_html($comment, true));
@@ -151,7 +149,7 @@ class CommentListTheme extends Themelet
         if (count($comments) === 0) {
             $html->appendChild(P("No comments by this user."));
         } else {
-            $html->appendChild(P(A(["href" => make_link("comment/beta-search/{$user->name}/1")], "More")));
+            $html->appendChild(P(A(["href" => make_link("comment/user-search/{$user->name}/1")], "More")));
         }
         Ctx::$page->add_block(new Block("Comments", $html, "left", 70, "comment-list-user"));
     }
@@ -171,11 +169,11 @@ class CommentListTheme extends Themelet
         Ctx::$page->add_block(new Block("Comments", $html, "main", 70, "comment-list-user"));
         Ctx::$page->set_title("{$user->name}'s comments");
         $this->display_navigation([
-            ($page_number <= 1) ? null : make_link("comment/beta-search/{$user->name}/" . ($page_number - 1)),
+            ($page_number <= 1) ? null : make_link("comment/user-search/{$user->name}/" . ($page_number - 1)),
             make_link(),
-            ($page_number >= $total_pages) ? null : make_link("comment/beta-search/{$user->name}/" . ($page_number + 1)),
+            ($page_number >= $total_pages) ? null : make_link("comment/user-search/{$user->name}/" . ($page_number + 1)),
         ]);
-        $this->display_paginator("comment/beta-search/{$user->name}", null, $page_number, $total_pages);
+        $this->display_paginator("comment/user-search/{$user->name}", null, $page_number, $total_pages);
     }
 
     protected function comment_to_html(Comment $comment, bool $trim = false): HTMLElement
@@ -271,6 +269,27 @@ class CommentListTheme extends Themelet
                 BR(),
                 INPUT(["type" => "submit", "value" => "Post Comment"])
             ),
+        );
+    }
+
+    protected function build_search_box(?string $search = null): HTMLElement
+    {
+        return SHM_FORM(
+            action: make_link("comment/search/1"),
+            method: "GET",
+            children: [
+                INPUT([
+                    "type" => "search",
+                    "name" => "search",
+                    "value" => $search ?? "",
+                    "placeholder" => "Search comments",
+                ]),
+                INPUT([
+                    "type" => "submit",
+                    "value" => "Find",
+                    "style" => "display: none;"
+                ])
+            ],
         );
     }
 

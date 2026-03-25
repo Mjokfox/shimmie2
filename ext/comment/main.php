@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use GQLA\{Field, Mutation, Type};
 
-use function MicroHTML\{emptyHTML};
+use function MicroHTML\{A, emptyHTML};
 
 /** @phpstan-type DBComment array{id:int,image_id:int,owner_id:int,owner_ip:string,posted:string,comment:string,edited:bool|int} */
 #[Type(name: "Comment")]
@@ -126,6 +126,30 @@ final class Comment
 			FROM comments
 			WHERE owner_id=:owner_id
 		", ["owner_id" => $user->id]);
+    }
+
+    public static function count_search(string $search): int
+    {
+        /** @var int */
+        return Ctx::$database->get_one(
+            'SELECT count(id) FROM comments
+            WHERE comment LIKE :search',
+            ['search' => "%$search%"]
+        );
+    }
+
+    /** @return Comment[] */
+    public static function search(string $search, int $limit, int $offset = 0): array
+    {
+        /** @var DBComment[] */
+        $rows = Ctx::$database->get_all(
+            'SELECT * FROM comments
+            WHERE comment LIKE :search
+            ORDER BY image_id DESC, id ASC
+            LIMIT :limit OFFSET :offset',
+            ['search' => "%$search%", 'limit' => $limit, 'offset' => $offset]
+        );
+        return self::multi_row($rows);
     }
 
     /**
@@ -339,8 +363,45 @@ final class CommentList extends Extension
                 }
             }
 
-            $this->theme->display_comment_list($images, $current_page + 1, $total_pages, Ctx::$user->can(CommentPermission::CREATE_COMMENT));
-        } elseif ($event->page_matches("comment/beta-search/{search}", paged: true)) {
+            $this->theme->display_comment_list($images, $current_page + 1, $total_pages);
+        } elseif ($event->page_matches("comment/search", paged: true)
+            || $event->page_matches("comment/search/{search}", paged: true)
+        ) {
+            if ($event->GET->offsetExists('search')) {
+                Ctx::$page->set_redirect(make_link("comment/search/" . $event->GET->get('search') . "/1"));
+                return;
+            }
+            $search = $event->get_arg('search');
+            $current_page = $event->get_iarg('page_num', 1) - 1;
+            $comments_per_page = 5 * Ctx::$config->get(CommentConfig::LIST_COUNT);
+            $count = Comment::count_search($search);
+
+            $total_pages = (int)ceil($count / $comments_per_page);
+            $comments = Comment::search($search, $comments_per_page, $current_page * $comments_per_page);
+
+            $user_ratings = RatingsInfo::is_enabled() ? Ratings::get_user_class_privs(Ctx::$user) : [];
+            $posts = [];
+            foreach ($comments as $comment) {
+                if (!isset($posts[$comment->image_id])) {
+                    $post = Post::by_id($comment->image_id);
+                    if (
+                        RatingsInfo::is_enabled() && !is_null($post) &&
+                        !in_array($post['rating'], $user_ratings)
+                    ) {
+                        $post = null; // this is "clever", I may live to regret it
+                    }
+                    if (
+                        ApprovalInfo::is_enabled() && !is_null($post) &&
+                        $post['approved'] !== true
+                    ) {
+                        $post = null;
+                    }
+                    $posts[$comment->image_id] = [$post, []];
+                }
+                $posts[$comment->image_id][1][] = $comment;
+            }
+            $this->theme->display_comment_list(array_filter($posts, fn ($p) => $p[0] !== null), $current_page + 1, $total_pages, $search);
+        } elseif ($event->page_matches("comment/user-search/{search}", paged: true)) {
             $search = $event->get_arg('search');
             $page_num = $event->get_iarg('page_num', 1) - 1;
             $duser = User::by_name($search);
@@ -384,10 +445,9 @@ final class CommentList extends Extension
         $i_days_old = ((time() - \Safe\strtotime($event->display_user->join_date)) / 86400) + 1;
         $i_comment_count = Comment::count_comments_by_user($event->display_user);
         $h_comment_rate = sprintf("%.1f", ($i_comment_count / $i_days_old));
-        $event->add_part(emptyHTML("Comments made: $i_comment_count, $h_comment_rate per day"));
+        $event->add_part(emptyHTML(A(["href" => make_link("comment/user-search/{$event->display_user->name}/1")], "Comments made"), ": $i_comment_count, $h_comment_rate per day"));
 
-        $recent = Comment::get_all_from_user($event->display_user->id, 10);
-        $this->theme->display_recent_user_comments($recent, $event->display_user);
+        $this->theme->display_recent_user_comments($event->display_user);
     }
 
     #[EventListener]
