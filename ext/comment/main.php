@@ -133,7 +133,7 @@ final class Comment
         /** @var int */
         return Ctx::$database->get_one(
             'SELECT count(id) FROM comments
-            WHERE comment LIKE :search',
+            WHERE LOWER(comment) LIKE LOWER(:search)',
             ['search' => "%$search%"]
         );
     }
@@ -144,7 +144,7 @@ final class Comment
         /** @var DBComment[] */
         $rows = Ctx::$database->get_all(
             'SELECT * FROM comments
-            WHERE comment LIKE :search
+            WHERE LOWER(comment) LIKE LOWER(:search)
             ORDER BY image_id DESC, id ASC
             LIMIT :limit OFFSET :offset',
             ['search' => "%$search%", 'limit' => $limit, 'offset' => $offset]
