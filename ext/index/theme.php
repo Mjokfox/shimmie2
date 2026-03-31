@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A, BR, DIV, H2, H3, HR, INPUT, META, P, SPAN, SUP, emptyHTML};
+use function MicroHTML\{A, BR, DIV, H2, H3, HR, IMG, INPUT, META, P, SPAN, SUB, SUP, emptyHTML};
 
 use MicroHTML\HTMLElement;
 
@@ -88,8 +88,58 @@ class IndexTheme extends Themelet
      */
     protected function build_table(array $images, ?string $query): HTMLElement
     {
-        $thumbs = array_map(fn ($image) => $this->build_thumb($image), $images);
-        return DIV(["class" => "shm-image-list", "data-query" => $query], ...$thumbs);
+        if (Ctx::$config->get(IndexConfig::APRIL_FOOLS) && is_null(Ctx::$page->get_cookie("fools2026_disable"))) {
+            $cookie = int_escape(Ctx::$page->get_cookie("fools2026_counter"));
+            Ctx::$page->add_cookie("fools2026_counter", (string)($cookie + 1), time() + 60 * 60 * 24 * 365);
+            $page_size = Ctx::$config->get(IndexConfig::IMAGES);
+            $position = \random_int(0, $page_size - 1);
+
+            $theme_name = get_theme();
+            $dummies = Filesystem::zglob("themes/$theme_name/static/fools_*");
+            if (\count($dummies) === 0) {
+                $thumbs = array_map(fn ($image) => $this->build_thumb($image), $images);
+                return DIV(["class" => "shm-image-list", "data-query" => $query], ...$thumbs);
+            }
+            while (\count($dummies) < $page_size - 1) { // make sure to have enough for the full page
+                $dummies = array_merge($dummies, $dummies);
+            }
+            $dummies = \array_slice($dummies, 0, $page_size - 1);
+            \Safe\shuffle($dummies);
+            $table = DIV(["class" => "shm-image-list", "data-query" => $query]);
+            for ($i = 0; $i < $page_size ;$i++) {
+                if ($i === $position) {
+                    $table->appendChild($this->build_thumb($images[0]));
+                } else {
+                    $table->appendChild(A(
+                        [
+                            "href" => "",
+                            "class" => "thumb shm-thumb shm-thumb-link",
+                            "data-tags" => "",
+                            "data-height" => 192,
+                            "data-width" => 192,
+                            "data-mime" => "image/png",
+                            "data-post-id" => 0,
+                        ],
+                        IMG(
+                            [
+                                "id" => "fools_thumb_$i",
+                                "title" => "None here!",
+                                "alt" => "april fools!",
+                                "src" => "/".$dummies[$i]->str(),
+                            ]
+                        )
+                    ));
+                }
+            }
+            $span = DIV(["style" => "display:flex;"], "We've made searching for foxes more realistic here! You'll need some real patience sifting through forests and landscapes, only to maybe find a single fox if youre lucky.. ");
+            if ($cookie > 4) {
+                $span->appendChild(".....I'm very sure it will be a permanent change, either way, happy april fools!", SUB(["style" => "margin-left:auto;"], "Getting tired of this \"realistic\" searching? ", A(["href" => make_link("fools2026_disable")], "Return to normality...")));
+            }
+            return emptyHTML($span, $table);
+        } else {
+            $thumbs = array_map(fn ($image) => $this->build_thumb($image), $images);
+            return DIV(["class" => "shm-image-list", "data-query" => $query], ...$thumbs);
+        }
     }
 
     protected function display_shortwiki(): void

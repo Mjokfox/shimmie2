@@ -29,7 +29,10 @@ final class Index extends Extension
             $search_terms = SearchTerm::explode($event->get_arg('search', ""));
             $count_search_terms = count($search_terms);
             $page_number = $event->get_iarg('page_num', 1);
-            $page_size = Ctx::$config->get(IndexConfig::IMAGES);
+            $page_size = (
+                Ctx::$config->get(IndexConfig::APRIL_FOOLS)
+                && is_null(Ctx::$page->get_cookie("fools2026_disable"))
+            ) ? 1 : Ctx::$config->get(IndexConfig::IMAGES);
 
             $search_results_limit = Ctx::$config->get(IndexConfig::SEARCH_RESULTS_LIMIT);
 
@@ -55,7 +58,7 @@ final class Index extends Extension
                 );
             }
 
-            $total_pages = (int)ceil(Search::count_posts($search_terms) / Ctx::$config->get(IndexConfig::IMAGES));
+            $total_pages = (int)ceil(Search::count_posts($search_terms) / $page_size);
             if ($search_results_limit && $total_pages > $search_results_limit / $page_size && !Ctx::$user->can(IndexPermission::BIG_SEARCH)) {
                 $total_pages = (int)ceil($search_results_limit / $page_size);
             }
@@ -75,19 +78,30 @@ final class Index extends Extension
                 $images = Search::find_posts(($page_number - 1) * $page_size, $page_size, $search_terms);
             }
 
-            $count_images = count($images);
-
-            if ($count_search_terms === 0 && $count_images === 0 && $page_number === 1) {
-                $this->theme->display_intro();
-                send_event(new PostListBuildingEvent($search_terms));
-            } elseif ($count_search_terms > 0 && $count_images === 1 && $page_number === 1) {
-                Ctx::$page->set_redirect(make_link('post/view/'.$images[0]->id));
-            } else {
+            if (Ctx::$config->get(IndexConfig::APRIL_FOOLS) && is_null(Ctx::$page->get_cookie("fools2026_disable"))) {
                 send_event(new PostListBuildingEvent($search_terms));
 
                 $this->theme->set_page($page_number, $total_pages, $search_terms);
                 $this->theme->display_page($images);
+            } else {
+                $count_images = count($images);
+
+                if ($count_search_terms === 0 && $count_images === 0 && $page_number === 1) {
+                    $this->theme->display_intro();
+                    send_event(new PostListBuildingEvent($search_terms));
+                } elseif ($count_search_terms > 0 && $count_images === 1 && $page_number === 1) {
+                    Ctx::$page->set_redirect(make_link('post/view/'.$images[0]->id));
+                } else {
+                    send_event(new PostListBuildingEvent($search_terms));
+
+                    $this->theme->set_page($page_number, $total_pages, $search_terms);
+                    $this->theme->display_page($images);
+                }
             }
+        } elseif ($event->page_matches("fools2026_disable")) {
+            Ctx::$page->add_cookie("fools2026_disable", "true", time() + 60 * 60 * 24 * 365);
+            Ctx::$page->flash("April fools shall be silenced, for now...");
+            Ctx::$page->set_redirect(Url::referer_or(search_link([])));
         }
     }
 

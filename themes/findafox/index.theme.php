@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A, B, DIV, FORM, INPUT, LINK, META};
+use function MicroHTML\{A, B, FORM, INPUT, LINK, META};
 
 use MicroHTML\HTMLElement;
 
@@ -104,18 +104,6 @@ class CustomIndexTheme extends IndexTheme
             Ctx::$page->add_block(new Block(null, $this->build_table($images, null), "main", 10, "image-list"));
             $this->display_paginator("post/$path", null, $this->page_number, $this->total_pages, true);
         }
-    }
-
-    /**
-     * @param Post[] $images
-     */
-    protected function build_table(array $images, ?string $query): HTMLElement
-    {
-        $table = DIV(["class" => "shm-image-list", "data-query" => $query]);
-        foreach ($images as $image) {
-            $table->appendChild($this->build_thumb($image));
-        }
-        return $table;
     }
 
     protected function display_shortwiki(): void

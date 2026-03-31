@@ -48,4 +48,11 @@ final class IndexConfig extends ConfigGroup
 
     #[ConfigMeta("Limit complex searches", ConfigType::BOOL, default: false, advanced: true)]
     public const LIMIT_COMPLEX = "speed_hax_limit_complex";
+    #[ConfigMeta(
+        "Enable 2026 findafox april fools",
+        ConfigType::BOOL,
+        default: false,
+        help: "Takes images from the current theme's static files folder starting with \"fools_\" and spreads them randomly across search results"
+    )]
+    public const APRIL_FOOLS = "index_temp_april_fools";
 }
