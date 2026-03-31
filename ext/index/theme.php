@@ -103,7 +103,7 @@ class IndexTheme extends Themelet
             while (\count($dummies) < $page_size - 1) { // make sure to have enough for the full page
                 $dummies = array_merge($dummies, $dummies);
             }
-            $dummies = \array_slice($dummies, 0, $page_size - 1);
+            $dummies = \array_slice($dummies, 0, $page_size);
             \Safe\shuffle($dummies);
             $table = DIV(["class" => "shm-image-list", "data-query" => $query]);
             for ($i = 0; $i < $page_size ;$i++) {
