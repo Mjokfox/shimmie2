@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A, BR, DIV, H2, H3, HR, IMG, INPUT, META, P, SPAN, SUB, SUP, emptyHTML};
+use function MicroHTML\{A, B, BR, DIV, H2, H3, HR, IMG, INPUT, META, P, SPAN, SUP, emptyHTML};
 
 use MicroHTML\HTMLElement;
 
@@ -133,7 +133,7 @@ class IndexTheme extends Themelet
             }
             $span = DIV(["style" => "display:flex;"], "We've made searching for foxes more realistic here! You'll need some real patience sifting through forests and landscapes, only to maybe find a single fox if youre lucky.. ");
             if ($cookie > 4) {
-                $span->appendChild(".....I'm very sure it will be a permanent change, either way, happy april fools!", SUB(["style" => "margin-left:auto;"], "Getting tired of this \"realistic\" searching? ", A(["href" => make_link("fools2026_disable")], "Return to normality...")));
+                $span->appendChild(".....I'm very sure it will be a permanent change, either way, happy april fools!", B(["style" => "margin-left:auto;padding:2px;border:dashed 1px var(--text)"], "Getting tired of this \"realistic\" searching? ", A(["href" => make_link("fools2026_disable")], "Return to normality...")));
             }
             return emptyHTML($span, $table);
         } else {
