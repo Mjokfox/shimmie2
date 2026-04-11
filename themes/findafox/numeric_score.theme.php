@@ -50,15 +50,18 @@ class CustomNumericScoreTheme extends NumericScoreTheme
 
             if ($is_favorited) {
                 $url = "favourite/remove/{$image->id}";
-                $text = "♥";
+                $class = "fav";
+                $title = "Remove from your favorites";
             } else {
                 $url = "favourite/add/{$image->id}";
-                $text = "♡";
+                $class = "";
+                $title = "Add to your favorites";
             }
             $fav = DIV(
+                ["title" => $title],
                 SHM_SIMPLE_FORM(
                     make_link($url),
-                    SHM_SUBMIT($text, ["class" => "fav vote-button"])
+                    SHM_SUBMIT("♥", ["class" => "$class vote-button"])
                 )
             );
         }
