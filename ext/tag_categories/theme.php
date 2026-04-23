@@ -15,7 +15,6 @@ class TagCategoriesTheme extends Themelet
      */
     public function show_tag_categories(array $tc_dict): void
     {
-        global $database;
         $tc_block_index = 0;
         $html = [];
 
@@ -31,7 +30,7 @@ class TagCategoriesTheme extends Themelet
             )
             ORDER BY tct.id;";
             $args = ["category_name" => $tag_category];
-            $tags = $database->get_col($query, $args);
+            $tags = Ctx::$database->get_col($query, $args);
             $tags = implode(' ', $tags);
             $tags = str_replace(' ', " \n", $tags);
 
@@ -232,21 +231,19 @@ class TagCategoriesTheme extends Themelet
 
     public function show_count_tag_categories(): void
     {
-        global $page;
-        global $database;
         $dict = [];
-        $dict[] = $database->get_all(
+        $dict[] = Ctx::$database->get_all(
             'SELECT tags.tag, tags.count
             FROM tags
             ORDER BY tags.count ASC;'
         );
-        $dict[] = $database->get_all(
+        $dict[] = Ctx::$database->get_all(
             'SELECT tags.tag, tags.count
             FROM tags, image_tag_categories_tags itct
             WHERE tags.id = itct.tag_id
             ORDER BY tags.count ASC;'
         );
-        $dict[] = $database->get_all(
+        $dict[] = Ctx::$database->get_all(
             'SELECT tags.tag, tags.count
             FROM tags
             WHERE tags.id NOT IN (SELECT itct.tag_id FROM image_tag_categories_tags itct)
@@ -277,20 +274,19 @@ class TagCategoriesTheme extends Themelet
             );
             $html->appendChild($thtml);
         }
-        $page->set_title("Tag Categories counts");
-        $page->set_heading("Tag Categories counts");
+        Ctx::$page->set_title("Tag Categories counts");
+        Ctx::$page->set_heading("Tag Categories counts");
 
-        $page->add_block(new Block("Tag Categories counts", DIV(["style" => "display:flex;justify-content:space-evenly;"], $html), "main", 10));
+        Ctx::$page->add_block(new Block("Tag Categories counts", DIV(["style" => "display:flex;justify-content:space-evenly;"], $html), "main", 10));
         $this->display_navigation();
     }
 
     public function display_admin_form(): void
     {
-        global $page;
         $html = SHM_SIMPLE_FORM(
             make_link("admin/count_categories_tags"),
             SHM_SUBMIT('Display tag count'),
         );
-        $page->add_block(new Block("Tag categories count", $html));
+        Ctx::$page->add_block(new Block("Tag categories count", $html));
     }
 }

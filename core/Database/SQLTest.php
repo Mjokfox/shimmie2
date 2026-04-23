@@ -16,7 +16,7 @@ final class SQLTest extends ShimmiePHPUnitTestCase
 {
     public function testConcatPipes(): void
     {
-        self::assertEquals(
+        self::assertSame(
             "foobar",
             Ctx::$database->get_one("SELECT 'foo' || 'bar'")
         );
@@ -34,7 +34,7 @@ final class SQLTest extends ShimmiePHPUnitTestCase
     {
         self::assertEqualsWithDelta(1.0, Ctx::$database->get_one("SELECT log(10, 10)"), 0.01);
         // Some DBs default to log(10, n) and some to log(E, n), so we can't use this'
-        // self::assertEqualsWithDelta(2.3, $database->get_one("SELECT log(10)"), 0.01);
+        // self::assertSameWithDelta(2.3, $database->get_one("SELECT log(10)"), 0.01);
         self::assertEqualsWithDelta(2.3, Ctx::$database->get_one("SELECT ln(10)"), 0.01);
         self::assertEqualsWithDelta(3.0, Ctx::$database->get_one("SELECT log(2, 8)"), 0.01);
     }
@@ -46,7 +46,7 @@ final class SQLTest extends ShimmiePHPUnitTestCase
     public function test_cyrillic_php_lowercase(): void
     {
         self::assertNotEquals("советских", strtolower("Советских"), "strtolower");
-        self::assertEquals("советских", mb_strtolower("Советских"), "mb_strtolower");
+        self::assertSame("советских", mb_strtolower("Советских"), "mb_strtolower");
     }
 
     /**
@@ -58,7 +58,7 @@ final class SQLTest extends ShimmiePHPUnitTestCase
     #[Depends("test_cyrillic_php_lowercase")]
     public function test_cyrillic_database_lowercase(): void
     {
-        self::assertEquals("советских", Ctx::$database->get_one("SELECT LOWER('Советских')"), "LOWER");
+        self::assertSame("советских", Ctx::$database->get_one("SELECT LOWER('Советских')"), "LOWER");
     }
 
     /**
@@ -74,7 +74,7 @@ final class SQLTest extends ShimmiePHPUnitTestCase
         Ctx::$database->execute("INSERT INTO tags(tag) VALUES (:val)", ["val" => "a_cd3"]);
 
         // with regular SQL there's no one query that works on all DBs
-        self::assertEquals(
+        self::assertSame(
             ["a_cd3"],
             Ctx::$database->get_col(match(Ctx::$database->get_driver_id()) {
                 DatabaseDriverID::SQLITE => "SELECT tag FROM tags WHERE tag LIKE :pattern ESCAPE '\\'",
@@ -85,7 +85,7 @@ final class SQLTest extends ShimmiePHPUnitTestCase
         );
 
         // with SCORE_ILIKE, we can use the same query on all DBs
-        self::assertEquals(
+        self::assertSame(
             ["a_cd3"],
             Ctx::$database->get_col("SELECT tag FROM tags WHERE SCORE_ILIKE(tag, :pattern)", ["pattern" => "a\\_%"]),
             "SCORE_ILIKE consistently uses backslash as an escape character"
@@ -105,14 +105,14 @@ final class SQLTest extends ShimmiePHPUnitTestCase
 
         // With regular SQL lower(x) == lower(y) works across DBs, but that
         // requires running lower() a lot, and on mysql that's not needed at all
-        self::assertEquals(
+        self::assertSame(
             ["abcd1", "ABCD2"],
             Ctx::$database->get_col("SELECT tag FROM tags WHERE lower(tag) LIKE lower(:pattern)", ["pattern" => "ab%"]),
             "LIKE case-sensitivity is weird"
         );
 
         // Other than mass-lower(), we need to use dabase-specific syntax
-        self::assertEquals(
+        self::assertSame(
             ["abcd1", "ABCD2"],
             Ctx::$database->get_col(match(Ctx::$database->get_driver_id()) {
                 DatabaseDriverID::SQLITE => "SELECT tag FROM tags WHERE tag LIKE :pattern",
@@ -123,7 +123,7 @@ final class SQLTest extends ShimmiePHPUnitTestCase
         );
 
         // With SCORE_ILIKE, we can use the same query on all DBs
-        self::assertEquals(
+        self::assertSame(
             ["abcd1", "ABCD2"],
             Ctx::$database->get_col("SELECT tag FROM tags WHERE SCORE_ILIKE(tag, :pattern)", ["pattern" => "ab%"]),
             "SCORE_ILIKE is consistently case-insensitive for ascii"
@@ -143,14 +143,14 @@ final class SQLTest extends ShimmiePHPUnitTestCase
 
         // With regular SQL lower(x) == lower(y) works across DBs, but that
         // requires running lower() a lot, and on mysql that's not needed at all
-        self::assertEquals(
+        self::assertSame(
             ["советских1", "Советских2"],
             Ctx::$database->get_col("SELECT tag FROM tags WHERE lower(tag) LIKE lower(:pattern)", ["pattern" => "со%"]),
             "LIKE case-sensitivity is weird"
         );
 
         // Other than mass-lower(), we need to use dabase-specific syntax
-        self::assertEquals(
+        self::assertSame(
             ["советских1", "Советских2"],
             Ctx::$database->get_col(match(Ctx::$database->get_driver_id()) {
                 DatabaseDriverID::SQLITE => "SELECT tag FROM tags WHERE lower(tag) LIKE lower(:pattern)",
@@ -161,7 +161,7 @@ final class SQLTest extends ShimmiePHPUnitTestCase
         );
 
         // With SCORE_ILIKE, we can use the same query on all DBs
-        self::assertEquals(
+        self::assertSame(
             ["советских1", "Советских2"],
             Ctx::$database->get_col("SELECT tag FROM tags WHERE SCORE_ILIKE(tag, :pattern)", ["pattern" => "со%"]),
             "SCORE_ILIKE is consistently case-insensitive for utf-8"
@@ -177,5 +177,48 @@ final class SQLTest extends ShimmiePHPUnitTestCase
 
         self::assertTrue(bool_escape(Ctx::$database->get_one("SELECT TRUE = :true", ["true" => true])), "TRUE comparison");
         self::assertTrue(bool_escape(Ctx::$database->get_one("SELECT FALSE = :false", ["false" => false])), "FALSE comparison");
+    }
+
+    /**
+     * Validate that CURRENT_TIMESTAMP and now() with DATE() work consistently across all databases
+     * to return date in 'Y-m-d' format (used for last_active tracking)
+     */
+    public function test_date_format(): void
+    {
+        // Verify it matches PHP's date('Y-m-d') format
+        $php_date = date('Y-m-d');
+
+        // Test CURRENT_TIMESTAMP
+        $date_result_ct = Ctx::$database->get_one("SELECT DATE(CURRENT_TIMESTAMP)");
+        self::assertMatchesRegularExpression(
+            '/^\d{4}-\d{2}-\d{2}$/',
+            $date_result_ct,
+            "DATE(CURRENT_TIMESTAMP) should return YYYY-MM-DD format"
+        );
+        self::assertSame(
+            $php_date,
+            $date_result_ct,
+            "DATE(CURRENT_TIMESTAMP) should match PHP date('Y-m-d')"
+        );
+
+        // Test now()
+        $date_result_now = Ctx::$database->get_one("SELECT DATE(now())");
+        self::assertMatchesRegularExpression(
+            '/^\d{4}-\d{2}-\d{2}$/',
+            $date_result_now,
+            "DATE(now()) should return YYYY-MM-DD format"
+        );
+        self::assertSame(
+            $php_date,
+            $date_result_now,
+            "DATE(now()) should match PHP date('Y-m-d')"
+        );
+
+        // Both should return the same value
+        self::assertSame(
+            $date_result_ct,
+            $date_result_now,
+            "DATE(CURRENT_TIMESTAMP) and DATE(now()) should return the same value"
+        );
     }
 }

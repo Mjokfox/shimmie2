@@ -17,7 +17,7 @@ final class IPBanTest extends ShimmiePHPUnitTestCase
 
     public function testIPBan(): void
     {
-        global $database;
+        $database = Ctx::$database;
 
         self::log_in_as_admin();
 
@@ -57,6 +57,6 @@ final class IPBanTest extends ShimmiePHPUnitTestCase
         // just test it doesn't crash for now
         self::log_in_as_admin();
         $page = self::get_page('ip_ban/list', ['r_all' => 'on']);
-        self::assertEquals(200, $page->code);
+        self::assertSame(200, $page->code);
     }
 }

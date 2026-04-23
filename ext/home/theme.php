@@ -64,7 +64,6 @@ class HomeTheme extends Themelet
 
     protected function build_search(): HTMLElement
     {
-        global $config, $user;
         $search_html = emptyHTML(DIV(
             ["class" => "space", "id" => "search"],
             SHM_FORM(
@@ -77,7 +76,7 @@ class HomeTheme extends Themelet
                 ]
             )
         ));
-        if (ReverseImageInfo::is_enabled() && $config->get(ReverseImageConfig::SEARCH_ENABLE) && $user->get_config()->get(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
+        if (ReverseImageInfo::is_enabled() && Ctx::$config->get(ReverseImageConfig::SEARCH_ENABLE) && Ctx::$user->get_config()->get(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
             $search_html->appendChild(DIV(
                 ["class" => "space", "id" => "text-search"],
                 SHM_FORM(

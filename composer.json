@@ -1,4 +1,5 @@
 {
+    "$schema": "https://getcomposer.org/schema.json",
     "name": "shish/shimmie2",
     "description": "A tag-based image gallery",
     "type": "project",
@@ -35,13 +36,12 @@
         "ext-fileinfo": "*",
         "ifixit/php-akismet": "^1.0",
         "google/recaptcha": "^1.1",
-        "shish/eventtracer-php": "^2.2",
-        "shish/ffsphp": "^1.4",
-        "shish/microbundler": "^1.0.2",
-        "shish/microcrud": "^2.4",
-        "shish/microhtml": "^2.7.0",
-        "shish/microotlp": "^0.0.15",
-        "shish/gqla": "^1.1.1",
+        "shish/ffsphp": "^1.6",
+        "shish/microbundler": "^1.1.0",
+        "shish/microcrud": "^2.5",
+        "shish/microhtml": "^2.8",
+        "shish/microotlp": "^1.0",
+        "shish/gqla": "^1.2",
         "thecodingmachine/safe": "^3.4",
         "enshrined/svg-sanitize": "^0.22",
         "bower-asset/jquery": "^1.12",
@@ -52,7 +52,7 @@
         "naroga/redis-cache": "^1.2",
         "symfony/console": "^8.0",
         "symfony/yaml": "^8.0",
-        "jfcherng/php-diff": "^6.16"
+        "jfcherng/php-diff": "^7.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^12.5",

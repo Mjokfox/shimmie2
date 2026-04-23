@@ -25,7 +25,7 @@ final class DeleteTipEvent extends Event
 }
 
 /**
- * @phpstan-type Tip array{id: int, image: string, text: string, enable: bool}
+ * @phpstan-type TipRow array{id: int, image: string, text: string, enable: bool}
  * @extends Extension<TipsTheme>
  */
 final class Tips extends Extension
@@ -101,12 +101,11 @@ final class Tips extends Extension
 
     private function manageTips(): void
     {
-        global $config;
         $images = Filesystem::get_dir_contents(new Path("ext/tips/images"));
         $images = array_map(fn ($p) => $p->basename()->str(), $images);
 
         // theme HAX
-        $theme_name = $config->get(SetupConfig::THEME);
+        $theme_name = Ctx::$config->get(SetupConfig::THEME);
         $theme_images = Filesystem::get_dir_contents(new Path("themes/$theme_name/static/"));
         if (count($theme_images) > 0) {
             $theme_images = array_map(fn ($p) => $p->basename()->str(), $theme_images);
@@ -133,7 +132,7 @@ final class Tips extends Extension
 
     private function getTip(): void
     {
-        /** @var ?Tip $tip */
+        /** @var ?TipRow $tip */
         $tip = Ctx::$database->get_row("
             SELECT *
             FROM tips
@@ -149,7 +148,7 @@ final class Tips extends Extension
 
     private function getAll(): void
     {
-        /** @var array<Tip> $tips */
+        /** @var array<TipRow> $tips */
         $tips = Ctx::$database->get_all("SELECT * FROM tips ORDER BY id ASC");
         $this->theme->showAll($tips);
     }

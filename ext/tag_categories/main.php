@@ -16,7 +16,7 @@ final class TagCategories extends Extension
     #[EventListener]
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
-        global $database;
+        $database = Ctx::$database;
 
         if ($this->get_version() < 1) {
             // primary extension database, holds all our stuff!
@@ -117,7 +117,7 @@ final class TagCategories extends Extension
      */
     public static function getKeyedDict(): array
     {
-        global $database;
+        $database = Ctx::$database;
         static $tc_keyed_dict = null;
 
         if (is_null($tc_keyed_dict)) {
@@ -132,11 +132,10 @@ final class TagCategories extends Extension
         return $tc_keyed_dict;
     }
     /**
-     * @return array{string:string}|null
+     * @return array{string:string}
      */
-    public static function getCategorizedTags(): ?array
+    public static function getCategorizedTags(): array
     {
-        global $database;
         static $tc_category_dict = null;
         if ($tc_category_dict === null || defined('UNITTEST')) {
             $query = "
@@ -146,7 +145,7 @@ final class TagCategories extends Extension
             JOIN tags t ON ct.tag_id = t.id
             ORDER BY ct.id;";
 
-            $tc_category_dict = $database->get_pairs($query);
+            $tc_category_dict = Ctx::$database->get_pairs($query);
         }
         return $tc_category_dict;
     }
@@ -154,9 +153,6 @@ final class TagCategories extends Extension
     public static function get_tag_category(string $tag): ?string
     {
         $tag_category_dict = static::getCategorizedTags();
-        if (is_null($tag_category_dict)) {
-            return null;
-        }
         if (array_key_exists($tag, $tag_category_dict)) {
             return $tag_category_dict[$tag];
         }
@@ -181,7 +177,7 @@ final class TagCategories extends Extension
 
         // we found a tag, see if it's valid!
         $tag_category_dict = static::getCategorizedTags();
-        if (!is_null($tag_category_dict) && \array_key_exists($h_tag, $tag_category_dict)) {
+        if (\array_key_exists($h_tag, $tag_category_dict)) {
             $category = $tag_category_dict[$h_tag];
 
             return SPAN(
@@ -198,7 +194,6 @@ final class TagCategories extends Extension
 
     private function add_tags_to_category(string $category, string $tags): void
     {
-        global $database;
         $tags = str_replace("\n", ' ', $tags);
         $tags = Tag::explode($tags, false);
         $tag_ids = [];
@@ -212,7 +207,7 @@ final class TagCategories extends Extension
         WHERE category = :category;";
         $args = ["category" => $category];
 
-        $category_id = $database->get_one($query, $args);
+        $category_id = Ctx::$database->get_one($query, $args);
 
         $query = "
         INSERT INTO image_tag_categories_tags (category_id, tag_id)
@@ -220,13 +215,12 @@ final class TagCategories extends Extension
         $args = ["category_id" => $category_id];
         foreach ($tag_ids as $tag) {
             $args["tag_id"] = $tag;
-            $database->execute($query, $args);
+            Ctx::$database->execute($query, $args);
         }
     }
     private function delete_tags_from_category(string $category): void
     {
-        global $database;
-        $database->execute(
+        Ctx::$database->execute(
             'DELETE FROM image_tag_categories_tags
             WHERE category_id = (
                 SELECT id
@@ -241,7 +235,6 @@ final class TagCategories extends Extension
 
     public function page_update(): void
     {
-        global $database;
         if (isset($_POST['tc_status'])) {
             if (!isset($_POST['tc_category']) ||
             !isset($_POST['tc_up_group']) ||
@@ -254,7 +247,7 @@ final class TagCategories extends Extension
             }
 
             if ($_POST['tc_status'] === 'edit') {
-                $database->execute(
+                Ctx::$database->execute(
                     'UPDATE image_tag_categories
                     SET upper_group=:upper_group,
                         lower_group=:lower_group,
@@ -276,7 +269,7 @@ final class TagCategories extends Extension
                 Log::info("tag_categories", "Edited category: ".$_POST['tc_category'], "Edited category: ".$_POST['tc_category']);
 
             } elseif ($_POST['tc_status'] === 'new') {
-                $database->execute(
+                Ctx::$database->execute(
                     'INSERT INTO image_tag_categories (category, upper_group, lower_group, color, upload_page_type, upload_page_priority)
                     VALUES (:category, :upper_group, :lower_group, :color, :upload_page_type, :upload_page_priority)',
                     [
@@ -292,7 +285,7 @@ final class TagCategories extends Extension
                 Log::info("tag_categories", "Created category: ".$_POST['tc_category'], "Created category: ".$_POST['tc_category']);
             } elseif ($_POST['tc_status'] === 'delete') {
                 $this->delete_tags_from_category($_POST['tc_category']);
-                $database->execute(
+                Ctx::$database->execute(
                     'DELETE FROM image_tag_categories
                     WHERE category=:category',
                     [

@@ -22,6 +22,7 @@ final class Approval extends Extension
         if (defined("UNITTEST") || Ctx::$user->can(ApprovalPermission::BYPASS_IMAGE_APPROVAL)) {
             self::approve_image($event->image->id);
         }
+        Ctx::$cache->delete("pending-count");
     }
 
     #[EventListener]
@@ -49,7 +50,7 @@ final class Approval extends Extension
     #[EventListener]
     public function onAdminAction(AdminActionEvent $event): void
     {
-        global $database;
+        $database = Ctx::$database;
 
         $action = $event->action;
         $event->redirect = true;
@@ -72,6 +73,7 @@ final class Approval extends Extension
                 default:
                     break;
             }
+            Ctx::$cache->delete("pending-count");
         }
     }
 
@@ -88,7 +90,9 @@ final class Approval extends Extension
     {
         if ($event->parent === "posts") {
             if (!Ctx::$user->is_anonymous()) {
-                $event->add_nav_link(search_link(['approved=no']), "Pending Approval", order: 60);
+                $count = $this->count_pending();
+                $h_count = $count > 0 ? " ($count)" : "";
+                $event->add_nav_link(search_link(['approved=no']), "Pending Approval$h_count", order: 60);
             }
         }
     }
@@ -97,7 +101,9 @@ final class Approval extends Extension
     public function onUserBlockBuilding(UserBlockBuildingEvent $event): void
     {
         if (!Ctx::$user->is_anonymous()) {
-            $event->add_link("Pending Approval", search_link(["approved=no"]), 60);
+            $count = $this->count_pending();
+            $h_count = $count > 0 ? " ($count)" : "";
+            $event->add_link("Pending Approval$h_count", search_link(["approved=no"]), 60);
         }
     }
 
@@ -157,22 +163,24 @@ final class Approval extends Extension
 
     public static function approve_image(int $image_id): void
     {
-        global $database;
+        $database = Ctx::$database;
 
         $database->execute(
             "UPDATE images SET approved = TRUE, approved_by_id = :approved_by_id WHERE id = :id AND approved = FALSE",
             ["approved_by_id" => Ctx::$user->id, "id" => $image_id]
         );
+        Ctx::$cache->delete("pending-count");
     }
 
     public static function disapprove_image(int $image_id): void
     {
-        global $database;
+        $database = Ctx::$database;
 
         $database->execute(
             "UPDATE images SET approved = FALSE, approved_by_id = NULL WHERE id = :id AND approved = TRUE",
             ["id" => $image_id]
         );
+        Ctx::$cache->delete("pending-count");
     }
 
     private function check_permissions(Post $image): bool
@@ -211,7 +219,7 @@ final class Approval extends Extension
     #[EventListener]
     public function onBulkActionBlockBuilding(BulkActionBlockBuildingEvent $event): void
     {
-        if (in_array("approved:no", $event->search_terms)) {
+        if (in_array("approved:no", $event->search_terms) || in_array("approved=no", $event->search_terms)) {
             $event->add_action("approve-post", "Approve", "a", permission: ApprovalPermission::APPROVE_IMAGE);
         } else {
             $event->add_action("disapprove-post", "Disapprove", permission: ApprovalPermission::APPROVE_IMAGE);
@@ -248,7 +256,7 @@ final class Approval extends Extension
     #[EventListener]
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
-        global $database;
+        $database = Ctx::$database;
 
         if ($this->get_version() < 1) {
             $database->execute("ALTER TABLE images ADD COLUMN approved BOOLEAN NOT NULL DEFAULT FALSE");
@@ -260,6 +268,28 @@ final class Approval extends Extension
         if ($this->get_version() < 2) {
             $database->standardise_boolean("images", "approved");
             $this->set_version(2);
+        }
+    }
+
+    public function count_pending(): int
+    {
+        // Admins can see all unapproved posts
+        if (Ctx::$user->can(ApprovalPermission::APPROVE_IMAGE)) {
+            return (int)cache_get_or_set(
+                "pending-count",
+                fn () => Ctx::$database->get_one("SELECT count(*) FROM images WHERE approved = FALSE"),
+                600
+            );
+        }
+        // Regular users can see their own unapproved posts
+        elseif (!Ctx::$user->is_anonymous()) {
+            return Ctx::$database->get_one(
+                "SELECT count(*) FROM images WHERE approved = FALSE AND owner_id = :approval_owner_id",
+                ["approval_owner_id" => Ctx::$user->id]
+            );
+        } else {
+            // this should never be called
+            return 0;
         }
     }
 }

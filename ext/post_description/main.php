@@ -36,7 +36,7 @@ final class PostDescription extends Extension
     #[EventListener]
     public function onPostInfoGet(PostInfoGetEvent $event): void
     {
-        global $database;
+        $database = Ctx::$database;
         $description = (string) $database->get_one(
             "SELECT description FROM image_descriptions WHERE image_id = :id",
             ["id" => $event->image->id]

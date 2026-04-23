@@ -169,8 +169,6 @@ final class CronUploader extends Extension
 
     private function display_documentation(): void
     {
-        global $database;
-
         $this->prep_root_dir();
 
         $queue_dir = $this->get_queue_dir();
@@ -180,7 +178,6 @@ final class CronUploader extends Extension
         $queue_dirinfo = Filesystem::scan_dir($queue_dir);
         $uploaded_dirinfo = Filesystem::scan_dir($uploaded_dir);
         $failed_dirinfo = Filesystem::scan_dir($failed_dir);
-
 
         $running = false;
         $lockfile = \Safe\fopen($this->get_lock_file()->str(), "w");
@@ -197,7 +194,7 @@ final class CronUploader extends Extension
         $logs = [];
         if (LogDatabaseInfo::is_enabled()) {
             /** @var array<array{date_sent: string, message: string}> $logs */
-            $logs = $database->get_all(
+            $logs = Ctx::$database->get_all(
                 "SELECT * FROM score_log WHERE section = :section ORDER BY date_sent DESC LIMIT 100",
                 ["section" => self::NAME]
             );
@@ -263,7 +260,7 @@ final class CronUploader extends Extension
      */
     public function process_upload(): bool
     {
-        global $database;
+        $database = Ctx::$database;
 
         $max_time = intval(ini_get('max_execution_time')) * .8;
 
@@ -307,7 +304,7 @@ final class CronUploader extends Extension
                 }
                 try {
                     $result = $database->with_savepoint(function () use ($img, $output_subdir) {
-                        Log::info(self::NAME, "Adding file: {$img[0]} - tags: {$img[2]}");
+                        Log::info(self::NAME, "Adding file: {$img[0] -> str()} - tags: {$img[2]}");
                         $result = $this->add_image($img[0], $img[1], $img[2]);
                         $this->move_uploaded($img[0], $img[1], $output_subdir, false);
                         return $result;
@@ -432,7 +429,7 @@ final class CronUploader extends Extension
                 $tags = Filesystem::path_to_tags(new Path($relativePath));
 
                 yield [
-                    0 => $fullpath,
+                    0 => new Path($fullpath),
                     1 => pathinfo($fullpath, PATHINFO_BASENAME),
                     2 => $tags
                 ];

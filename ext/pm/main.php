@@ -69,17 +69,7 @@ final class PM
     }
 
     /**
-     * @param array{
-     *     id: string|int,
-     *     from_id: string|int,
-     *     from_ip: string,
-     *     to_id: string|int,
-     *     subject: string,
-     *     message: string,
-     *     is_read: string|bool,
-     *     sent_date: string,
-     *     archived_by: string|int
-     * } $row
+     * @param array{id: string|int, from_id: string|int, from_ip: string, to_id: string|int, subject: string, message: string, is_read: string|bool, sent_date: string, archived_by: string|int} $row
      */
     public static function from_row(array $row): PM
     {
@@ -317,6 +307,7 @@ final class PrivMsg extends Extension
         $page = Ctx::$page;
         if ($event->page_matches("pm/read/{pm_id}", permission: PrivMsgPermission::READ_PM)) {
             $pm_id = $event->get_iarg('pm_id');
+            /** @var array{id: string|int, from_id: string|int, from_ip: string, to_id: string|int, subject: string, message: string, is_read: string|bool, sent_date: string}|null $pm */
             $pm = $database->get_row("SELECT * FROM private_message WHERE id = :id", ["id" => $pm_id]);
             if (is_null($pm)) {
                 throw new ObjectNotFound("No such PM");
