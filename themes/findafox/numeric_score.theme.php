@@ -61,15 +61,15 @@ class CustomNumericScoreTheme extends NumericScoreTheme
                 ["title" => $title],
                 SHM_SIMPLE_FORM(
                     make_link($url),
-                    SHM_SUBMIT("♥", ["class" => "$class vote-button"])
+                    SHM_SUBMIT("♥\u{FE0E}", ["class" => "$class vote-button"])
                 )
             );
         }
         $html = DIV(
             ["class" => "numeric-score", "style" => "display:flex; flex-direction:row; align-items:center"],
-            DIV($vote_form($image->id, 1, "⬆")),
+            DIV($vote_form($image->id, 1, "⬆\u{FE0E}")),
             DIV(["class" => "current-score $score_class", "title" => "Current score", "my_vote" => $i_vote], B($i_score)),
-            DIV($vote_form($image->id, -1, "⬇")),
+            DIV($vote_form($image->id, -1, "⬇\u{FE0E}")),
             $fav,
             $voters,
         );
