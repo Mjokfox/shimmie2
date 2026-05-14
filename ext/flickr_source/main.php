@@ -88,12 +88,16 @@ class FlickrSource extends Extension
                 }
             }
             $source = $this->getFlickrUrl($matches[1]);
-            if ($source !== "https://flickr.com/photos///") {
-                $func($file, $source);
-                $passed++;
-            } else {
+            if ($source === "https://flickr.com/photos///") {
+                $source = 'Unknown: broken flickr link';
                 $failed[] = $file["id"];
+            } elseif (str_starts_with($source, "https://identity")) {
+                $source = 'Unknown: private flickr link';
+                $failed[] = $file["id"];
+            } else {
+                $passed++;
             }
+            $func($file, $source);
         }
         return ["passed" => $passed, "failed" => $failed, "not" => $not];
     }
