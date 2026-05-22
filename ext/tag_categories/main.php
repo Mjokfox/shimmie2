@@ -8,7 +8,10 @@ use MicroHTML\HTMLElement;
 
 use function MicroHTML\SPAN;
 
-/** @extends Extension<TagCategoriesTheme> */
+/**
+ * @phpstan-type TagCategoryRow array{category: string, upper_group: string, lower_group: string, color: string, upload_page_type: ?int, upload_page_priority: ?int}
+ * @extends Extension<TagCategoriesTheme>
+ */
 final class TagCategories extends Extension
 {
     public const KEY = "tag_categories";
@@ -83,8 +86,8 @@ final class TagCategories extends Extension
     public function onPageRequest(PageRequestEvent $event): void
     {
         if ($event->page_matches("tags/categories", method: "GET")) {
-            /** @var array<array{category: string, upper_group: string, lower_group: string, color: string, upload_page_type: ?int, upload_page_priority: ?int}> $tcs */
-            $tcs = Ctx::$database->get_all('SELECT * FROM image_tag_categories ORDER BY upload_page_priority IS NULL, upload_page_priority DESC;');
+            /** @var array<TagCategoryRow> $tcs */
+            $tcs = self::get_all_categories();
             $this->theme->show_tag_categories($tcs);
         } elseif ($event->page_matches("tags/categories", method: "POST", permission: TagCategoriesPermission::EDIT_TAG_CATEGORIES)) {
             $this->page_update();
@@ -113,19 +116,18 @@ final class TagCategories extends Extension
     }
 
     /**
-     * @return array<string, array{category: string, upper_group: string, lower_group: string, color: string, upload_page_type: ?int, upload_page_priority: ?int}>
+     * @return array<string, TagCategoryRow>
      */
     public static function getKeyedDict(): array
     {
-        $database = Ctx::$database;
         static $tc_keyed_dict = null;
 
         if (is_null($tc_keyed_dict)) {
             $tc_keyed_dict = [];
-            $tc_dict = $database->get_all('SELECT * FROM image_tag_categories');
+            $tc_dict = self::get_all_categories();
 
             foreach ($tc_dict as $row) {
-                $tc_keyed_dict[(string)$row['category']] = $row;
+                $tc_keyed_dict[$row['category']] = $row;
             }
         }
 
@@ -295,5 +297,16 @@ final class TagCategories extends Extension
                 Log::info("tag_categories", "Deleted category: ".$_POST['tc_category'], "Deleted category: ".$_POST['tc_category']);
             }
         }
+    }
+
+    /**
+     * Get all tag categories
+     * @return array<TagCategoryRow> Array of category records with all fields
+     */
+    public static function get_all_categories(): array
+    {
+        /** @var array<TagCategoryRow> $result */
+        $result = Ctx::$database->get_all('SELECT * FROM image_tag_categories ORDER BY upload_page_priority IS NULL, upload_page_priority DESC;');
+        return $result;
     }
 }

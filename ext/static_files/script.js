@@ -15,38 +15,118 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     /** time-ago dates **/
-    $.timeago.settings.cutoff = 365 * 24 * 60 * 60 * 1000; // Display original dates older than 1 year
-    $("time").timeago();
+    function updateTimeAgo() {
+        const CUTOFF_MS = 365 * 24 * 60 * 60 * 1000; // 1 year in milliseconds
+        const now = new Date();
+
+        document.querySelectorAll("time[datetime]").forEach((timeElement) => {
+            const datetime = timeElement.getAttribute("datetime");
+            if (!datetime) return;
+
+            const date = new Date(datetime);
+            const diff = now - date;
+
+            // If older than 1 year, keep the original text
+            if (diff > CUTOFF_MS) {
+                return;
+            }
+
+            // Calculate relative time
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+            const weeks = Math.floor(days / 7);
+            const months = Math.floor(days / 30);
+
+            let timeAgoText;
+            if (seconds < 45) {
+                timeAgoText = "a few seconds ago";
+            } else if (seconds < 90) {
+                timeAgoText = "a minute ago";
+            } else if (minutes < 45) {
+                timeAgoText = minutes + " minutes ago";
+            } else if (minutes < 90) {
+                timeAgoText = "an hour ago";
+            } else if (hours < 24) {
+                timeAgoText = hours + " hours ago";
+            } else if (hours < 48) {
+                timeAgoText = "a day ago";
+            } else if (days < 7) {
+                timeAgoText = days + " days ago";
+            } else if (days < 14) {
+                timeAgoText = "a week ago";
+            } else if (days < 30) {
+                timeAgoText = weeks + " weeks ago";
+            } else if (days < 60) {
+                timeAgoText = "a month ago";
+            } else {
+                timeAgoText = months + " months ago";
+            }
+
+            timeElement.textContent = timeAgoText;
+        });
+    }
+    updateTimeAgo();
+    setInterval(updateTimeAgo, 60000);
 
     /** sidebar toggle **/
-    let sidebar_hidden = [];
+    let toggled_elements = [];
     try {
-        sidebar_hidden = (ui_cookie_get("sidebar-hidden") || "").split("|");
-        for (let i = 0; i < sidebar_hidden.length; i++) {
-            if (sidebar_hidden[i].length > 0) {
-                document
-                    .querySelectorAll(sidebar_hidden[i] + " .blockbody")
-                    .forEach((e) => {
-                        e.style.display = "none";
-                    });
-            }
+        const cookieValue = ui_cookie_get("toggled-elements");
+        if (cookieValue) {
+            toggled_elements = JSON.parse(cookieValue);
         }
+        toggled_elements.forEach((selector) => {
+            document.querySelectorAll(selector).forEach((e) => {
+                e.style.display = "none";
+            });
+        });
     } catch (err) {}
-    $(".shm-toggler").each(function (idx, elm) {
-        let tid = $(elm).data("toggle-sel");
-        let tob = $(tid + " .blockbody");
-        $(elm).click(function (e) {
-            tob.toggle();
-            if (sidebar_hidden.indexOf(tid) === -1) {
-                sidebar_hidden.push(tid);
+    document.querySelectorAll(".shm-toggler").forEach(function (elm) {
+        let tid = elm.dataset.toggleSel;
+        let tob = document.querySelector(tid);
+        elm.addEventListener("click", function (e) {
+            // Vanilla JS slideToggle equivalent
+            if (tob.style.display === "none") {
+                // Show the element
+                tob.style.display = "";
+                tob.style.overflow = "hidden";
+                tob.style.height = "0";
+                tob.style.transition = "height 0.4s ease";
+                const height = tob.scrollHeight;
+                requestAnimationFrame(() => {
+                    tob.style.height = height + "px";
+                });
+                setTimeout(() => {
+                    tob.style.height = "";
+                    tob.style.overflow = "";
+                    tob.style.transition = "";
+                }, 400);
             } else {
-                for (let i = 0; i < sidebar_hidden.length; i++) {
-                    if (sidebar_hidden[i] === tid) {
-                        sidebar_hidden.splice(i, 1);
-                    }
-                }
+                // Hide the element
+                tob.style.overflow = "hidden";
+                tob.style.height = tob.scrollHeight + "px";
+                tob.style.transition = "height 0.4s ease";
+                // Force a reflow so the browser registers the current height before animating
+                tob.offsetHeight;
+                requestAnimationFrame(() => {
+                    tob.style.height = "0";
+                });
+                setTimeout(() => {
+                    tob.style.display = "none";
+                    tob.style.height = "";
+                    tob.style.overflow = "";
+                    tob.style.transition = "";
+                }, 400);
             }
-            ui_cookie_set("sidebar-hidden", sidebar_hidden.join("|"));
+            const index = toggled_elements.indexOf(tid);
+            if (index === -1) {
+                toggled_elements.push(tid);
+            } else {
+                toggled_elements.splice(index, 1);
+            }
+            ui_cookie_set("toggled-elements", JSON.stringify(toggled_elements));
         });
     });
 

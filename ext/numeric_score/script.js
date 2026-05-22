@@ -1,6 +1,10 @@
-score_classes = "score-zero score-pos score-neg";
+score_classes = ["score-zero", "score-pos", "score-neg"];
 function get_score_class(s) {
     return s == 0 ? "score-zero" : (s > 0 ? "score-pos" : "score-neg")
+}
+
+function remove_classes(el, classes) {
+    classes.forEach(c => el.classList.remove(c));
 }
 
 async function update_vote(imageID,score,score_without,auth_token) {
@@ -25,16 +29,17 @@ async function update_vote(imageID,score,score_without,auth_token) {
     }).catch(e => {console.error(e)})
 
     if (Math.abs(res) == 1 || res == "0") {
-        const sc = get_score_class(res)
-        $(".vote-button").removeClass(score_classes);
-        $(`.vote-button[score=${res}]`).addClass(sc);
+        const sc = get_score_class(res);
+        document.querySelectorAll(".vote-button").forEach(el => remove_classes(el, score_classes));
+        document.querySelector(`.vote-button[score="${res}"]`)?.classList.add(sc);
 
         const new_score = Number(score_without)+Number(res);
-        const tsc = get_score_class(new_score)
-        $display = $(".current-score b").text(new_score);
-        $display = $(".current-score");
-        $display.removeClass(score_classes);
-        $display.addClass(tsc);
+        const tsc = get_score_class(new_score);
+
+        const current = document.querySelector(".current-score");
+        current.firstElementChild.textContent = new_score;
+        remove_classes(current, score_classes);
+        current.classList.add(tsc);
     }
 }
 

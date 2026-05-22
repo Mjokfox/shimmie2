@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{BR, SPAN, emptyHTML, rawHTML};
+use function MicroHTML\{A, BR, DIV, SPAN, emptyHTML};
 
 /**
  * @phpstan-type BlotterEntry array{id:int,entry_date:string,entry_text:string,important:bool}
@@ -37,88 +37,39 @@ class CustomBlotterTheme extends BlotterTheme
      */
     public function display_blotter(array $entries): void
     {
-        $html = $this->get_html_for_blotter($entries);
-        Ctx::$page->add_block(new Block(null, rawHTML($html), "main", 0, "blotter", false));
-    }
-
-    /**
-     * @param BlotterEntry[] $entries
-     */
-    private function get_html_for_blotter(array $entries): string
-    {
-        $count = count($entries);
+        $count = \count($entries);
         if ($count === 1) {
             $entry = $entries[0];
+            $id = $entry['id'];
+            $removed = Ctx::$page->get_cookie("blotter-removed");
+            if ((int)$removed >= $id) {
+                return;
+            }
+
             $messy_date = $entry['entry_date'];
             $clean_date = date("m/d/y", \Safe\strtotime($messy_date));
-            $cleaner_time = SHM_DATE($messy_date);
-            $out_text = "Server news: {$clean_date} ($cleaner_time)";
-            $in_text = format_text($entry['entry_text']);
-            $id = $entry['id'];
-            $html = "
-            <div class='blotter' data-id='$id' style='display:none;'>
-                <a href='#' id='blotter2-toggle' class='shm-blotter2-toggle' style='margin-left:auto;'>
-                    <div id='blotter1' class='shm-blotter1'>
-                        <span>$out_text Click to Show/Hide</span>
-                    </div>
-                    <div id='blotter2' class='shm-blotter2' style='display:none;'>$in_text</div>
-                </a>
-                <span class='shm-blotter-tools'>
-                    <a href='".make_link("blotter/list")."'>Show All</a>
-                    <a href='#' id='blotter-hide'>Dismiss</a>
-                </span>
-            </div>
-		    ";
+            $clean_time = SHM_DATE($messy_date);
+            $html = DIV(
+                ["class" => "blotter", "data-id" => $id],
+                DIV(
+                    ["class" => "shm-toggler blotter-container", "data-toggle-sel" => ".blotter-content"],
+                    SPAN(
+                        ["class" => "blotter-title"],
+                        "Server news {$clean_date} (",
+                        $clean_time,
+                        ") Click to Show/Hide"
+                    ),
+                    DIV(["class" => "blotter-content", "style" => "display: none;"], format_text($entry['entry_text']))
+                ),
+                DIV(
+                    ["class" => "blotter-tools"],
+                    A(["href" => make_link("blotter/list")], "Show All"),
+                    A(["href" => "#", "id" => "blotter-dismiss"], "Dismiss")
+                ),
+            );
+            Ctx::$page->add_block(new Block(null, $html, "main", 0, "blotter", false));
         } else {
-            $i_color = Ctx::$config->get(BlotterConfig::COLOR);
-            $position = Ctx::$config->get(BlotterConfig::POSITION);
-            $entries_list = "";
-            foreach ($entries as $entry) {
-                /**
-                 * Blotter entries
-                 */
-                // Reset variables:
-                $i_open = "";
-                $i_close = "";
-                //$id = $entry['id'];
-                $messy_date = $entry['entry_date'];
-                $clean_date = date("m/d/y", \Safe\strtotime($messy_date));
-                $entry_text = $entry['entry_text'];
-                if ($entry['important']) {
-                    $i_open = "<span style='color: #$i_color'>";
-                    $i_close = "</span>";
-                }
-                $entries_list .= "<li>{$i_open}{$clean_date} - {$entry_text}{$i_close}</li>";
-            }
-
-            $pos_break = "";
-            $pos_align = "text-align: right; position: absolute; right: 0px;";
-
-            if ($position === "left") {
-                $pos_break = "<br />";
-                $pos_align = "";
-            }
-
-            if ($count === 0) {
-                $out_text = "No blotter entries yet.";
-                $in_text = "Empty.";
-            } else {
-                $clean_date = date("m/d/y", \Safe\strtotime($entries[0]['entry_date']));
-                $out_text = "Blotter updated: {$clean_date}";
-                $in_text = "<ul>$entries_list</ul>";
-            }
-            $html = "
-			<div id='blotter1' class='shm-blotter1'>
-				<span>$out_text</span>
-				{$pos_break}
-				<span style='{$pos_align}'>
-					<a href='#' id='blotter2-toggle' class='shm-blotter2-toggle'>Show/Hide</a>
-					<a href='".make_link("blotter/list")."'>Show All</a>
-				</span>
-			</div>
-			<div id='blotter2' class='shm-blotter2'>$in_text</div>
-		";
+            parent::display_blotter($entries);
         }
-        return $html;
     }
 }

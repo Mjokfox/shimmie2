@@ -463,7 +463,7 @@ div#paginator a:hover {
 
 .tagcategoryblock td:last-child span {
 	padding: 0.24rem 0.7rem 0.5rem 0;
-	display: block;
+	/* display: block; */
 }
 
 .tagcategoryblock button {
@@ -523,19 +523,6 @@ ul.flat-list li {
 
 ul.flat-list li a {
 	font-weight: normal;
-}
-
-#blotter1 {
-	position: relative;
-	margin-right: 16px;
-	margin-left: 16px;
-	font-size: 90%;
-}
-
-#blotter2 {
-	margin-right: 16px;
-	margin-left: 16px;
-	font-size: 90%;
 }
 
 #flash {
@@ -1103,22 +1090,6 @@ INPUT.autocomplete_tags {
 	background-color: #8881;
 }
 
-#blotter .blockbody div {
-	font-size: 1em;
-	display: flex;
-	justify-content: center;
-	background-color: var(--header-selected);
-	padding: 2px;
-}
-
-.blotter span:has(a) {
-	padding: 2px;
-}
-
-#blotter2-toggle:visited, #blotter2-toggle {
-	color: var(--text);
-}
-
 .pm-edit {
 	margin-left: .6rem;
 	padding: 0 .3rem;
@@ -1158,12 +1129,25 @@ FORM.full-width.search-bar input {
     width:3em
 }
 
-.shm-blotter-tools {
-	margin-left:auto;
+.blotter {
+	display: flex;
+	background-color: var(--header-selected);
+	padding: 4px;
 }
 
-.shm-blotter-tools A {
-	margin-left:1em;
+.blotter-container {
+	cursor: pointer;
+	flex-grow: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.blotter-tools {
+	margin-left:auto;
+	A {
+		margin-left: 1em;
+	}
 }
 
 table.pm-text {

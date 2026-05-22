@@ -1,19 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
-	const id = $(".blotter").attr("data-id");
-	if (id){
-		const cookie = ui_cookie_get("blotter-removed");
-		if (cookie == null || id > cookie){
-			$(".blotter").show()
-			$(".shm-blotter2-toggle").click(function() {
-				$(".shm-blotter2").slideToggle("slow");
-			});
-		
-			$("#blotter-hide").click(function() {
-				ui_cookie_set("blotter-removed", id);
-				$("#blotter, .blotter").remove()
-			})
-		} else {
-			$("#blotter, .blotter").remove()
-		}
+	const id = document.body.querySelector(".blotter")?.dataset.id;
+	const dismiss = document.getElementById("blotter-dismiss");
+	if (id && dismiss){
+		dismiss.addEventListener("click", () => {
+			shm_cookie_set("blotter-removed", id);
+			const blotter = document.getElementById("blotter");
+			if (blotter) blotter.remove();
+		})
 	}
 });

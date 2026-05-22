@@ -48,26 +48,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function hide_dupe(id) {
     hidden_dupes.push(id);
-    $("#duplicate_img").remove();
+    document.getElementById("duplicate_img")?.remove();
 }
 
 function make_duplicate_image(dup,id){
-    $("#duplicate_img").remove();
-    const $img = $("<img>", {"src":dup["link"]});
-    const $infob = $("<b>", {"text":`${dup["width"]} x ${dup["height"]}, ${fileSize(dup["filesize"])}`});
+    document.getElementById("duplicate_img")?.remove();
+    const img = document.createElement("IMG");
+    img.src = dup["link"];
+    const infob = document.createElement("B");
+    infob.textContent = `${dup["width"]} x ${dup["height"]}, ${fileSize(dup["filesize"])}`;
     var html = "";
     const hide_btn = `<b onclick="hide_dupe('${id}');">Hide</b>`
     if (dup["auto_dupe"]){
         html = `<span class="markdown">This image might already exist on the site, please check if yours is higher quality.<br> If yours is higher quality, please report the <a target="_blank" href="/post/view/${dup["id"]}">current post</a> with your source link. ${hide_btn}</span>`
-        $img.addClass("auto_dupe");
+        img.classList.add("auto_dupe");
     } else{
         html = `<span class="markdown">Closest visually similar <a target="_blank" href="/post/view/${dup["id"]}">image on this site</a>, please check if it is not the same. ${hide_btn}</span>`
-        $img.addClass("no_auto_dupe");
+        img.classList.add("no_auto_dupe");
     }
-    const $div = $("<div>", {id: "duplicate_img", "class": "media-preview", "html": html});
-    $div.append($img);
-    $div.append($infob);
-    $("#mediaPreview").append($div)
+    const div = document.createElement("DIV");
+    div.id = "duplicate_img";
+    div.classList.add("media-preview");
+    div.innerHTML = html;
+    div.append(img, infob);
+    document.getElementById("mediaPreview")?.append(div);
 }
 
 const used_array = [];

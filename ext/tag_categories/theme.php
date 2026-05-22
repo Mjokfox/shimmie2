@@ -8,10 +8,13 @@ use function MicroHTML\{BUTTON, DIV, H2, INPUT, OPTION, P, SELECT, SPAN, TABLE, 
 
 use MicroHTML\HTMLElement;
 
+/**
+ * @phpstan-import-type TagCategoryRow from TagCategories
+ */
 class TagCategoriesTheme extends Themelet
 {
     /**
-     * @param array<array{category: string, upper_group: string, lower_group: string, color: string, upload_page_type: ?int, upload_page_priority: ?int}> $tc_dict
+     * @param array<TagCategoryRow> $tc_dict
      */
     public function show_tag_categories(array $tc_dict): void
     {
@@ -41,7 +44,7 @@ class TagCategoriesTheme extends Themelet
             $upload_page_priority = $row['upload_page_priority'] ?? 0;
             $type_map = ["hidden", "half width", "full width", "single column", "dropdown", "single row", "single row (half width)", "info line"];
             $html[] = DIV(
-                ["class" => "tagcategoryblock tagcategorycategories"],
+                ["class" => "tagcategoryblock tc-viewing"],
                 SHM_SIMPLE_FORM(
                     make_link("tags/categories"),
                     TABLE(
@@ -55,31 +58,31 @@ class TagCategoriesTheme extends Themelet
                         TR(
                             TD("List - Group"),
                             TD(
-                                SPAN($upper_group),
-                                INPUT(["type" => "text", "name" => "tc_up_group", "style" => "display:none", "value" => $upper_group])
+                                SPAN(["class" => "tc-view"], $upper_group),
+                                INPUT(["type" => "text", "name" => "tc_up_group", "class" => "tc-edit", "value" => $upper_group])
                             )
                         ),
                         TR(
                             TD("Upload - Group"),
                             TD(
-                                SPAN($lower_group),
-                                INPUT(["type" => "text", "name" => "tc_lo_group", "style" => "display:none", "value" => $lower_group])
+                                SPAN(["class" => "tc-view"], $lower_group),
+                                INPUT(["type" => "text", "name" => "tc_lo_group", "class" => "tc-edit", "value" => $lower_group])
                             )
                         ),
                         TR(
                             TD("Color"),
                             TD(
-                                SPAN($tag_color),
-                                DIV(["class" => "tc_colorswatch", "style" => "background-color:$tag_color"]),
-                                INPUT(["type" => "color", "name" => "tc_color", "style" => "display:none", "value" => $tag_color])
+                                SPAN(["class" => "tc-view"], $tag_color),
+                                DIV(["class" => "tc_colorswatch tc-view", "style" => "background-color:$tag_color"]),
+                                INPUT(["type" => "color", "name" => "tc_color", "class" => "tc-edit", "value" => $tag_color])
                             )
                         ),
                         TR(
                             TD("Upload page"),
                             TD(
-                                SPAN($type_map[$upload_page_type]),
+                                SPAN(["class" => "tc-view"], $type_map[$upload_page_type]),
                                 SELECT(
-                                    ["name" => "tc_up_type", "style" => "display:none;"],
+                                    ["name" => "tc_up_type", "class" => "tc-edit"],
                                     OPTION(["value" => "0", ($upload_page_type === 0 ? "selected" : "") => true], "hidden"),
                                     OPTION(["value" => "1", ($upload_page_type === 1 ? "selected" : "") => true], "half width"),
                                     OPTION(["value" => "2", ($upload_page_type === 2 ? "selected" : "") => true], "full width"),
@@ -94,50 +97,39 @@ class TagCategoriesTheme extends Themelet
                         TR(
                             TD("Priority"),
                             TD(
-                                SPAN($upload_page_priority),
-                                INPUT(["type" => "number", "name" => "tc_up_prio", "style" => "display:none;", "value" => $upload_page_priority]),
+                                SPAN(["class" => "tc-view"], $upload_page_priority),
+                                INPUT(["type" => "number", "name" => "tc_up_prio", "class" => "tc-edit", "value" => $upload_page_priority]),
                             ),
                         ),
                         TR(
                             TD("tags"),
                             TD(
                                 TEXTAREA(
-                                    ["type" => "text", "name" => "tc_tag_list", "class" => "autocomplete_tags", "placeholder" => "tagme", "rows" => "5.5", "cols" => "15", "readonly" => true],
+                                    ["type" => "text", "name" => "tc_tag_list", "class" => "autocomplete_tags", "placeholder" => "tagme", "rows" => "5.5", "cols" => "15"],
                                     $tags
                                 ),
                             ),
                         ),
                     ),
                     BUTTON([
-                        "class" => "tc_edit",
+                        "class" => "tc-view",
                         "type" => "button",
-                        "onclick" => "
-                            $('.tagcategorycategories:nth-of-type($tc_block_index) tr + tr td span').hide();
-                            $('.tagcategorycategories:nth-of-type($tc_block_index) td input').show();
-                            $('.tagcategorycategories:nth-of-type($tc_block_index) td select').show();
-                            $('.tagcategorycategories:nth-of-type($tc_block_index) .tc_edit').hide();
-                            $('.tagcategorycategories:nth-of-type($tc_block_index) .tc_colorswatch').hide();
-                            $('.tagcategorycategories:nth-of-type($tc_block_index) .tc_submit').show();
-                            $('.tagcategorycategories:nth-of-type($tc_block_index) textarea').prop('readonly', false);
-                        "
+                        "onclick" => "this.closest('.tagcategoryblock').className = 'tagcategoryblock tc-editing';"
                     ], "Edit"),
                     BUTTON([
-                        "class" => "tc_submit",
+                        "class" => "tc-edit",
                         "type" => "submit",
-                        "style" => "display:none;",
                         "name" => "tc_status",
                         "value" => "edit"
                     ], "Submit"),
                     BUTTON([
-                        "class" => "tc_submit",
+                        "class" => "tc-edit",
                         "type" => "button",
-                        "style" => "display:none;",
-                        "onclick" => "$('.tagcategoryblock:nth-of-type($tc_block_index) .tc_delete').show(); $(this).hide();",
+                        "onclick" => "this.closest('.tagcategoryblock').className = 'tagcategoryblock tc-deleting';",
                     ], "Delete"),
                     BUTTON([
-                        "class" => "tc_delete",
+                        "class" => "tc-delete",
                         "type" => "submit",
-                        "style" => "display:none;",
                         "name" => "tc_status",
                         "value" => "delete",
                     ], "Really, really delete"),
