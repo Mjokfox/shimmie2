@@ -20,6 +20,7 @@ class CustomNumericScoreTheme extends NumericScoreTheme
                 SHM_SUBMIT($text)
             );
         };
+        $votes_url_json = json_encode(make_link("numeric_score/votes/$image->id"));
         $voters = null;
         if (Ctx::$user->can(NumericScorePermission::EDIT_OTHER_VOTE)) {
             $voters = emptyHTML(
@@ -29,7 +30,7 @@ class CustomNumericScoreTheme extends NumericScoreTheme
                     A(
                         [
                             "href" => make_link("numeric_score/votes/$image->id"),
-                            "onclick" => '$("#votes-content").load("'.make_link("numeric_score/votes/$image->id").'"); return false;',
+                            "onclick" => 'fetch(' . $votes_url_json . ').then(r => r.text()).then(html => document.getElementById("votes-content").innerHTML = html); return false;',
                         ],
                         "See All Votes"
                     )

@@ -25,7 +25,7 @@ class CustomhomeTheme extends HomeTheme
             )
         );
         if (ReverseImageInfo::is_enabled() && Ctx::$config->get(ReverseImageConfig::SEARCH_ENABLE) && Ctx::$user->get_config()->get(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
-            $search_html->appendChild(A(["href" => "#", "onclick" => "$(\".search-bar\").toggle();"], "Or describe an image"));
+            $search_html->appendChild(A(["href" => "#", "onclick" => "toggle_elements('.search-bar')"], "Or describe an image"));
             $search_html = emptyHTML(
                 $search_html,
                 DIV(
@@ -39,7 +39,7 @@ class CustomhomeTheme extends HomeTheme
                             SHM_SUBMIT("Search")
                         ]
                     ),
-                    A(["href" => "#", "onclick" => "$(\".search-bar\").toggle();"], "Back to tag search")
+                    A(["href" => "#", "onclick" => "toggle_elements('.search-bar')"], "Back to tag search")
                 )
             );
         }

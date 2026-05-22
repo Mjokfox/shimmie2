@@ -68,3 +68,14 @@ function forum_edit_box(e, thread_id, post_id) {
         e.parentNode.appendChild(editBox);
     }
 }
+
+function toggle_elements(selector) {
+    document.querySelectorAll(selector).forEach(el => {
+        if (el.style.display == 'none' || getComputedStyle(el).display == 'none') {
+            el.style.display = 'block';
+        }
+        else {
+            el.style.display = 'none';
+        }  
+    })
+}

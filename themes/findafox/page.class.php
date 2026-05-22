@@ -82,7 +82,7 @@ class customPage extends Page
                         DIV(
                             ["class" => "mobile-burger",],
                             A([
-                                "onclick" => '$(".flat-list").toggle();$(this).text($(this).text() === "≡" ? "×" : "≡");'
+                                "onclick" => 'toggle_elements(".flat-list");this.textContent=(this.textContent === "≡" ? "×" : "≡");'
                             ], "≡")
                         )
                     ),

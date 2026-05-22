@@ -195,7 +195,7 @@ class WikiTheme extends Themelet
                     INPUT(["type" => "hidden", "name" => "revision", "value" => $page->revision]),
                     BUTTON([
                         "type" => "button",
-                        "onclick" => "$('#wiki-delete').show(); $(this).hide();",
+                        "onclick" => "document.getElementById('wiki-delete').style.display='';this.style.display='none';",
                     ], "Delete current revision"),
                     BUTTON([
                         "id" => "wiki-delete",

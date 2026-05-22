@@ -51,7 +51,7 @@ class PrivMsgTheme extends Themelet
                         SHM_SIMPLE_FORM(
                             make_link("pm/delete"),
                             INPUT(["type" => "hidden", "name" => "pm_id", "value" => $pm->id]),
-                            INPUT(["id" => "del-{$pm->id}", "onclick" => "$('#del-{$pm->id}').hide();$('#con-{$pm->id}').show();", "type" => "button", "value" => "Delete"]),
+                            INPUT(["id" => "del-{$pm->id}", "onclick" => "document.getElementById('del-{$pm->id}').style.display='none';document.getElementById('con-{$pm->id}').style.display='';", "type" => "button", "value" => "Delete"]),
                             SHM_SUBMIT("This will also delete it for the other user, confirm?", ["id" => "con-{$pm->id}", "style" => "display:none;"])
                         )
                     )
