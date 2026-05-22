@@ -20,7 +20,7 @@ class CustomNumericScoreTheme extends NumericScoreTheme
                 SHM_SUBMIT($text)
             );
         };
-        $votes_url_json = json_encode(make_link("numeric_score/votes/$image->id"));
+        $votes_url_json = json_encode(make_link("numeric_score/votes/$image->id")->__toString());
         $voters = null;
         if (Ctx::$user->can(NumericScorePermission::EDIT_OTHER_VOTE)) {
             $voters = emptyHTML(
