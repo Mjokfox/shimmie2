@@ -7,7 +7,11 @@ namespace Shimmie2;
 use Jenssegers\ImageHash\ImageHash;
 use Jenssegers\ImageHash\Implementations\{AverageHash, BlockHash, DifferenceHash, PerceptualHash};
 
-use function MicroHTML\{B, INPUT, TABLE, TD, TR, emptyHTML};
+use function MicroHTML\{B, BUTTON, INPUT, TABLE, TD, TR, emptyHTML};
+
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\{InputArgument, InputInterface};
+use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * @phpstan-type PhashArr array{average:?string,difference:?string,perceptual:?string,blockhash:?string}
@@ -98,7 +102,7 @@ class DuplicateDetector extends Extension
             "populated: $current/$all",
             SHM_SIMPLE_FORM(
                 make_link("admin/clear_phashes"),
-                SHM_SUBMIT('Clear all phashes'),
+                BUTTON(['type' => 'button', 'onclick' => 'if(window.confirm("Are you sure you want to delete all phashes"))this.form.submit()'], 'Clear all phashes')
             )
         );
         Ctx::$page->add_block(new Block("Duplicate detector", $html));
@@ -110,20 +114,7 @@ class DuplicateDetector extends Extension
         switch ($event->action) {
             case "fill_phashes":
                 $start_time = ftime();
-                $query = "SELECT a.id, a.hash
-                FROM images a
-                LEFT JOIN image_phashes b
-                    ON a.id = b.image_id
-                WHERE b.image_id IS NULL
-                AND a.image = TRUE
-                AND a.id > :id
-                ORDER BY a.id ASC
-                LIMIT :limit;";
-                $images = Ctx::$database->get_all($query, ["id" => $event->params['start_id'] ?: "0","limit" => $event->params['limit'] ?: "0"]);
-                foreach ($images as $image) {
-                    $phashes = $this->generate_phashes($_SERVER['DOCUMENT_ROOT'] ."/" . Filesystem::warehouse_path(Post::MEDIA_DIR, $image["hash"])->str());
-                    $this->add_phash_to_db($image["id"], $phashes);
-                }
+                $this->fill_phashes((int)$event->params['start_id'], (int)$event->params['limit']);
                 $exec_time = round(ftime() - $start_time, 2);
                 $message = "Added image features to the database for {$event->params['limit']} images in $exec_time seconds";
                 Log::info("admin", $message, $message);
@@ -134,6 +125,23 @@ class DuplicateDetector extends Extension
                 Log::info("admin", $message, $message);
                 break;
         }
+    }
+
+    #[EventListener]
+    public function onCliGen(CliGenEvent $event): void
+    {
+        $event->app->register('fill_image_phashes')
+            ->addArgument("start_id", InputArgument::OPTIONAL, default: 0)
+            ->addArgument("limit", InputArgument::OPTIONAL, default: 100)
+            ->setDescription('Generate image phashes')
+            ->setCode(function (InputInterface $input, OutputInterface $output): int {
+                $_SERVER['DOCUMENT_ROOT'] = getcwd();
+                $start_time = ftime();
+                $this->fill_phashes($input->getArgument('start_id'), $input->getArgument('limit'));
+                $exec_time = round(ftime() - $start_time, 2);
+                $output->write("Took $exec_time seconds");
+                return Command::SUCCESS;
+            });
     }
 
     #[EventListener]
@@ -184,6 +192,24 @@ class DuplicateDetector extends Extension
         if ($distance <= Ctx::$config->get(DuplicateDetectorConfig::HAMMING_DISTANCE_THRESHOLD)) {
             $event->is_duplicate = true;
             $event->stop_processing = true;
+        }
+    }
+
+    private function fill_phashes(int|string $start_id = 0, int|string $limit = 100): void
+    {
+        $query = "SELECT a.id, a.hash
+        FROM images a
+        LEFT JOIN image_phashes b
+            ON a.id = b.image_id
+        WHERE b.image_id IS NULL
+        AND a.image = TRUE
+        AND a.id > :id
+        ORDER BY a.id ASC
+        LIMIT :limit;";
+        $images = Ctx::$database->get_all($query, ["id" => $start_id, "limit" => $limit]);
+        foreach ($images as $image) {
+            $phashes = $this->generate_phashes($_SERVER['DOCUMENT_ROOT'] ."/" . Filesystem::warehouse_path(Post::MEDIA_DIR, $image["hash"])->str());
+            $this->add_phash_to_db($image["id"], $phashes);
         }
     }
 
