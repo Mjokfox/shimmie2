@@ -242,8 +242,7 @@ final class Upload extends Extension
                 throw new ServerError("Can't upload images: disk nearly full");
             }
             $this->theme->display_page();
-        }
-        if ($event->page_matches("upload", method: "POST", permission: ImagePermission::CREATE_IMAGE)) {
+        } elseif ($event->page_matches("upload", method: "POST", permission: ImagePermission::CREATE_IMAGE)) {
             if ($this->is_full) {
                 throw new ServerError("Can't upload images: disk nearly full");
             }
@@ -262,7 +261,7 @@ final class Upload extends Extension
             }
 
             $urls = array_filter($event->POST->toArray(), function ($value, $key) {
-                return str_starts_with($key, "url") && is_string($value) && strlen($value) > 0;
+                return str_starts_with($key, "url") && \is_string($value) && \strlen($value) > 0;
             }, ARRAY_FILTER_USE_BOTH);
             foreach ($urls as $name => $value) {
                 $slot = int_escape(substr($name, 3));
@@ -270,16 +269,49 @@ final class Upload extends Extension
             }
 
             $this->theme->display_upload_status($results);
-        }
-        if ($event->page_matches("upload_duplicate", method: "POST", authed: false)) {
-            /** @var string $hash */
-            $hash = $event->POST->req("md5");
-            $image = Post::by_hash($hash); // @phpstan-ignore-line
-            if ($image) {
-                Ctx::$page->set_data(MimeType::JSON, json_encode(["dup" => "1","id" => $image->id])); // @phpstan-ignore-line
+        } elseif ($event->page_matches("api/upload_action", method: "POST", authed: false)) {
+            if ($event->POST->offsetExists("image_url")) {
+                $url = $event->POST->req("image_url");
+                if (\strlen($url) === 0) {
+                    throw new UserError("url is empty but exists");
+                }
+                $file = shm_tempnam("transload");
+                try {
+                    $this->fetch_transload($url, $file);
+                } catch (\Throwable $th) {
+                    throw new UserError("url is not an image");
+                }
+                $hash = $file->md5();
+            } elseif (isset($_FILES['resized_image_file'])) {
+                if ($_FILES['resized_image_file']['error']) {
+                    throw new UploadException("Upload failed: ".$_FILES['resized_image_file']['error']);
+                } else {
+                    $file = new Path($_FILES['resized_image_file']['tmp_name']);
+                    /** @var hash-string $hash*/
+                    $hash = $event->POST->get("image_hash") ?? $file->md5();
+                }
             } else {
-                Ctx::$page->set_data(MimeType::JSON, json_encode(["dup" => "0"])); // @phpstan-ignore-line
+                throw new InvalidInput("No url or resized image given");
             }
+            $uae = send_event(new UploadActionEvent($file, $hash));
+
+            if ($event->POST->offsetExists("image_url") && $file->exists()) {
+                $file->unlink();
+            }
+
+            Ctx::$page->set_data(MimeType::JSON, \Safe\json_encode($uae->output));
+        }
+    }
+
+    #[EventListener(priority: 1)]
+    public function onUploadAction(UploadActionEvent $event): void
+    {
+        $image = Post::by_hash($event->hash);
+        if (!is_null($image)) {
+            $event->output["hash_duplicate"] = ["is" => true, "id" => $image->id];
+            $event->stop_processing = true;
+        } else {
+            $event->output["hash_duplicate"] = ["is" => false, "id" => 0];
         }
     }
 
@@ -364,18 +396,7 @@ final class Upload extends Extension
 
         try {
             // Fetch file
-            try {
-                $headers = Network::fetch_url($url, $tmp_filename);
-            } catch (FetchException $e) {
-                throw new UploadException("Error reading from $url: $e");
-            }
-
-            // Parse metadata
-            $s_filename = Network::find_header($headers, 'Content-Disposition');
-            assert(is_string($s_filename));
-            $h_filename = ($s_filename ? \Safe\preg_replace('/^.*filename\*?=(?:UTF-8\'\')?\"?([^\";]*)\"?$/i', '$1', $s_filename) : null);
-            $filename = $h_filename ?: basename($url);
-
+            $filename = $this->fetch_transload($url, $tmp_filename);
             $new_images = Ctx::$database->with_savepoint(function () use ($tmp_filename, $filename, $slot, $metadata) {
                 $event = send_event(new DataUploadEvent($tmp_filename, $filename, $slot, $metadata));
                 if (count($event->posts) === 0) {
@@ -395,5 +416,24 @@ final class Upload extends Extension
         }
 
         return $results;
+    }
+
+    /**
+     * @param non-empty-string $url
+     * @throws UploadException
+     */
+    private function fetch_transload(string $url, Path $tmp_filename): string
+    {
+        try {
+            $headers = Network::fetch_url($url, $tmp_filename);
+        } catch (FetchException $e) {
+            throw new UploadException("Error reading from $url: $e");
+        }
+
+        // Parse metadata
+        $s_filename = Network::find_header($headers, 'Content-Disposition');
+        /** @var string $h_filename */
+        $h_filename = ($s_filename ? \Safe\preg_replace('/^.*filename\*?=(?:UTF-8\'\')?\"?([^\";]*)\"?$/i', '$1', $s_filename) : null);
+        return $h_filename ?: basename($url);
     }
 }

@@ -289,7 +289,7 @@ class Database
      *
      * @param literal-string $query
      * @param QueryParams $args
-     * @return array<string, mixed>
+     * @return array<mixed, mixed>
      */
     public function get_pairs(string $query, array $args = []): array
     {
@@ -305,7 +305,7 @@ class Database
      *
      * @param literal-string $query
      * @param QueryParams $args
-     * @return \Generator<string, mixed>
+     * @return \Generator<mixed, mixed>
      */
     public function get_pairs_iterable(string $query, array $args = []): \Generator
     {

@@ -30,14 +30,17 @@ final class AliasEditorTest extends ShimmiePHPUnitTestCase
     {
         self::log_in_as_admin();
 
+        Ctx::$cache->clear();
         self::get_page("alias/export/aliases.csv");
         self::assert_no_text("test1");
 
+        Ctx::$cache->clear();
         self::post_page('alias/add', ['c_oldtag' => 'test1', 'c_newtag' => 'test2']);
         self::get_page('alias/list');
         self::assert_text("test1");
         self::get_page("alias/export/aliases.csv");
         self::assert_text('"test1","test2"');
+        Ctx::$cache->clear();
 
         $image_id = $this->create_post("tests/pbx_screenshot.jpg", "test1");
         self::get_page("post/view/$image_id"); # check that the tag has been replaced
@@ -49,6 +52,7 @@ final class AliasEditorTest extends ShimmiePHPUnitTestCase
         $this->delete_post($image_id);
 
         self::post_page('alias/remove', ['d_oldtag' => 'test1']);
+        Ctx::$cache->clear();
         self::get_page('alias/list');
         self::assert_title("Alias List");
         self::assert_no_text("test1");
@@ -58,9 +62,11 @@ final class AliasEditorTest extends ShimmiePHPUnitTestCase
     {
         self::log_in_as_admin();
 
+        Ctx::$cache->clear();
         self::get_page("alias/export/aliases.csv");
         self::assert_no_text("multi");
 
+        Ctx::$cache->clear();
         send_event(new AddAliasEvent("onetag", "multi tag"));
         self::get_page('alias/list');
         self::assert_text("multi");
@@ -68,6 +74,7 @@ final class AliasEditorTest extends ShimmiePHPUnitTestCase
         self::get_page("alias/export/aliases.csv");
         self::assert_text('"onetag","multi tag"');
 
+        Ctx::$cache->clear();
         $image_id_1 = $this->create_post("tests/pbx_screenshot.jpg", "onetag");
         $image_id_2 = $this->create_post("tests/bedroom_workshop.jpg", "onetag");
         self::get_page("post/list/onetag/1"); # searching for an aliased tag should find its aliases
@@ -82,6 +89,7 @@ final class AliasEditorTest extends ShimmiePHPUnitTestCase
         $this->delete_post($image_id_1);
         $this->delete_post($image_id_2);
 
+        Ctx::$cache->clear();
         send_event(new DeleteAliasEvent("onetag"));
         self::get_page('alias/list');
         self::assert_title("Alias List");

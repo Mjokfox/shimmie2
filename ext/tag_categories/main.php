@@ -55,6 +55,13 @@ final class TagCategories extends Extension
             $this->set_version(2);
         }
 
+        if ($this->get_version() < 3) {
+            $database->execute("CREATE INDEX idx_itct_category_id ON image_tag_categories_tags(category_id);");
+            $database->execute("CREATE INDEX idx_itct_tag_id ON image_tag_categories_tags(tag_id);");
+            $database->execute("CREATE INDEX idx_itc_lower_group ON image_tag_categories(lower_group);");
+            $this->set_version(3);
+        }
+
         // if empty, add our default values
         $number_of_db_rows = $database->get_one('SELECT COUNT(*) FROM image_tag_categories');
 

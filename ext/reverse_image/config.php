@@ -15,7 +15,7 @@ class ReverseImageConfig extends ConfigGroup
     #[ConfigMeta("Default reverse image search results: ", ConfigType::INT, default: 10)]
     public const CONF_DEFAULT_AMOUNT = "reverse_image_results_default";
 
-    #[ConfigMeta("The similarity in % when its a duplicate: ", ConfigType::INT, default: 3)]
+    #[ConfigMeta("The similarity in % when its a duplicate: ", ConfigType::INT, default: 95)]
     public const SIMILARITY_DUPLICATE = "reverse_image_similarity_duplicate";
 
     #[ConfigMeta("Python engine url: ", ConfigType::STRING, default: "127.0.0.1:10017")]
@@ -30,11 +30,11 @@ class ReverseImageUserConfig extends UserConfigGroup
     public const KEY = "reverse_image";
     protected ?string $title = "Tag prediction";
 
-    #[ConfigMeta("Enable automatic predicting: ", ConfigType::BOOL, default: true)]
-    public const USER_ENABLE_AUTO = "reverse_image_automatic";
+    #[ConfigMeta("Enable automatic tag predicting: ", ConfigType::BOOL, default: true)]
+    public const USER_ENABLE_PREDICTING = "reverse_image_automatic";
 
-    #[ConfigMeta("Enable automatic tagging: ", ConfigType::BOOL, default: false)]
-    public const USER_ENABLE_AUTO_SELECT = "reverse_image_automatic_select";
+    #[ConfigMeta("Enable automatic tag selecting: ", ConfigType::BOOL, default: false)]
+    public const USER_ENABLE_TAGGING = "reverse_image_automatic_select";
 
     #[ConfigMeta("The minimum percentage prediction to tag: ", ConfigType::INT, default: 50)]
     public const USER_TAG_THRESHOLD = "reverse_image_tag_threshold";

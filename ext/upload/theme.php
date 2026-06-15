@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A, B, BR, DIV, H1, INPUT, LABEL, NOSCRIPT, P, SCRIPT, SMALL, SPAN, emptyHTML};
+use function MicroHTML\{A, BR, DIV, INPUT, NOSCRIPT, P, SCRIPT, SMALL, SPAN, emptyHTML, rawHTML};
 
 use MicroHTML\HTMLElement;
 
@@ -28,81 +28,30 @@ class UploadTheme extends Themelet
 
         $tl_enabled = (Ctx::$config->get(UploadConfig::TRANSLOAD_ENGINE) !== "none");
         $max_size = $limits['shm_filesize'];
-        $split_view = Ctx::$config->get(UploadConfig::SPLITVIEW);
-        $preview_enabled = Ctx::$config->get(UploadConfig::PREVIEW);
         $max_kb = to_shorthand_int($max_size);
         $max_total_size = $limits['shm_post'];
         $max_total_kb = to_shorthand_int($max_total_size);
-        $upload_list = cache_get_or_set("upload_page", fn () => $this->build_upload_list(), 900);
+        $upload_list = $this->build_upload_list();
 
         $common_fields = emptyHTML();
         $ucbe = send_event(new UploadCommonBuildingEvent());
         foreach ($ucbe->get_parts() as $part) {
             $common_fields->appendChild($part);
         }
-        if ($preview_enabled) {
-            $preview_class = "media-preview".(!$split_view ? " upload-split-view" : "");
-            $preview_element = DIV(["id" => "mediaPreview", "class" => $preview_class, "data-mime" => ""]);
-        } else {
-            $preview_element = "";
-        }
+        $captcha = Captcha::get_html(UploadPermission::SKIP_UPLOAD_CAPTCHA);
+
         $form = SHM_FORM(make_link("upload"), multipart: true, id: "file_upload");
         $form->appendChild(
-            DIV(
-                ["class" => "container"],
-                DIV(
-                    ["class" => "left-column"],
-                    NOSCRIPT(H1("sorry, this page requires javascript")),
-                    DIV(
-                        ["style" => "display:flex;justify-content:center"],
-                        B(
-                            ["style" => "border:1px solid var(--text);padding:3px 1rem;"],
-                            "Before uploading, please read the ",
-                            A(["href" => "/wiki/upload_guidelines"], "guidelines")
-                        )
-                    ),
-                    $split_view ? $preview_element : "",
-                    DIV(
-                        ["style" => "display: flex; align-items: center;"],
-                        INPUT(["type" => "file",
-                              "id" => "multiFileInput",
-                              "multiple" => true,
-                              "style" => "display:none",
-                        ]),
-                        INPUT([
-                            "type" => "button",
-                            "value" => "Multiple files input",
-                            "onclick" => "document.getElementById('multiFileInput').click();" ,
-                        ]),
-                        LABEL(
-                            ["style" => "padding-left:5px"],
-                            INPUT(["type" => "checkbox", "id" => "multiFileOverride"]),
-                            " Overwrite current files?",
-                        ),
-                        INPUT([
-                            "type" => "button",
-                            "value" => "Clear all files",
-                            "style" => "margin-left: auto;",
-                            "onclick" => "clearFiles();" ,
-                        ]),
-                    ),
-                    DIV(
-                        ["id" => "dropZone"],
-                        TABLE(
-                            ["id" => "large_upload_form", "class" => "form"],
-                            $common_fields,
-                            $upload_list,
-                            TR(
-                                TD(["colspan" => "7"], INPUT(["id" => "uploadbutton", "type" => "submit", "value" => "Post"]))
-                            ),
-                        ),
-                    )
+            TABLE(
+                ["id" => "large_upload_form", "class" => "form upload-form"],
+                $common_fields,
+                $upload_list,
+                $captcha ? TR(
+                    TD(["colspan" => "7"], $captcha)
+                ) : null,
+                TR(
+                    TD(["colspan" => "7"], INPUT(["id" => "uploadbutton", "type" => "submit", "value" => "Post"]))
                 ),
-                DIV(["class" => "divider"]),
-                DIV(
-                    ["class" => "right-column"],
-                    !$split_view ? $preview_element : "",
-                )
             )
         );
         $html = emptyHTML(
@@ -119,18 +68,71 @@ class UploadTheme extends Themelet
             SCRIPT("
             window.shm_max_size = $max_size;
             window.shm_max_total_size = $max_total_size;
-            const PREVIEW_ENABLED=".($preview_enabled ? "true" : "false").";
-            const SPLIT_VIEW_ENABLED=".($split_view ? "true" : "false").";
             ")
         );
 
-        $page = Ctx::$page;
-        $page->set_title("Upload");
-        $this->display_navigation();
-        $page->add_block(new Block("Upload", $html, "main", 20));
+        $upload_count = Ctx::$config->get(UploadConfig::COUNT);
+        $preview_enabled = Ctx::$config->get(UploadConfig::PREVIEW);
+        $split_view = Ctx::$config->get(UploadConfig::SPLITVIEW);
+        $tl_enabled = Ctx::$config->get(UploadConfig::TRANSLOAD_ENGINE) !== "none";
+        $accept = $this->get_accept();
+        $uhbe = send_event(new UploadHeaderBuildingEvent());
+        $usfbe = send_event(new UploadSpecificBuildingEvent(""));
 
+        $upload_page_data = [
+            "max_panels" => $upload_count,
+            "preview_enabled" => $preview_enabled,
+            "splitview" => $split_view,
+            "transload" => $tl_enabled,
+            "media_accept" => $accept,
+            "common_parts" => array_map(fn ($e) => $e->__toString(), array_values($ucbe->get_parts())),
+            "specific_headers" => $uhbe->get_parts(),
+            "specific_parts" => array_map(fn ($e) => $e->__toString(), array_values($usfbe->get_parts())),
+            "max_file_size" => $max_size,
+            "max_total_size" => $max_total_size
+            ];
+
+        /** @var array{lower_group:string, type:int, tags:string}[] $tc_dict */
+        $tc_dict = Ctx::$database->get_all(
+            "SELECT
+                itc.lower_group,
+                itc.upload_page_type AS type,
+                STRING_AGG(t.tag, ',' ORDER BY itc.upload_page_priority DESC, itct.id ASC) AS tags
+            FROM image_tag_categories_tags itct
+            JOIN image_tag_categories itc ON itct.category_id = itc.id
+            JOIN tags t ON itct.tag_id = t.id
+            WHERE itc.lower_group IS NOT NULL
+            AND itc.lower_group <> ''
+            AND NOT itc.upload_page_type = 0
+            GROUP BY itc.lower_group, itc.upload_page_type
+            ORDER BY MAX(itc.upload_page_priority) DESC;"
+        );
+        // remove numerical array indices :/
+        $tc_dict = array_map(fn ($e) => ["group" => $e["lower_group"], "type" => $e["type"], "tags" => $e["tags"]], $tc_dict);
+
+        $type_table = [1 => ["cols" => 2, "class" => "grid-cell"],
+        2 => ["cols" => 4, "class" => "grid-cell cell-wide"],
+        3 => ["cols" => 1, "class" => "grid-cell cell-thin"],
+        4 => ["cols" => 1, "class" => "grid-cell cell-thin"],
+        5 => ["cols" => 4, "class" => "grid-cell cell-wide"],
+        6 => ["cols" => 2, "class" => "grid-cell"],
+        7 => ["cols" => 4, "class" => "grid-cell cell-info"],];
+
+        $json_data = json_encode([
+            "upload_page_data" => $upload_page_data,
+            "type_table" => $type_table,
+            "tc_dict" => $tc_dict
+            ], );
+
+        Ctx::$page->add_html_header(rawHTML(
+            "<script id=\"upload_page_data\" type=\"application/json\">$json_data</script>"
+        )); // must be rawhtml, otherwise html encoding breaks it
+
+        Ctx::$page->set_title("Upload");
+        $this->display_navigation();
+        Ctx::$page->add_block(new Block("Upload", $html, "main", 20));
         if ($tl_enabled) {
-            $page->add_block(new Block("Bookmarklets", $this->build_bookmarklets(), "left", 20));
+            Ctx::$page->add_block(new Block("Bookmarklets", $this->build_bookmarklets(), "left", 20));
         }
     }
 
@@ -138,16 +140,14 @@ class UploadTheme extends Themelet
     {
         $upload_list = emptyHTML();
         $upload_count = Ctx::$config->get(UploadConfig::COUNT);
-        $preview_enabled = Ctx::$config->get(UploadConfig::PREVIEW);
-        $split_view = Ctx::$config->get(UploadConfig::SPLITVIEW);
-        $tl_enabled = Ctx::$config->get(UploadConfig::TRANSLOAD_ENGINE) !== "none";
+        $tl_enabled = (Ctx::$config->get(UploadConfig::TRANSLOAD_ENGINE) !== "none");
         $accept = $this->get_accept();
 
         $headers = emptyHTML();
         $uhbe = send_event(new UploadHeaderBuildingEvent());
         foreach ($uhbe->get_parts() as $part) {
             $headers->appendChild(
-                TH("Post $part")
+                TH("Post-Specific $part")
             );
         }
 
@@ -156,25 +156,21 @@ class UploadTheme extends Themelet
                 ["class" => "header"],
                 TH(["colspan" => 2], "Select File"),
                 TH($tl_enabled ? "or URL" : null),
-                // $headers,
+                $headers,
             )
         );
-        $colors = ["F00","F80","FF0","8F0","0F0","0F8","0FF","08F","00F","80F","F0F","F08"];
-        $alpha = "2";
+
         for ($i = 0; $i < $upload_count; $i++) {
             $specific_fields = emptyHTML();
             $usfbe = send_event(new UploadSpecificBuildingEvent((string)$i));
             foreach ($usfbe->get_parts() as $part) {
                 $specific_fields->appendChild($part);
             }
-            $color = "#".$colors[$i % 11].$alpha;
 
             $upload_list->appendChild(
                 TR(
-                    ["id" => "rowdata{$i}","style" => "background-color:".$color],
                     TD(
                         ["colspan" => 2, "style" => "white-space: nowrap;"],
-                        SPAN("{$i} "),
                         DIV([
                             "id" => "canceldata{$i}",
                             "style" => "display:inline;margin-right:5px;font-size:15px;visibility:hidden;",
@@ -185,60 +181,17 @@ class UploadTheme extends Themelet
                             "id" => "data{$i}",
                             "name" => "data{$i}[]",
                             "accept" => $accept,
-                            "multiple" => false,
-                            "style" => "display:none",
+                            "multiple" => true,
                         ]),
-                        INPUT([
-                           "type" => "button",
-                           "value" => "Browse...",
-                           "id" => "browsedata{$i}",
-                           "onclick" => "document.getElementById('data{$i}').click();" ,
-                       ]),
                     ),
                     TD(
                         $tl_enabled ? INPUT([
                             "type" => "text",
-                            "class" => "url-input",
                             "name" => "url{$i}",
                             "value" => ($i === 0) ? @$_GET['url'] : null,
                         ]) : null
                     ),
-                    TD(
-                        ["style" => "text-align:center"],
-                        DIV([
-                            "id" => "showinputdata{$i}",
-                            "style" => "display:inline;margin-right:5px;font-size:15px;visibility:hidden;",
-                            "onclick" => "inputdiv(this,document.getElementById('inputdivdata{$i}'),'data{$i}','$color');",
-                        ], "Show"),
-                    ),
-                    $preview_enabled ? TD(
-                        DIV([
-                           "id" => "showpreviewdata{$i}",
-                           "style" => "display:inline;margin-right:5px;font-size:15px;visibility:hidden;",
-                           "onclick" => "showpreview(document.getElementById('data{$i}').files[0],'$color');",
-                       ], "Preview"),
-                    ) : "",
-                ),
-                TR(
-                    ["style" => "background-color:".$color],
-                    TD(
-                        ["colspan" => "100%"],
-                        DIV(
-                            [
-                                "id" => "inputdivdata{$i}",
-                                "style" => "display: none",
-                                "class" => $split_view ? "upload-split-view" : "",
-                            ],
-                            TABLE(
-                                ["id" => "small_upload_form", "class" => "form","style" => "width:100%"],
-                                TR(["class" => "header"], $headers),
-                                TR(
-                                    ["class" => "header"],
-                                    $specific_fields,
-                                ),
-                            )
-                        ),
-                    ),
+                    $specific_fields,
                 )
             );
         }
@@ -320,6 +273,8 @@ class UploadTheme extends Themelet
             $this->display_navigation();
             foreach ($errors as $error) {
                 $page->add_block(new Block($error->name, format_text($error->error)));
+                $page->add_cookie("upload_success", "false", time() + 60);
+                // $page->add_html_header(SCRIPT("ui_cookie_set(\"upload_success\", \"false\");"));
             }
         } elseif (count($successes) === 0) {
             $page->set_title("No images uploaded");
@@ -328,9 +283,11 @@ class UploadTheme extends Themelet
         } elseif (count($successes) === 1) {
             $page->set_redirect(make_link("post/view/{$successes[0]->image_id}"));
             $page->add_http_header("X-Shimmie-Post-ID: " . $successes[0]->image_id);
+            $page->add_cookie("upload_success", "true", time() + 60, httponly: false);
         } else {
             $ids = join(",", array_reverse(array_map(fn ($s) => $s->image_id, $successes)));
             $page->set_redirect(search_link(["id={$ids}"]));
+            $page->add_cookie("upload_success", "true", time() + 60, httponly: false);
         }
     }
 

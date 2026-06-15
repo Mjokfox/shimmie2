@@ -249,10 +249,10 @@ final class AutoTagger extends Extension
         while (true) {
             $new_tags = [];
             foreach ($tags_mixed as $tag) {
-                $additional_tags = Ctx::$database->get_one(
+                $additional_tags = cache_get_or_set("auto-tag-$tag", fn () => Ctx::$database->get_one(
                     "SELECT additional_tags FROM auto_tag WHERE LOWER(tag) = LOWER(:input)",
                     ["input" => $tag]
-                );
+                ) ?? "", 60);
 
                 if (!empty($additional_tags)) {
                     $additional_tags = Tag::explode($additional_tags);

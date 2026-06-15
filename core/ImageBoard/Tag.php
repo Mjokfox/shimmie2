@@ -95,13 +95,14 @@ final class Tag
                 $tag = substr($tag, 1);
             }
 
-            $newtags = AliasEditor::get_aliases($tag);
-            if (empty($newtags)) {
-                //tag has no alias, use old tag
-                $aliases = [$tag];
-            } else {
-                $aliases = $newtags;
-            }
+            $aliases = cache_get_or_set("aliases-$tag", function () use ($tag) {
+                $newtags = AliasEditor::get_aliases($tag);
+                if (empty($newtags)) {
+                    //tag has no alias, use old tag
+                    return [$tag];
+                }
+                return $newtags;
+            }, 60);
 
             foreach ($aliases as $alias) {
                 if ($tag === $alias) {

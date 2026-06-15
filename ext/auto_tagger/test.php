@@ -46,7 +46,7 @@ final class AutoTaggerTest extends ShimmiePHPUnitTestCase
         $this->delete_post($image_id);
 
         send_event(new AddAutoTagEvent("test2", "test3"));
-
+        Ctx::$cache->clear();
         $image_id = $this->create_post("tests/pbx_screenshot.jpg", "test1");
         self::get_page("post/view/$image_id"); # check that the tag has been replaced
         self::assert_title("Post $image_id: test1 test2 test3");

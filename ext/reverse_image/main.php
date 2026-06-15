@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{INPUT, rawHTML};
+use function MicroHTML\{DIV, INPUT, SCRIPT, SPAN, emptyHTML};
 
 require_once "config.php";
 
@@ -102,59 +102,31 @@ class ReverseImage extends Extension
             send_event(new PostListBuildingEvent([$search]));
             $IT->set_page($page_number, (int)ceil($image_count / $page_size), [$search]);
             $IT->display_page($images);
-
-        } elseif ($event->page_matches("reverse_image_search_fromupload", method: "POST", authed: false)) {
-            $ids = $this->reverse_image_search_post();
-            if (count($ids) > 0) {
-                $threshold = $config->get(ReverseImageConfig::SIMILARITY_DUPLICATE) / 100;
-                $first = array_key_first($ids);
-                $image = Post::by_id((int)$first);
-                if (!is_null($image)) {
-                    $closest = [
-                        "id" => $first,
-                        "link" => $image->get_thumb_link()->getPath(),
-                        "width" => $image->width,
-                        "height" => $image->height,
-                        "filesize" => $image->filesize,
-                        "auto_dupe" => $ids[$first] < $threshold
-                    ];
-                } else {
-                    $closest = null;
-                }
-                $tag_n = $this->tags_from_features_id($ids);
-                $json_input = json_encode(["tags" => $tag_n,"closest" => $closest]);
-                if ($json_input !== false) {
-                    $page->set_data(MimeType::JSON, $json_input, 'tag_occurrences.json');
-                } else {
-                    throw new ServerError("Failed to serialize data");
-                }
-
-            } else {
-                $page->set_data(MimeType::JSON, "No similar images found, either the file was not uploaded properly or no url given", 'failed.json');
-            }
         } elseif ($event->page_matches("upload", method: "GET", permission: ImagePermission::CREATE_IMAGE)) {
             $user_config = $user->get_config();
-            $default_reverse_result_limit = $config->get(ReverseImageConfig::CONF_DEFAULT_AMOUNT);
-            $enable_auto_pre = $user_config->get(ReverseImageUserConfig::USER_ENABLE_AUTO);
-            $enable_auto_tag = $user_config->get(ReverseImageUserConfig::USER_ENABLE_AUTO_SELECT);
-            $predict_threshold = $user_config->get(ReverseImageUserConfig::USER_TAG_THRESHOLD);
-            $html = "";
-            if ($enable_auto_tag) {
-                $r = 127 * (1 - ($predict_threshold / 100));
-                $g = 255 * ($predict_threshold / 100);
-                $man = $enable_auto_pre ? "Automatically" : "Semi manually";
-                $html .= "<div>$man selecting tags with higher than <div, style='background-color:rgba($r,$g,0,0.5)'> $predict_threshold% [predicted] probability</div></div>";
-            } elseif ($enable_auto_pre) {
-                $html .= "<div>Note: automatic tag predicting is currently active, this can be disabled in user options. You can also enable automatic selecting in user options.</div>";
+            $enable_predicting = $user_config->get(ReverseImageUserConfig::USER_ENABLE_PREDICTING);
+            if ($enable_predicting) {
+                $enable_tagging = $user_config->get(ReverseImageUserConfig::USER_ENABLE_TAGGING);
+                $predict_threshold = $user_config->get(ReverseImageUserConfig::USER_TAG_THRESHOLD);
+                $html = emptyHTML();
+                if ($enable_tagging) {
+                    $r = 127 * (1 - ($predict_threshold / 100));
+                    $g = 255 * ($predict_threshold / 100);
+                    $html->appendChild(DIV(
+                        "Automatically selecting tags with greater than ",
+                        SPAN(["style" => "background-color:rgba($r,$g,0,0.5)"], "$predict_threshold% probability")
+                    ));
+                } else {
+                    $html->appendChild(DIV("Note: automatic tag predicting is currently active, this can be disabled in user options. You can also enable automatic tag selecting in user options.", ));
+                }
+                $enable_tagging = $enable_tagging ? "true" : "false";
+                $html->appendChild(SCRIPT(
+                    "const ENABLE_REVERSE_IMAGE = true;
+                    const ENABLE_AUTO_TAG = $enable_tagging; 
+                    const AUTO_TAG_THRESHOLD = $predict_threshold;"
+                ));
+                $page->add_block(new Block(null, $html, "main", 100));
             }
-            $enable_auto_pre = $enable_auto_pre ? "true" : "false";
-            $enable_auto_tag = $enable_auto_tag ? "true" : "false";
-            $page->add_block(new Block(null, rawHTML("$html<script>
-            const DEFAULT_RIS_N = $default_reverse_result_limit;
-            const ENABLE_AUTO_PREDICT = $enable_auto_pre;
-            const ENABLE_AUTO_TAG = $enable_auto_tag; 
-            const AUTO_TAG_THRESHOLD = $predict_threshold; 
-            </script>"), "main", 100));
         } elseif ($event->page_matches("reverse_image_search", method: "GET")) {
             $this->theme->display_page();
         } elseif ($event->page_matches("reverse_image_search", method: "POST", authed: false)) {
@@ -252,25 +224,74 @@ class ReverseImage extends Extension
         }
     }
 
+    #[EventListener]
+    public function onUploadAction(UploadActionEvent $event): void
+    {
+        $features = $this->get_image_features($event->file->str());
+        if (!$features) {
+            return;
+        }
+        $similarities = $this->reverse_image_compare($features, Ctx::$config->get(ReverseImageConfig::CONF_DEFAULT_AMOUNT));
+        if (\count($similarities) > 0) {
+            $event->output["tag_predictions"] = $this->tags_from_features_id($similarities);
+
+            $first = array_key_first($similarities);
+            $image = Post::by_id($first);
+            if (!is_null($image)) {
+                $event->output["visual_duplicate"] = [
+                    "distance" => floor($similarities[$first] * 100),
+                    "threshold" => 100 - Ctx::$config->get(ReverseImageConfig::SIMILARITY_DUPLICATE),
+                    "image_id" => $first,
+                    "image_data" => [
+                        "link" => $image->get_media_link()->getPath(),
+                        "thumb_link" => $image->get_thumb_link()->getPath(),
+                        "width" => $image->width,
+                        "height" => $image->height,
+                        "filesize" => $image->filesize
+                    ]
+                ];
+            }
+        }
+    }
+
+    #[EventListener]
+    public function onDuplicateCheck(DuplicateCheckEvent $event): void
+    {
+        if ($event->is_duplicate) {
+            return;
+        }
+        $features = $this->get_image_features($event->file->str());
+        if (!$features) {
+            return;
+        }
+
+        $similarity = $this->get_similarty_from_post($event->image_id, $features);
+        if ((100 * $similarity) <= (100 - Ctx::$config->get(ReverseImageConfig::SIMILARITY_DUPLICATE))) {
+            $event->is_duplicate = true;
+            $event->stop_processing = true;
+        }
+
+    }
+
     /**
-     * @param int[] $ids
+     * @param array<int, float> $similarities
      * @return array<string, mixed>
      */
-    public function tags_from_features_id(array $ids): array
+    public function tags_from_features_id(array $similarities): array
     {
-        $ids_array = implode(",", array_keys($ids));
+        $ids = implode(",", array_keys($similarities));
 
         $sum_case = "SUM(CASE\n";
         $i = 1;
-        foreach (array_keys($ids) as $id) {
-            $sum_case .= "WHEN b.image_id = $id THEN " . (1 - $ids[$id]) / $i++ . "\n";
+        foreach ($similarities as $id => $similarity) {
+            $sum_case .= "WHEN b.image_id = $id THEN " . (1 - $similarity) / $i++ . "\n";
         }
         $sum_case .= "ELSE 0\nEND) AS n\n";
         $query = "SELECT a.tag,
             $sum_case
             FROM tags a
             INNER JOIN image_tags b ON a.id = b.tag_id
-            WHERE b.image_id IN ($ids_array)
+            WHERE b.image_id IN ($ids)
             GROUP BY a.tag
             ORDER BY n DESC";
         // @phpstan-ignore-next-line
@@ -318,7 +339,7 @@ class ReverseImage extends Extension
 
     // helper function for the default post request
     /**
-     * @return array<string, mixed>
+     * @return array<int, mixed>
      */
     public function reverse_image_search_post(): array
     {
@@ -374,7 +395,7 @@ class ReverseImage extends Extension
         assert($ch !== false);
         if (function_exists('curl_file_create')) { // php 5.5+
             $cFile = curl_file_create($path);
-        } else { //
+        } else {
             $cFile = '@' . realpath($path);
         }
         $post = ['image' => $cFile];
@@ -428,21 +449,40 @@ class ReverseImage extends Extension
     // gets the closest image ids from the input features, returning an array[$limit] of these ids
     /**
      * @param float[] $features
-     * @return array<string, mixed>
+     * @return array<int, float>
      */
-    private function reverse_image_compare(array $features, int|string $limit, ?int $offset = null): array
+    private function reverse_image_compare(array $features, int|string $limit, ?int $offset = 0): array
     {
         $feature_array = "[" . implode(",", $features) . "]";
-        $query = "SELECT image_id, features <=> :feature_array AS similarity
+        return Ctx::$database->get_pairs(
+            "SELECT 
+            image_id, features <=> :feature_array AS similarity
             FROM image_features
             ORDER BY similarity ASC
-            LIMIT :limit";
-        if ($offset) {
-            $query .= "\nOFFSET $offset";
-        }
-        $args = ["feature_array" => $feature_array, "limit" => $limit];
-        // @phpstan-ignore-next-line
-        $image_ids = Ctx::$database->get_pairs($query, $args);
-        return $image_ids;
+            LIMIT :limit
+            OFFSET :offset",
+            [
+                "feature_array" => $feature_array,
+                "limit" => $limit,
+                "offset" => $offset
+            ]
+        );
+    }
+
+    /**
+     * @param float[] $features
+     */
+    private function get_similarty_from_post(int $image_id, array $features): float
+    {
+        $feature_array = "[" . implode(",", $features) . "]";
+        return Ctx::$database->get_one(
+            "SELECT features <=> :feature_array 
+            FROM image_features
+            WHERE image_id = :image_id",
+            [
+                "feature_array" => $feature_array,
+                "image_id" => $image_id
+            ]
+        );
     }
 }

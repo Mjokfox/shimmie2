@@ -165,6 +165,14 @@ final class PostTags extends Extension
             $common_tags = $event->params['tags'] ?? "";
             $my_tags = $event->params["tags{$event->slot}"] ?? "";
             $tags = Tag::explode("$common_tags $my_tags");
+            if (!defined("UNITTEST")) {
+                $mime = $event->image->get_mime();
+                $tag = $mime->__toString() === MimeType::GIF_ANIMATED ? "gif" : explode('/', $mime->base)[0];
+                if (!empty($tag)) {
+                    $tags[] = $tag;
+                }
+            }
+
             try {
                 send_event(new CheckStringContentEvent(Tag::implode($tags), type: StringType::TAG));
                 send_event(new TagSetEvent($event->image, $tags));

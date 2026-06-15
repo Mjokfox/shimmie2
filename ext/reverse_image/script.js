@@ -1,205 +1,158 @@
-// only do this on the right page
-if (window.location.pathname === "/reverse_image_search"){
-    function dropZoneInit(){
-        const fileInput = document.getElementById("file_input");
-        const dropZone = document.getElementById("dropZone")
-        if (fileInput && dropZone) {
-            dropZone.addEventListener("dragover", function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (e.dataTransfer.types.includes("Files")) {
-                    dropZone.style.borderStyle = "dashed";
-                } else {
-                    e.dataTransfer.dropEffect = "dotted"; // Indicate that dropping is not allowed
-                }
-                // dropZone.style.borderStyle = "dashed";
-            });
-            dropZone.addEventListener("dragleave", function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                dropZone.style.borderStyle = "dotted";
-            });
-            dropZone.addEventListener("drop", function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                dropZone.style.borderStyle = "dotted";
-                const files = e.dataTransfer.files;
-                const dt = new DataTransfer();
+class ReverseImage{};
 
-                ([...files]).forEach(file => dt.items.add(file));
-                fileInput.files = dt.files;
+ReverseImage.dropZoneInit = function(){
+    const fileInput = document.getElementById("file_input");
+    const dropZone = document.getElementById("dropZone")
+    if (fileInput && dropZone) {
+        dropZone.addEventListener("dragover", function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.dataTransfer.types.includes("Files")) {
+                dropZone.style.borderStyle = "dashed";
+            } else {
+                e.dataTransfer.dropEffect = "dotted";
+            }
+        });
+        dropZone.addEventListener("dragleave", function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.style.borderStyle = "dotted";
+        });
+        dropZone.addEventListener("drop", function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.style.borderStyle = "dotted";
+            const files = e.dataTransfer.files;
+            const dt = new DataTransfer();
 
-                fileInput.dispatchEvent(new Event("input", { bubbles: true }));
+            ([...files]).forEach(file => dt.items.add(file));
+            fileInput.files = dt.files;
 
-            },false);
-        }
+            fileInput.dispatchEvent(new Event("input", { bubbles: true }));
+
+        },false);
     }
+}
 
-    function submit_button(){
-        document.getElementById('submit_button').click();
-    }
+ReverseImage.submit_button = function(){
+    document.getElementById('submit_button').click();
+}
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById("file_input").addEventListener('input', submit_button);
-    dropZoneInit();
+    if (!document.getElementById("reverse_image_search")) return;
+    document.getElementById("file_input").addEventListener('input', ReverseImage.submit_button);
+    ReverseImage.dropZoneInit();
 });
 
+/**
+ * @param {CustomEvent<{panel: UploadPanel, json: Object}>} e
+ */
+ReverseImage.upload_page_process = function(e) {
+    if (!ReverseImage.only_duplicates) {
+        ReverseImage.upload_page_tags(e.detail);
+    }
+    ReverseImage.upload_page_prepare_mini_duplicate(e.detail);
 }
 
-function hide_dupe(id) {
-    hidden_dupes.push(id);
-    document.getElementById("duplicate_img")?.remove();
+ReverseImage.upload_page_tags = function(detail) {
+    if (!detail.json?.tag_predictions) return;
+    const panel = detail.panel;
+    const predictions = detail.json.tag_predictions;
+    ReverseImage.panel_cache[panel.index] = predictions;
+    ReverseImage.panel_predictions(panel, true);
+    ui_cookie_set("reverse_image_panelcache", JSON.stringify(ReverseImage.panel_cache));
+    panel.add_panel_listener(ReverseImage.panel_predictions);
 }
 
-function make_duplicate_image(dup,id){
+ReverseImage.upload_page_prepare_mini_duplicate = function(detail) {
+    if (!detail.json?.visual_duplicate) return;
+    const panel = detail.panel;
+    const data = detail.json.visual_duplicate;
+    ReverseImage.duplicate_cache[panel.index] = data;
+    ui_cookie_set("reverse_image_duplicatecache", JSON.stringify(ReverseImage.duplicate_cache));
+    panel.add_panel_listener(ReverseImage.panel_show_mini_duplicate);
+}
+
+/**
+ * @param {CustomEvent<{panels: UploadPanel[]}>} e
+ */
+ReverseImage.upload_page_recover = function(e){
+    document.getElementById("reset_button")?.addEventListener("click", () =>{
+        ReverseImage.panel_cache = {};
+        ReverseImage.duplicate_cache = {};
+        ui_cookie_set("reverse_image_panelcache", "{}");
+        ui_cookie_set("reverse_image_duplicatecache", "{}");
+    })
+
+    e.detail.panels.forEach(p => {
+        if (!ReverseImage.only_duplicates && ReverseImage.panel_cache[p.index]) {
+            p.add_panel_listener(ReverseImage.panel_predictions);
+        }
+        if (ReverseImage.duplicate_cache[p.index]) {
+            p.add_panel_listener(ReverseImage.panel_show_mini_duplicate);
+        }
+    });
+}
+
+ReverseImage.panel_show_mini_duplicate = function(panel) {
+    if (panel.is_video) return;
+    const data = ReverseImage.duplicate_cache[panel.index];
+    if (!data) return;
+    const image_data = data.image_data;
     document.getElementById("duplicate_img")?.remove();
-    const img = document.createElement("IMG");
-    img.src = dup["link"];
-    const infob = document.createElement("B");
-    infob.textContent = `${dup["width"]} x ${dup["height"]}, ${fileSize(dup["filesize"])}`;
-    var html = "";
-    const hide_btn = `<b onclick="hide_dupe('${id}');">Hide</b>`
-    if (dup["auto_dupe"]){
-        html = `<span class="markdown">This image might already exist on the site, please check if yours is higher quality.<br> If yours is higher quality, please report the <a target="_blank" href="/post/view/${dup["id"]}">current post</a> with your source link. ${hide_btn}</span>`
+    const img = build("IMG", {src: image_data.thumb_link})
+    if (data.distance <= data.threshold){
         img.classList.add("auto_dupe");
     } else{
-        html = `<span class="markdown">Closest visually similar <a target="_blank" href="/post/view/${dup["id"]}">image on this site</a>, please check if it is not the same. ${hide_btn}</span>`
         img.classList.add("no_auto_dupe");
     }
-    const div = document.createElement("DIV");
-    div.id = "duplicate_img";
-    div.classList.add("media-preview");
-    div.innerHTML = html;
-    div.append(img, infob);
-    document.getElementById("mediaPreview")?.append(div);
+
+    const hide = qbuild("B", "", "Hide");
+    const div = build("DIV", {id: "duplicate_img", class: "media-preview"}, 
+        qbuild("SPAN", "markdown", 
+            "Closest visually similar ",
+            build("A", {target: "_blank", href: `/post/view/${data.image_id}`}, "image on this site"),
+            " please check if it is not the same. ",
+            hide
+        ),
+        img,
+        qbuild("B", "", `${image_data.width} x ${image_data.height}, ${fileSize(image_data.filesize)}`)
+    )
+    hide.addEventListener("click", () => {
+        delete(ReverseImage.duplicate_cache[panel.index]);
+        div.remove();
+    })
+    panel.parent.media_preview.append(div);
 }
 
-const used_array = [];
-const dup_array = {};
-const hidden_dupes = [];
-async function get_predictions(id) {
-    if (dup_array[id] && !hidden_dupes.includes(id)){
-        make_duplicate_image(dup_array[id],id);
-    }
-    if (used_array.includes(id)){
-        return;
-    }
-    used_array.push(id);
-    const url_input =  document.getElementById(`urldata${id}`);
-    const file_input = document.getElementById(`data${id}`);
-    const data = new FormData()
-    data.append('file', file_input.files[0])
-    data.append('url', url_input.value)
-
-    const tag_n = await fetch('/reverse_image_search_fromupload', 
-        {
-            method: 'POST',
-            body: data
-        }).then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        }).catch(error => {
-            console.error('There was a problem with the fetch operation:', error);
-            return;
-        });
-
-    if (tag_n) {
-        if(tag_n["closest"]) {
-            make_duplicate_image(tag_n["closest"],id)
-            dup_array[id] = tag_n["closest"];
-        }
-        if(!ENABLE_AUTO_PREDICT) return;
-
-        const inputdiv = document.getElementById(`inputdivdata${id}`);
-        if (ENABLE_AUTO_TAG){
-            inputdiv.querySelectorAll("input[type=radio], input[type=checkbox]").forEach((input) => {
-                if (input.checked){input.checked = false; input.previousChecked = false;}
-                if (input.parentElement){
-                    input.parentElement.style["background-color"] = "rgba(127,0,0,0.25)";
-                }
-            });
-        } else {
-            inputdiv.querySelectorAll("input[type=radio], input[type=checkbox]").forEach((input) => {
-                if (input.parentElement){
-                    input.parentElement.style["background-color"] = "rgba(127,0,0,0.25)";
-                }
-            });
-        }
-        const sim_max = Object.values(tag_n["tags"])[0];
-        const threshold = 2.55*AUTO_TAG_THRESHOLD;
-        for (const [tag, similarity] of Object.entries(tag_n["tags"])) {
-            const el = inputdiv.querySelector(`input[value=${CSS.escape(tag)}]`)
-            if (el && el.parentElement) {
-                const r = 127*(1- (similarity/sim_max));
-                const g = 255*(similarity/sim_max);
-                el.parentElement.style["background-color"] = `rgba(${r},${g},0,0.5)`;
-                if (g > threshold) {
-                    el.parentElement.style["font-weight"] = "bold";
-                    if (ENABLE_AUTO_TAG){
-                        el.dispatchEvent(new Event("click"));
-                        el.checked = true;
-                        el.previousChecked = true;
-                    }
+ReverseImage.panel_predictions = function(panel, can_input=false) {
+    const predictions = ReverseImage.panel_cache[panel.index]
+    if (!predictions) return;
+    const sim_max = Object.values(predictions)[0];
+    const threshold = 2.55*AUTO_TAG_THRESHOLD;
+    for (const [tag, similarity] of Object.entries(predictions)) {
+        const el = panel.selector_panel.querySelector(`INPUT[value=${CSS.escape(tag)}]`)
+        if (el && el.parentElement) {
+            const r = 127*(1- (similarity/sim_max));
+            const g = 255*(similarity/sim_max);
+            el.parentElement.style["background-color"] = `rgba(${r},${g},0,0.5)`;
+            if (g > threshold) {
+                el.parentElement.style["font-weight"] = "bold";
+                if (can_input && ENABLE_AUTO_TAG){
+                    if (el.type == "checkbox") el.checked = true;
+                    el.dispatchEvent(new Event("click", { bubbles: true })); // TODO fix actual input
+                    el.checked = true;
                 }
             }
-        };
-        const el = document.getElementById(`usertags_${id}`)
-        if (el){
-            el.dispatchEvent(new Event('input'));
-        }    
-        
-    }
+        }
+    };
+}
+ReverseImage.only_duplicates = true;
+if (typeof(ENABLE_REVERSE_IMAGE) !== "undefined" && ENABLE_REVERSE_IMAGE) {
+    ReverseImage.panel_cache = JSON.parse(ui_cookie_get("reverse_image_panelcache") ?? "{}"); 
+    ReverseImage.only_duplicates = false;
 }
 
-// tag prediction
-if (window.location.pathname === "/upload"){
-    function make_predict_button(id){
-        const input = document.createElement("input");
-        input.id = `predict-button_${id}`;
-        input.type = "button";
-        input.value = "Predict tags";
-        input.style["width"] = "auto";
-        input.style["padding"] = "0px 10px";
-        input.setAttribute("onclick","");
-        input.addEventListener('click', function() {
-            get_predictions(id);
-        });
-        return input;
-    }
-    
-    function input_button_predict(el){
-        if (el.style["border-style"] == "dotted"){
-            id = el.id.split("data")[1];
-            get_predictions(id);
-        }
-    }
-
-    function tags_predict_init(){
-        document.querySelectorAll('[id^="CopyNumber_"]').forEach((el) => {
-            el.after(make_predict_button(el.id.split("_")[1]));
-        });
-    }
-document.addEventListener('DOMContentLoaded', () => {
-    tags_predict_init();
-    var observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutationRecord) {
-            input_button_predict(mutationRecord.target);
-        });    
-    });
-    
-    document.querySelectorAll('.showInputButton').forEach((el) => {
-        observer.observe(el, { attributes : true, attributeFilter : ['style'] });
-    });
-    document.body.querySelectorAll("[id^='canceldata']").forEach((el) => {
-        el.addEventListener("click", () => {
-            const id = el.id.split("canceldata")[1];
-            if (id){
-                const index = used_array.indexOf(id);
-                if (index > -1) used_array.splice(index, 1);
-            }
-        })
-    });
-});
-}
+ReverseImage.duplicate_cache = JSON.parse(ui_cookie_get("reverse_image_duplicatecache") ?? "{}");
+window.addEventListener("upload_result", ReverseImage.upload_page_process);
+    window.addEventListener("upload_page_initialized", ReverseImage.upload_page_recover);

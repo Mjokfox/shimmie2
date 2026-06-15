@@ -1,5 +1,10 @@
-TABLE#large_upload_form.form {
+TABLE.upload-form {
     width: 100%;
+}
+
+#upload_form {
+    border-collapse: collapse;
+    z-index: 1;
 }
 
 .mini_upload INPUT:not([type="checkbox"]):not([type="radio"]),
@@ -21,6 +26,8 @@ TABLE#large_upload_form.form {
 
 .left-column {
     width: 50%;
+    display: flex;
+    flex-direction: column;
 }
 
 .right-column {
@@ -61,11 +68,37 @@ TABLE#large_upload_form.form {
     cursor: pointer;
 }
 
+.reset-button {
+    padding: 0 .5em;
+    cursor: pointer;
+    width: fit-content;
+    align-self: center;
+}
+
+#upload_form .browse-button {
+    width:5em;
+}
+
+#upload_form input[disabled] {
+  pointer-events: none;
+}
+
 .upload-split-view {
     left: 51%;
     transform:translate(0%,-50%);
     position: fixed;
     top: 52%;
+}
+
+/* TODO!!! */
+@media not (max-width: 800px) {
+  .upload-split-view {
+    max-width: 48%;
+  }
+
+  TR .preview-hide-wide {
+    display: none;
+  }
 }
 
 IMG.upload-split-view {
@@ -74,13 +107,13 @@ IMG.upload-split-view {
 }
 
 .media-preview {
-    padding: 10px;
+    margin: 10px 0;
     align-items: center;
     display: flex;
     flex-direction: column;
 }
 
-.media-preview IMG, VIDEO {
+.media-preview IMG, .media-preview VIDEO {
     max-height: 50vh;
     max-width: 100%;
     display: block;
@@ -93,10 +126,124 @@ IMG.upload-split-view {
     padding-top: 5px;
 }
 
+.media-preview-hover VIDEO {
+    max-height: inherit;
+}
+
 .upload-button {
     padding: 10px 20px;
     background-color: #008CBA;
     color: white;
     border: none;
     cursor: pointer;
+}
+
+DIV.upload-tags-grid SELECT {
+    width: auto;
+}
+
+DIV.grid-cell-label {
+	border-right-width: 1px;
+	border-right-style: solid;
+	height:100%;
+	display: flex;
+  	align-items: center;
+	justify-content: end;
+	/* margin-right: 10px; */
+	font-weight: bold;
+    width: 8ch;
+    white-space: normal;
+    overflow-wrap: break-word;
+	text-align: right;
+	padding: 0 5px;
+}
+
+.cell-info DIV.grid-cell-label {
+    width: 100%;
+	text-align: center;
+    display: block;
+    border: none;
+}
+
+.upload-form TEXTAREA {
+    resize: vertical;
+}
+
+.upload-controls-container {
+    text-align:center
+}
+
+.upload-controls {
+    display: inline;
+    padding: 2px;
+    cursor: pointer;
+    margin: auto;
+    visibility: hidden;
+}
+
+#upload_form .upload-panel-actions {
+    display: flex;
+
+    INPUT {
+        width: auto;
+    }
+
+    .copy-button {
+        padding: 0 1em;
+    }
+
+    .clear-button {
+        padding: 0 3em;
+        margin-left: auto;
+    }
+}
+
+.upload-tag-preview {
+    cursor: default;
+}
+
+.upload-tag-preview:hover {
+    border: 1px solid gray;
+}
+
+.upload-popup-container {
+    display: flex;
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    background-color: #0006;
+}
+
+.upload-popup-centering {
+    margin: auto;
+    padding: 1em;
+    background-color: var(--header-selected);
+    border: 1px solid var(--text);
+    pointer-events: initial;
+}
+
+.upload-popup-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    justify-items: center;
+    align-items: center;
+    gap: 1em;
+    margin-top: 1em;
+    font-size: 2em;
+    text-wrap: nowrap;
+}
+
+.upload-popup-actions button {
+    padding: .5em;
+}
+
+.upload-popup-accept {
+    color: green;
+}
+
+.upload-popup-reject {
+    color: red;
 }

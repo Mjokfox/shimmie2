@@ -109,6 +109,7 @@ final class PostTitles extends Extension
 
     private function set_title(int $image_id, string $title): void
     {
+        $title = substr($title, 0, 255);
         Ctx::$database->execute("UPDATE images SET title=:title WHERE id=:id", ['title' => $title, 'id' => $image_id]);
         Log::info("post_titles", "Title for >>{$image_id} set to: ".$title);
     }

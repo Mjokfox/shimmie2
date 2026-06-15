@@ -84,6 +84,11 @@ HEADER {
 	grid-row: 1;
 	margin-bottom: 0.9rem;
 	text-align: left;
+	position: relative;
+}
+
+BODY:has(.upload-popup-container) HEADER {
+	z-index: 1000;
 }
 
 HEADER h1 {
@@ -424,7 +429,7 @@ div#paginator a:hover {
 }
 
 #large_upload_form {
-	width: 600px;
+	width: 50%;
 }
 
 .setupblock,
@@ -709,7 +714,7 @@ A.thumb IMG {
 		margin: 0;
 	}
 
-	TABLE.form, TABLE.form.image_info{
+	TABLE.form.image_info{
 		width: unset;
 	}
 
@@ -945,29 +950,8 @@ DIV.grid-cell.cell-wide, DIV.grid-cell.cell-info {
 	grid-column: span 4;
 }
 
-DIV.grid-cell-label {
-    font-weight: bold;
-    width: 8ch;
-    white-space: normal;
-    overflow-wrap: break-word;
-	text-align: right;
-	padding: 0 5px;
-}
 
-.cell-info DIV.grid-cell-label {
-    width: 100%;
-	text-align: center;
-}
 
-DIV.grid-cell-separator {
-	border-right-width: 1px;
-	border-right-style: solid;
-	height:100%;
-	display: flex;
-  	align-items: center;
-	justify-content: end;
-	margin-right: 10px;
-}
 
 .label-margin {
 	margin-bottom: 5px;

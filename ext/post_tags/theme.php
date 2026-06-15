@@ -57,13 +57,17 @@ class PostTagsTheme extends Themelet
 
     public function get_upload_specific_html(string $suffix): HTMLElement
     {
-        return TD(
-            INPUT([
-                "type" => "text",
-                "name" => "tags{$suffix}",
-                "class" => "autocomplete_tags",
-                "value" => ($suffix === "0") ? @$_GET['tags'] : null,
-            ])
+        return TR(
+            TD(
+                ["class" => "dont-offset", "colspan" => "100%"],
+                INPUT([
+                    "type" => "text",
+                    "name" => "tags{$suffix}",
+                    "placeholder" => "Tags...",
+                    "class" => "autocomplete_tags",
+                    "value" => ($suffix === "0") ? @$_GET['tags'] : null,
+                ])
+            )
         );
     }
 

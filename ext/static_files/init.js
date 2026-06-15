@@ -1,3 +1,40 @@
+/**
+ * Create an element of type, args can be a key value pair to assign to the element, or a string or HTMLElement, which is appended as child
+ * @param {String} type 
+ * @param  {...(Object|HTMLElement|String)} args 
+ * @returns {HTMLElement}
+ */
+function build(type, ...args) {
+    const e = document.createElement(type);
+    args.forEach(a => {
+        const t = typeof a;
+        if (a instanceof HTMLElement || t === "string") {
+            e.append(a);
+        } else if (t === "object") {
+            for (let [k, v] of Object.entries(a)) {
+                if (v === undefined) continue;
+                if (k === "class") k = "className";
+                e[k] = v;
+            }
+        }
+    });
+    return e;
+}
+
+/**
+ * A faster version of build() which only sets a class and appends children
+ * @param {String} type 
+ * @param {String?} classes 
+ * @param {...(HTMLElement)?} children 
+ * @returns {HTMLElement}
+ */
+function qbuild(type, classes, ...children) {
+    const e = document.createElement(type);
+    if (classes) e.className = classes;
+    if (children.length) e.append(...children);
+    return e;
+}
+
 function shm_cookie_set(name, value) {
     Cookies.set("shm_" + name, value, {
         expires: 365,
@@ -25,6 +62,10 @@ function ui_cookie_get(name) {
         }
     }
     return val;
+}
+function ui_cookie_remove(name) {
+    let key = document.body.dataset.baseHref + "/" + name;
+    localStorage.removeItem(key);
 }
 
 function shm_make_link(page, query) {

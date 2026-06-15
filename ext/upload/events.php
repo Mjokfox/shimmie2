@@ -31,3 +31,19 @@ class UploadSpecificBuildingEvent extends PartListBuildingEvent
         parent::__construct();
     }
 }
+
+class UploadActionEvent extends Event
+{
+    /** @var array<mixed> $output */
+    public array $output;
+    /**
+     * @param Path $file
+     * @param hash-string $hash
+     */
+    public function __construct(
+        public Path $file,
+        public string $hash,
+    ) {
+        parent::__construct();
+    }
+}

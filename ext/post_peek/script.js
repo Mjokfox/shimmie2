@@ -30,15 +30,15 @@ function postPeekAddPeeker() {
         parent.style.position = "relative";
 
         var mime = parent.dataset["mime"];
-        if (mime.match(mimeRegex)) {
+        if (mime && mime.match(mimeRegex)) {
             var linkElement = document.createElement("DIV");
 
             linkElement.classList.add("post-peek");
             linkElement.style.position = "absolute";
             linkElement.style.top = "4px";
             linkElement.style.left = "4px";
-            if (mime.split("/")[1] === "gif"){
-                linkElement.innerHTML = mime.split("/")[1];
+            if (mime.split("/")[1].startsWith("gif")){
+                linkElement.innerHTML = "gif";
                 linkElement.style.padding = "4px";
                 linkElement.style.paddingBottom = "1px";
                 linkElement.style.fontSize = "14px";
