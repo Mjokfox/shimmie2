@@ -300,6 +300,7 @@ class UploadPanel {
         this.custom_tag_input = build("TEXTAREA", {class: "autocomplete_tags", placeholder: "Custom tags"});
         this.custom_tag_input.addEventListener("input", () => this.update_tags())
         this.tag_input.parentElement.append(this.custom_tag_input);
+        if (typeof(elementInit) === "function") elementInit(this.custom_tag_input);
 
         const panel_footer = build("DIV", build("B", "Tags from this panel:"));
         this.tag_display = build("TEXTAREA", {class: "upload-tag-preview", readOnly: true});

@@ -230,68 +230,70 @@ function setCompletion(element, new_word) {
 	element.dispatchEvent(new Event("input"))
 }
 
+function elementInit(element) {
+    // set metadata
+    element.completions = {};
+    element.selected_completion = -1;
+    element.completer_timeout = null;
+
+    // disable built-in autocomplete
+    element.setAttribute("autocomplete", "off");
+
+    // safari treats spellcheck as a form of autocomplete
+    element.setAttribute("spellcheck", "off");
+
+    // when element is focused, add completion block
+    element.addEventListener("focus", () => {
+        updateCompletions(element);
+    });
+
+    // when element is blurred, remove completion block
+    element.addEventListener("blur", () => {
+        hideCompletions();
+    });
+
+    // when cursor is moved, change current completion
+    document.addEventListener("selectionchange", () => {
+        // if element is focused
+        if (document.activeElement === element) {
+            updateCompletions(element);
+        }
+    });
+
+    element.addEventListener("keydown", (event) => {
+        // up / down should select previous / next completion
+        if (event.code === "ArrowUp") {
+            event.preventDefault();
+            highlightCompletion(element, element.selected_completion - 1);
+        } else if (event.code === "ArrowDown") {
+            event.preventDefault();
+            highlightCompletion(element, element.selected_completion + 1);
+        }
+        // if enter or right are pressed while a completion is selected, add the selected completion
+        else if (
+            (event.code === "Enter" || event.code == "ArrowRight" || event.code == "Tab") &&
+            element.selected_completion !== -1
+        ) {
+            event.preventDefault();
+            const key = Object.keys(element.completions)[
+                element.selected_completion
+            ];
+            setCompletion(element, key);
+        }
+        // if escape is pressed, hide the completion block
+        else if (event.code === "Escape") {
+            event.preventDefault();
+            hideCompletions();
+        }
+    });
+
+    // on change, update completions
+    element.addEventListener("input", () => {
+        updateCompletions(element);
+    });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     // Find all elements with class 'autocomplete_tags'
-    document.querySelectorAll(".autocomplete_tags").forEach((element) => {
-        // set metadata
-        element.completions = {};
-        element.selected_completion = -1;
-        element.completer_timeout = null;
-
-        // disable built-in autocomplete
-        element.setAttribute("autocomplete", "off");
-
-        // safari treats spellcheck as a form of autocomplete
-        element.setAttribute("spellcheck", "off");
-
-        // when element is focused, add completion block
-        element.addEventListener("focus", () => {
-            updateCompletions(element);
-        });
-
-        // when element is blurred, remove completion block
-        element.addEventListener("blur", () => {
-            hideCompletions();
-        });
-
-        // when cursor is moved, change current completion
-        document.addEventListener("selectionchange", () => {
-            // if element is focused
-            if (document.activeElement === element) {
-                updateCompletions(element);
-            }
-        });
-
-        element.addEventListener("keydown", (event) => {
-            // up / down should select previous / next completion
-            if (event.code === "ArrowUp") {
-                event.preventDefault();
-                highlightCompletion(element, element.selected_completion - 1);
-            } else if (event.code === "ArrowDown") {
-                event.preventDefault();
-                highlightCompletion(element, element.selected_completion + 1);
-            }
-            // if enter or right are pressed while a completion is selected, add the selected completion
-            else if (
-                (event.code === "Enter" || event.code == "ArrowRight" || event.code == "Tab") &&
-                element.selected_completion !== -1
-            ) {
-                event.preventDefault();
-                const key = Object.keys(element.completions)[
-                    element.selected_completion
-                ];
-                setCompletion(element, key);
-            }
-            // if escape is pressed, hide the completion block
-            else if (event.code === "Escape") {
-                event.preventDefault();
-                hideCompletions();
-            }
-        });
-
-        // on change, update completions
-        element.addEventListener("input", () => {
-            updateCompletions(element);
-        });
-    });
+    document.querySelectorAll(".autocomplete_tags").forEach(elementInit);
 });

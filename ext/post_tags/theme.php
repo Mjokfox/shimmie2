@@ -51,7 +51,7 @@ class PostTagsTheme extends Themelet
     {
         return TR(
             TH(["width" => "20"], "Common Tags"),
-            TD(["colspan" => "6"], INPUT(["name" => "tags", "type" => "text", "placeholder" => "tagme", "class" => "autocomplete_tags"]))
+            TD(["class" => "dont-offset", "colspan" => "6"], INPUT(["name" => "tags", "type" => "text", "placeholder" => "tagme", "class" => "autocomplete_tags"]))
         );
     }
 
