@@ -27,7 +27,7 @@ final class ReplaceFile extends Extension
                 $url = $event->POST->req("url");
                 assert(!empty($url));
                 Network::fetch_url($url, $tmp_filename);
-            } elseif (count($_FILES) > 0) {
+            } elseif (isset($_FILES["data"]) && $_FILES["data"]["error"] === UPLOAD_ERR_OK) {
                 $tmp_filename = new Path($_FILES["data"]['tmp_name']);
             } else {
                 Ctx::$page->set_redirect(make_link("replace/$image_id"));

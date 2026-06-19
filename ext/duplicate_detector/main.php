@@ -53,10 +53,11 @@ class DuplicateDetector extends Extension
                 $url = $event->POST->req("url");
                 assert(!empty($url));
                 Network::fetch_url($url, $tmp_filename);
-            } elseif (count($_FILES) > 0) {
+            } elseif (isset($_FILES["data"]) && $_FILES["data"]["error"] === UPLOAD_ERR_OK) {
                 $tmp_filename = new Path($_FILES["data"]['tmp_name']);
             } else {
                 Ctx::$page->set_redirect(make_link("duplicate_replace/$image_id"));
+                Ctx::$page->flash("No file or url given!");
                 return;
             }
             if ($tmp_filename->filesize() > Ctx::$config->get(UploadConfig::SIZE)) {
@@ -67,7 +68,7 @@ class DuplicateDetector extends Extension
 
             $dce = send_event(new DuplicateCheckEvent($tmp_filename, $image_id));
             if (!$dce->is_duplicate) {
-                throw new InvalidInput("The image you've given is not similar enough to be a duplicate. If you think this is incorrect, please report the duplicate post with your source");
+                throw new InvalidInput("The image you've given has been determined to not be similar enough as a duplicate to this post. If you think this is incorrect, please report the duplicate post with your source");
             }
 
             send_event(new MediaReplaceEvent($image, $tmp_filename));
@@ -158,6 +159,21 @@ class DuplicateDetector extends Extension
     }
 
     #[EventListener]
+    public function onMediaReplace(MediaReplaceEvent $event): void
+    {
+        if (!$event->image->image) {
+            return;
+        }
+        $phashes = $this->generate_phashes($event->image->get_media_filename()->str());
+        $exists = Ctx::$database->get_one("SELECT 1 FROM image_features WHERE image_id = :id", ["id" => $event->image->id]);
+        if (is_null($exists)) {
+            $this->add_phash_to_db($event->image->id, $phashes);
+        } else { // update instead
+            $this->update_phash_in_db($event->image->id, $phashes);
+        }
+    }
+
+    #[EventListener]
     public function onUploadAction(UploadActionEvent $event): void
     {
         $phashes = $this->generate_phashes($event->file->str());
@@ -189,7 +205,7 @@ class DuplicateDetector extends Extension
         }
         $phashes = $this->generate_phashes($event->file->str());
         $distance = $this->get_distance_from_post($event->image_id, $phashes);
-        if ($distance <= Ctx::$config->get(DuplicateDetectorConfig::HAMMING_DISTANCE_THRESHOLD)) {
+        if (!is_null($distance) && $distance <= Ctx::$config->get(DuplicateDetectorConfig::HAMMING_DISTANCE_THRESHOLD)) {
             $event->is_duplicate = true;
             $event->stop_processing = true;
         }
@@ -262,7 +278,26 @@ class DuplicateDetector extends Extension
     /**
      * @param PhashArr $phashes
      */
-    private function get_distance_from_post(int $image_id, array $phashes): int
+    private function update_phash_in_db(int $id, array $phashes): void
+    {
+        Ctx::$database->execute(
+            "UPDATE image_phashes 
+            SET ahash=:ahash, dhash=:dhash, phash=:phash, blockhash=:blockhash
+            WHERE image_id = :id",
+            [
+                "id" => $id,
+                "ahash" => $phashes["average"],
+                "dhash" => $phashes["difference"],
+                "phash" => $phashes["perceptual"],
+                "blockhash" => $phashes["blockhash"],
+                ]
+        );
+    }
+
+    /**
+     * @param PhashArr $phashes
+     */
+    private function get_distance_from_post(int $image_id, array $phashes): ?int
     {
         return Ctx::$database->get_one(
             "SELECT LEAST (
