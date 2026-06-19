@@ -89,7 +89,7 @@ DuplicateDetector.upload_page_process = async function(json, panel) {
         nodes.accept.addEventListener("click", () => resolve(true));
         nodes.reject.addEventListener("click", () => resolve(false));
         nodes.greater.addEventListener("mousedown", () => {
-            window.open(shm_make_link(`duplicate_replace/${runner.image_id}`, `flash=The filename or url was: ${filename}`), '_blank').focus();
+            window.open(shm_make_link(`duplicate_replace/${runner.image_id}`, `flash=Please select the same image again, then click Post. The filename or url was: ${filename}`), '_blank').focus();
             resolve(false);
         });
         document.addEventListener("keydown", (e) => {
