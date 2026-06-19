@@ -77,7 +77,7 @@ class CustomForumTheme extends ForumTheme
             );
         }
         $h_edit = null;
-        if (Ctx::$user->can(CommentPermission::DELETE_COMMENT) || (Ctx::$user->can(CommentPermission::CREATE_COMMENT) && Ctx::$user->id === $duser->id)) {
+        if (Ctx::$user->can(ForumPermission::FORUM_EDIT) && Ctx::$user->id === $post->owner_id) {
             $h_edit = $this->edit_button($post->id, $thread_id, $post->message);
         }
         return TABLE(
