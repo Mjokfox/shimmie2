@@ -1142,6 +1142,9 @@ class UploadPage {
             this.right_column.firstChild.style.width = `${(newRightWidth/100)*containerRect.width}px`;
     }
 
+    export_required() {
+        return this.panels.some(p => p.file_active || p.url_active);
+    }
 
     export() {
         const output = {};
@@ -1297,6 +1300,7 @@ class UploadPage {
         const file = new File([u8arr], data.fileName, data.options);
         if (data.resized) file.resized = data.resized;
         this.panels[index].transfer_file(file);
+        this.files_changed = true;
         return true;
     }
 
@@ -1581,14 +1585,19 @@ document.addEventListener('DOMContentLoaded', () => {
 let prev_save = Date.now();
 UploadPage.save_state = async function (e) {
     if (upload_page && upload_page.initialized && Date.now() - prev_save > 1000) {
-        upload_page.export();
-        if (upload_page.files_changed) {
-            await upload_page.export_images();
+        if (!upload_page.export_required()) {
+            ui_cookie_remove("upload_page_save_date");
+            ui_cookie_remove("upload_page_save");
+        } else {
+            upload_page.export();
+            if (upload_page.files_changed) {
+                await upload_page.export_images();
+            }
+            ui_cookie_set("upload_page_save_date", Date.now());
         }
         if (e) { // setInterval does not give an event parameter
             prev_save = Date.now();
         }
-        ui_cookie_set("upload_page_save_date", Date.now());
     }
 }
 
