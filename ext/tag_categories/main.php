@@ -9,7 +9,7 @@ use MicroHTML\HTMLElement;
 use function MicroHTML\SPAN;
 
 /**
- * @phpstan-type TagCategoryRow array{category: string, upper_group: string, lower_group: string, color: string, upload_page_type: ?int, upload_page_priority: ?int}
+ * @phpstan-type TagCategoryRow array{category: string, list_group: string, upload_group: string, color: string, upload_page_type: ?int, upload_page_priority: ?int}
  * @extends Extension<TagCategoriesTheme>
  */
 final class TagCategories extends Extension
@@ -27,8 +27,8 @@ final class TagCategories extends Extension
                 'image_tag_categories',
                 'id SCORE_AIPK,
                 category VARCHAR(60) UNIQUE,
-				upper_group VARCHAR(60),
-				lower_group VARCHAR(60),
+				list_group VARCHAR(60),
+				upload_group VARCHAR(60),
 				color VARCHAR(7),
                 upload_page_type INTEGER,
                 upload_page_priority INTEGER',
@@ -47,8 +47,8 @@ final class TagCategories extends Extension
             $this->set_version(2);
         }
         if ($this->get_version() < 2) {
-            $database->execute("ALTER TABLE image_tag_categories RENAME COLUMN display_singular to upper_group;");
-            $database->execute("ALTER TABLE image_tag_categories RENAME COLUMN display_multiple to lower_group;");
+            $database->execute("ALTER TABLE image_tag_categories RENAME COLUMN display_singular to list_group;");
+            $database->execute("ALTER TABLE image_tag_categories RENAME COLUMN display_multiple to upload_group;");
             $database->execute("ALTER TABLE image_tag_categories ADD COLUMN upload_page_type INTEGER;");
             $database->execute("ALTER TABLE image_tag_categories ADD COLUMN upload_page_priority INTEGER;");
             $database->execute("ALTER TABLE image_tag_categories ADD CONSTRAINT image_tag_categories_category_key UNIQUE (category);");
@@ -58,24 +58,31 @@ final class TagCategories extends Extension
         if ($this->get_version() < 3) {
             $database->execute("CREATE INDEX idx_itct_category_id ON image_tag_categories_tags(category_id);");
             $database->execute("CREATE INDEX idx_itct_tag_id ON image_tag_categories_tags(tag_id);");
-            $database->execute("CREATE INDEX idx_itc_lower_group ON image_tag_categories(lower_group);");
-            $this->set_version(3);
+            $database->execute("CREATE INDEX idx_itc_upload_group ON image_tag_categories(upload_group);");
+            $this->set_version(4);
         }
+
+        if ($this->get_version() < 4) {
+            $database->execute("ALTER TABLE image_tag_categories RENAME COLUMN upper_group to list_group;");
+            $database->execute("ALTER TABLE image_tag_categories RENAME COLUMN lower_group to upload_group;");
+            $this->set_version(4);
+        }
+
 
         // if empty, add our default values
         $number_of_db_rows = $database->get_one('SELECT COUNT(*) FROM image_tag_categories');
 
         if ($number_of_db_rows === 0) {
             $database->execute(
-                'INSERT INTO image_tag_categories (category, upper_group, lower_group, color) VALUES (:category, :single, :multiple, :color)',
+                'INSERT INTO image_tag_categories (category, list_group, upload_group, color) VALUES (:category, :single, :multiple, :color)',
                 ["category" => "artist", "single" => "Artist", "multiple" => "Artists", "color" => "#BB6666"]
             );
             $database->execute(
-                'INSERT INTO image_tag_categories (category, upper_group, lower_group, color) VALUES (:category, :single, :multiple, :color)',
+                'INSERT INTO image_tag_categories (category, list_group, upload_group, color) VALUES (:category, :single, :multiple, :color)',
                 ["category" => "series", "single" => "Series", "multiple" => "Series", "color" => "#AA00AA"]
             );
             $database->execute(
-                'INSERT INTO image_tag_categories (category, upper_group, lower_group, color) VALUES (:category, :single, :multiple, :color)',
+                'INSERT INTO image_tag_categories (category, list_group, upload_group, color) VALUES (:category, :single, :multiple, :color)',
                 ["category" => "character", "single" => "Character", "multiple" => "Characters", "color" => "#66BB66"]
             );
         }
@@ -99,10 +106,8 @@ final class TagCategories extends Extension
         } elseif ($event->page_matches("tags/categories", method: "POST", permission: TagCategoriesPermission::EDIT_TAG_CATEGORIES)) {
             $this->page_update();
             Ctx::$page->set_redirect(make_link("tags/categories"));
-        } elseif ($event->page_matches("admin/count_categories_tags", method: "GET")) {
+        } elseif ($event->page_matches("tags/categories_tags", method: "GET")) {
             $this->theme->show_count_tag_categories();
-        } elseif ($event->page_matches("admin/count_categories_tags", method: "POST")) {
-            Ctx::$page->set_redirect(make_link("admin/count_categories_tags"));
         }
     }
 
@@ -118,7 +123,46 @@ final class TagCategories extends Extension
         switch ($event->action) {
             case "count_categories_tags":
                 $event->redirect = false;
+                Ctx::$page->set_redirect(make_link("tags/categories_tags"));
                 break;
+        }
+    }
+
+    #[EventListener]
+    public function onSearchTermParse(SearchTermParseEvent $event): void
+    {
+        if ($matches = $event->matches("/^(.+)_tags(<=|<|=|>|>=)([0-9]+)$/i")) {
+            $list_group = $matches[1];
+            $cmp = $matches[2];
+            $count = $matches[3];
+
+            $exists = Ctx::$database->get_one(
+                'SELECT 1 FROM image_tag_categories
+                WHERE LOWER(list_group) = LOWER(:list_group)',
+                ['list_group' => $list_group]
+            );
+
+            if (!\is_null($exists)) {
+                $event->add_querylet(
+                    new Querylet("
+                    images.id IN (
+                        SELECT it.image_id FROM image_tags it
+                        INNER JOIN image_tag_categories_tags tct on it.tag_id = tct.tag_id
+                        INNER JOIN image_tag_categories tc ON tc.id = tct.category_id AND LOWER(tc.list_group) = LOWER(:cat{$event->id})
+                        GROUP BY it.image_id
+                        HAVING COUNT(it.image_id) $cmp :count{$event->id}
+                    )", ["cat{$event->id}" => $list_group, "count{$event->id}" => $count])
+                );
+            }
+        }
+    }
+
+
+    #[EventListener]
+    public function onHelpPageBuilding(HelpPageBuildingEvent $event): void
+    {
+        if ($event->key === HelpPages::SEARCH) {
+            $event->add_section("Tag Categories", $this->theme->get_help_html());
         }
     }
 
@@ -244,30 +288,24 @@ final class TagCategories extends Extension
 
     public function page_update(): void
     {
-        if (isset($_POST['tc_status'])) {
-            if (!isset($_POST['tc_category']) ||
-            !isset($_POST['tc_up_group']) ||
-            !isset($_POST['tc_lo_group']) ||
-            !isset($_POST['tc_tag_list']) ||
-            !isset($_POST['tc_color']) ||
-            !isset($_POST['tc_up_type']) ||
-            !isset($_POST['tc_up_prio'])) {
-                return;
-            }
-
-            if ($_POST['tc_status'] === 'edit') {
+        $required = ['tc_status', 'tc_category', 'tc_list_group', 'tc_upload_group', 'tc_tag_list', 'tc_color', 'tc_up_type', 'tc_up_prio'];
+        if (!empty(array_diff_key(array_flip($required), $_POST))) {
+            return;
+        }
+        switch ($_POST['tc_status']) {
+            case 'edit':
                 Ctx::$database->execute(
                     'UPDATE image_tag_categories
-                    SET upper_group=:upper_group,
-                        lower_group=:lower_group,
+                    SET list_group=:list_group,
+                        upload_group=:upload_group,
                         color=:color,
                         upload_page_type=:upload_page_type,
                         upload_page_priority=:upload_page_priority
                     WHERE category=:category',
                     [
                         'category' => $_POST['tc_category'],
-                        'upper_group' => $_POST['tc_up_group'],
-                        'lower_group' => $_POST['tc_lo_group'],
+                        'list_group' => $_POST['tc_list_group'],
+                        'upload_group' => $_POST['tc_upload_group'],
                         'color' => $_POST['tc_color'],
                         'upload_page_type' => $_POST['tc_up_type'],
                         'upload_page_priority' => $_POST["tc_up_prio"],
@@ -276,15 +314,15 @@ final class TagCategories extends Extension
                 $this->delete_tags_from_category($_POST['tc_category']);
                 $this->add_tags_to_category($_POST['tc_category'], $_POST['tc_tag_list']);
                 Log::info("tag_categories", "Edited category: ".$_POST['tc_category'], "Edited category: ".$_POST['tc_category']);
-
-            } elseif ($_POST['tc_status'] === 'new') {
+                break;
+            case 'new':
                 Ctx::$database->execute(
-                    'INSERT INTO image_tag_categories (category, upper_group, lower_group, color, upload_page_type, upload_page_priority)
-                    VALUES (:category, :upper_group, :lower_group, :color, :upload_page_type, :upload_page_priority)',
+                    'INSERT INTO image_tag_categories (category, list_group, upload_group, color, upload_page_type, upload_page_priority)
+                    VALUES (:category, :list_group, :upload_group, :color, :upload_page_type, :upload_page_priority)',
                     [
                         'category' => $_POST['tc_category'],
-                        'upper_group' => $_POST['tc_up_group'],
-                        'lower_group' => $_POST['tc_lo_group'],
+                        'list_group' => $_POST['tc_list_group'],
+                        'upload_group' => $_POST['tc_upload_group'],
                         'color' => $_POST['tc_color'],
                         'upload_page_type' => $_POST['tc_up_type'],
                         'upload_page_priority' => $_POST["tc_up_prio"],
@@ -292,7 +330,8 @@ final class TagCategories extends Extension
                 );
                 $this->add_tags_to_category($_POST['tc_category'], $_POST['tc_tag_list']);
                 Log::info("tag_categories", "Created category: ".$_POST['tc_category'], "Created category: ".$_POST['tc_category']);
-            } elseif ($_POST['tc_status'] === 'delete') {
+                break;
+            case 'delete':
                 $this->delete_tags_from_category($_POST['tc_category']);
                 Ctx::$database->execute(
                     'DELETE FROM image_tag_categories
@@ -302,7 +341,9 @@ final class TagCategories extends Extension
                     ]
                 );
                 Log::info("tag_categories", "Deleted category: ".$_POST['tc_category'], "Deleted category: ".$_POST['tc_category']);
-            }
+                break;
+            default:
+                return;
         }
     }
 

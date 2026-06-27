@@ -92,23 +92,23 @@ class UploadTheme extends Themelet
             "max_total_size" => $max_total_size
             ];
 
-        /** @var array{lower_group:string, type:int, tags:string}[] $tc_dict */
+        /** @var array{upload_group:string, type:int, tags:string}[] $tc_dict */
         $tc_dict = Ctx::$database->get_all(
             "SELECT
-                itc.lower_group,
+                itc.upload_group,
                 itc.upload_page_type AS type,
                 STRING_AGG(t.tag, ',' ORDER BY itc.upload_page_priority DESC, itct.id ASC) AS tags
             FROM image_tag_categories_tags itct
             JOIN image_tag_categories itc ON itct.category_id = itc.id
             JOIN tags t ON itct.tag_id = t.id
-            WHERE itc.lower_group IS NOT NULL
-            AND itc.lower_group <> ''
+            WHERE itc.upload_group IS NOT NULL
+            AND itc.upload_group <> ''
             AND NOT itc.upload_page_type = 0
-            GROUP BY itc.lower_group, itc.upload_page_type
+            GROUP BY itc.upload_group, itc.upload_page_type
             ORDER BY MAX(itc.upload_page_priority) DESC;"
         );
         // remove numerical array indices :/
-        $tc_dict = array_map(fn ($e) => ["group" => $e["lower_group"], "type" => $e["type"], "tags" => $e["tags"]], $tc_dict);
+        $tc_dict = array_map(fn ($e) => ["group" => $e["upload_group"], "type" => $e["type"], "tags" => $e["tags"]], $tc_dict);
 
         $type_table = [1 => ["cols" => 2, "class" => "grid-cell"],
         2 => ["cols" => 4, "class" => "grid-cell cell-wide"],

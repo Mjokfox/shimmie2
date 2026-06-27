@@ -37,8 +37,8 @@ class TagCategoriesTheme extends Themelet
             $tags = implode(' ', $tags);
             $tags = str_replace(' ', " \n", $tags);
 
-            $upper_group = $row['upper_group'];
-            $lower_group = $row['lower_group'];
+            $list_group = $row['list_group'];
+            $upload_group = $row['upload_group'];
             $tag_color = $row['color'];
             $upload_page_type = $row['upload_page_type'] ?? 0;
             $upload_page_priority = $row['upload_page_priority'] ?? 0;
@@ -58,15 +58,15 @@ class TagCategoriesTheme extends Themelet
                         TR(
                             TD("List - Group"),
                             TD(
-                                SPAN(["class" => "tc-view"], $upper_group),
-                                INPUT(["type" => "text", "name" => "tc_up_group", "class" => "tc-edit", "value" => $upper_group])
+                                SPAN(["class" => "tc-view"], $list_group),
+                                INPUT(["type" => "text", "name" => "tc_list_group", "class" => "tc-edit", "value" => $list_group])
                             )
                         ),
                         TR(
                             TD("Upload - Group"),
                             TD(
-                                SPAN(["class" => "tc-view"], $lower_group),
-                                INPUT(["type" => "text", "name" => "tc_lo_group", "class" => "tc-edit", "value" => $lower_group])
+                                SPAN(["class" => "tc-view"], $upload_group),
+                                INPUT(["type" => "text", "name" => "tc_upload_group", "class" => "tc-edit", "value" => $upload_group])
                             )
                         ),
                         TR(
@@ -139,8 +139,8 @@ class TagCategoriesTheme extends Themelet
 
         // new
         $tag_category = 'example';
-        $upper_group = 'Example';
-        $lower_group = 'Examples';
+        $list_group = 'Example';
+        $upload_group = 'Examples';
         $tag_color = '#EE5542';
         $html[] = DIV(
             ["class" => "tagcategoryblock"],
@@ -156,13 +156,13 @@ class TagCategoriesTheme extends Themelet
                     TR(
                         TD("List - Group"),
                         TD(
-                            INPUT(["type" => "text", "name" => "tc_up_group", "value" => $upper_group])
+                            INPUT(["type" => "text", "name" => "tc_list_group", "value" => $list_group])
                         )
                     ),
                     TR(
                         TD("Upload - Group"),
                         TD(
-                            INPUT(["type" => "text", "name" => "tc_lo_group", "value" => $lower_group])
+                            INPUT(["type" => "text", "name" => "tc_upload_group", "value" => $upload_group])
                         )
                     ),
                     TR(
@@ -279,6 +279,6 @@ class TagCategoriesTheme extends Themelet
             make_link("admin/count_categories_tags"),
             SHM_SUBMIT('Display tag count'),
         );
-        Ctx::$page->add_block(new Block("Tag categories count", $html));
+        Ctx::$page->add_block(new Block("Tag categories", $html));
     }
 }

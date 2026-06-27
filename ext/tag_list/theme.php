@@ -72,10 +72,10 @@ class TagListTheme extends Themelet
 
         foreach ($tag_infos as $row) {
             $category = TagCategories::get_tag_category($row["tag"]);
-            if (is_null($category)) {
+            if (\is_null($category)) {
                 $group = "NULL";
-            } elseif (array_key_exists($category, $tag_category_dict)) {
-                $group = $tag_category_dict[$category]["upper_group"];
+            } elseif (\array_key_exists($category, $tag_category_dict)) {
+                $group = $tag_category_dict[$category]["list_group"];
                 if (!isset($priorities[$group])) {
                     $priorities[$group] = $tag_category_dict[$category]["upload_page_priority"] ?? 0;
                 }
