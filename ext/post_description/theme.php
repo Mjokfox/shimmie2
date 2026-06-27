@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{B, TD, TEXTAREA, TR};
+use function MicroHTML\{B, P, TD, TEXTAREA, TR, emptyHTML};
 
 use MicroHTML\HTMLElement;
 
@@ -41,6 +41,16 @@ class PostDescriptionTheme extends Themelet
                     "class" => "formattable",
                 ])
             )
+        );
+    }
+
+    public function get_help_html(): HTMLElement
+    {
+        return emptyHTML(
+            P("Search for posts having some string in their description"),
+            SHM_COMMAND_EXAMPLE("description=words", "Returns posts who's description contains the string 'words', case insensitive."),
+            SHM_COMMAND_EXAMPLE("description=any", "Returns posts with any description"),
+            SHM_COMMAND_EXAMPLE("description=none", "Returns posts with no description"),
         );
     }
 }

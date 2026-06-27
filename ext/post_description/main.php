@@ -85,4 +85,34 @@ final class PostDescription extends Extension
     {
         $event->add_part($this->theme->get_upload_specific_html($event->suffix), 51);
     }
+
+    #[EventListener]
+    public function onSearchTermParse(SearchTermParseEvent $event): void
+    {
+        if ($matches = $event->matches("/^description[:=](.*)$/i")) {
+            $description = strtolower($matches[1]);
+
+            if (\Safe\preg_match("/^(any|none)$/i", $description)) {
+                $not = ($description === "any" ? "" : "NOT");
+                $event->add_querylet(new Querylet("images.id $not IN (
+                    SELECT image_id FROM image_descriptions
+                    WHERE description != 'None'
+                )"));
+            } else {
+                $event->add_querylet(new Querylet('images.id IN (
+                    SELECT image_id FROM image_descriptions
+                    WHERE SCORE_ILIKE(description, :description)
+                )', ["description" => "%$description%"]));
+            }
+        }
+    }
+
+
+    #[EventListener]
+    public function onHelpPageBuilding(HelpPageBuildingEvent $event): void
+    {
+        if ($event->key === HelpPages::SEARCH) {
+            $event->add_section("Post descriptions", $this->theme->get_help_html());
+        }
+    }
 }

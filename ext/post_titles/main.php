@@ -95,15 +95,32 @@ final class PostTitles extends Extension
     #[EventListener(priority: 60)]
     public function onSearchTermParse(SearchTermParseEvent $event): void
     {
-        if ($matches = $event->matches("/^(title)[=:](.*)$/i")) {
-            $title = strtolower($matches[2]);
+        if ($matches = $event->matches("/^title[:=](.*)$/i")) {
+            $title = strtolower($matches[1]);
 
             if (\Safe\preg_match("/^(any|none)$/i", $title)) {
                 $not = ($title === "any" ? "NOT" : "");
                 $event->add_querylet(new Querylet("images.title IS $not NULL"));
             } else {
-                $event->add_querylet(new Querylet('SCORE_ILIKE(images.title, :title)', ["title" => "%$title%"]));
+                if (Ctx::$config->get(PostTitlesConfig::DEFAULT_TO_FILENAME)) {
+                    $like = match (Ctx::$database->get_driver_id()) {
+                        DatabaseDriverID::PGSQL => "COALESCE(images.title, images.filename) ILIKE :title",
+                        DatabaseDriverID::SQLITE => "COALESCE(images.title, images.filename) LIKE :title ESCAPE '\\'",
+                        DatabaseDriverID::MYSQL => "COALESCE(images.title, images.filename) LIKE :title",
+                    };
+                    $event->add_querylet(new Querylet($like, ["title" => "%$title%"]));
+                } else {
+                    $event->add_querylet(new Querylet('SCORE_ILIKE(images.title, :title)', ["title" => "%$title%"]));
+                }
             }
+        }
+    }
+
+    #[EventListener]
+    public function onHelpPageBuilding(HelpPageBuildingEvent $event): void
+    {
+        if ($event->key === HelpPages::SEARCH) {
+            $event->add_section("Post titles", $this->theme->get_help_html());
         }
     }
 
