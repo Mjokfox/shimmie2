@@ -134,8 +134,6 @@ class FlickrSource extends Extension
 
         $redirectedUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
 
-        curl_close($ch);
-
         return $redirectedUrl;
     }
 }

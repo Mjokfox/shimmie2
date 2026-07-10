@@ -42,7 +42,14 @@ final class RandomImage extends Extension
                     Ctx::$page->set_data(MimeType::HTML, (string)$this->theme->build_thumb($image));
                     break;
                 default:
-                    send_event(new MediaDownloadingEvent($image, $image->get_media_filename(), $image->get_mime(), $event->GET));
+                    send_event(new MediaDownloadingEvent(
+                        $image,
+                        $image->get_media_filename(),
+                        $image->get_mime(),
+                        $image->get_nice_media_name(),
+                        "inline",
+                        $event->GET,
+                    ));
             }
         }
     }

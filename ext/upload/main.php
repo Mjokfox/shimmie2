@@ -431,8 +431,8 @@ final class Upload extends Extension
         }
 
         // Parse metadata
+        /** @var string|null $s_filename */
         $s_filename = Network::find_header($headers, 'Content-Disposition');
-        /** @var string $h_filename */
         $h_filename = ($s_filename ? \Safe\preg_replace('/^.*filename\*?=(?:UTF-8\'\')?\"?([^\";]*)\"?$/i', '$1', $s_filename) : null);
         return $h_filename ?: basename($url);
     }
