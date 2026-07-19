@@ -167,7 +167,8 @@ final class PostTags extends Extension
             $tags = Tag::explode("$common_tags $my_tags");
             if (!defined("UNITTEST")) {
                 $mime = $event->image->get_mime();
-                $tag = $mime->__toString() === MimeType::GIF_ANIMATED ? "gif" : explode('/', $mime->base)[0];
+                $type = explode('/', $mime->base)[0];
+                $tag = $event->image->video && $type === "image" ? "animated" : $type;
                 if (!empty($tag)) {
                     $tags[] = $tag;
                 }
