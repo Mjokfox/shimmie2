@@ -161,7 +161,7 @@ class DuplicateDetector extends Extension
                 $start_time = ftime();
                 $this->fill_phashes((int)$event->params['start_id'], (int)$event->params['limit']);
                 $exec_time = round(ftime() - $start_time, 2);
-                $message = "Added image features to the database for {$event->params['limit']} images in $exec_time seconds";
+                $message = "Added image phashes to the database for {$event->params['limit']} images in $exec_time seconds";
                 Log::info("admin", $message, $message);
                 break;
             case 'clear_phashes':
@@ -204,7 +204,7 @@ class DuplicateDetector extends Extension
         if (!$event->image->image) {
             return;
         }
-        $exists = Ctx::$database->get_one("SELECT 1 FROM image_features WHERE image_id = :id", ["id" => $event->image->id]);
+        $exists = Ctx::$database->get_one("SELECT 1 FROM image_phashes WHERE image_id = :id", ["id" => $event->image->id]);
         if (is_null($exists)) {
             $phashes = $this->generate_phashes($event->image->get_media_filename()->str());
             $this->add_phash_to_db($event->image->id, $phashes);
@@ -219,7 +219,7 @@ class DuplicateDetector extends Extension
             return;
         }
         $phashes = $this->generate_phashes($event->tmp_filename->str());
-        $exists = Ctx::$database->get_one("SELECT 1 FROM image_features WHERE image_id = :id", ["id" => $event->image->id]);
+        $exists = Ctx::$database->get_one("SELECT 1 FROM image_phashes WHERE image_id = :id", ["id" => $event->image->id]);
         if (is_null($exists)) {
             $this->add_phash_to_db($event->image->id, $phashes);
         } else { // update instead
