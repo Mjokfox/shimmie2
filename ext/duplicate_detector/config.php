@@ -12,8 +12,8 @@ class DuplicateDetectorConfig extends ConfigGroup
         "average" => "average",
         "difference" => "difference",
         "perceptual" => "perceptual",
-        "blockhash" => "blockhash",
-    ], default: ["average", "difference", "perceptual"])]
+        // "blockhash" => "blockhash", // NOT WORKING
+    ], default: ["difference", "perceptual"])]
 
     public const ENABLED_ALGORITHMS = "duplicate_detector_enabled_algorithms";
 

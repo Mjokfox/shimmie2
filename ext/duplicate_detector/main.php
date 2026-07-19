@@ -7,7 +7,7 @@ namespace Shimmie2;
 use Jenssegers\ImageHash\ImageHash;
 use Jenssegers\ImageHash\Implementations\{AverageHash, BlockHash, DifferenceHash, PerceptualHash};
 
-use function MicroHTML\{B, BUTTON, INPUT, TABLE, TD, TR, emptyHTML};
+use function MicroHTML\{A, B, BUTTON, INPUT, TABLE, TD, TR, emptyHTML};
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\{InputArgument, InputInterface};
@@ -15,6 +15,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * @phpstan-type PhashArr array{average:?string,difference:?string,perceptual:?string,blockhash:?string}
+ * @phpstan-type similarArr array{image_id1:int,image_id2:int,ahash_distance:?int,dhash_distance:?int,phash_distance:?int,blockhash_distance:?int,least_distance:?int}
  * @extends Extension<DuplicateDetectorTheme>
  */
 class DuplicateDetector extends Extension
@@ -24,25 +25,67 @@ class DuplicateDetector extends Extension
     #[EventListener]
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
-        if ($this->get_version() < 1) {
+        if ($this->get_version() < 2) {
+            if ($this->get_version() < 1) {
+                Ctx::$database->create_table(
+                    'image_phashes',
+                    'image_id INTEGER NOT NULL,
+                    ahash bit(64),
+                    dhash bit(64),
+                    phash bit(64),
+                    blockhash bit(64),
+                    FOREIGN KEY(image_id) REFERENCES images(id) ON DELETE CASCADE,
+                    PRIMARY KEY(image_id)'
+                );
+            }
             Ctx::$database->create_table(
-                'image_phashes',
-                'image_id INTEGER NOT NULL,
-                ahash bit(64),
-                dhash bit(64),
-                phash bit(64),
-                blockhash bit(64),
-                FOREIGN KEY(image_id) REFERENCES images(id) ON DELETE CASCADE,
-                PRIMARY KEY(image_id)'
+                'similar_images',
+                'image_id1 INTEGER NOT NULL,
+                image_id2 INTEGER NOT NULL,
+                ahash_distance SMALLINT,
+                dhash_distance SMALLINT,
+                phash_distance SMALLINT,
+                blockhash_distance SMALLINT,
+                ignored BOOL DEFAULT FALSE,
+                FOREIGN KEY(image_id1) REFERENCES images(id) ON DELETE CASCADE,
+                FOREIGN KEY(image_id2) REFERENCES images(id) ON DELETE CASCADE'
             );
-            $this->set_version(1);
+            $this->set_version(2);
         }
     }
 
     #[EventListener]
     public function onPageRequest(PageRequestEvent $event): void
     {
-        if ($event->page_matches("duplicate_replace/{image_id}", method: "GET", permission: DuplicateDetectorPermission::REPLACE_DUPLICATE)) {
+        if ($event->page_matches("duplicate_finder", paged: true, method: "GET", permission: DuplicateDetectorPermission::FIND_DUPLICATE)) {
+            $page = $event->get_iarg('page_num', 1) - 1;
+            $order = $event->GET->get("sort") ?? "least";
+            $items_per_page = $event->GET->get("items_per_page");
+            if (is_null($items_per_page) || !is_numberish($items_per_page)) {
+                $limit = 24;
+            } else {
+                $limit = int_escape($items_per_page);
+                if ($limit < 1) {
+                    $limit = 24;
+                }
+            }
+            $show_ignored = $event->GET->get("show_ignored") === "true";
+            $this->theme->display_finder_page(
+                $this->get_all_similar($order, $show_ignored, $page * $limit, $limit),
+                $page,
+                (int)ceil($this->count_all_similar($show_ignored) / $limit),
+                $show_ignored,
+                $order,
+                $event->GET
+            );
+        } elseif ($event->page_matches("duplicate_finder", method: "POST", permission: DuplicateDetectorPermission::FIND_DUPLICATE)) {
+            $this->find_and_set_all_similar();
+            Ctx::$page->set_redirect(make_link("duplicate_finder"));
+        } elseif ($event->page_matches("duplicate_finder/ignore", method: "POST", permission: DuplicateDetectorPermission::FIND_DUPLICATE)) {
+            $set_ignore = $event->POST->get("set_ignore") !== "false";
+            $this->set_ignore($event->POST->req("image_id1"), $event->POST->req("image_id2"), $set_ignore);
+            Ctx::$page->set_redirect(Url::referer_or(make_link("duplicate_finder")));
+        } elseif ($event->page_matches("duplicate_replace/{image_id}", method: "GET", permission: DuplicateDetectorPermission::REPLACE_DUPLICATE)) {
             $this->theme->display_replace_page($event->get_iarg('image_id'));
         } elseif ($event->page_matches("duplicate_replace/{image_id}", method: "POST", permission: DuplicateDetectorPermission::REPLACE_DUPLICATE)) {
             $image_id = $event->get_iarg('image_id');
@@ -86,6 +129,7 @@ class DuplicateDetector extends Extension
         $current = Ctx::$database->get_one("SELECT count(image_id) FROM image_phashes");
         $all = Ctx::$database->get_one("SELECT count(id) FROM images WHERE image = TRUE");
         $html = emptyHTML(
+            A(["href" => make_link("duplicate_finder")], "Go to duplicate finder"),
             SHM_SIMPLE_FORM(
                 make_link("admin/fill_phashes"),
                 TABLE(
@@ -131,6 +175,15 @@ class DuplicateDetector extends Extension
     #[EventListener]
     public function onCliGen(CliGenEvent $event): void
     {
+        $event->app->register('reset_all_similar_images')
+            ->setDescription('Fully refreshes the `similar_images` table, it will be very slow with large amounts of images, so best to call from cli to avoid web timeout..')
+            ->setCode(function (InputInterface $input, OutputInterface $output): int {
+                $start_time = ftime();
+                $this->find_and_set_all_similar();
+                $exec_time = round(ftime() - $start_time, 2);
+                $output->write("Took $exec_time seconds");
+                return Command::SUCCESS;
+            });
         $event->app->register('fill_image_phashes')
             ->addArgument("start_id", InputArgument::OPTIONAL, default: 0)
             ->addArgument("limit", InputArgument::OPTIONAL, default: 100)
@@ -155,6 +208,7 @@ class DuplicateDetector extends Extension
         if (is_null($exists)) {
             $phashes = $this->generate_phashes($event->image->get_media_filename()->str());
             $this->add_phash_to_db($event->image->id, $phashes);
+            $this->set_similar_by_post_id($event->image->id);
         }
     }
 
@@ -164,13 +218,15 @@ class DuplicateDetector extends Extension
         if (!$event->image->image) {
             return;
         }
-        $phashes = $this->generate_phashes($event->image->get_media_filename()->str());
+        $phashes = $this->generate_phashes($event->tmp_filename->str());
         $exists = Ctx::$database->get_one("SELECT 1 FROM image_features WHERE image_id = :id", ["id" => $event->image->id]);
         if (is_null($exists)) {
             $this->add_phash_to_db($event->image->id, $phashes);
         } else { // update instead
             $this->update_phash_in_db($event->image->id, $phashes);
         }
+        $this->remove_similar_by_id($event->image->id);
+        $this->set_similar_by_post_id($event->image->id);
     }
 
     #[EventListener]
@@ -240,7 +296,7 @@ class DuplicateDetector extends Extension
                     "average" => new ImageHash(new AverageHash()),
                     "difference" => new ImageHash(new DifferenceHash()),
                     "perceptual" => new ImageHash(new PerceptualHash()),
-                    "blockhash" => new ImageHash(new BlockHash()),
+                    // "blockhash" => new ImageHash(new BlockHash(8)), // NOT WORKING
                     default => new ImageHash(new DifferenceHash())
                 };
             }
@@ -318,26 +374,108 @@ class DuplicateDetector extends Extension
         );
     }
 
-    /**
-     * @return array{image_id:int,distance:int}[]
-     */
-    private function find_similar_by_image_id(int $id, ?int $limit = null): array
+    /** Fully refreshes the `similar_images` table with a naive comparison implementation since there is no bktree data type, so it is very slow, best to call from cli to avoid web timeout.. */
+    private function find_and_set_all_similar(): void
     {
-        /** @var array{image_id:int,distance:int}[] */
-        return Ctx::$database->get_all(
-            "SELECT ip.image_id,
-            LEAST (
-                bit_count(ip.ahash # iq.ahash), 
-                bit_count(ip.dhash # iq.dhash),
-                bit_count(ip.phash # iq.phash),
-                bit_count(ip.blockhash # iq.blockhash)
-            ) AS distance
+        Ctx::$database->execute("DELETE FROM similar_images");
+        Ctx::$database->execute(
+            "INSERT INTO similar_images (image_id1, image_id2, ahash_distance, dhash_distance, phash_distance, blockhash_distance)
+            SELECT
+                ip.image_id AS image_id1,
+                iq.image_id AS image_id2,
+                bit_count(ip.ahash # iq.ahash) as ahash_distance,
+                bit_count(ip.dhash # iq.dhash) as dhash_distance,
+                bit_count(ip.phash # iq.phash) as phash_distance,
+                bit_count(ip.blockhash # iq.blockhash) as blockhash_distance
+            FROM image_phashes ip
+            JOIN image_phashes iq ON ip.image_id < iq.image_id
+            WHERE LEAST(
+                    bit_count(ip.ahash # iq.ahash),
+                    bit_count(ip.dhash # iq.dhash),
+                    bit_count(ip.phash # iq.phash),
+                    bit_count(ip.blockhash # iq.blockhash)
+                ) <= :threshold",
+            ["threshold" => Ctx::$config->get(DuplicateDetectorConfig::HAMMING_DISTANCE_THRESHOLD)]
+        );
+    }
+
+    private function set_similar_by_post_id(int $id): void
+    {
+        Ctx::$database->execute(
+            "INSERT INTO similar_images (image_id1, image_id2, ahash_distance, dhash_distance, phash_distance, blockhash_distance)
+            SELECT
+                ip.image_id AS image_id1,
+                iq.image_id AS image_id2,
+                bit_count(ip.ahash # iq.ahash) as ahash_distance,
+                bit_count(ip.dhash # iq.dhash) as dhash_distance,
+                bit_count(ip.phash # iq.phash) as phash_distance,
+                bit_count(ip.blockhash # iq.blockhash) as blockhash_distance
             FROM image_phashes ip
             JOIN image_phashes iq ON iq.image_id = :id
             WHERE NOT ip.image_id = :id
-            ORDER BY distance
-            LIMIT :limit",
-            ["id" => $id, "limit" => $limit ?? Ctx::$config->get(DuplicateDetectorConfig::DEFAULT_LIMIT)]
+            AND LEAST(
+                    bit_count(ip.ahash # iq.ahash),
+                    bit_count(ip.dhash # iq.dhash),
+                    bit_count(ip.phash # iq.phash),
+                    bit_count(ip.blockhash # iq.blockhash)
+                ) <= :threshold",
+            ["id" => $id, "threshold" => Ctx::$config->get(DuplicateDetectorConfig::HAMMING_DISTANCE_THRESHOLD)]
+        );
+    }
+
+    /** @return similarArr[] */
+    private function get_all_similar(string $order = "least", bool $show_ignored = false, int $offset = 0, int $limit = 24): array
+    {
+        $ordering_options = [
+            "post_id_asc" => "image_id1 ASC",
+            "post_id_desc" => "image_id1 DESC",
+            "ahash" => "ahash_distance",
+            "dhash" => "dhash_distance",
+            "phash" => "phash_distance",
+            "blockhash" => "blockhash_distance",
+            "least" => "LEAST(
+                ahash_distance,
+                dhash_distance,
+                phash_distance,
+                blockhash_distance
+            )"
+        ];
+
+        $order_string = \array_key_exists($order, $ordering_options) ? $ordering_options[$order] : $ordering_options["least"];
+
+        // @phpstan-ignore-next-line
+        return Ctx::$database->get_all("SELECT *, LEAST(ahash_distance, dhash_distance, phash_distance, blockhash_distance) AS least_distance FROM similar_images WHERE ignored = :show_ignored
+            ORDER BY $order_string
+            LIMIT :limit OFFSET :offset
+        ", ["show_ignored" => $show_ignored, "limit" => $limit, "offset" => $offset]);
+    }
+
+    private function remove_similar_by_id(int $id): void
+    {
+        Ctx::$database->execute(
+            "DELETE FROM similar_images WHERE image_id1 = :id OR image_id2 = :id",
+            ["id" => $id]
+        );
+    }
+
+    private function count_all_similar(bool $show_ignored = false): int
+    {
+        return Ctx::$database->get_one(
+            "SELECT COUNT(*) FROM similar_images WHERE ignored = :show_ignored",
+            ["show_ignored" => $show_ignored]
+        );
+    }
+
+    private function set_ignore(int|string $image_id1, int|string $image_id2, bool $value): void
+    {
+        Ctx::$database->execute(
+            "UPDATE similar_images SET ignored = :ignored
+            WHERE image_id1 = :image_id1 AND image_id2 = :image_id2",
+            [
+                "ignored" => $value,
+                "image_id1" => $image_id1,
+                "image_id2" => $image_id2
+            ]
         );
     }
 

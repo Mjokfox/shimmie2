@@ -1,3 +1,29 @@
+.duplicate-table {
+    display: grid;
+    gap: 1em;
+}
+
+.duplicate-row {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+}
+
+.duplicate-row-entry {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: .5em;
+}
+
+.duplicate-row-entry > a {
+    align-self: center;
+    justify-self: center;
+}
+
+.duplicate-row-entry > div {
+    max-width: var(--thumb-height);
+}
+
 .upload-duplicate-subcontainer {
     display: grid;
     grid-template-columns: 1fr auto 1fr;

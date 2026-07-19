@@ -179,7 +179,7 @@ class ReverseImage extends Extension
     public function onImageReplace(MediaReplaceEvent $event): void
     {
         $exists = Ctx::$database->get_one("SELECT 1 FROM image_features WHERE image_id = :id", ["id" => $event->image->id]);
-        $features = $this->get_image_features($event->image->get_media_filename()->str());
+        $features = $this->get_image_features($event->tmp_filename->str());
         if ($features) {
             if ($exists) {
                 $this->edit_features_to_db($features, $event->image->id);
