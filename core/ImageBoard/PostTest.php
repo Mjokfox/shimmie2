@@ -21,7 +21,7 @@ final class PostTest extends ShimmiePHPUnitTestCase
 
         Ctx::$config->set(SetupConfig::NICE_URLS, true);
         self::assertSame(
-            "/test/_images/feb01bab5698a11dd87416724c7a89e3/1%20-%20ACDC.jpg",
+            "/test/_reduced_images/feb01bab5698a11dd87416724c7a89e3/1%20-%20ACDC.jpg",
             (string)$image->get_media_link()
         );
         self::assertSame(
@@ -31,7 +31,7 @@ final class PostTest extends ShimmiePHPUnitTestCase
 
         Ctx::$config->set(SetupConfig::NICE_URLS, false);
         self::assertSame(
-            "/test/index.php?q=image%2F1%2F1%2520-%2520ACDC.jpg",
+            "/test/index.php?q=reduced_image%2F1%2F1%2520-%2520ACDC.jpg",
             (string)$image->get_media_link()
         );
         self::assertSame(

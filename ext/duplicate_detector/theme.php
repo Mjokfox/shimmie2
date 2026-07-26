@@ -84,6 +84,9 @@ class DuplicateDetectorTheme extends Themelet
                 if (is_null($post1) || is_null($post2)) {
                     continue;
                 }
+                if (TrashInfo::is_enabled() && ($post1['trash'] || $post2['trash'])) {
+                    continue;
+                }
 
                 $info = TABLE();
                 foreach ($known_distance_types as $key => $value) {

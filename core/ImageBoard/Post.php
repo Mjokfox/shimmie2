@@ -392,6 +392,9 @@ final class Post implements \ArrayAccess
      */
     public function get_media_link(): Url
     {
+        if (ReducedSizeImagesInfo::is_enabled() && !Ctx::$user->can(ReducedSizeImagesPermission::SEE_FULL_SIZE)) {
+            return $this->get_link(ReducedSizeImagesConfig::MEDIA_LINK, '_reduced_images/$hash/$id%20-%20$tags.$ext', 'reduced_image/$id/$id%20-%20$tags.$ext');
+        }
         return $this->get_link(ImageConfig::MEDIA_LINK, '_images/$hash/$id%20-%20$tags.$ext', 'image/$id/$id%20-%20$tags.$ext');
     }
 

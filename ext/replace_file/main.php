@@ -92,6 +92,8 @@ final class ReplaceFile extends Extension
 
         $image->save_to_db();
 
+        $event->new_image = $image;
+
         send_event(new ThumbnailGenerationEvent($image));
 
         Log::info("image", "Replaced >>{$image->id} {$event->old_hash} with {$event->new_hash}");
