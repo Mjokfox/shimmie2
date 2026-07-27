@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A, BODY, DIV, FORM, H1, IMG, INPUT, META, SCRIPT, STYLE, TITLE, emptyHTML};
+use function MicroHTML\{A, BODY, DIV, FORM, H1, IMG, INPUT, META, SCRIPT, STYLE, TITLE, emptyHTML, rawHTML};
 
 class SiteCaptchaTheme extends Themelet
 {
     public function display_page(): void
     {
         $url = make_link("captcha/check");
+        $time = time(); // add a 'random' string behind the image urls to avoid caching
+        $css_url = make_link("captcha/css?$time");
         Ctx::$page->add_http_header("Refresh: 3; url=$url");
         $data_href = Url::base();
-        $time = time(); // add a 'random' string behind the image urls to avoid caching
         Ctx::$page->add_auto_html_headers();
         Ctx::$page->set_data(MimeType::HTML, (string)Ctx::$page->html_html(
             emptyHTML(
@@ -21,6 +22,7 @@ class SiteCaptchaTheme extends Themelet
                 META(["http-equiv" => "refresh", "url" => $url]),
                 META(["http-equiv" => "Content-Type", "content" => "text/html;charset=utf-8"]),
                 META(["name" => "viewport", "content" => "width=device-width, initial-scale=1"]),
+                rawHTML("<script type=\"text/javascript\">const CAPTCHA_REDIRECT = \"$url\"</script>"),
                 SCRIPT(["type" => "text/javascript", "src" => "{$data_href}/ext/site_captcha/captcha.js"]),
                 STYLE("
                     .delayed-text {
@@ -33,8 +35,8 @@ class SiteCaptchaTheme extends Themelet
                 ...Ctx::$page->get_all_html_headers(),
             ),
             BODY(
-                ["style" => "background-image:url(\"/captcha/css?$time\");"],
-                IMG(["id" => "img", "style" => "display:none;", "src" => "/captcha/image?$time"]),
+                ["style" => "background-image:url(\"$css_url\");"],
+                IMG(["id" => "img", "style" => "display:none;", "src" => make_link("captcha/image?$time")]),
                 H1(["class" => "delayed-text"], "Loading..."),
                 A(["class" => "delayed-text", "style" => "animation-delay:5s", "href" => $url], "Your browser might not be redirecting automatically, please click this link"),
             )
@@ -68,11 +70,12 @@ class SiteCaptchaTheme extends Themelet
 
     public function display_block(): void
     {
+        $css_url = make_link("captcha/css");
         Ctx::$page->add_block(new Block(
             null,
             DIV(
-                ["style" => "background-image:url(\"/captcha/css\");"],
-                IMG(["style" => "display:none;", "src" => "/captcha/image"])
+                ["style" => "background-image:url(\"$css_url\");"],
+                IMG(["style" => "display:none;", "src" => make_link("captcha/image")])
             ),
             'subheading',
             id:"captcha",
