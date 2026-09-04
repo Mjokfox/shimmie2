@@ -8,7 +8,7 @@ final class PostDescriptionSetEvent extends Event
 {
     public function __construct(
         public int $image_id,
-        public string $description
+        public ?string $description
     ) {
         parent::__construct();
     }
@@ -36,11 +36,7 @@ final class PostDescription extends Extension
     #[EventListener]
     public function onPostInfoGet(PostInfoGetEvent $event): void
     {
-        $database = Ctx::$database;
-        $description = (string) $database->get_one(
-            "SELECT description FROM image_descriptions WHERE image_id = :id",
-            ["id" => $event->image->id]
-        ) ?: null;
+        $description = self::get_description($event->image->id);
         if ($description !== null) {
             $event->params["description"] = $description;
         }
@@ -50,7 +46,7 @@ final class PostDescription extends Extension
     public function onPostInfoSet(PostInfoSetEvent $event): void
     {
         $description = $event->get_param("description");
-        if (Ctx::$user->can(PostDescriptionPermission::EDIT_IMAGE_DESCRIPTIONS) && $description) {
+        if (Ctx::$user->can(PostDescriptionPermission::EDIT_IMAGE_DESCRIPTIONS)) {
             send_event(new PostDescriptionSetEvent($event->image->id, $description));
         }
     }
@@ -73,10 +69,7 @@ final class PostDescription extends Extension
     #[EventListener]
     public function onPostInfoBoxBuilding(PostInfoBoxBuildingEvent $event): void
     {
-        $description = (string)Ctx::$database->get_one(
-            "SELECT description FROM image_descriptions WHERE image_id = :id",
-            ["id" => $event->image->id]
-        ) ?: "None";
+        $description = self::get_description($event->image->id) ?: "None";
         $event->add_part($this->theme->get_description_editor_html($description), 35);
     }
 
@@ -114,5 +107,13 @@ final class PostDescription extends Extension
         if ($event->key === HelpPages::SEARCH) {
             $event->add_section("Post descriptions", $this->theme->get_help_html());
         }
+    }
+
+    public static function get_description(int $image_id): ?string
+    {
+        return (string) Ctx::$database->get_one(
+            "SELECT description FROM image_descriptions WHERE image_id = :id",
+            ["id" => $image_id]
+        ) ?: null;
     }
 }

@@ -6,6 +6,10 @@ namespace Shimmie2;
 
 use function MicroHTML\{B, INPUT, TABLE, TD, TR, rawHTML};
 
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\{InputArgument, InputInterface};
+use Symfony\Component\Console\Output\OutputInterface;
+
 class FlickrSource extends Extension
 {
     public const KEY = "flickr_source";
@@ -71,6 +75,32 @@ class FlickrSource extends Extension
         }
     }
 
+    #[EventListener]
+    public function onCliGen(CliGenEvent $event): void
+    {
+        $event->app->register('flickr_source')
+            ->setDescription('Find flickr sources for the newest default 100 posts, requires -u user argument, where user has permission to change the source')
+            ->addArgument('amount', InputArgument::OPTIONAL)
+            ->setCode(function (InputInterface $input, OutputInterface $output): int {
+                $start_time = ftime();
+                $limit = $input->getArgument('amount') ?? 100;
+                /** @var array{array{id:int,filename:string}} $files  */
+                $files = Ctx::$database->get_all(
+                    "SELECT * FROM images
+                    WHERE (source IS NULL OR source LIKE '%live.staticflickr%')
+                    AND mime LIKE 'image/%'
+                    ORDER BY id DESC
+                    LIMIT :limit;",
+                    ["limit" => $limit]
+                );
+                $res = $this->findSources($files, [$this, "imageUpdate"]);
+                $exec_time = round(ftime() - $start_time, 2);
+                $message = "passed: {$res["passed"]}, invalid: ".count($res["failed"]).", skipped: {$res["not"]}, time: $exec_time seconds." . (count($res["failed"]) > 0 ? " Failed: " . implode(", ", $res["failed"]) : "");
+                $output->write($message);
+                return Command::SUCCESS;
+            });
+    }
+
     /**
      * @param array{array{id:int,filename:string}} $files
      * @return array{passed:int,failed:array<int>,not:int}
@@ -80,6 +110,7 @@ class FlickrSource extends Extension
         $passed = 0;
         $failed = [];
         $not = 0;
+        $process_body = PostTitlesInfo::is_enabled() || PostDescriptionInfo::is_enabled();
         foreach ($files as $file) {
             if (!\Safe\preg_match("/(\d{7,13})_[a-f0-9]{7,13}_[a-z0-9]{1,2}(?:_d)?(?:\.jpg|\.png)$/", $file["filename"], $matches)) {
                 if (!\Safe\preg_match("/[a-zA-Z\-]+_(\d{7,13})_o(?:_d)?(?:\.jpg|\.png)$/", $file["filename"], $matches)) {
@@ -87,8 +118,12 @@ class FlickrSource extends Extension
                     continue;
                 }
             }
-            $source = $this->getFlickrUrl($matches[1]);
-            if ($source === "https://flickr.com/photos///") {
+            $data = $this->getFlickrData($matches[1], $process_body);
+            $source = $data["source"];
+
+            if (is_null($source)) {
+                $not++;
+            } elseif ($source === "https://flickr.com/photos///") {
                 $source = 'Unknown: broken flickr link';
                 $failed[] = $file["id"];
             } elseif (str_starts_with($source, "https://identity")) {
@@ -97,16 +132,34 @@ class FlickrSource extends Extension
             } else {
                 $passed++;
             }
-            $func($file, $source);
+            $func($file, $data);
         }
         return ["passed" => $passed, "failed" => $failed, "not" => $not];
     }
 
-    /** @param array{id:int,filename:string} $file */
-    private function imageUpdate(array $file, string $source): void
+    /** @param array{id:int,filename:string} $file
+     * @param array{description: string, title: string, source: string} $data
+    */
+    private function imageUpdate(array $file, array $data): void
     {
         $image = new Post($file);
-        send_event(new SourceSetEvent($image, $source));
+        send_event(new SourceSetEvent($image, $data["source"]));
+
+        if (PostTitlesInfo::is_enabled() && !empty($data["title"])) {
+            if (empty($image['title'])) {
+                send_event(new PostTitleSetEvent($image, $data["title"]));
+            }
+        }
+
+        if (PostDescriptionInfo::is_enabled() && !empty($data["description"])) {
+            $description = (string) Ctx::$database->get_one(
+                "SELECT description FROM image_descriptions WHERE image_id = :id",
+                ["id" => $image->id]
+            ) ?: null;
+            if (empty($description)) {
+                send_event(new PostDescriptionSetEvent($image->id, $data["description"]));
+            }
+        }
     }
 
     /** @param array{id:int,filename:string} $file */
@@ -119,21 +172,38 @@ class FlickrSource extends Extension
         );
     }
 
-    private function getFlickrUrl(int|string $id): string
+    /** @return array{source: ?string, title: ?string, description: ?string} */
+    private function getFlickrData(int|string $id, bool $process_body): array
     {
-        $url = "https://flickr.com/photo.gne?id={$id}";
-
-        $ch = curl_init($url);
-
+        $ch = curl_init("https://flickr.com/photo.gne?id=$id");
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_HEADER, true);
-        curl_setopt($ch, CURLOPT_NOBODY, true);
 
-        curl_exec($ch);
+        if (!$process_body) { // we only need the header
+            curl_setopt($ch, CURLOPT_HEADER, true);
+            curl_setopt($ch, CURLOPT_NOBODY, true);
+        }
 
-        $redirectedUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+        $output = [
+            "source" => null,
+            "title" => null,
+            "description" => null
+        ];
 
-        return $redirectedUrl;
+        /** @var false|string $response  */
+        $response = curl_exec($ch);
+        if ($response !== false) {
+            $output["source"] = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+            if ($process_body) {
+                if (preg_match("/<meta name=\"description\" content=\"(.*?)\"  data-dynamic=\"true\">/s", $response, $matches)) {
+                    $output["description"] = $matches[1];
+                }
+                if (preg_match("/<meta name=\"title\" content=\"(.*?)\"  data-dynamic=\"true\">/s", $response, $matches)) {
+                    $output["title"] = $matches[1];
+                }
+            }
+        }
+
+        return $output;
     }
 }
