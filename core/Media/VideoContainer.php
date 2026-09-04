@@ -32,11 +32,13 @@ enum VideoContainer: string
             VideoCodec::H264,
             VideoCodec::HEVC,
             VideoCodec::MPEG4,
+            VideoCodec::AV1,
         ],
         VideoContainer::MP4->value => [
             VideoCodec::H264,
             VideoCodec::HEVC,
             VideoCodec::MPEG4,
+            VideoCodec::AV1,
         ],
         VideoContainer::OGG->value => [
             VideoCodec::THEORA,
