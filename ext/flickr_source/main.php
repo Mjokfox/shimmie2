@@ -52,7 +52,7 @@ class FlickrSource extends Extension
                     LIMIT :limit;",
                     ["id_offset" => $offset, "limit" => $limit]
                 );
-                $res = $this->findSources($files, [$this, "imageUpdate"]);
+                $res = $this->find_sources($files, [$this, "image_update"]);
 
                 if (PostSchedulingInfo::is_enabled()) {
                     /** @var array{array{id:int,filename:string}} $files  */
@@ -61,7 +61,7 @@ class FlickrSource extends Extension
                         LEFT JOIN scheduled_posts_metadata spm ON spm.schedule_id = sp.id AND spm.key = 'source'
                         WHERE spm.schedule_id IS NULL;"
                     );
-                    $res1 = $this->findSources($files, [$this, "scheduleImageUpdate"]);
+                    $res1 = $this->find_sources($files, [$this, "schedule_image_update"]);
                     $res["passed"] += $res1["passed"];
                     $res["failed"] = array_merge($res["failed"], $res1["failed"]);
                     $res["not"] += $res1["not"];
@@ -93,7 +93,7 @@ class FlickrSource extends Extension
                     LIMIT :limit;",
                     ["limit" => $limit]
                 );
-                $res = $this->findSources($files, [$this, "imageUpdate"]);
+                $res = $this->find_sources($files, [$this, "image_update"]);
                 $exec_time = round(ftime() - $start_time, 2);
                 $message = "passed: {$res["passed"]}, invalid: ".count($res["failed"]).", skipped: {$res["not"]}, time: $exec_time seconds." . (count($res["failed"]) > 0 ? " Failed: " . implode(", ", $res["failed"]) : "");
                 $output->write($message);
@@ -105,7 +105,7 @@ class FlickrSource extends Extension
      * @param array{array{id:int,filename:string}} $files
      * @return array{passed:int,failed:array<int>,not:int}
      */
-    private function findSources(array $files, callable $func): array
+    private function find_sources(array $files, callable $func): array
     {
         $passed = 0;
         $failed = [];
@@ -118,7 +118,7 @@ class FlickrSource extends Extension
                     continue;
                 }
             }
-            $data = $this->getFlickrData($matches[1], $process_body);
+            $data = $this->get_Flickr_data($matches[1], $process_body);
             $source = $data["source"];
 
             if (is_null($source)) {
@@ -140,7 +140,7 @@ class FlickrSource extends Extension
     /** @param array{id:int,filename:string} $file
      * @param array{description: string, title: string, source: string} $data
     */
-    private function imageUpdate(array $file, array $data): void
+    private function image_update(array $file, array $data): void
     {
         $image = new Post($file);
         send_event(new SourceSetEvent($image, $data["source"]));
@@ -163,7 +163,7 @@ class FlickrSource extends Extension
     }
 
     /** @param array{id:int,filename:string} $file */
-    private function scheduleImageUpdate(array $file, string $source): void
+    private function schedule_image_update(array $file, string $source): void
     {
         Ctx::$database->execute(
             "INSERT INTO scheduled_posts_metadata(schedule_id, key, value) 
@@ -173,7 +173,7 @@ class FlickrSource extends Extension
     }
 
     /** @return array{source: ?string, title: ?string, description: ?string} */
-    private function getFlickrData(int|string $id, bool $process_body): array
+    private function get_Flickr_data(int|string $id, bool $process_body): array
     {
         $ch = curl_init("https://flickr.com/photo.gne?id=$id");
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -196,14 +196,20 @@ class FlickrSource extends Extension
             $output["source"] = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
             if ($process_body) {
                 if (preg_match("/<meta name=\"description\" content=\"(.*?)\"  data-dynamic=\"true\">/s", $response, $matches)) {
-                    $output["description"] = html_entity_decode($matches[1]);
+                    $output["description"] = $this->sanitize_output(html_entity_decode($matches[1]));
                 }
                 if (preg_match("/<meta name=\"title\" content=\"(.*?)\"  data-dynamic=\"true\">/s", $response, $matches)) {
-                    $output["title"] = html_entity_decode($matches[1]);
+                    $output["title"] = $this->sanitize_output(html_entity_decode($matches[1]));
                 }
             }
         }
 
         return $output;
+    }
+
+    private function sanitize_output(string $s): ?string
+    {
+        $s = preg_replace('/<a href=\"(.*?)\".*?<\/a>/is', '$1', $s);
+        return preg_replace('/<.+?>/im', '$1', $s ?? "");
     }
 }

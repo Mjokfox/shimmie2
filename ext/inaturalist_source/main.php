@@ -17,7 +17,7 @@ class INatSource extends Extension
         if (!($event->params["source"] || $event->params["source{$event->slot}"])) {
             $image = $event->image;
             if (\Safe\preg_match(self::REGEX, \basename($image->filename), $matches)) {
-                $source = $this->shapeSource($matches[1]);
+                $source = $this->shape_source($matches[1]);
                 send_event(new SourceSetEvent($image, $source));
             }
         }
@@ -62,7 +62,7 @@ class INatSource extends Extension
                     ["id_offset" => $offset, "limit" => $limit]
                 );
                 $total = \count($files);
-                $found = $this->findSources($files, [$this, "imageUpdate"]);
+                $found = $this->find_sources($files, [$this, "image_update"]);
 
                 if (PostSchedulingInfo::is_enabled()) {
                     /** @var array{array{id:int,filename:string}} $files  */
@@ -72,7 +72,7 @@ class INatSource extends Extension
                         WHERE spm.schedule_id IS NULL;"
                     );
                     $total += count($files);
-                    $found += $this->findSources($files, [$this, "scheduleImageUpdate"]);
+                    $found += $this->find_sources($files, [$this, "schedule_image_update"]);
                 }
                 $exec_time = round(ftime() - $start_time, 2);
                 $not = $total - $found;
@@ -86,12 +86,12 @@ class INatSource extends Extension
     /**
      * @param array{array{id:int,filename:string}} $files
      */
-    private function findSources(array $files, callable $func): int
+    private function find_sources(array $files, callable $func): int
     {
         $found = 0;
         foreach ($files as $file) {
             if (\Safe\preg_match(self::REGEX, \basename($file["filename"]), $matches)) {
-                $source = $this->shapeSource($matches[1]);
+                $source = $this->shape_source($matches[1]);
                 $func($file, $source);
                 $found++;
             }
@@ -99,20 +99,20 @@ class INatSource extends Extension
         return $found;
     }
 
-    private function shapeSource(int|string $observation_id): string
+    private function shape_source(int|string $observation_id): string
     {
         return "https://www.inaturalist.org/observations/$observation_id";
     }
 
     /** @param array{id:int,filename:string} $file */
-    private function imageUpdate(array $file, string $source): void
+    private function image_update(array $file, string $source): void
     {
         $image = new Post($file);
         send_event(new SourceSetEvent($image, $source));
     }
 
     /** @param array{id:int,filename:string} $file */
-    private function scheduleImageUpdate(array $file, string $source): void
+    private function schedule_image_update(array $file, string $source): void
     {
         Ctx::$database->execute(
             "INSERT INTO scheduled_posts_metadata(schedule_id, key, value) 
