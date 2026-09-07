@@ -196,10 +196,10 @@ class FlickrSource extends Extension
             $output["source"] = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
             if ($process_body) {
                 if (preg_match("/<meta name=\"description\" content=\"(.*?)\"  data-dynamic=\"true\">/s", $response, $matches)) {
-                    $output["description"] = $matches[1];
+                    $output["description"] = html_entity_decode($matches[1]);
                 }
                 if (preg_match("/<meta name=\"title\" content=\"(.*?)\"  data-dynamic=\"true\">/s", $response, $matches)) {
-                    $output["title"] = $matches[1];
+                    $output["title"] = html_entity_decode($matches[1]);
                 }
             }
         }
