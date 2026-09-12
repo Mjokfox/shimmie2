@@ -422,7 +422,10 @@ final class UserPage extends Extension
     public function onPageNavBuilding(PageNavBuildingEvent $event): void
     {
         if (Ctx::$user->is_anonymous()) {
-            $event->add_nav_link(make_link('user_admin/login'), "Account", category: "user", order: 10);
+            $event->add_nav_link(make_link('user_admin/login'), "Log in", category: "user", order: 10);
+            if (Ctx::$config->get(UserAccountsConfig::SIGNUP_ENABLED)) {
+                $event->add_nav_link(make_link('user_admin/create'), "Register", category: "user", order: 11);
+            }
         } else {
             $event->add_nav_link(make_link('user'), "Account", ["user"], "user", 10);
         }

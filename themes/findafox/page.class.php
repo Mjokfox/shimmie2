@@ -15,7 +15,6 @@ class customPage extends Page
         list($nav_links, $sub_links) = $this->get_nav_links();
 
         $left_block_html = [];
-        $user_block_html = [];
         $main_block_html = [];
         $sub_block_html = [];
 
@@ -24,14 +23,13 @@ class customPage extends Page
                 case "left":
                     $left_block_html[] = $this->block_html($block, false);
                     break;
-                case "user":
-                    $user_block_html[] = $block->body;
-                    break;
                 case "subheading":
                     $sub_block_html[] = $block->body;
                     break;
                 case "main":
                     $main_block_html[] = $this->block_html($block, false);
+                    break;
+                case "user":
                     break;
                 default:
                     print "<p>error: {$block->header} using an unknown section ({$block->section})";
@@ -61,11 +59,12 @@ class customPage extends Page
             }
         }
 
+        $data_href = (string)Url::base();
         $title_link = H1(
             ["id" => "site-title"],
             A(
                 ["href" => make_link($main_page)],
-                IMG(["src" => "/web-app-manifest-192x192.png", "alt" => "", "class" => "logo"]),
+                IMG(["src" => "$data_href/web-app-manifest-192x192.png", "alt" => "", "class" => "logo"]),
                 $site_name
             )
         );

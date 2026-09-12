@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A, BR, INPUT, LABEL, SMALL, TABLE, TD, TR, joinHTML};
+use function MicroHTML\{A, BR, INPUT, LABEL, SMALL, TABLE, TD, TR};
 
 use MicroHTML\HTMLElement;
 
@@ -55,16 +55,6 @@ class CustomUserPageTheme extends UserPageTheme
      */
     public function display_user_block(User $user, array $parts): void
     {
-        $html = [];
-        $blocked = ["Pools", "Pool Changes", "Alias Editor", "My Profile"];
-        foreach ($parts as $part) {
-            if (in_array($part["name"], $blocked)) {
-                continue;
-            }
-            $html[] = A(["href" => $part["link"], "class" => "tab"], $part["name"]);
-        }
-        $b = new Block("User Links", joinHTML(" ", $html), "user", 90, is_content: false);
-        Ctx::$page->add_block($b);
     }
 
     public function display_signup_page(): void

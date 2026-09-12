@@ -132,6 +132,11 @@ HEADER ul#navbar li:first-child a {
 	font-weight: bold;
 }
 
+HEADER ul#navbar li a[href*="user_admin"] {
+	color: var(--link-first);
+	font-weight: bold;
+}
+
 HEADER ul#navbar li a.current-page {
 	background-color: var(--header-selected);
 	font-weight: bold;
