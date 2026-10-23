@@ -175,7 +175,7 @@ class ReverseImage extends Extension
         }
     }
 
-    #[EventListener]
+    #[EventListener(priority: 49)] // happen before the actual replacement, so the tmpfile exists
     public function onImageReplace(MediaReplaceEvent $event): void
     {
         $exists = Ctx::$database->get_one("SELECT 1 FROM image_features WHERE image_id = :id", ["id" => $event->image->id]);
@@ -389,6 +389,9 @@ class ReverseImage extends Extension
      */
     public function get_image_features(string $path): array|false
     {
+        if (!is_file($path)) {
+            error_log("reverse_image: Failed to get image features: path does not exist");
+        }
         $uri = Ctx::$config->get(ReverseImageConfig::CONF_URL);
         $url = "$uri/extract_features";
         $ch = curl_init($url);
