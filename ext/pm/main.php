@@ -489,6 +489,7 @@ final class PrivMsg extends Extension
             "message" => $event->pm->message,
         ]
         );
+        $event->id = Ctx::$database->get_last_insert_id("private_message_id_seq");
         Ctx::$cache->delete("pm-count-{$event->pm->to_id}");
         Log::info("pm", "Sent PM to User #{$event->pm->to_id}");
     }
