@@ -24,7 +24,7 @@ function xy_from_touch_mouse(e) {
 // only do this on the right page
 if ((window.location.pathname === "/home" || window.location.pathname === "/") && window.silly_cookies_url && window.silly_cookies_text){
     const front_page = document.getElementById("front-page");
-    if (front_page.parentElement){
+    if (front_page){
         function makeFallingCookie(event) {
             const img = document.createElement("img");
             img.src = "/ext/silly_cookies/default/cookie.png";
@@ -196,7 +196,7 @@ if ((window.location.pathname === "/home" || window.location.pathname === "/") &
         subcontainer.appendChild(text);
         
         container.appendChild(subcontainer);
-        front_page.parentElement.appendChild(container);
+        front_page.appendChild(container);
 
         if (window.silly_cookies_gib){
             const dispenser = document.createElement("button");

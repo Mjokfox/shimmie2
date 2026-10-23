@@ -82,11 +82,62 @@ final class Network
     }
 
     /**
+     * @return array<IPAddress>
+     */
+    public static function resolve_hostname(string $host): array
+    {
+        $ips = [];
+        // \Safe\dns_get_record is broken due to implicit `nameservers=null`
+        $records = \dns_get_record($host, DNS_A + DNS_AAAA);
+        if ($records === false) {
+            return $ips;
+        }
+        foreach ($records as $record) {
+            if (isset($record['ip'])) {
+                $ips[] = IPAddressV4::parse($record['ip']);
+            } elseif (isset($record['ipv6'])) {
+                $ips[] = IPAddressV6::parse($record['ipv6']);
+            }
+        }
+        return array_unique($ips);
+    }
+
+    /**
+     * Make sure a user isn't attempting to fetch file://...,
+     * http://localhost, http://192.168.0.1, etc.
+     */
+    private static function validate_url_for_fetch(string $url): void
+    {
+        $parsed = parse_url($url);
+        if (!$parsed || !isset($parsed['scheme']) || !isset($parsed['host'])) {
+            throw new FetchException("Invalid URL: cannot parse");
+        }
+
+        $scheme = $parsed['scheme'];
+        if ($scheme !== 'http' && $scheme !== 'https') {
+            throw new FetchException("Invalid URL: {$scheme} is not allowed");
+        }
+
+        $host = $parsed['host'];
+        $ips = self::resolve_hostname($host);
+        if (empty($ips)) {
+            throw new FetchException("Invalid URL: cannot resolve hostname");
+        }
+        foreach ($ips as $ip) {
+            if ($ip->is_private() || $ip->is_localhost()) {
+                throw new FetchException("Invalid URL: connects to a private IP address");
+            }
+        }
+    }
+
+    /**
      * @param non-empty-string $url
      * @return header-array
      */
     public static function fetch_url(string $url, Path $mfile): array
     {
+        self::validate_url_for_fetch($url);
+
         if (Ctx::$config->get(UploadConfig::TRANSLOAD_ENGINE) === "curl" && function_exists("curl_init")) {
             $ch = curl_init($url);
             assert($ch !== false);
@@ -98,6 +149,8 @@ final class Network
             curl_setopt($ch, CURLOPT_REFERER, $url);
             curl_setopt($ch, CURLOPT_USERAGENT, "Shimmie-".SysConfig::getVersion());
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
 
             $response = curl_exec($ch);
             if ($response === false) {
@@ -114,7 +167,10 @@ final class Network
 
             fwrite($fp, $body);
             fclose($fp);
-        } elseif (Ctx::$config->get(UploadConfig::TRANSLOAD_ENGINE) === "wget") {
+        }
+        // Disabled pending security review
+        /*
+        elseif (Ctx::$config->get(UploadConfig::TRANSLOAD_ENGINE) === "wget") {
             $s_url = escapeshellarg($url);
             $s_mfile = escapeshellarg($mfile->str());
             system("wget --no-check-certificate $s_url --output-document=$s_mfile");
@@ -122,7 +178,11 @@ final class Network
                 throw new FetchException("wget failed");
             }
             $headers = [];
-        } elseif (Ctx::$config->get(UploadConfig::TRANSLOAD_ENGINE) === "fopen") {
+        }
+        */
+        // Disabled pending security review
+        /*
+        elseif (Ctx::$config->get(UploadConfig::TRANSLOAD_ENGINE) === "fopen") {
             $fp_in = @fopen($url, "r");
             $fp_out = fopen($mfile->str(), "w");
             if (!$fp_in || !$fp_out) {
@@ -138,7 +198,8 @@ final class Network
             fclose($fp_out);
 
             $headers = Network::http_parse_headers(implode("\n", http_get_last_response_headers() ?? []));
-        } else {
+        }
+        */ else {
             throw new FetchException("No transload engine configured");
         }
 

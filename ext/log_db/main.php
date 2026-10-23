@@ -25,7 +25,9 @@ final class ActorColumn extends Column
     {
         $driver = $this->table->db->getAttribute(\PDO::ATTR_DRIVER_NAME);
         switch ($driver) {
-            case DatabaseDriverID::PGSQL:
+            // MicroCRUD uses raw PDO, not shimmie's
+            // abstraction with DatabaseDriverID etc
+            case "pgsql":
                 return "((LOWER(username) = LOWER(:{$this->name}_0)) OR (address && cast(:{$this->name}_1 as inet)))";
             default:
                 return "((username = :{$this->name}_0) OR (address = :{$this->name}_1))";
@@ -155,7 +157,7 @@ final class MessageColumn extends Column
 
         // Split message into parts, capturing the delimiters
         $parts = preg_split(
-            "/(Image #|Post #|&gt;&gt;)(\d+)/",
+            "/(Image #|Post #|&gt;&gt;|>>)(\d+)/",
             $message,
             -1,
             PREG_SPLIT_DELIM_CAPTURE

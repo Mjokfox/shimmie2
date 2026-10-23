@@ -481,10 +481,14 @@ final class PrivMsg extends Extension
         Ctx::$database->execute(
             "INSERT INTO private_message(from_id, from_ip, to_id, sent_date, subject, message)
 			VALUES(:fromid, :fromip, :toid, now(), :subject, :message)",
-            ["fromid" => $event->pm->from_id, "fromip" => (string)$event->pm->from_ip,
-            "toid" => $event->pm->to_id, "subject" => $event->pm->subject, "message" => $event->pm->message]
+            [
+            "fromid" => $event->pm->from_id,
+            "fromip" => (string)$event->pm->from_ip,
+            "toid" => $event->pm->to_id,
+            "subject" => $event->pm->subject,
+            "message" => $event->pm->message,
+        ]
         );
-        $event->id = Ctx::$database->get_last_insert_id("private_message_id_seq");
         Ctx::$cache->delete("pm-count-{$event->pm->to_id}");
         Log::info("pm", "Sent PM to User #{$event->pm->to_id}");
     }

@@ -204,7 +204,7 @@ final class Forum extends Extension
 
             if ($this->get_version() < 4) {
                 Ctx::$database->execute("ALTER TABLE forum_threads ADD response_count INTEGER NOT NULL DEFAULT 0");
-                Ctx::$database->execute("UPDATE forum_threads ft SET response_count = (SELECT COUNT(1) FROM forum_posts fp WHERE fp.thread_id = ft.id)");
+                Ctx::$database->execute("UPDATE forum_threads SET response_count = (SELECT COUNT(1) FROM forum_posts WHERE forum_posts.thread_id = forum_threads.id)");
                 $this->set_version(4);
             }
 
@@ -402,13 +402,15 @@ final class Forum extends Extension
     private function save_new_thread(User $user, string $title, bool $sticky): int
     {
         $title = substr($title, 0, Ctx::$config->get(ForumConfig::TITLE_SUBSTRING));
-        Ctx::$database->execute(
-            "INSERT INTO forum_threads
-			(title, sticky, user_id, user_ip, date, uptodate)
-			VALUES
-			(:title, :sticky, :user_id, :user_ip, now(), now())",
-            ['title' => $title, 'sticky' => $sticky, 'user_id' => $user->id, 'user_ip' => (string)Network::get_real_ip()]
-        );
+        Ctx::$database->execute("
+			INSERT INTO forum_threads (title, sticky, user_id, user_ip, date, uptodate)
+			VALUES (:title, :sticky, :user_id, :user_ip, now(), now())
+		", [
+            'title' => $title,
+            'sticky' => $sticky,
+            'user_id' => $user->id,
+            'user_ip' => (string)Network::get_real_ip(),
+        ]);
 
         $thread_id = Ctx::$database->get_last_insert_id('forum_threads_id_seq');
 

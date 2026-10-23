@@ -13,7 +13,7 @@ class CustomhomeTheme extends HomeTheme
     protected function build_search(): HTMLElement
     {
         $search_html = DIV(
-            ["class" => "space search-bar", "id" => "search"],
+            ["class" => "search"],
             SHM_FORM(
                 action: search_link(),
                 method: "GET",
@@ -25,11 +25,11 @@ class CustomhomeTheme extends HomeTheme
             )
         );
         if (ReverseImageInfo::is_enabled() && Ctx::$config->get(ReverseImageConfig::SEARCH_ENABLE) && Ctx::$user->get_config()->get(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
-            $search_html->appendChild(A(["href" => "#", "onclick" => "toggle_elements('.search-bar')"], "Or describe an image"));
+            $search_html->appendChild(A(["href" => "#", "onclick" => "toggle_elements('.search')"], "Or describe an image"));
             $search_html = emptyHTML(
                 $search_html,
                 DIV(
-                    ["class" => "space search-bar", "id" => "text-search", "style" => "display:none;"],
+                    ["class" => "search", "style" => "display:none;"],
                     SHM_FORM(
                         action: make_link("post/search"),
                         method: "GET",
@@ -39,7 +39,7 @@ class CustomhomeTheme extends HomeTheme
                             SHM_SUBMIT("Search")
                         ]
                     ),
-                    A(["href" => "#", "onclick" => "toggle_elements('.search-bar')"], "Back to tag search")
+                    A(["href" => "#", "onclick" => "toggle_elements('.search')"], "Back to tag search")
                 )
             );
         }

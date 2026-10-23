@@ -1,4 +1,4 @@
-ARG PHP_VERSION=8.4
+ARG PHP_VERSION=8.5
 
 # Tree of layers:
 # base
@@ -10,7 +10,7 @@ ARG PHP_VERSION=8.4
 # Install base packages
 # Things which all stages (build, test, run) need
 FROM debian:trixie AS base
-COPY --from=docker.io/mwader/static-ffmpeg:7.1 /ffmpeg /ffprobe /usr/local/bin/
+COPY --from=docker.io/mwader/static-ffmpeg:9.0 /ffmpeg /ffprobe /usr/local/bin/
 RUN apt update && \
     apt upgrade -y && \
     apt install -y --no-install-recommends \
@@ -20,7 +20,7 @@ RUN apt update && \
     php${PHP_VERSION}-gd php${PHP_VERSION}-zip php${PHP_VERSION}-xml php${PHP_VERSION}-mbstring php${PHP_VERSION}-curl \
     php${PHP_VERSION}-pgsql php${PHP_VERSION}-mysql php${PHP_VERSION}-sqlite3 \
     php${PHP_VERSION}-memcached \
-    curl imagemagick zip unzip librsvg2-bin git && \
+    curl imagemagick zip unzip librsvg2-bin git ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 # Install dev packages

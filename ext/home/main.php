@@ -35,7 +35,7 @@ final class Home extends Extension
             if (WikiInfo::is_enabled()) {
                 $main_links .= '[Wiki](site://wiki)';
             }
-            $main_links .= '[Documentation](site://ext_doc)';
+            $main_links .= '[Documentation](site://help)';
         }
 
         return $this->theme->build_body(

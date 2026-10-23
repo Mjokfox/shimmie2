@@ -39,12 +39,19 @@ class Tombstones extends Extension
         $database = Ctx::$database;
         if ($this->get_version() < 1) {
             $database->create_table("tombstones", "
+				id SCORE_AIPK,
 				post_id INTEGER NOT NULL,
 				hash CHAR(32) NOT NULL,
 				date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 				message TEXT NOT NULL,
 			");
-            $this->set_version(1);
+            $database->execute("CREATE INDEX tombstones__hash ON tombstones(hash)");
+            $this->set_version(2);
+        }
+        if ($this->get_version() < 2) {
+            $database->execute("ALTER TABLE tombstones ADD COLUMN id SCORE_AIPK");
+            $database->execute("CREATE INDEX tombstones__hash ON tombstones(hash)");
+            $this->set_version(2);
         }
     }
 
@@ -88,12 +95,17 @@ class Tombstones extends Extension
         $date = date("Y-m-d H:i");
         $name = Ctx::$user->name;
 
+        $msg = Ctx::$config->get(TombstonesConfig::MESSAGE);
+        $msg = str_replace('$HASH', $hash, $msg);
+        $msg = str_replace('$DATE', $date, $msg);
+        $msg = str_replace('$ADMIN', $name, $msg);
+
         $database->execute(
             "INSERT INTO tombstones (post_id, hash, message) VALUES (:post_id, :hash, :message)",
             [
                 "post_id" => $event->image->id,
                 "hash" => $event->image->hash,
-                "message" => "$hash was deleted on $date by $name",
+                "message" => $msg,
             ]
         );
     }

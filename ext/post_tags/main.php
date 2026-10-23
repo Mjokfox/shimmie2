@@ -195,14 +195,16 @@ final class PostTags extends Extension
             $cmp = ltrim($matches[1], ":") ?: "=";
             $count = $matches[2];
             $event->add_querylet(
-                new Querylet("EXISTS (
-				              SELECT 1
-				              FROM image_tags it
-				              LEFT JOIN tags t ON it.tag_id = t.id
-				              WHERE images.id = it.image_id
-				              GROUP BY image_id
-				              HAVING COUNT(*) $cmp $count
-				)")
+                new Querylet("
+    				EXISTS (
+    					SELECT 1
+    					FROM image_tags it
+    					LEFT JOIN tags t ON it.tag_id = t.id
+    					WHERE images.id = it.image_id
+    					GROUP BY image_id
+    					HAVING COUNT(*) $cmp $count
+    				)
+                ")
             );
         }
     }
@@ -325,11 +327,11 @@ final class PostTags extends Extension
             if (count($images) === 0) {
                 Log::info("tag_edit", "No images found with target tag, doing in-place rename");
                 $database->execute(
-                    "DELETE FROM tags WHERE tag=:replace",
+                    "DELETE FROM tags WHERE LOWER(tag) = LOWER(:replace)",
                     ["replace" => $replace_set[0]]
                 );
                 $database->execute(
-                    "UPDATE tags SET tag=:replace WHERE tag=:search",
+                    "UPDATE tags SET tag=:replace WHERE LOWER(tag) = LOWER(:search)",
                     ["replace" => $replace_set[0], "search" => $search_set[0]]
                 );
                 return;

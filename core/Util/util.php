@@ -172,6 +172,24 @@ function truncate_filename(?string $filename, int $max_len = 250): ?string
 }
 
 
+function dedent(string $str): string
+{
+    $str = str_replace("\t", "    ", $str);
+    $lines = explode("\n", $str);
+    $min_indent = 9999;
+    foreach ($lines as $line) {
+        if (trim($line) === '') {
+            continue;
+        }
+        $min_indent = min($min_indent, strspn($line, ' '));
+    }
+    foreach ($lines as &$line) {
+        $line = substr($line, $min_indent);
+    }
+    unset($line);
+    return implode("\n", $lines);
+}
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
 * Debugging functions                                                       *
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -275,6 +293,25 @@ function _fatal_error(\Throwable $e): void
     //$hash = exec("git rev-parse HEAD");
     //$h_hash = $hash ? "<p><b>Hash:</b> $hash" : "";
     //'.$h_hash.'
+
+    // Logging to OTLP is just appending a struct
+    // to an in-memory buffer so should be safe
+    $attrs = [
+        "err.stack_trace" => $e->getTraceAsString(),
+        "enduser.id" => $_COOKIE["shm_user"] ?? "No User",
+        "net.peer.ip" => (string)Network::get_real_ip(),
+        "http.uri" => $_SERVER["REQUEST_URI"] ?? "No URI",
+        "http.user_agent" => $_SERVER['HTTP_USER_AGENT'] ?? "No UA",
+    ];
+    if (is_a($e, DatabaseException::class)) {
+        $attrs["err.query"] = $e->query;
+        $attrs["err.args"] = var_export($e->args, true);
+    }
+    Ctx::$tracer->logMessage(
+        $e->getMessage(),
+        \MicroOTLP\LogSeverity::FATAL,
+        $attrs
+    );
 
     if (PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg') {
         print("Trace: ");

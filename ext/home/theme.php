@@ -59,13 +59,13 @@ class HomeTheme extends Themelet
         if (empty((string)$links)) {
             return null;
         }
-        return DIV(["class" => "space", "id" => "links"], $links);
+        return DIV(["id" => "links"], $links);
     }
 
     protected function build_search(): HTMLElement
     {
         $search_html = emptyHTML(DIV(
-            ["class" => "space", "id" => "search"],
+            ["class" => "search"],
             SHM_FORM(
                 action: search_link(),
                 method: "GET",
@@ -78,7 +78,8 @@ class HomeTheme extends Themelet
         ));
         if (ReverseImageInfo::is_enabled() && Ctx::$config->get(ReverseImageConfig::SEARCH_ENABLE) && Ctx::$user->get_config()->get(ReverseImageUserConfig::USER_SEARCH_ENABLE)) {
             $search_html->appendChild(DIV(
-                ["class" => "space", "id" => "text-search"],
+                ["class" => "search"],
+                "Or",
                 SHM_FORM(
                     action: make_link("post/search"),
                     method: "GET",
@@ -98,7 +99,7 @@ class HomeTheme extends Themelet
         if (empty($main_text)) {
             return null;
         }
-        return DIV(["class" => "space", "id" => "message"], $main_text);
+        return DIV(["id" => "message"], $main_text);
     }
 
     protected function build_counter(int $post_count): ?HTMLElement
@@ -117,14 +118,14 @@ class HomeTheme extends Themelet
                 'src' => "$base_href/ext/home/counters/$counter_dir/$cur.gif"
             ]);
         }
-        return DIV(["class" => "space", "id" => "counter"], joinHTML('', $counter_digits));
+        return DIV(["id" => "counter"], joinHTML('', $counter_digits));
     }
 
     protected function build_footer(?string $contact_link, int $post_count): HTMLElement
     {
         $num_comma = number_format($post_count);
         return DIV(
-            ["class" => "space", "id" => "foot"],
+            ["id" => "foot"],
             SMALL(SMALL(
                 empty($contact_link)
                     ? null
