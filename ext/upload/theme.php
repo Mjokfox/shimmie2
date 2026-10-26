@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A, BR, DIV, INPUT, NOSCRIPT, P, SCRIPT, SMALL, SPAN, emptyHTML, rawHTML};
+use function MicroHTML\{A, B, BR, DIV, INPUT, NOSCRIPT, P, SCRIPT, SMALL, SPAN, emptyHTML, rawHTML};
 
 use MicroHTML\HTMLElement;
 
@@ -55,6 +55,14 @@ class UploadTheme extends Themelet
             )
         );
         $html = emptyHTML(
+            DIV(
+                ["style" => "width: 50%;display: flex;justify-content: center;"],
+                B(
+                    ["style" => "border: 2px outset var(--text);padding:3px 1rem;"],
+                    "Before uploading, please read the ",
+                    A(["href" => "/wiki/upload_guidelines"], "guidelines")
+                ),
+            ),
             $form,
             SMALL(
                 "(",
