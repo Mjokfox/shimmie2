@@ -206,26 +206,20 @@ final class Notifications extends Extension
         if (empty($ids)) {
             return;
         }
-        $count = \count($ids);
-        if ($count > 1) {
-            $condition = 'IN (' . implode(',', $ids) . ')';
-            $args = ['user_id' => Ctx::$user->id];
-        } else {
-            $condition = "= :id";
-            $args = ['id' => $ids[0], 'user_id' => Ctx::$user->id];
-        }
+        $args = ['user_id' => Ctx::$user->id, "ids" => $ids];
         switch ($action) {
             case 'Delete':
-                $q = new Querylet("DELETE FROM notifications WHERE id $condition AND user_id = :user_id", $args);
+                $q = new Querylet("DELETE FROM notifications WHERE id IN :ids AND user_id = :user_id", $args);
                 $action .= "d";
                 break;
             case 'Read':
-                $q = new Querylet("UPDATE notifications SET is_read = TRUE WHERE id $condition AND user_id = :user_id", $args);
+                $q = new Querylet("UPDATE notifications SET is_read = TRUE WHERE id IN :ids AND user_id = :user_id", $args);
                 break;
             default:
                 throw new UserError('invalid action');
         }
-        Ctx::$database->execute($q->sql, $q->variables); // @phpstan-ignore-line
+        $count = \count($ids);
+        Ctx::$database->execute($q->sql, $q->variables);
         Ctx::$cache->delete("notif-count-" . Ctx::$user->id);
         Ctx::$page->flash("$action $count notification" . ($count > 1 ? 's.' : '.'));
     }

@@ -80,19 +80,22 @@ class ReverseImage extends Extension
             $page_number = $event->get_iarg('page_num', 1);
             $page_size = $config->get(IndexConfig::IMAGES);
 
-            $image_ids = $this->reverse_image_compare($feat, $page_size, ($page_number - 1) * $page_size);
+            $features = $this->reverse_image_compare($feat, $page_size, ($page_number - 1) * $page_size);
             /** @var IndexTheme $IT */
             $IT = Themelet::get_theme_class(IndexTheme::class);
             $images = [];
-            if (!empty($image_ids)) {
-                $in = implode(",", array_keys($image_ids));
-                $query = "SELECT images.* FROM images
-                    WHERE id IN ($in)
-                    order by array_position(array[$in], id);";
-                // @phpstan-ignore-next-line
-                $res = Ctx::$database->get_all($query);
-                foreach ($res as $r) {
-                    $images[] = new Post($r);
+            $image_ids = array_keys($features);
+            if (!empty($features)) {
+                $res = Ctx::$database->get_all("SELECT images.* FROM images
+                    WHERE id IN :ids", ["ids" => $image_ids]);
+                foreach ($image_ids as $id) { // holy inefficient, but i couldnt find a way to preserver the order in sql for now
+                    foreach ($res as $key => $row) {
+                        if ($row["id"] === $id) {
+                            $images[] = new Post($row);
+                            unset($res[$key]);
+                            break;
+                        }
+                    }
                 }
             }
             $this->theme->list_search($search);

@@ -150,30 +150,32 @@ final class Media extends Extension
     public function onSearchTermParse(SearchTermParseEvent $event): void
     {
         if ($matches = $event->matches("/^content[=:](video|audio|image|unknown)$/i")) {
-            $field = $matches[1];
-            if ($field === "unknown") {
-                $event->add_querylet(new Querylet("video IS NULL OR audio IS NULL OR image IS NULL"));
-            } else {
-                $event->add_querylet(new Querylet("$field = TRUE"));
-            }
+            $sql = match ($matches[1]) {
+                "unknown" => "video IS NULL OR audio IS NULL OR image IS NULL",
+                "video" => "video IS TRUE",
+                "audio" => "audio IS TRUE",
+                "image" => "image IS TRUE",
+                default => "",
+            };
+            $event->add_querylet(new Querylet($sql));
         } elseif ($matches = $event->matches("/^ratio(:|<=|<|=|>|>=)(\d+):(\d+)$/i")) {
-            $cmp = ltrim($matches[1], ":") ?: "=";
-            $args = ["width{$event->id}" => int_escape($matches[2]), "height{$event->id}" => int_escape($matches[3])];
-            $event->add_querylet(new Querylet("width / :width{$event->id} $cmp height / :height{$event->id}", $args));
+            $cmp = cmp_escape($matches[1]);
+            $args = ["width" => int_escape($matches[2]), "height" => int_escape($matches[3])];
+            $event->add_querylet(new Querylet("width / :width $cmp height / :height", $args));
         } elseif ($matches = $event->matches("/^size(:|<=|<|=|>|>=)(\d+)x(\d+)$/i")) {
-            $cmp = ltrim($matches[1], ":") ?: "=";
-            $args = ["width{$event->id}" => int_escape($matches[2]), "height{$event->id}" => int_escape($matches[3])];
-            $event->add_querylet(new Querylet("width $cmp :width{$event->id} AND height $cmp :height{$event->id}", $args));
+            $cmp = cmp_escape($matches[1]);
+            $args = ["width" => int_escape($matches[2]), "height" => int_escape($matches[3])];
+            $event->add_querylet(new Querylet("width $cmp :width AND height $cmp :height", $args));
         } elseif ($matches = $event->matches("/^width(:|<=|<|=|>|>=)(\d+)$/i")) {
-            $cmp = ltrim($matches[1], ":") ?: "=";
-            $event->add_querylet(new Querylet("width $cmp :width{$event->id}", ["width{$event->id}" => int_escape($matches[2])]));
+            $cmp = cmp_escape($matches[1]);
+            $event->add_querylet(new Querylet("width $cmp :width", ["width" => int_escape($matches[2])]));
         } elseif ($matches = $event->matches("/^height(:|<=|<|=|>|>=)(\d+)$/i")) {
-            $cmp = ltrim($matches[1], ":") ?: "=";
-            $event->add_querylet(new Querylet("height $cmp :height{$event->id}", ["height{$event->id}" => int_escape($matches[2])]));
+            $cmp = cmp_escape($matches[1]);
+            $event->add_querylet(new Querylet("height $cmp :height", ["height" => int_escape($matches[2])]));
         } elseif ($matches = $event->matches("/^length(:|<=|<|=|>|>=)(.+)$/i")) {
+            $cmp = cmp_escape($matches[1]);
             $value = parse_to_milliseconds($matches[2]);
-            $cmp = ltrim($matches[1], ":") ?: "=";
-            $event->add_querylet(new Querylet("length $cmp :length{$event->id}", ["length{$event->id}" => $value]));
+            $event->add_querylet(new Querylet("length $cmp :length", ["length" => $value]));
         }
     }
 
@@ -425,9 +427,7 @@ final class Media extends Extension
                     }
 
                     // Completely fill the background of the new image with allocated color.
-                    if (imagefill($image_resized, 0, 0, $transparency) === false) {
-                        throw new MediaException("Unable to fill new image with transparent color");
-                    }
+                    imagefill($image_resized, 0, 0, $transparency);
 
                     // Set the background color for new image to transparent
                     imagecolortransparent($image_resized, $transparency);
@@ -438,24 +438,18 @@ final class Media extends Extension
                 //
                 // More info here:  https://stackoverflow.com/questions/279236/how-do-i-resize-pngs-with-transparency-in-php
                 //
-                if (imagealphablending($image_resized, false) === false) {
-                    throw new MediaException("Unable to disable image alpha blending");
-                }
-                if (imagesavealpha($image_resized, true) === false) {
-                    throw new MediaException("Unable to enable image save alpha");
-                }
+                imagealphablending($image_resized, false);
+                imagesavealpha($image_resized, true);
                 $transparent_color = imagecolorallocatealpha($image_resized, 255, 255, 255, 127);
                 if ($transparent_color === false) {
                     throw new MediaException("Unable to allocate transparent color");
                 }
-                if (imagefilledrectangle($image_resized, 0, 0, $new_width, $new_height, $transparent_color) === false) {
-                    throw new MediaException("Unable to fill new image with transparent color");
-                }
+                imagefilledrectangle($image_resized, 0, 0, $new_width, $new_height, $transparent_color);
                 break;
         }
 
         // Actually resize the image.
-        if (imagecopyresampled(
+        imagecopyresampled(
             $image_resized,
             $image,
             0,
@@ -466,9 +460,7 @@ final class Media extends Extension
             $new_height,
             $width,
             $height
-        ) === false) {
-            throw new MediaException("Unable to copy resized image data to new image");
-        }
+        );
 
         switch ($output_mime->base) {
             case MimeType::BMP:
@@ -482,12 +474,8 @@ final class Media extends Extension
                 }
 
                 $background_color = Media::hex_color_allocate($new_image, $alpha_color);
-                if (imagefilledrectangle($new_image, 0, 0, $width, $height, $background_color) === false) {
-                    throw new ImageTranscodeException("Could not fill background color");
-                }
-                if (imagecopy($new_image, $image_resized, 0, 0, 0, 0, $width, $height) === false) {
-                    throw new ImageTranscodeException("Could not copy source image to new image");
-                }
+                imagefilledrectangle($new_image, 0, 0, $width, $height, $background_color);
+                imagecopy($new_image, $image_resized, 0, 0, 0, 0, $width, $height);
 
                 $image_resized = $new_image;
                 break;

@@ -197,8 +197,10 @@ final class PostScheduling extends DataHandlerExtension
 
     private function get_latest(): int
     {
-        $order = Ctx::$config->get(IndexConfig::ORDER);
-        // @phpstan-ignore-next-line
+        $order = literal_escape(
+            Ctx::$config->get(IndexConfig::ORDER),
+            ["id DESC", "id ASC", "posted DESC", "posted ASC"]
+        );
         return \Safe\strtotime(Ctx::$database->get_one("
             SELECT posted FROM images
             ORDER BY $order
@@ -208,8 +210,10 @@ final class PostScheduling extends DataHandlerExtension
 
     public function get_scheduled_post(): int
     {
-        $order = Ctx::$config->get(PostSchedulingConfig::SCHEDULE_ORDER);
-        // @phpstan-ignore-next-line
+        $order = literal_escape(
+            Ctx::$config->get(PostSchedulingConfig::SCHEDULE_ORDER),
+            ["id DESC", "id ASC", "posted DESC", "posted ASC", "RANDOM()"]
+        );
         $scheduled = Ctx::$database->get_row("
             SELECT * FROM scheduled_posts
             ORDER BY $order

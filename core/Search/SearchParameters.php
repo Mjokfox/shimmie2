@@ -9,6 +9,7 @@ final class SearchParameters
     /**
      * @param TagCondition[] $tag_conditions
      * @param MetadataCondition[] $metadata_conditions
+     * @param literal-string $order
      */
     public function __construct(
         public readonly array $tag_conditions = [],
@@ -45,7 +46,10 @@ final class SearchParameters
             }
         }
 
-        $order ??= "images.".Ctx::$config->get(IndexConfig::ORDER);
+        $order ??= "images." . literal_escape(
+            Ctx::$config->get(IndexConfig::ORDER),
+            ["id DESC", "id ASC", "posted DESC", "posted ASC"]
+        );
 
         return new SearchParameters($tag_conditions, $img_conditions, $order);
     }

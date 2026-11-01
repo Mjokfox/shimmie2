@@ -8,7 +8,7 @@
     "prefer-stable": true,
     "config": {
         "platform": {
-            "php": "8.4.0"
+            "php": "8.5.0"
         }
     },
     "repositories": [
@@ -30,7 +30,7 @@
         }
     ],
     "require": {
-        "php": "^8.4",
+        "php": "^8.5",
         "ext-pdo": "*",
         "ext-json": "*",
         "ext-fileinfo": "*",
@@ -116,7 +116,8 @@
         "format-ci": "php-cs-fixer check --format=@auto",
         "analyse-ci": "phpstan analyse --memory-limit 1G --error-format=github",
         "analyse": "phpstan analyse --memory-limit 1G --error-format=raw | sed -E 's/:([0-9]+):/:\\1 /'",
-        "test": "php -d xdebug.mode=coverage vendor/bin/phpunit",
+        "test-cover": "php -d xdebug.mode=coverage vendor/bin/phpunit",
+        "test": "vendor/bin/phpunit --no-coverage",
         "docker-run": "./.docker/run.php"
     }
 }

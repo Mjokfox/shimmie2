@@ -131,9 +131,11 @@ final class TagCategories extends Extension
     #[EventListener]
     public function onSearchTermParse(SearchTermParseEvent $event): void
     {
-        if ($matches = $event->matches("/^(.+)_tags(<=|<|=|>|>=)([0-9]+)$/i")) {
-            $list_group = $matches[1];
-            $cmp = $matches[2];
+        $database = Ctx::$database;
+
+        if ($matches = $event->matches("/^(.+)_?tags(:|<=|<|=|>|>=)([0-9]+)$/i")) {
+            $list_group = strtolower($matches[1]);
+            $cmp = cmp_escape($matches[2]);
             $count = $matches[3];
 
             $exists = Ctx::$database->get_one(
@@ -144,14 +146,12 @@ final class TagCategories extends Extension
 
             if (!\is_null($exists)) {
                 $event->add_querylet(
-                    new Querylet("
-                    images.id IN (
-                        SELECT it.image_id FROM image_tags it
-                        INNER JOIN image_tag_categories_tags tct on it.tag_id = tct.tag_id
-                        INNER JOIN image_tag_categories tc ON tc.id = tct.category_id AND LOWER(tc.list_group) = LOWER(:cat{$event->id})
-                        GROUP BY it.image_id
-                        HAVING COUNT(it.image_id) $cmp :count{$event->id}
-                    )", ["cat{$event->id}" => $list_group, "count{$event->id}" => $count])
+                    new Querylet("(
+					    SELECT count(distinct t.id)
+					    FROM tags t
+					    INNER JOIN image_tags it ON it.tag_id = t.id AND images.id = it.image_id
+					    WHERE SCORE_ILIKE(t.tag, :cat) $cmp :count
+					", ["cat" => $list_group, "count" => $count])
                 );
             }
         }
