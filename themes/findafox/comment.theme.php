@@ -110,19 +110,19 @@ class CustomCommentListTheme extends CommentListTheme
         $h_del = null;
         if (Ctx::$user->can(CommentPermission::DELETE_OTHERS_COMMENT)
             || (Ctx::$user->can(CommentPermission::DELETE_COMMENT) && Ctx::$user->id === $comment->owner_id)) {
-            $h_del = emptyHTML(" - ", $this->delete_link($comment->id, $comment->image_id, $comment->owner->name, $tfe->stripped));
+            $h_del = $this->delete_link($comment->id, $comment->image_id, $comment->owner->name, $tfe->stripped);
         }
         $h_edit = null;
         if (Ctx::$user->can(CommentPermission::EDIT_COMMENT) && Ctx::$user->id === $comment->owner_id) {
             $h_edit = emptyHTML(" - ", $this->edit_button($comment->id, $comment->image_id, $comment->comment));
         }
-        $h_edited = $comment->edited ? emptyHTML(BR(), EM("edited")) : null;
+        $h_edited = $comment->edited ? EM(" - edited") : null;
         if ($trim) {
             return P(
                 ["class" => "comment"],
                 $h_userlink,
-                $h_del,
                 $h_edited,
+                $h_del,
                 BR(),
                 A(["href" => make_link("post/view/{$comment->image_id}")], ">>$comment->image_id "),
                 $h_posted,
@@ -134,7 +134,7 @@ class CustomCommentListTheme extends CommentListTheme
             return TABLE(
                 ["class" => "comment"],
                 TR(
-                    TD(["class" => "meta"], $h_userlink, BR(), $h_avatar, br(), $h_posted, $h_del, $h_edited),
+                    TD(["class" => "meta"], $h_userlink, BR(), $h_avatar, br(), $h_posted, $h_edited, $h_del),
                     TD(["class" => "c_body", "id" => "c{$comment->id}"], $h_comment, BR(), BR(), $h_reply, $h_edit)
                 )
             );
