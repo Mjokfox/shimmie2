@@ -835,7 +835,7 @@ class SelectorPanel {
     tag_panel(type_table, tc_dict) {
         const grid = build("DIV", {class: "upload-tags-grid"});
         tc_dict.forEach((row) => {
-            const type = type_table[row.type];
+            const type = type_table[row.type] ?? { cols: 4, class: "grid-cell cell-wide" };
             const cell = build(
                 "DIV",
                 { class: type.class },

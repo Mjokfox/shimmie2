@@ -287,15 +287,15 @@ final class CommentList extends Extension
             send_event(new CheckStringContentEvent($new_comment));
             send_event(new CommentEditingEvent($image_id, $comment_id, Ctx::$user, $new_comment));
             $page->set_redirect(make_link("post/view/$image_id", null, "c$comment_id"));
-        } elseif ($event->page_matches("comment/delete/{comment_id}/{image_id}")) {
-            // FIXME: post, not args
-            $id = $event->get_iarg('comment_id');
-            $comment = Comment::by_id($id);
+        } elseif ($event->page_matches("comment/delete", method: "POST")) {
+            $comment_id = int_escape($event->POST->req('comment_id'));
+            $image_id = int_escape($event->POST->req('image_id'));
+            $comment = Comment::by_id($comment_id);
             if (Ctx::$user->can(CommentPermission::DELETE_OTHERS_COMMENT)
                 || (Ctx::$user->can(CommentPermission::DELETE_COMMENT) && $comment->owner->id === Ctx::$user->id)) {
-                send_event(new CommentDeletionEvent($event->get_iarg('comment_id')));
+                send_event(new CommentDeletionEvent($comment_id));
                 $page->flash("Deleted comment");
-                $page->set_redirect(Url::referer_or(make_link("post/view/" . $event->get_iarg('image_id'))));
+                $page->set_redirect(Url::referer_or(make_link("post/view/$image_id")));
             } else {
                 throw new PermissionDenied("You are not allowed to delete this comment");
             }
@@ -314,7 +314,7 @@ final class CommentList extends Extension
             }
             $page->flash("Deleted $num comments");
             $page->set_redirect(make_link("admin"));
-        } elseif ($event->page_matches("comment/list", paged: true)) {
+        } elseif ($event->page_matches("comment/list", method: "GET", paged: true)) {
             $threads_per_page = 10;
 
             $where = Ctx::$config->get(CommentConfig::RECENT_COMMENTS)
@@ -363,8 +363,8 @@ final class CommentList extends Extension
             }
 
             $this->theme->display_comment_list($images, $current_page + 1, $total_pages);
-        } elseif ($event->page_matches("comment/search", paged: true)
-            || $event->page_matches("comment/search/{search}", paged: true)
+        } elseif ($event->page_matches("comment/search", method: "GET", paged: true)
+            || $event->page_matches("comment/search/{search}", method: "GET", paged: true)
         ) {
             if ($event->GET->offsetExists('search')) {
                 Ctx::$page->set_redirect(make_link("comment/search/" . $event->GET->get('search') . "/1"));
@@ -400,7 +400,7 @@ final class CommentList extends Extension
                 $posts[$comment->image_id][1][] = $comment;
             }
             $this->theme->display_comment_list(array_filter($posts, fn ($p) => $p[0] !== null), $current_page + 1, $total_pages, $search);
-        } elseif ($event->page_matches("comment/user-search/{search}", paged: true)) {
+        } elseif ($event->page_matches("comment/user-search/{search}", method: "GET", paged: true)) {
             $search = $event->get_arg('search');
             $page_num = $event->get_iarg('page_num', 1) - 1;
             $duser = User::by_name($search);

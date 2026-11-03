@@ -77,7 +77,6 @@ final class NumericScoreVote
     public static function create_vote(int $post_id, int $score): bool
     {
         if (Ctx::$user->can(NumericScorePermission::CREATE_VOTE)) {
-            assert($score === -1 || $score === 1);
             send_event(new NumericScoreSetEvent($post_id, Ctx::$user, $score));
             return true;
         }
@@ -93,6 +92,9 @@ final class NumericScoreSetEvent extends Event
         public User $user,
         public int $score
     ) {
+        if (!in_array($score, [-1, 0, 1])) {
+            throw new InvalidInput("Invalid score: must be -1, 0, or 1");
+        }
         parent::__construct();
     }
 }
@@ -161,21 +163,19 @@ final class NumericScore extends Extension
         } elseif ($event->page_matches("numeric_score/vote", method: "POST", permission: NumericScorePermission::CREATE_VOTE)) {
             $image_id = int_escape($event->POST->req("image_id"));
             $score = int_escape($event->POST->req("vote"));
-            if (($score === -1 || $score === 1) && $image_id > 0) {
-                $NSSE = send_event(new NumericScoreSetEvent($image_id, $user, $score));
-            } else {
-                throw new InvalidInput("Invalid score");
+            if ($image_id > 0) {
+                send_event(new NumericScoreSetEvent($image_id, $user, $score));
             }
-            Ctx::$page->set_redirect(make_link("post/view/$image_id"));
+            $page->set_redirect(make_link("post/view/$image_id"));
         } elseif ($event->page_matches("numeric_score/votefetch", method: "POST", permission: NumericScorePermission::CREATE_VOTE)) {
             $image_id = int_escape($event->POST->req("image_id"));
             $score = int_escape($event->POST->req("vote"));
-            if (($score === -1 || $score === 1) && $image_id > 0) {
+            if ($image_id > 0) {
                 $NSSE = send_event(new NumericScoreSetEvent($image_id, $user, $score));
+                Ctx::$page->set_data(MimeType::TEXT, (string)$NSSE->new_score);
             } else {
-                throw new InvalidInput("Invalid score");
+                throw new InvalidInput("Post id cannot be 0 or negative");
             }
-            Ctx::$page->set_data(MimeType::TEXT, (string)$NSSE->new_score);
         } elseif ($event->page_matches("numeric_score/remove_votes_on", method: "POST", permission: NumericScorePermission::EDIT_OTHER_VOTE)) {
             $image_id = int_escape($event->POST->req("image_id"));
             $database->execute(

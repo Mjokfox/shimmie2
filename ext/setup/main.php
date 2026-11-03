@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
+use Jfcherng\Diff\DiffHelper;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\{InputArgument, InputInterface, InputOption};
 use Symfony\Component\Console\Output\OutputInterface;
@@ -48,28 +49,50 @@ final class ConfigSaveEvent extends Event
     {
         $settings = [];
         $post = $post->toArray();
+        $all_metas = ConfigGroup::get_all_metas();
+
         foreach ($post as $key => $type) {
             if (str_starts_with($key, "_type_")) {
                 $key = str_replace("_type_", "", $key);
+                if (is_array($type)) {
+                    throw new InvalidInput("Invalid value for '_type_$key'");
+                }
                 $value = $post["_config_$key"] ?? null;
                 if ($value === "") {
                     $value = null;
                 }
+
                 if ($type === "string") {
-                    $settings[$key] = $value;
+                    $typed_value = $value;
                 } elseif ($type === "int") {
                     assert(!is_array($value));
-                    $settings[$key] = $value !== null ? parse_shorthand_int($value) : null;
+                    $typed_value = $value !== null ? parse_shorthand_int($value) : null;
                 } elseif ($type === "bool") {
-                    $settings[$key] = $value === "on";
+                    $typed_value = $value === "on";
                 } elseif ($type === "array") {
-                    $settings[$key] = $value;
+                    $typed_value = $value;
                 } else {
                     if (is_array($value)) {
                         $value = implode(", ", $value);
                     }
-                    throw new InvalidInput("Invalid type '$value' for key '$key'");
+                    throw new InvalidInput("Can't cast '$value' to $type for '$key'");
                 }
+
+                // Validate against known configuration metadata options
+                if (isset($all_metas[$key]) && $all_metas[$key]->options !== null && $typed_value !== null) {
+                    if (is_array($value)) {
+                        throw new InvalidInput("Value for '$key' must be a single value, got array");
+                    }
+                    $options = $all_metas[$key]->options;
+                    if (is_callable($options)) {
+                        $options = $options();
+                    }
+                    if (is_array($options) && !in_array($typed_value, $options)) {
+                        throw new InvalidInput("Invalid value '$value' for '$key' - select from " . implode(", ", $options));
+                    }
+                }
+
+                $settings[$key] = $typed_value;
             }
         }
         return $settings;
@@ -126,43 +149,33 @@ final class Setup extends Extension
     public function onConfigSave(ConfigSaveEvent $event): void
     {
         $config = $event->config;
-        $changes = [];
+        $n = 0;
+        $all_metas = ConfigGroup::get_all_metas();
         foreach ($event->values as $key => $value) {
-            if (is_null($value)) {
-                if (!is_null($config->get($key))) {
-                    $changes[] = "$key set to null";
+            $old_value = $config->get($key);
+            match(true) {
+                is_null($value) => $config->delete($key),
+                default => $config->set($key, $value),
+            };
+            if ($old_value !== $value) {
+                $is_sensitive = isset($all_metas[$key]) && $all_metas[$key]->sensitive;
+                $old_str = var_export($old_value, true);
+                $new_str = var_export($value, true);
+
+                if ($is_sensitive) {
+                    Log::info("setup", "Sensitive config '$key' changed");
+                } elseif (str_contains($old_str, "\n") || str_contains($new_str, "\n")) {
+                    $diff = DiffHelper::calculate($old_str, $new_str, "Unified");
+                    Log::info("setup", "Config '$key' changed (diff):\n" . $diff);
+                } else {
+                    Log::info("setup", "Config '$key' changed: " . $old_str . " / " . $new_str);
                 }
-                $config->delete($key);
-            } elseif (is_string($value)) {
-                /** @var string $old */
-                $old = $config->get($key);
-                if ($old !== $value) {
-                    $changes[] = "$key changed from ($old) to ($value)";
-                }
-                $config->set($key, $value);
-            } elseif (is_int($value)) {
-                /** @var int $old */
-                $old = $config->get($key);
-                if ($old !== $value) {
-                    $changes[] = "$key changed from ($old) to ($value)";
-                }
-                $config->set($key, $value);
-            } elseif (is_bool($value)) {
-                $old = $config->get($key);
-                if ($old !== $value) {
-                    $changes[] = "$key changed from (".($old ? "true" : "false").") to (".($value ? "true" : "false").")";
-                }
-                $config->set($key, $value);
-            } elseif (is_array($value)) {
-                $old = $config->get($key);
-                if ($old !== $value) {
-                    $changes[] = "$key changed from ([".(is_array($old) ? implode(",", $old) : "")."]) to ([".implode(",", $value)."])";
-                }
-                $config->set($key, $value);
+                $n++;
             }
         }
-        $message = count($changes) > 0 ? implode(",\r\n", $changes) : "nothing changed";
-        Log::critical("setup", "Configuration updated: $message");
+        if ($n > 0) {
+            Log::warning("setup", "Config saved ($n changes)");
+        }
     }
 
     #[EventListener]

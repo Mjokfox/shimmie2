@@ -31,6 +31,21 @@ final class SVGFileHandler extends DataHandlerExtension
         }
     }
 
+    #[EventListener]
+    public function onMediaReplace(MediaReplaceEvent $event): void
+    {
+        if ($this->check_contents($event->tmp_filename)) {
+            // Sanitise SVG on replace to prevent users with REPLACE_IMAGE
+            // permission from storing SVGs with malicious content
+            $sanitizer = new Sanitizer();
+            $sanitizer->removeRemoteReferences(true);
+            $dirtySVG = $event->tmp_filename->get_contents();
+            $cleanSVG = false_throws($sanitizer->sanitize($dirtySVG));
+            $event->tmp_filename->put_contents($cleanSVG);
+            $event->new_hash = md5($cleanSVG);
+        }
+    }
+
     protected function media_check_properties(Post $image): MediaProperties
     {
         $msp = new MiniSVGParser($image->get_media_filename()->str());

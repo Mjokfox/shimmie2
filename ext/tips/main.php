@@ -58,7 +58,7 @@ final class Tips extends Extension
     {
         $this->getTip();
 
-        if ($event->page_matches("tips/list", permission: TipsPermission::ADMIN)) {
+        if ($event->page_matches("tips/list", method: "GET", permission: TipsPermission::ADMIN)) {
             $this->manageTips();
             $this->getAll();
         } elseif ($event->page_matches("tips/save", method: "POST", permission: TipsPermission::ADMIN)) {
@@ -68,13 +68,11 @@ final class Tips extends Extension
                 $event->POST->req("text")
             ));
             Ctx::$page->set_redirect(make_link("tips/list"));
-        } elseif ($event->page_matches("tips/status/{tipID}", permission: TipsPermission::ADMIN)) {
-            // FIXME: HTTP GET CSRF
+        } elseif ($event->page_matches("tips/status/{tipID}", method: "POST", permission: TipsPermission::ADMIN)) {
             $tipID = $event->get_iarg('tipID');
             $this->setStatus($tipID);
             Ctx::$page->set_redirect(make_link("tips/list"));
-        } elseif ($event->page_matches("tips/delete/{tipID}", permission: TipsPermission::ADMIN)) {
-            // FIXME: HTTP GET CSRF
+        } elseif ($event->page_matches("tips/delete/{tipID}", method: "POST", permission: TipsPermission::ADMIN)) {
             $tipID = $event->get_iarg('tipID');
             send_event(new DeleteTipEvent($tipID));
             Ctx::$page->set_redirect(make_link("tips/list"));

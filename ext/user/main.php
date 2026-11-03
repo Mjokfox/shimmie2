@@ -201,8 +201,6 @@ final class UserPage extends Extension
             "user",
             "base",
             [
-                ArtistsPermission::EDIT_ARTIST_INFO => true,
-                ArtistsPermission::EDIT_IMAGE_ARTIST => true,
                 BulkActionsPermission::PERFORM_BULK_ACTIONS => true,
                 BulkDownloadPermission::BULK_DOWNLOAD => true,
                 CommentPermission::CREATE_COMMENT => true,
@@ -307,7 +305,9 @@ final class UserPage extends Extension
             $page->add_block(new Block(null, emptyHTML($t->table($t->query()), $t->paginator())));
         }
         if ($event->page_matches("user_admin/logout", method: "GET")) {
-            // FIXME: security
+            $this->theme->display_logout_confirmation();
+        }
+        if ($event->page_matches("user_admin/logout", method: "POST")) {
             $this->page_logout();
         }
 
@@ -328,15 +328,28 @@ final class UserPage extends Extension
             if ($this->user_can_edit_user($user, $duser)) {
                 if ($pass1 !== $pass2) {
                     throw new InvalidInput("Passwords don't match");
-                } else {
-                    // FIXME: send_event()
-                    $duser->set_password($pass1);
-                    if ($duser->id === $user->id) {
-                        $duser->set_login_cookie();
-                    }
-                    $page->flash("Password changed");
-                    $this->redirect_to_user($duser);
                 }
+
+                // Verify current password unless user has permission to edit other users' passwords
+                $can_edit_other_passwords = $user->can(UserAccountsPermission::EDIT_USER_PASSWORD);
+                $is_self = ($duser->id === $user->id);
+
+                if (!$can_edit_other_passwords || $is_self) {
+                    // User is changing their own password, or admin doesn't have EDIT_USER_PASSWORD permission
+                    // Either way, require current password
+                    $current_pass = $event->POST->req('current_password');
+                    if (is_null($duser->passhash) || !password_verify($current_pass, $duser->passhash)) {
+                        throw new InvalidInput("Current password is incorrect");
+                    }
+                }
+
+                // FIXME: send_event()
+                $duser->set_password($pass1);
+                if ($is_self) {
+                    $duser->set_login_cookie();
+                }
+                $page->flash("Password changed");
+                $this->redirect_to_user($duser);
             }
         }
         if ($event->page_matches("user_admin/change_email", method: "POST")) {
@@ -360,11 +373,16 @@ final class UserPage extends Extension
             }
         }
         if ($event->page_matches("user_admin/delete_user", method: "POST", permission: UserAccountsPermission::DELETE_USER)) {
-            $this->delete_user(
-                int_escape($event->POST->req('id')),
-                $event->POST->get("with_images") === "on",
-                $event->POST->get("with_comments") === "on"
-            );
+            $duser = User::by_id(int_escape($event->POST->req('id')));
+            if ($this->user_can_edit_user($user, $duser)) {
+                $this->delete_user(
+                    $duser->id,
+                    $event->POST->get("with_images") === "on",
+                    $event->POST->get("with_comments") === "on"
+                );
+            } else {
+                throw new PermissionDenied("You do not have permission to delete this user");
+            }
         }
 
         if ($event->page_matches("user/{name}")) {

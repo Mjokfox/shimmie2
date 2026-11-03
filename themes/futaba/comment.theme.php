@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A, DIV, HR, P, TABLE, TD, TR, emptyHTML, rawHTML};
+use function MicroHTML\{A, BUTTON, DIV, HR, INPUT, P, TABLE, TD, TR, emptyHTML, rawHTML};
 
 use MicroHTML\HTMLElement;
 
@@ -83,12 +83,9 @@ class FutabaCommentListTheme extends CommentListTheme
         if ($trim) {
             $h_comment = truncate($tfe->stripped, 50);
         } else {
-            $h_comment = $tfe->formatted;
+            $h_comment = (string)$tfe->getFormattedHTML();
+            $h_comment = rawHTML(\Safe\preg_replace("/(^|>)(&gt;[^<\n]*)(<|\n|$)/", '${1}<span class=\'greentext\'>${2}</span>${3}', $h_comment));
         }
-        $h_comment = \Safe\preg_replace("/(^|>)(&gt;[^<\n]*)(<|\n|$)/", '${1}<span class=\'greentext\'>${2}</span>${3}', $h_comment);
-        // handles discrepency in comment page and homepage
-        $h_comment = str_replace("<br>", "", $h_comment);
-        $h_comment = str_replace("\n", "<br>", $h_comment);
         $i_comment_id = $comment->id;
         $i_image_id = $comment->image_id;
 
@@ -98,13 +95,24 @@ class FutabaCommentListTheme extends CommentListTheme
         if (Ctx::$user->can(CommentPermission::DELETE_OTHERS_COMMENT)
             || (Ctx::$user->can(CommentPermission::DELETE_COMMENT) && Ctx::$user->id === $comment->owner_id)) {
             $comment_preview = substr($tfe->stripped, 0, 50);
-            $j_delete_confirm_message = json_encode("Delete comment by {$comment->owner->name}:\n$comment_preview");
-            $h_delete_script = "return confirm($j_delete_confirm_message);";
-            $h_delete_link = make_link("comment/delete/$i_comment_id/$i_image_id");
-            $del = emptyHTML(" - [", A(["onclick" => $h_delete_script, "href" => $h_delete_link], "Delete"), "]");
+            $deleteForm = SHM_SIMPLE_FORM(
+                make_link("comment/delete"),
+                INPUT(["type" => "hidden", "name" => "comment_id", "value" => $i_comment_id]),
+                INPUT(["type" => "hidden", "name" => "image_id", "value" => $i_image_id]),
+                BUTTON(
+                    [
+                        "type" => "submit",
+                        "class" => "shm-button-as-link",
+                        "data-message" => "Delete comment by {$comment->owner->name}:\n$comment_preview",
+                        "onclick" => "return confirm(this.dataset.message);"
+                    ],
+                    "Delete"
+                )
+            );
+            $del = emptyHTML(" - [", $deleteForm, "]");
         }
         if ($this->post_page) {
-            $j_name = json_encode($comment->owner->name);
+            $j_name = json_encode($comment->owner->name, JSON_HEX_TAG | JSON_HEX_AMP);
             $reply = emptyHTML("[", A(["href" => "javascript: ShmComment.replyTo($i_image_id, $i_comment_id, $j_name)"], "Reply"), "]");
         } else {
             $reply = emptyHTML("[", A(["href" => make_link("post/view/$i_image_id")], "Reply"), "]");
@@ -118,12 +126,12 @@ class FutabaCommentListTheme extends CommentListTheme
                 $h_date,
                 "No.$i_comment_id",
                 $reply,
-                P(rawHTML($h_comment))
+                P($h_comment)
             );
         } else {
             return TABLE(TR(
                 TD(["nowrap" => true, "class" => "doubledash"], ">>"),
-                TD(DIV(["class" => "reply"], $userlink, $del, $h_date, "No.$i_comment_id", P(rawHTML($h_comment))))
+                TD(DIV(["class" => "reply"], $userlink, $del, $h_date, "No.$i_comment_id", P($h_comment)))
             ));
         }
     }

@@ -9,9 +9,9 @@ final class EokmConfig extends ConfigGroup
     public const KEY = "eokm";
     public ?string $title = "EOKM Filter";
 
-    #[ConfigMeta("Username", ConfigType::STRING)]
+    #[ConfigMeta("Username", ConfigType::STRING, sensitive: true)]
     public const USERNAME = "eokm_username";
 
-    #[ConfigMeta("Password", ConfigType::STRING)]
+    #[ConfigMeta("Password", ConfigType::STRING, sensitive: true)]
     public const PASSWORD = "eokm_password";
 }

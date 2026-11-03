@@ -319,6 +319,13 @@ a:hover {
 	text-decoration: underline;
 }
 
+BUTTON.shm-button-as-link:hover {
+	color: var(--link-hover);
+	background: none;
+    border: none;
+	text-decoration: underline;
+}
+
 NAV {
 	grid-column: 1;
 	grid-row: 2;

@@ -114,21 +114,25 @@ final class OuroborosPost extends _SafeOuroborosImage
      * @noinspection PhpMissingParentConstructorInspection
      *
      * @param array<string, mixed> $post
+     * @param array<string, mixed>|null $files Optional $_FILES array for file uploads
      */
     // @phpstan-ignore-next-line
-    public function __construct(array $post)
+    public function __construct(array $post, ?array $files = null)
     {
         if (array_key_exists('tags', $post)) {
             // implode(explode()) to resolve aliases and sanitise
             $this->tags = Tag::implode(Tag::explode(urldecode($post['tags'])));
         }
-        if (array_key_exists('file', $post)) {
-            if (!is_null($post['file'])) {
-                assert(is_array($post['file']));
-                assert(array_key_exists('tmp_name', $post['file']));
-                assert(array_key_exists('name', $post['file']));
-                $this->file = $post['file'];
-            }
+        if (
+            !is_null($files) &&
+            isset($files["tmp_name"]["file"], $files["name"]["file"], $files["error"]["file"])
+            && $files["error"]["file"] === UPLOAD_ERR_OK
+            && is_uploaded_file($files["tmp_name"]["file"])
+        ) {
+            $this->file = [
+                'tmp_name' => $files['tmp_name']['file'],
+                'name' => $files['name']['file'],
+            ];
         }
         if (array_key_exists('rating', $post)) {
             assert(
@@ -238,7 +242,7 @@ final class OuroborosAPI extends Extension
                 $this->tryAuth();
                 if (Ctx::$user->can(ImagePermission::CREATE_IMAGE)) {
                     $md5 = isset($_REQUEST['md5']) && \Safe\preg_match("%^[0-9A-Fa-f]{32}$%", $_REQUEST['md5']) ? strtolower($_REQUEST['md5']) : null;
-                    $this->postCreate(new OuroborosPost($_REQUEST['post']), $md5);
+                    $this->postCreate(new OuroborosPost($_REQUEST['post'], $_FILES['post'] ?? null), $md5);
                 } else {
                     $this->sendResponse(403, 'You cannot create new posts');
                 }

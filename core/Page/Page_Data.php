@@ -9,9 +9,7 @@ namespace Shimmie2;
  */
 trait Page_Data
 {
-    abstract public function set_mode(PageMode $mode): void;
-    abstract public function set_mime(MimeType|string $mime): void;
-    abstract public function send_headers(): void;
+    use Page_Common;
 
     public private(set) string $data = "";
     public private(set) ?string $data_filename = null;
@@ -35,11 +33,10 @@ trait Page_Data
 
     protected function display_data(): void
     {
+        $disposition = $this->gen_disposition_header($this->data_disposition, $this->data_filename);
+        $this->add_http_header("Content-Disposition: $disposition");
+        $this->add_http_header("Content-Length: " . strlen($this->data));
         $this->send_headers();
-        if (!is_null($this->data_filename)) {
-            header('Content-Disposition: ' . $this->data_disposition . '; filename=' . $this->data_filename);
-        }
-        header("Content-Length: " . strlen($this->data));
         print $this->data;
     }
 }
