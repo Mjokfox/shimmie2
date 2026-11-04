@@ -70,6 +70,12 @@ final class Favorites extends Extension
             send_event(new FavoriteSetEvent($image_id, Ctx::$user, false));
             Ctx::$page->set_redirect(make_link("post/view/$image_id"));
         }
+        if ($event->page_matches("favourite/votefetch", method: "POST", permission: FavouritesPermission::EDIT_FAVOURITES)) {
+            $image_id = int_escape($event->POST->req("image_id"));
+            $action = $event->POST->req("action") === "favorite";
+            send_event(new FavoriteSetEvent($image_id, Ctx::$user, $action));
+            Ctx::$page->set_data(MimeType::TEXT, $action ? "true" : "false");
+        }
     }
 
     #[EventListener]

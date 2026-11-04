@@ -1,17 +1,18 @@
-score_classes = ["score-zero", "score-pos", "score-neg"];
-function get_score_class(s) {
+class NumericScore{};
+NumericScore.score_classes = ["score-zero", "score-pos", "score-neg"];
+NumericScore.get_score_class = function(s){
     return s == 0 ? "score-zero" : (s > 0 ? "score-pos" : "score-neg")
 }
 
-function remove_classes(el, classes) {
+NumericScore.remove_classes = function(el, classes) {
     classes.forEach(c => el.classList.remove(c));
 }
 
-async function update_vote(imageID,score,score_without,auth_token) {
-    if ((Math.abs(score) != 1) || isNaN(imageID) || isNaN(score_without)){
+NumericScore.update_vote = function(imageID,score,auth_token) {
+    if ((Math.abs(score) != 1) || isNaN(Number(imageID))){
         return;
     }
-    const res = await fetch("/numeric_score/votefetch" , 
+    return fetch("/numeric_score/votefetch" , 
         {
             credentials: "same-origin",
             headers: {
@@ -27,18 +28,23 @@ async function update_vote(imageID,score,score_without,auth_token) {
         }
         return await res.text();
     }).catch(e => {console.error(e)})
+}
 
-    if (Math.abs(res) == 1 || res == "0") {
-        const sc = get_score_class(res);
-        document.querySelectorAll(".vote-button").forEach(el => remove_classes(el, score_classes));
-        document.querySelector(`.vote-button[score="${res}"]`)?.classList.add(sc);
+NumericScore.update_counter = function(score, score_without) {
+    if (isNaN(Number(score_without))){
+        return;
+    }
+    if (Math.abs(score) <= 1) {
+        const sc = NumericScore.get_score_class(score);
+        document.querySelectorAll(".vote-button").forEach(el => NumericScore.remove_classes(el, NumericScore.score_classes));
+        document.querySelector(`.vote-button[score="${score}"]`)?.classList.add(sc);
 
-        const new_score = Number(score_without)+Number(res);
-        const tsc = get_score_class(new_score);
+        const new_score = Number(score_without)+Number(score);
+        const tsc = NumericScore.get_score_class(new_score);
 
         const current = document.querySelector(".current-score");
         current.firstElementChild.textContent = new_score;
-        remove_classes(current, score_classes);
+        NumericScore.remove_classes(current, NumericScore.score_classes);
         current.classList.add(tsc);
     }
 }
@@ -65,11 +71,12 @@ document.addEventListener("DOMContentLoaded", () => {
             const image_id = image_id_el.value;
             const vote = vote_el.value;
             if (my_vote == vote) {
-                button.classList.add(get_score_class(my_vote))
+                button.classList.add(NumericScore.get_score_class(my_vote))
             }
             button.setAttribute("score", vote);
-            button.addEventListener("click", () => {
-                update_vote(image_id, vote, score_without, auth);
+            button.addEventListener("click", async () => {
+                const score = await NumericScore.update_vote(image_id, vote, auth);
+                NumericScore.update_counter(score, score_without);
             })
             
             el.parentElement.replaceChild(button, el);

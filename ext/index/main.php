@@ -79,7 +79,7 @@ final class Index extends Extension
             }
 
             if (Ctx::$config->get(IndexConfig::APRIL_FOOLS) && is_null(Ctx::$page->get_cookie("fools2026_disable"))) {
-                send_event(new PostListBuildingEvent($search_terms));
+                send_event(new PostListBuildingEvent($search_terms, $images));
 
                 $this->theme->set_page($page_number, $total_pages, $search_terms);
                 $this->theme->display_page($images);
@@ -88,11 +88,11 @@ final class Index extends Extension
 
                 if ($count_search_terms === 0 && $count_images === 0 && $page_number === 1) {
                     $this->theme->display_intro();
-                    send_event(new PostListBuildingEvent($search_terms));
+                    send_event(new PostListBuildingEvent($search_terms, $images));
                 } elseif ($count_search_terms > 0 && $count_images === 1 && $page_number === 1) {
                     Ctx::$page->set_redirect(make_link('post/view/'.$images[0]->id));
                 } else {
-                    send_event(new PostListBuildingEvent($search_terms));
+                    send_event(new PostListBuildingEvent($search_terms, $images));
 
                     $this->theme->set_page($page_number, $total_pages, $search_terms);
                     $this->theme->display_page($images);

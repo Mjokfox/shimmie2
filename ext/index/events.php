@@ -90,9 +90,11 @@ class PostListBuildingEvent extends Event
 {
     /**
      * @param search-term-array $search_terms
+     * @param Post[] $images
      */
     public function __construct(
-        public array $search_terms
+        public array $search_terms,
+        public array $images
     ) {
         parent::__construct();
     }

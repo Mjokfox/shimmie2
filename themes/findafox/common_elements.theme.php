@@ -43,6 +43,15 @@ class CustomCommonElementsTheme extends CommonElementsTheme
             "data-mime" => $image->get_mime(),
             "data-post-id" => $id,
         ];
+        if (NumericScoreInfo::is_enabled()) {
+            $attrs["data-numeric_score"] = $image['numeric_score'];
+        }
+        if (FavoritesInfo::is_enabled()) {
+            $attrs["data-favorites"] = $image['favorites'];
+        }
+        if (FavoritesInfo::is_enabled()) {
+            $attrs["data-comment_count"] = $image['comment_count'];
+        }
         if (RatingsInfo::is_enabled()) {
             $attrs["data-rating"] = $image['rating'];
         }

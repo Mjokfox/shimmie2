@@ -102,7 +102,7 @@ class ReverseImage extends Extension
 
             $image_count = Ctx::$database->get_one("SELECT count(id) from images;");
 
-            send_event(new PostListBuildingEvent([$search]));
+            send_event(new PostListBuildingEvent([$search], $images));
             $IT->set_page($page_number, (int)ceil($image_count / $page_size), [$search]);
             $IT->display_page($images);
         } elseif ($event->page_matches("upload", method: "GET", permission: ImagePermission::CREATE_IMAGE)) {

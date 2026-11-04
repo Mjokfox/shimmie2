@@ -179,13 +179,14 @@ final class CommentList extends Extension
     public function onInitExt(InitExtEvent $event): void
     {
         Post::$prop_types["comments_locked"] = PostPropType::BOOL;
+        Post::$prop_types["comment_count"] = PostPropType::INT;
     }
 
     #[EventListener]
     public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
     {
         $database = Ctx::$database;
-        if ($this->get_version() < 5) {
+        if ($this->get_version() < 6) {
             // shortcut to latest
             if ($this->get_version() < 1) {
                 $database->create_table("comments", "
@@ -251,6 +252,20 @@ final class CommentList extends Extension
             if ($this->get_version() === 4) {
                 $database->execute("ALTER TABLE comments ADD COLUMN edited BOOLEAN NOT NULL DEFAULT FALSE");
                 $this->set_version(5);
+            }
+
+            if ($this->get_version() === 5) {
+                $database->execute("ALTER TABLE images ADD COLUMN comment_count INTEGER NOT NULL DEFAULT 0");
+                $counts = $database->get_pairs("SELECT image_id, count(image_id) FROM comments
+                    group by image_id
+                    ORDER BY image_id");
+                foreach ($counts as $image_id => $count) {
+                    $database->execute(
+                        "UPDATE images SET comment_count = :count WHERE id = :image_id",
+                        ["count" => $count, "image_id" => $image_id]
+                    );
+                }
+                $this->set_version(6);
             }
         }
     }
@@ -504,11 +519,16 @@ final class CommentList extends Extension
     #[EventListener]
     public function onCommentDeletion(CommentDeletionEvent $event): void
     {
+        $image_id = Ctx::$database->get_one(
+            "SELECT image_id FROM comments WHERE id = :comment_id",
+            ["comment_id" => $event->comment_id]
+        );
         Ctx::$database->execute("
 			DELETE FROM comments
 			WHERE id=:comment_id
 		", ["comment_id" => $event->comment_id]);
-        Log::info("comment", "Deleting Comment #{$event->comment_id}");
+        $this->update_comment_count($image_id);
+        Log::info("comment", "Deleted Comment #{$event->comment_id}");
     }
 
     #[EventListener]
@@ -553,6 +573,7 @@ final class CommentList extends Extension
             "remote_addr" => (string)Network::get_real_ip(),
             "comment" => $comment,
         ]);
+        $this->update_comment_count($image_id);
         $comment_id = Ctx::$database->get_last_insert_id('comments_id_seq');
         $snippet = substr($comment, 0, 100);
         $snippet = str_replace("\n", " ", $snippet);
@@ -582,6 +603,17 @@ final class CommentList extends Extension
         $snippet = str_replace("\n", " ", $snippet);
         $snippet = str_replace("\r", " ", $snippet);
         Log::info("comment", "Comment $comment_id on >>$image_id edited by $user->name to: $snippet");
+    }
+
+    private function update_comment_count(int $image_id): void
+    {
+        Ctx::$database->execute(
+            "UPDATE images SET comment_count = (
+                SELECT count(image_id) FROM comments
+                WHERE image_id = :image_id)
+            WHERE id = :image_id",
+            ["image_id" => $image_id]
+        );
     }
 
     private function is_comment_limit_hit(): bool

@@ -50,6 +50,7 @@ final class RatingsUserConfig extends UserConfigGroup
      */
     public static function get_ratings_options(): array
     {
+        error_log("da");
         $levels = Ratings::get_user_class_privs(Ctx::$user);
         $options = [];
         foreach ($levels as $level) {

@@ -1,0 +1,62 @@
+.thumbnail-overlay {
+    height: 1.25em;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: end;
+    gap: 1em; /* TODO mobile */
+    text-shadow: 0 1px 5px black, 0 0 4px black;
+    position: absolute;
+    bottom: 0;
+    font-weight: bold;
+    opacity: 0.5;
+}
+
+.shm-thumb:hover .thumbnail-overlay {
+  background-color: #0008;
+  opacity: 1;
+}
+
+.shm-thumb:hover .thumbnail-hover-overlay {
+    display: flex;
+}
+
+.thumbnail-hover-overlay {
+    position: absolute;
+    width: 100%;
+    bottom: 1.25em;
+    display: none;
+    gap: 1em;
+    justify-content: center;
+    align-items: end;
+    button {
+        padding: .2em .4em;
+        background-color: #0008;
+        margin: .1em;
+    }
+    button.button-loading:hover {
+        cursor: wait;
+    }
+    button:hover {
+        cursor: pointer;
+    }
+    .favorite {
+        margin-left: auto;
+    }
+    .fav {
+        color: red;
+    }
+}
+
+.rating-unknown {
+    color: gray
+}
+.rating-safe {
+    color: lime
+}
+.rating-questionable {
+    color: yellow
+}
+.rating-explicit {
+    color: red
+}
