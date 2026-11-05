@@ -20,6 +20,7 @@ class TagCategoriesTheme extends Themelet
     {
         $tc_block_index = 0;
         $html = [];
+        $type_map = ["hidden", "half width", "full width", "single column", "dropdown", "single row", "single row (half width)", "info line", "radio row"];
 
         foreach ($tc_dict as $row) {
             $tc_block_index += 1;
@@ -42,7 +43,11 @@ class TagCategoriesTheme extends Themelet
             $tag_color = $row['color'];
             $upload_page_type = $row['upload_page_type'] ?? 0;
             $upload_page_priority = $row['upload_page_priority'] ?? 0;
-            $type_map = ["hidden", "half width", "full width", "single column", "dropdown", "single row", "single row (half width)", "info line"];
+
+            $select = SELECT(["name" => "tc_up_type", "class" => "tc-edit"]);
+            foreach ($type_map as $idx => $text) {
+                $select->appendChild(OPTION(["value" => (string)$idx, ($upload_page_type === $idx ? "selected" : "") => true], $text));
+            }
             $html[] = DIV(
                 ["class" => "tagcategoryblock tc-viewing"],
                 SHM_SIMPLE_FORM(
@@ -81,18 +86,7 @@ class TagCategoriesTheme extends Themelet
                             TD("Upload page"),
                             TD(
                                 SPAN(["class" => "tc-view"], $type_map[$upload_page_type]),
-                                SELECT(
-                                    ["name" => "tc_up_type", "class" => "tc-edit"],
-                                    OPTION(["value" => "0", ($upload_page_type === 0 ? "selected" : "") => true], "hidden"),
-                                    OPTION(["value" => "1", ($upload_page_type === 1 ? "selected" : "") => true], "half width"),
-                                    OPTION(["value" => "2", ($upload_page_type === 2 ? "selected" : "") => true], "full width"),
-                                    OPTION(["value" => "3", ($upload_page_type === 3 ? "selected" : "") => true], "single column"),
-                                    OPTION(["value" => "4", ($upload_page_type === 4 ? "selected" : "") => true], "dropdown"),
-                                    OPTION(["value" => "5", ($upload_page_type === 5 ? "selected" : "") => true], "single row"),
-                                    OPTION(["value" => "6", ($upload_page_type === 6 ? "selected" : "") => true], "single row (half width)"),
-                                    OPTION(["value" => "7", ($upload_page_type === 7 ? "selected" : "") => true], "info line"),
-                                    OPTION(["value" => "8", ($upload_page_type === 8 ? "selected" : "") => true], "radio row"),
-                                ),
+                                $select
                             ),
                         ),
                         TR(
@@ -143,6 +137,10 @@ class TagCategoriesTheme extends Themelet
         $list_group = 'Example';
         $upload_group = 'Examples';
         $tag_color = '#EE5542';
+        $selectnew = SELECT(["name" => "tc_up_type"]);
+        foreach ($type_map as $idx => $text) {
+            $selectnew->appendChild(OPTION(["value" => (string)$idx], $text));
+        }
         $html[] = DIV(
             ["class" => "tagcategoryblock"],
             SHM_SIMPLE_FORM(
@@ -175,18 +173,7 @@ class TagCategoriesTheme extends Themelet
                     TR(
                         TD("Upload page"),
                         TD(
-                            SELECT(
-                                ["name" => "tc_up_type"],
-                                OPTION(["value" => "0"], "hidden"),
-                                OPTION(["value" => "1"], "half width"),
-                                OPTION(["value" => "2"], "full width"),
-                                OPTION(["value" => "3"], "single column"),
-                                OPTION(["value" => "4"], "dropdown"),
-                                OPTION(["value" => "5"], "single row"),
-                                OPTION(["value" => "6"], "single row (half width)"),
-                                OPTION(["value" => "7"], "info line"),
-                                OPTION(["value" => "8"], "radio row"),
-                            ),
+                            $selectnew
                         ),
                     ),
                     TR(
