@@ -984,7 +984,7 @@ class UploadPage {
         };
         form.addEventListener("submit", (e) => this.submit_check(e));
         // build the page structure
-        this.container = qbuild("DIV", "container");
+        this.container = qbuild("DIV", "upload-container");
         this.file_storage = build("DIV", {id: "file_storage", style: "display:none;"});
         this.left_column = qbuild("DIV", "left-column");
         this.divider = qbuild("DIV", "divider");
@@ -1146,7 +1146,7 @@ class UploadPage {
 
         this.left_column.style.width = `${newLeftWidth}%`;
         this.right_column.style.width = `${newRightWidth}%`;
-        this.split_view_rule.style.left = `${inputleft}%`;
+        // this.split_view_rule.style.left = `${inputleft}%`;
         if (this.preview_enabled && !this.splitview)
             this.right_column.firstChild.style.width = `${(newRightWidth/100)*containerRect.width}px`;
     }
