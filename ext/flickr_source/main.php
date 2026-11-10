@@ -162,13 +162,15 @@ class FlickrSource extends Extension
         }
     }
 
-    /** @param array{id:int,filename:string} $file */
-    private function schedule_image_update(array $file, string $source): void
+    /** @param array{id:int,filename:string} $file 
+     * @param array{description: string, title: string, source: string} $data
+    */
+    private function schedule_image_update(array $file, array $data): void
     {
         Ctx::$database->execute(
             "INSERT INTO scheduled_posts_metadata(schedule_id, key, value) 
             VALUES (:id, 'source', :value)",
-            ["id" => $file["id"], "value" => $source]
+            ["id" => $file["id"], "value" => $data["source"]]
         );
     }
 
