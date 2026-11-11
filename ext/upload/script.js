@@ -814,7 +814,7 @@ class SelectorPanel {
     }
 
     input_label(tag, type, group) {
-        return build("LABEL", build("INPUT", { value: tag, type: type, ariaLabel: group }), tag);
+        return build("LABEL", build("INPUT", { value: tag.alias, type: type, ariaLabel: group }), tag.tag);
     }
 
     all_input(tags, type, parent, group) {
@@ -845,7 +845,7 @@ class SelectorPanel {
 
             if (row.type === 7) return;
 
-            const tags = row.tags.split(",");
+            const tags = row.tags;
             const rows = Math.max(4, Math.ceil(tags.length / type.cols));
             const tworows = Math.ceil(tags.length / 2);
             const inputs = build("DIV", {

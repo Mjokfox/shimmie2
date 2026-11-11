@@ -117,7 +117,15 @@ class UploadTheme extends Themelet
                 ORDER BY MAX(itc.upload_page_priority) DESC;"
             );
             // remove numerical array indices :/
-            $tc_dict = array_map(fn ($e) => ["group" => $e["upload_group"], "type" => $e["type"], "tags" => $e["tags"]], $tc_dict);
+            $tc_dict = array_map(function ($e) {
+                $tags = explode(",", $e["tags"]);
+                $combined = [];
+                foreach ($tags as $tag) {
+                    $aliases = AliasEditor::get_aliases($tag);
+                    $combined[] = ["tag" => $tag, "alias" => empty($aliases) ? $tag : $aliases[0]];
+                }
+                return ["group" => $e["upload_group"], "type" => $e["type"], "tags" => $combined];
+            }, $tc_dict);
         } else {
             $tc_dict = [];
         }
