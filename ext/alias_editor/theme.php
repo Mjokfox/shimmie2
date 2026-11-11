@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A,BR,CODE,INPUT};
+use function MicroHTML\{A,B,BR,CODE,DIV,INPUT,SPAN};
 use function MicroHTML\emptyHTML;
 
 use MicroHTML\HTMLElement;
@@ -48,5 +48,30 @@ class AliasEditorTheme extends Themelet
         if (Ctx::$user->can(AliasEditorPermission::MANAGE_ALIAS_LIST)) {
             $page->add_block(new Block("Bulk Upload", $bulk_html, "main", 51));
         }
+    }
+
+    /**
+     * @param non-empty-string $oldtag
+     * @param non-empty-string $newtag
+     */
+    public function display_confirmation(string $oldtag, string $newtag, int $count): void
+    {
+        $form = SHM_SIMPLE_FORM(
+            make_link("alias/add"),
+            INPUT(["type" => "hidden", "name" => "c_oldtag", "value" => $oldtag]),
+            INPUT(["type" => "hidden", "name" => "c_newtag", "value" => $newtag]),
+            INPUT(["type" => "hidden", "name" => "confirm", "value" => "on"]),
+            INPUT(["type" => "submit", "value" => "Confirm"]),
+            A(["href" => make_link("alias/list"), "style" => "margin-left:1em;"], "No, go back"),
+        );
+
+        $html = DIV(
+            SPAN("Replacing tag \"", B($oldtag), "\" with \"", B($newtag), "\"."),
+            BR(),
+            SPAN("This will affect ", A(["href" => search_link([$oldtag])], B($count), " posts"), ", are you sure?"),
+            $form,
+        );
+
+        Ctx::$page->add_block(new Block("Confirm auto tag", $html));
     }
 }

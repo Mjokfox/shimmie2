@@ -64,8 +64,10 @@ final class AliasEditor extends Extension
         $page = Ctx::$page;
 
         if ($event->page_matches("alias/add", method: "POST", permission: AliasEditorPermission::MANAGE_ALIAS_LIST)) {
-            send_event(new AddAliasEvent($event->POST->req('c_oldtag'), $event->POST->req('c_newtag')));
-            $page->set_redirect(make_link("alias/list"));
+            if ($this->confirmed($event->POST)) {
+                send_event(new AddAliasEvent($event->POST->req('c_oldtag'), $event->POST->req('c_newtag')));
+                $page->set_redirect(make_link("alias/list"));
+            }
         }
         if ($event->page_matches("alias/remove", method: "POST", permission: AliasEditorPermission::MANAGE_ALIAS_LIST)) {
             send_event(new DeleteAliasEvent($event->POST->req('d_oldtag')));
@@ -142,9 +144,15 @@ final class AliasEditor extends Extension
     #[EventListener(priority: 60)]
     public function onAddAlias(AddAliasEvent $event): void
     {
+        $oldtag = trim(Tag::sanitize($event->oldtag));
+        $newtag = trim($event->newtag);
+        if (empty($oldtag) || empty($newtag)) {
+            throw new InvalidInput("New or old tag is empty or malformed");
+        }
+
         $row = Ctx::$database->get_row(
             "SELECT * FROM aliases WHERE lower(oldtag)=lower(:oldtag)",
-            ["oldtag" => $event->oldtag]
+            ["oldtag" => $oldtag]
         );
         if ($row) {
             throw new AddAliasException("{$row['oldtag']} is already an alias for {$row['newtag']}");
@@ -152,7 +160,7 @@ final class AliasEditor extends Extension
 
         $row = Ctx::$database->get_row(
             "SELECT * FROM aliases WHERE lower(oldtag)=lower(:newtag)",
-            ["newtag" => $event->newtag]
+            ["newtag" => $newtag]
         );
         if ($row) {
             throw new AddAliasException("{$row['oldtag']} is itself an alias for {$row['newtag']}");
@@ -160,9 +168,9 @@ final class AliasEditor extends Extension
 
         Ctx::$database->execute(
             "INSERT INTO aliases(oldtag, newtag) VALUES(:oldtag, :newtag)",
-            ["oldtag" => $event->oldtag, "newtag" => $event->newtag]
+            ["oldtag" => $oldtag, "newtag" => $newtag]
         );
-        Log::info("alias_editor", "Added alias for {$event->oldtag} -> {$event->newtag}", "Added alias");
+        Log::info("alias_editor", "Added alias for {$oldtag} -> {$newtag}", "Added alias");
     }
 
     #[EventListener]
@@ -186,6 +194,32 @@ final class AliasEditor extends Extension
         if (Ctx::$user->can(AliasEditorPermission::MANAGE_ALIAS_LIST)) {
             $event->add_link("Alias Editor", make_link("alias/list"));
         }
+    }
+
+    private function confirmed(QueryArray $POST): bool
+    {
+        $oldtag = trim(Tag::sanitize($POST->req('c_oldtag')));
+        $newtag = trim($POST->req('c_newtag'));
+        if (empty($oldtag) || empty($newtag)) {
+            throw new InvalidInput("New or old tag is empty or malformed");
+        }
+
+        if ($POST->get('confirm') === 'on') {
+            return true;
+        }
+
+        $tag_id = Ctx::$database->get_one("SELECT id FROM tags WHERE LOWER(tag) = LOWER(:tag)", ["tag" => $oldtag]);
+        if (is_null($tag_id)) { // no need to confirm if the tag does not exist
+            return true;
+        }
+
+        $count = Ctx::$database->get_one("SELECT COUNT(image_id) FROM image_tags WHERE tag_id = :tag_id", ["tag_id" => $tag_id]);
+        if ($count === 0) {
+            return true;
+        }
+
+        $this->theme->display_confirmation($oldtag, $newtag, $count);
+        return false;
     }
 
     /**

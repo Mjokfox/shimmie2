@@ -162,7 +162,7 @@ class FlickrSource extends Extension
         }
     }
 
-    /** @param array{id:int,filename:string} $file 
+    /** @param array{id:int,filename:string} $file
      * @param array{description: string, title: string, source: string} $data
     */
     private function schedule_image_update(array $file, array $data): void

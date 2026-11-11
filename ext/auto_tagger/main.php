@@ -67,8 +67,10 @@ final class AutoTagger extends Extension
     {
         $page = Ctx::$page;
         if ($event->page_matches("auto_tag/add", method: "POST", permission: AutoTaggerPermission::MANAGE_AUTO_TAG)) {
-            send_event(new AddAutoTagEvent($event->POST->req('c_tag'), $event->POST->req('c_additional_tags')));
-            $page->set_redirect(make_link("auto_tag/list"));
+            if ($this->confirmed($event->POST)) {
+                send_event(new AddAutoTagEvent($event->POST->req('c_tag'), $event->POST->req('c_additional_tags')));
+                $page->set_redirect(make_link("auto_tag/list"));
+            }
         }
         if ($event->page_matches("auto_tag/remove", method: "POST", permission: AutoTaggerPermission::MANAGE_AUTO_TAG)) {
             send_event(new DeleteAutoTagEvent($event->POST->req('d_tag')));
@@ -137,7 +139,11 @@ final class AutoTagger extends Extension
     #[EventListener]
     public function onAddAutoTag(AddAutoTagEvent $event): void
     {
-        $this->add_auto_tag($event->tag, $event->additional_tags);
+        $tag = trim(Tag::sanitize($event->tag));
+        if (empty($tag) || empty(trim($event->additional_tags))) {
+            throw new InvalidInput("Tag or additional tags are empty or malformed");
+        }
+        $this->add_auto_tag($tag, $event->additional_tags);
         Ctx::$page->flash("Added Auto-Tag");
     }
 
@@ -153,6 +159,32 @@ final class AutoTagger extends Extension
         if (Ctx::$user->can(AutoTaggerPermission::MANAGE_AUTO_TAG)) {
             $event->add_link("Auto-Tag Editor", make_link("auto_tag/list"));
         }
+    }
+
+    private function confirmed(QueryArray $POST): bool
+    {
+        $tag = trim(Tag::sanitize($POST->req('c_tag')));
+        $additional_tags = trim($POST->req('c_additional_tags'));
+        if (empty($tag) || empty($additional_tags)) {
+            throw new InvalidInput("New or old tag is empty or malformed");
+        }
+
+        if ($POST->get('confirm') === 'on') {
+            return true;
+        }
+
+        $tag_id = Ctx::$database->get_one("SELECT id FROM tags WHERE LOWER(tag) = LOWER(:tag)", ["tag" => $tag]);
+        if (is_null($tag_id)) { // no need to confirm if the tag does not exist
+            return true;
+        }
+
+        $count = Ctx::$database->get_one("SELECT COUNT(image_id) FROM image_tags WHERE tag_id = :tag_id", ["tag_id" => $tag_id]);
+        if ($count === 0) {
+            return true;
+        }
+
+        $this->theme->display_confirmation($tag, $additional_tags, $count);
+        return false;
     }
 
     private function get_auto_tag_csv(Database $database): string
@@ -184,11 +216,10 @@ final class AutoTagger extends Extension
 
     private function add_auto_tag(string $tag, string $additional_tags): void
     {
+        $additional_tags = Tag::explode($additional_tags);
         $existing_tags = Ctx::$database->get_one("SELECT additional_tags FROM auto_tag WHERE LOWER(tag)=LOWER(:tag)", ["tag" => $tag]);
         if (!is_null($existing_tags)) {
             // Auto Tags already exist, so we will append new tags to the existing one
-            $tag = Tag::sanitize($tag);
-            $additional_tags = Tag::explode($additional_tags);
             $existing_tags = Tag::explode($existing_tags);
             foreach ($additional_tags as $t) {
                 if (!in_array(strtolower($t), $existing_tags)) {
@@ -205,9 +236,6 @@ final class AutoTagger extends Extension
                 "Updated auto-tag for {$tag} -> {".implode(" ", $additional_tags)."}"
             );
         } else {
-            $tag = Tag::sanitize($tag);
-            $additional_tags = Tag::explode($additional_tags);
-
             Ctx::$database->execute(
                 "INSERT INTO auto_tag(tag, additional_tags) VALUES(:tag, :additional_tags)",
                 ["tag" => $tag, "additional_tags" => Tag::implode($additional_tags)]

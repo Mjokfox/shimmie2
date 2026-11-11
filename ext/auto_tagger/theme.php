@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A, INPUT, P, emptyHTML};
+use function MicroHTML\{A, B, BR, DIV, INPUT, P, SPAN, emptyHTML};
 
 use MicroHTML\HTMLElement;
 
@@ -40,5 +40,30 @@ class AutoTaggerTheme extends Themelet
                 ]
             )));
         }
+    }
+
+    /**
+     * @param non-empty-string $tag
+     * @param non-empty-string $additional_tags
+     */
+    public function display_confirmation(string $tag, string $additional_tags, int $count): void
+    {
+        $form = SHM_SIMPLE_FORM(
+            make_link("auto_tag/add"),
+            INPUT(["type" => "hidden", "name" => "c_tag", "value" => $tag]),
+            INPUT(["type" => "hidden", "name" => "c_additional_tags", "value" => $additional_tags]),
+            INPUT(["type" => "hidden", "name" => "confirm", "value" => "on"]),
+            INPUT(["type" => "submit", "value" => "Confirm"]),
+            A(["href" => make_link("alias/list"), "style" => "margin-left:1em;"], "No, go back"),
+        );
+
+        $html = DIV(
+            SPAN("Adding tag(s) \"", B($additional_tags), "\" to existing tag \"", B($tag), "\"."),
+            BR(),
+            SPAN("This will affect ", A(["href" => search_link([$tag])], B($count), " posts"), ", are you sure?"),
+            $form
+        );
+
+        Ctx::$page->add_block(new Block("Confirm auto tag", $html));
     }
 }
