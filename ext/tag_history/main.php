@@ -50,8 +50,8 @@ final class TagHistory extends Extension
     {
         $database = Ctx::$database;
 
-        $new_tags = Tag::implode($event->new_tags);
-        $old_tags = Tag::implode($event->old_tags);
+        $new_tags = strtolower(Tag::implode($event->new_tags));
+        $old_tags = strtolower(Tag::implode($event->old_tags));
 
         if ($new_tags === $old_tags) {
             return;
