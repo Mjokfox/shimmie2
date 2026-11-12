@@ -827,7 +827,7 @@ class SelectorPanel {
         const select = build("SELECT", {ariaLabel: group });
         select.append(build("OPTION", overflow ? "More..." : "Select..."));
         tags.forEach(tag => {
-            select.append(build("OPTION", {value: tag}, tag));
+            select.append(build("OPTION", {value: tag.alias}, tag.tag));
         });
         return select;
     }
