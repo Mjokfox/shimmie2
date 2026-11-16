@@ -106,7 +106,7 @@ class DuplicateDetector extends Extension
             if ($tmp_filename->filesize() > Ctx::$config->get(UploadConfig::SIZE)) {
                 $size = to_shorthand_int($tmp_filename->filesize());
                 $limit = to_shorthand_int(Ctx::$config->get(UploadConfig::SIZE));
-                throw new UploadException("File too large ($size > $limit)");
+                throw new InvalidInput("File too large ($size > $limit)");
             }
 
             $dce = send_event(new DuplicateCheckEvent($tmp_filename, $image_id));

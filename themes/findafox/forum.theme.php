@@ -71,9 +71,14 @@ class CustomForumTheme extends ForumTheme
         $h_avatar = $BAE->html;
         $h_del = null;
         if (Ctx::$user->can(ForumPermission::FORUM_ADMIN)) {
-            $h_del = SHM_SIMPLE_FORM(
-                make_link("forum/delete/$thread_id/$post->id"),
-                SHM_SUBMIT("Delete"),
+            $h_del = emptyHTML(
+                BR(),
+                SHM_POST_LINK(
+                    make_link("forum/delete/$thread_id/$post->id"),
+                    [],
+                    "Del",
+                    confirm: "Delete comment by {$h_name}",
+                )
             );
         }
         $h_edit = null;

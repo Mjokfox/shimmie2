@@ -4,29 +4,20 @@
     "description": "A tag-based image gallery",
     "type": "project",
     "license": "GPL-2.0-or-later",
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true,
     "config": {
         "platform": {
             "php": "8.5.0"
+        },
+        "allow-plugins": {
+            "php-http/discovery": true
         }
     },
     "repositories": [
         {
             "type": "composer",
             "url": "https://asset-packagist.org"
-        },
-        {
-            "type": "package",
-            "package": {
-                "name": "ifixit/php-akismet",
-                "version": "1.1",
-                "source": {
-                    "url": "https://github.com/iFixit/php-akismet.git",
-                    "type": "git",
-                    "reference": "fd4ff50eb577457c1b7b887401663e91e77625ae"
-                }
-            }
         }
     ],
     "require": {
@@ -34,7 +25,8 @@
         "ext-pdo": "*",
         "ext-json": "*",
         "ext-fileinfo": "*",
-        "ifixit/php-akismet": "^1.0",
+        "automattic/akismet-sdk": "^1.5",
+        "guzzlehttp/guzzle": "^7.10",
         "google/recaptcha": "^2.1",
         "shish/ffsphp": "^1.6",
         "shish/microbundler": "^1.1.0",
@@ -57,7 +49,7 @@
         "phpunit/phpunit": "^13.4",
         "friendsofphp/php-cs-fixer": "^3.89",
         "phpstan/phpstan": "^2.1",
-        "thecodingmachine/phpstan-safe-rule": "^1.4",
+        "thecodingmachine/phpstan-safe-rule": "^1.5.0-rc1",
         "phpstan/phpstan-strict-rules": "^2.0",
         "shish/phpstan-matchy-string": "^0.0.0"
     },
@@ -69,8 +61,7 @@
         "ext-apcu": "cache - apc",
         "ext-redis": "cache - redis",
         "ext-curl": "some extensions",
-        "ext-json": "some extensions",
-        "ext-zip": "self-updater extension, bulk import/export",
+        "ext-zip": "bulk import/export",
         "ext-zlib": "anti-spam",
         "ext-xml": "some extensions",
         "ext-gd": "GD-based thumbnailing"

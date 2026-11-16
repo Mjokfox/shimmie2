@@ -60,7 +60,7 @@ final class PostScheduling extends DataHandlerExtension
         if ($event->metadata->get("schedule") === "on") {
             if (!$this->check_contents($event->tmpname)) {
                 // We DO support this extension - but the file looks corrupt
-                throw new UploadException("Invalid or corrupted file");
+                throw new InvalidInput("Invalid or corrupted file");
             }
             $hash = $event->tmpname->md5();
             $existing = Post::by_hash($hash);
@@ -76,7 +76,7 @@ final class PostScheduling extends DataHandlerExtension
                     $event->posts[] = $existing;
                     return;
                 } else {
-                    throw new UploadException(">>{$existing->id} already has hash {$existing->hash}");
+                    throw new InvalidInput(">>{$existing->id} already has hash {$existing->hash}");
                 }
             }
 
@@ -89,7 +89,7 @@ final class PostScheduling extends DataHandlerExtension
             );
 
             if (!is_null($res)) {
-                throw new UploadException("Currently scheduled post #{$res} already has hash {$hash}");
+                throw new InvalidInput("Currently scheduled post #{$res} already has hash {$hash}");
             }
 
             $latest = $this->get_latest();
@@ -107,19 +107,14 @@ final class PostScheduling extends DataHandlerExtension
                 $image->tmp_file = $filename;
                 $filesize = $filename->filesize();
                 if ($filesize === 0) {
-                    throw new UploadException("File size is zero");
+                    throw new InvalidInput("File size is zero");
                 }
                 $image->filesize = $filesize;
                 $image->hash = $hash;
                 // DB limits to 255 char filenames
                 $image->filename = substr($event->filename, -250);
                 $image->set_mime($event->mime);
-                try {
-                    send_event(new MediaCheckPropertiesEvent($image));
-                } catch (MediaException $e) {
-                    throw new UploadException("Unable to scan media properties {$filename->str()} / {$image->filename} / $image->hash: ".$e->getMessage());
-                }
-
+                send_event(new MediaCheckPropertiesEvent($image));
                 $this->schedule_image($image, $event->metadata, $event->slot);
                 \Safe\exec("bash ext/post_scheduling/timer.sh -t $interval -d $interval > /dev/null 2>&1 &");
 
@@ -128,7 +123,7 @@ final class PostScheduling extends DataHandlerExtension
                 try {
                     $event->tmpname->copy($filename);
                 } catch (\Exception $e) {
-                    throw new UploadException("Failed to copy file from uploads ({$event->tmpname->str()}) to archive ({$filename->str()}): ".$e->getMessage());
+                    throw new InvalidInput("Failed to copy file from uploads ({$event->tmpname->str()}) to archive ({$filename->str()}): ".$e->getMessage());
                 }
                 Ctx::$cache->delete("scheduled_post_count");
                 Ctx::$page->flash("Scheduled {$event->filename};");
@@ -251,11 +246,11 @@ final class PostScheduling extends DataHandlerExtension
                 Ctx::$database->with_savepoint(function () use ($path, $scheduled, $metadata) {
                     $event = send_event(new DataUploadEvent($path, $scheduled["filename"], 0, $metadata));
                     if (count($event->posts) === 0) {
-                        throw new UploadException("MIME type not supported: " . $event->mime);
+                        throw new InvalidInput("MIME type not supported: " . $event->mime);
                     }
                 });
 
-            } catch (UploadException $ex) {
+            } catch (InvalidInput $ex) {
                 Log::error("post_schedule", "Image with hash ".$scheduled["hash"]." failed to upload, tags: ". $metadata->get("tags"));
                 return 1;
             }
@@ -386,8 +381,7 @@ final class PostScheduling extends DataHandlerExtension
         return true;
     }
 
-    protected function create_thumb(Post $post): bool
+    protected function create_thumb(Post $post): void
     {
-        return true;
     }
 }

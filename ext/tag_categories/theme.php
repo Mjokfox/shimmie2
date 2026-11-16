@@ -109,7 +109,7 @@ class TagCategoriesTheme extends Themelet
                     BUTTON([
                         "class" => "tc-view",
                         "type" => "button",
-                        "onclick" => "this.closest('.tagcategoryblock').className = 'tagcategoryblock tc-editing';"
+                        "data-tc-mode" => "tc-editing"
                     ], "Edit"),
                     BUTTON([
                         "class" => "tc-edit",
@@ -120,7 +120,7 @@ class TagCategoriesTheme extends Themelet
                     BUTTON([
                         "class" => "tc-edit",
                         "type" => "button",
-                        "onclick" => "this.closest('.tagcategoryblock').className = 'tagcategoryblock tc-deleting';",
+                        "data-tc-mode" => "tc-deleting"
                     ], "Delete"),
                     BUTTON([
                         "class" => "tc-delete",

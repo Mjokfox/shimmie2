@@ -28,3 +28,6 @@
 .wiki-admin-tools * {
 	margin: 0;
 }
+.wiki-edit-body {
+    width: 100%;
+}

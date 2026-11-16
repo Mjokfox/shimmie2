@@ -54,15 +54,79 @@ abstract class BaseConfigGroup extends Enablable
     }
 
     /**
+     * @param bool $all return all metas, or only enabled metas
      * @return array<string, ConfigMeta>
      */
-    public static function get_all_metas(): array
+    public static function get_all_metas(bool $all = true): array
     {
         $metas = [];
-        foreach (self::get_subclasses(true) as $class) {
+        foreach (self::get_subclasses($all) as $class) {
             $obj = $class->newInstance();
             $metas = array_merge($metas, $obj->get_config_fields());
         }
         return $metas;
+    }
+
+    /**
+     * Convert POST data to settings data, eg
+     *
+     *     $_POST = [
+     *         "_type_mynull" => "*",
+     *         "_type_mystring" => "*",
+     *         "_config_mystring" => "hello world!",
+     *         "_type_myint" => "*",
+     *         "_config_myint" => "42KB",
+     *     ]
+     *
+     * becomes
+     *
+     *     $config = [
+     *         "mynull" => null,
+     *         "mystring" => "hello world!",
+     *         "myint" => 43008,
+     *     ]
+     *
+     * Previously the _type_XXX keys were used to flag the type of each setting,
+     * but these now come from the config metadata. They are now used to tell
+     * the difference between a null value and a non-existent value.
+     *
+     * @return array<string, null|string|int|boolean|array<string>>
+     */
+    public static function fromPost(QueryArray $post): array
+    {
+        $settings = [];
+        $post = $post->toArray();
+
+        foreach (self::get_all_metas() as $key => $meta) {
+            if (array_key_exists("_type_$key", $post)) {
+                $string_value = $post["_config_$key"] ?? null;
+
+                // Validate against known configuration metadata options
+                // null is always a valid value, meaning "reset to default"
+                if ($meta->options !== null && $string_value !== null) {
+                    $options = $meta->options;
+                    // Options can either be an array, or a callable that returns an array -
+                    // we check for "!is_array()" instead of "is_callable()" because the latter
+                    // can return true for both cases, eg the array `["ClassName", "method_name"]`
+                    if (!is_array($options)) {
+                        $options = $options();
+                    }
+                    $string_values = is_array($string_value) ? $string_value : [$string_value];
+                    foreach ($string_values as $tv) {
+                        if (!in_array($tv, $options)) {
+                            throw new InvalidInput("Invalid value '$tv' for '$key' - select from " . implode(", ", $options));
+                        }
+                    }
+                }
+
+                // Check permissions
+                if ($meta->permission !== null && !Ctx::$user->can($meta->permission)) {
+                    throw new PermissionDenied("You do not have permission to set '$key'");
+                }
+
+                $settings[$key] = $meta->type->fromPost($string_value);
+            }
+        }
+        return $settings;
     }
 }

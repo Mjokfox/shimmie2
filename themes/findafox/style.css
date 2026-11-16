@@ -307,14 +307,6 @@ form {
 	margin: 0;
 }
 
-a {
-	text-decoration: none;
-}
-
-a:hover {
-	text-decoration: underline;
-}
-
 BUTTON.shm-button-as-link:hover {
 	color: var(--link-hover);
 	background: none;
@@ -436,6 +428,20 @@ div#paginator a:hover {
 	margin-top: 32px;
 }
 
+.comment-thumb-cell {
+	width: 220px;
+}
+.comment-body-cell {
+	text-align: left;
+}
+
+.danbooru2-search INPUT[type="text"] {
+    width: 75%;
+}
+.danbooru2-search INPUT[type="submit"] {
+    width: 20%;
+}
+
 .setupblock,
 .tagcategoryblock {
 	margin: 0.6rem 1rem 0.6rem 0;
@@ -492,6 +498,7 @@ div#paginator a:hover {
 	font-family: Tahoma, Verdana, Helvetica, sans-serif;
 }
 
+.shm-post-link-form BUTTON,
 a:link {
 	color: var(--link-default);
 	text-decoration: none;
@@ -502,6 +509,7 @@ a:visited {
 	text-decoration: none;
 }
 
+.shm-post-link-form BUTTON:hover,
 a:hover {
 	color: var(--link-hover);
 	text-decoration: none;

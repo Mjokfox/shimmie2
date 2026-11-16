@@ -9,6 +9,10 @@
 	width: 50%;
 }
 
+.upload-cancel {
+	white-space: nowrap;
+}
+
 BODY:has(.upload-popup-container) HEADER {
 	z-index: 1000;
 }

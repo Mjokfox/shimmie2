@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A, BR, BUTTON, DIV, INPUT, P, SPAN, SUP, TABLE, TD, TEXTAREA, TH, TR, emptyHTML};
+use function MicroHTML\{A, BR, DIV, INPUT, P, SPAN, SUP, TABLE, TD, TEXTAREA, TH, TR, emptyHTML};
 
 use MicroHTML\HTMLElement;
 
@@ -244,25 +244,20 @@ class CommentListTheme extends Themelet
     protected function delete_link(int $comment_id, int $image_id, string $owner, string $text): HTMLElement
     {
         $comment_preview = truncate($text, 50);
-        return SHM_SIMPLE_FORM(
+        return SHM_POST_LINK(
             make_link("comment/delete"),
-            INPUT(["type" => "hidden", "name" => "comment_id", "value" => $comment_id]),
-            INPUT(["type" => "hidden", "name" => "image_id", "value" => $image_id]),
-            BUTTON(
-                [
-                    "type" => "submit",
-                    "class" => "shm-button-as-link",
-                    "data-message" => "Delete comment by {$owner}:\n$comment_preview",
-                    "onclick" => "return confirm(this.dataset.message);"
-                ],
-                "Del"
-            )
+            [
+                "comment_id" => $comment_id,
+                "image_id" => $image_id,
+            ],
+            "Del",
+            confirm: "Delete comment by {$owner}:\n$comment_preview",
         );
     }
 
     protected function edit_button(int $comment_id, int $image_id, string $text): HTMLElement
     {
-        return A(["class" => "comment_edit", "data-comment_id" => $comment_id, "data-post_id" => $image_id, "data-content" => $text, "onclick" => "ShmComment.edit(this);"], " Edit");
+        return A(["class" => "comment_edit", "data-comment_id" => $comment_id, "data-post_id" => $image_id, "data-content" => $text], " Edit");
     }
 
     protected function build_postbox(int $image_id): HTMLElement

@@ -6,7 +6,7 @@ namespace Shimmie2;
 
 use Jfcherng\Diff\{DiffHelper};
 
-use function MicroHTML\{A, BR, BUTTON, DIV, HR, INPUT, P, STYLE, TABLE, TD, TEXTAREA, TR, emptyHTML, rawHTML};
+use function MicroHTML\{A, BR, BUTTON, DIV, HR, INPUT, P, TABLE, TD, TEXTAREA, TR, emptyHTML, rawHTML};
 
 use MicroHTML\HTMLElement;
 
@@ -77,11 +77,26 @@ class WikiTheme extends Themelet
     public function display_page_history(string $title, array $history): void
     {
         $table = TABLE(["class" => "zebra"]);
-        foreach ($history as $row) {
+        foreach ($history as $n => $row) {
             $table->appendChild(TR(
-                TD(INPUT(["type" => "radio", "name" => "r1", "value" => $row['revision']])),
-                TD(INPUT(["type" => "radio", "name" => "r2", "value" => $row['revision']])),
-                TD(A(["href" => make_link("wiki/$title", ["revision" => $row['revision']])], $row['revision'])),
+                TD(INPUT([
+                    "type" => "radio",
+                    "name" => "r1",
+                    "value" => $row['revision'],
+                    "checked" => $n === 1,
+                    "required" => true,
+                ])),
+                TD(INPUT([
+                    "type" => "radio",
+                    "name" => "r2",
+                    "value" => $row['revision'],
+                    "checked" => $n === 0,
+                    "required" => true,
+                ])),
+                TD(A(
+                    ["href" => make_link("wiki/$title", ["revision" => $row['revision']])],
+                    $row['revision']
+                )),
                 TD($row['date'])
             ));
         }
@@ -110,7 +125,7 @@ class WikiTheme extends Themelet
         Ctx::$page->set_title("Diff for $title");
         $this->display_navigation();
         $diff_html = DiffHelper::calculate($page1->body, $page2->body, "SideBySide");
-        Ctx::$page->add_html_header(STYLE(DiffHelper::getStyleSheet()));
+
         Ctx::$page->add_block(new Block("Diff for $title", rawHTML($diff_html)));
     }
 
@@ -128,7 +143,7 @@ class WikiTheme extends Themelet
         return SHM_SIMPLE_FORM(
             make_link("wiki/$u_title/save"),
             INPUT(["type" => "hidden", "name" => "revision", "value" => $page->revision + 1]),
-            TEXTAREA(["name" => "body", "class" => "formattable", "style" => "width: 100%", "rows" => 20], $page->body),
+            TEXTAREA(["name" => "body", "class" => "wiki-edit-body formattable", "rows" => 20], $page->body),
             $lock,
             BR(),
             SHM_SUBMIT("Save", ["class" => "setupsubmit"])

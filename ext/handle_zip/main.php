@@ -62,7 +62,7 @@ final class ZipFileHandler extends DataHandlerExtension
                     $metadata["filename"] = $zip_filename;
                 }
 
-                // @phpstan-ignore-next-line - we know this is a string from the checks above
+                // @phpstan-ignore argument.type (we know this is a string from the checks above)
                 $image = Post::by_hash($metadata["hash"]);
                 if ($image !== null) {
                     $skipped++;
@@ -118,9 +118,8 @@ final class ZipFileHandler extends DataHandlerExtension
         return false;
     }
 
-    protected function create_thumb(Post $image): bool
+    protected function create_thumb(Post $image): void
     {
-        return false;
     }
 
     /**

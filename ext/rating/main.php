@@ -34,19 +34,8 @@ add_rating(new ImageRating("?", "Unrated", "unrated", 99999));
 add_rating(new ImageRating("s", "Safe", "safe", 0));
 add_rating(new ImageRating("q", "Questionable", "questionable", 500));
 add_rating(new ImageRating("e", "Explicit", "explicit", 1000));
-// @phpstan-ignore-next-line
+// @-phpstan-ignore
 @include_once "data/config/ratings.conf.php";
-
-final class RatingSetException extends UserError
-{
-    public ?string $redirect;
-
-    public function __construct(string $msg, ?string $redirect = null)
-    {
-        parent::__construct($msg);
-        $this->redirect = $redirect;
-    }
-}
 
 final class RatingSetEvent extends Event
 {
@@ -160,16 +149,7 @@ final class Ratings extends Extension
             $my_rating = $event->params["rating{$event->slot}"] ?? "";
             $rating = Ratings::rating_is_valid($my_rating) ? $my_rating : $common_rating;
             if (Ratings::rating_is_valid($rating)) {
-                try {
-                    send_event(new RatingSetEvent($event->image, $rating));
-                } catch (RatingSetException $e) {
-                    if ($e->redirect) {
-                        Ctx::$page->flash("{$e->getMessage()}, please see {$e->redirect}");
-                    } else {
-                        Ctx::$page->flash($e->getMessage());
-                    }
-                    throw $e;
-                }
+                send_event(new RatingSetEvent($event->image, $rating));
             }
         }
     }

@@ -17,7 +17,7 @@ class NotesTheme extends Themelet
 {
     public function note_button(int $image_id): HTMLElement
     {
-        return FORM(INPUT(["type" => "button", "value" => "Add Note", "onclick" => "Notes.addNewNote()"]));
+        return FORM(INPUT(["type" => "button", "value" => "Add Note", "class" => "note-add-button"]));
     }
 
     public function request_button(int $image_id): HTMLElement
@@ -34,7 +34,7 @@ class NotesTheme extends Themelet
         return SHM_SIMPLE_FORM(
             make_link("note/nuke_notes"),
             INPUT(["type" => "hidden", "name" => "image_id", "value" => $image_id]),
-            INPUT(["type" => "submit", "value" => "Nuke Notes", "onclick" => "return confirm('Are you sure?')"]),
+            INPUT(["type" => "submit", "value" => "Nuke Notes", "data-shm-confirm" => "Are you sure?"]),
         );
     }
 
@@ -43,7 +43,7 @@ class NotesTheme extends Themelet
         return SHM_SIMPLE_FORM(
             make_link("note/nuke_requests"),
             INPUT(["type" => "hidden", "name" => "image_id", "value" => $image_id]),
-            INPUT(["type" => "submit", "value" => "Nuke Requests", "onclick" => "return confirm('Are you sure?')"]),
+            INPUT(["type" => "submit", "value" => "Nuke Requests", "data-shm-confirm" => "Are you sure?"]),
         );
     }
 
@@ -113,7 +113,7 @@ class NotesTheme extends Themelet
 
         return DIV(
             TABLE(
-                ["class" => "zebra", "style" => "text-align: left"],
+                ["class" => "zebra notes-history"],
                 THEAD(
                     TR(
                         TH("Post"),

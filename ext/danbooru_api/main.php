@@ -289,7 +289,7 @@ final class DanbooruApi extends Extension
             $file = shm_tempnam("transload");
             try {
                 Network::fetch_url($source, $file);
-            } catch (FetchException $e) {
+            } catch (UserError $e) {
                 $page->set_code(409);
                 $page->add_http_header("X-Danbooru-Errors: $e");
                 return;
@@ -348,7 +348,7 @@ final class DanbooruApi extends Extension
             } else {
                 $page->add_http_header("Location: $newid");
             }
-        } catch (UploadException $ex) {
+        } catch (UserError $ex) {
             $page->set_code(409);
             $page->add_http_header("X-Danbooru-Errors: exception - " . $ex->getMessage());
         }

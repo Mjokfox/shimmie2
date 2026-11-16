@@ -48,10 +48,6 @@ final class DeleteAliasEvent extends Event
     }
 }
 
-final class AddAliasException extends UserError
-{
-}
-
 /** @extends Extension<AliasEditorTheme> */
 final class AliasEditor extends Extension
 {
@@ -155,7 +151,7 @@ final class AliasEditor extends Extension
             ["oldtag" => $oldtag]
         );
         if ($row) {
-            throw new AddAliasException("{$row['oldtag']} is already an alias for {$row['newtag']}");
+            throw new InvalidInput("{$row['oldtag']} is already an alias for {$row['newtag']}");
         }
 
         $row = Ctx::$database->get_row(
@@ -163,7 +159,7 @@ final class AliasEditor extends Extension
             ["newtag" => $newtag]
         );
         if ($row) {
-            throw new AddAliasException("{$row['oldtag']} is itself an alias for {$row['newtag']}");
+            throw new InvalidInput("{$row['oldtag']} is itself an alias for {$row['newtag']}");
         }
 
         Ctx::$database->execute(

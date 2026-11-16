@@ -72,8 +72,8 @@ class CustomCommentListTheme extends CommentListTheme
 
             $html = TABLE(
                 TR(
-                    TD(["style" => "width: 220px;"], $this->build_thumb($image)),
-                    TD(["style" => "text-align: left;"], $comment_html)
+                    TD(["class" => "comment-thumb-cell"], $this->build_thumb($image)),
+                    TD(["class" => "comment-body-cell"], $comment_html)
                 )
             );
 
@@ -110,7 +110,7 @@ class CustomCommentListTheme extends CommentListTheme
         $h_del = null;
         if (Ctx::$user->can(CommentPermission::DELETE_OTHERS_COMMENT)
             || (Ctx::$user->can(CommentPermission::DELETE_COMMENT) && Ctx::$user->id === $comment->owner_id)) {
-            $h_del = $this->delete_link($comment->id, $comment->image_id, $comment->owner->name, $tfe->stripped);
+            $h_del = emptyHTML(BR(), $this->delete_link($comment->id, $comment->image_id, $comment->owner->name, $tfe->stripped));
         }
         $h_edit = null;
         if (Ctx::$user->can(CommentPermission::EDIT_COMMENT) && Ctx::$user->id === $comment->owner_id) {

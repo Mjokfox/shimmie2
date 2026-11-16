@@ -116,12 +116,12 @@ class PoolsTheme extends Themelet
             INPUT([
                 "name" => "search",
                 "type" => "text",
-                "style" => "width:75%"
+                "class" => "pool_search_input"
             ]),
             INPUT([
                 "type" => "submit",
                 "value" => "Go",
-                "style" => "width:20%"
+                "class" => "pool_search_submit"
             ])
         );
 
@@ -187,15 +187,15 @@ class PoolsTheme extends Themelet
             $editor->appendChild(
                 SHM_SIMPLE_FORM(
                     make_link("pool/nuke/{$pool->id}"),
-                    SHM_SUBMIT("Delete Pool", ["name" => "delete", "id" => "delete_pool_btn", "onclick" => "return confirm('Are you sure that you want to delete this pool?')"])
+                    SHM_SUBMIT("Delete Pool", ["name" => "delete", "id" => "delete_pool_btn", "data-shm-confirm" => "Are you sure that you want to delete this pool?"])
                 )
             );
         }
 
         if ($check_all) {
             $editor->appendChild(
-                INPUT(["type" => "button", "name" => "CheckAll", "value" => "Check All", "onclick" => "document.querySelectorAll('[name=\"check[]\"]').forEach(el => el.checked = true)"]),
-                INPUT(["type" => "button", "name" => "UnCheckAll", "value" => "Uncheck All", "onclick" => "document.querySelectorAll('[name=\"check[]\"]').forEach(el => el.checked = false)"])
+                INPUT(["type" => "button", "name" => "CheckAll", "value" => "Check All", "class" => "pool-check-all"]),
+                INPUT(["type" => "button", "name" => "UnCheckAll", "value" => "Uncheck All", "class" => "pool-uncheck-all"])
             );
         }
 
@@ -219,7 +219,7 @@ class PoolsTheme extends Themelet
         $form->appendChild($image_list);
         $form->appendChild(
             BR(),
-            SHM_SUBMIT("Add Selected", ["name" => "edit", "id" => "edit_pool_add_btn", "onclick" => "return confirm('Are you sure you want to add selected posts to this pool?')"]),
+            SHM_SUBMIT("Add Selected", ["name" => "edit", "id" => "edit_pool_add_btn", "data-shm-confirm" => "Are you sure you want to add selected posts to this pool?"]),
         );
 
         Ctx::$page->add_block(new Block("Import", $form, "main", 30));
@@ -242,7 +242,7 @@ class PoolsTheme extends Themelet
             $image_list->appendChild(SPAN(
                 ["class" => "thumb"],
                 $this->build_thumb($image),
-                INPUT(["type" => "number", "name" => "order_{$image->id}", "value" => $image['image_order'], "style" => "max-width: 50px;"]),
+                INPUT(["type" => "number", "name" => "order_{$image->id}", "value" => $image['image_order'], "class" => "pool_order_input"]),
             ));
         }
         $form->appendChild($image_list);

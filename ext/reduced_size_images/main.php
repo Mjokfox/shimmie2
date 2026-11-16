@@ -146,7 +146,7 @@ final class ReducedSizeImages extends Extension
             try {
                 $this->resize_image($post, $width, $height);
                 Log::info("reduze_size", ">>{$post->id} has been given a reduced image to: ".$width."x".$height);
-            } catch (MediaException $e) {
+            } catch (InvalidInput $e) {
                 // dont care, this is thrown for AVIF for some reason, even though we check if its supported twice
             }
         }
@@ -162,19 +162,18 @@ final class ReducedSizeImages extends Extension
     private function resize_image(Post $image_obj, int $width, int $height): void
     {
         if (($height <= 0) || ($width <= 0)) {
-            throw new ImageResizeException("Invalid options for height and width. ($width x $height)");
+            throw new InvalidInput("Invalid options for height and width. ($width x $height)");
         }
 
         $engine = MediaEngine::from(Ctx::$config->get(ResizeConfig::ENGINE));
 
         if (!$this->can_resize_mime($image_obj->get_mime())) {
-            throw new ImageResizeException("Engine {$engine->value} cannot resize selected image");
+            throw new InvalidInput("Engine {$engine->value} cannot resize selected image");
         }
 
         $hash = $image_obj->hash;
         $image_filename = Filesystem::warehouse_path(Post::MEDIA_DIR, $hash);
 
-        /* Temp storage while we resize */
         $outname = Filesystem::warehouse_path(self::MEDIA_DIR, $hash);
 
         send_event(new MediaResizeEvent(

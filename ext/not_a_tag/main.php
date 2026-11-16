@@ -70,8 +70,8 @@ final class NotATag extends Extension
         foreach ($pairs as $tag => $url) {
             // cast to string because PHP automatically turns ["69" => "No sex"]
             // into [69 => "No sex"]
-            if (in_array(strtolower((string)$tag), $tags)) {
-                throw new TagSetException("Invalid tag used: $tag", $url);
+            if (in_array(strtolower((string)$tag), $tags)) { // TODO CHECK
+                throw new InvalidTag("Invalid tag used: $tag", $url);
             }
         }
     }

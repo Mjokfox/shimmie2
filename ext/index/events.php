@@ -44,7 +44,7 @@ class SearchTermParseEvent extends Event
 
             // if what's left is empty, it's not a valid search term
             if ($term === "" || $term === "*") {
-                throw new SearchTermParseException("'$original_term' is not a valid search term");
+                throw new InvalidInput("'$original_term' is not a valid search term");
             }
         }
 
@@ -82,9 +82,6 @@ class SearchTermParseEvent extends Event
     }
 }
 
-class SearchTermParseException extends InvalidInput
-{
-}
 
 class PostListBuildingEvent extends Event
 {

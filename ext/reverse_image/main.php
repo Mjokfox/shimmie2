@@ -332,11 +332,8 @@ class ReverseImage extends Extension
     private function transload(string $url): Path
     {
         $tmp_filename = shm_tempnam("transload");
-        try {
-            Network::fetch_url($url, $tmp_filename);
-        } catch (FetchException $e) {
-            throw new UploadException("Error reading from $url: $e");
-        }
+        Network::fetch_url($url, $tmp_filename);
+
         return $tmp_filename;
     }
 
@@ -352,7 +349,7 @@ class ReverseImage extends Extension
             $file = Filesystem::warehouse_path(Post::MEDIA_DIR, $_POST["hash"], false);
         } elseif (isset($_FILES['file'])) {
             if ($_FILES['file']['error']) {
-                throw new UploadException("Upload failed: ".$_FILES['file']['error']);
+                throw new InvalidInput("Upload failed: ".$_FILES['file']['error']);
             } else {
                 $file = new Path($_FILES['file']['tmp_name']);
             }

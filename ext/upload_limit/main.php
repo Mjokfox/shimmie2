@@ -116,7 +116,7 @@ declare(strict_types=1);
 //                     $event->images[] = $existing;
 //                     return;
 //                 } else {
-//                     throw new UploadException(">>{$existing->id} already has hash {$existing->hash}");
+//                     throw new InvalidInput(">>{$existing->id} already has hash {$existing->hash}");
 //                 }
 //             }
 //             if (!$user->can(Permissions::BULK_IMPORT)) {
@@ -137,7 +137,7 @@ declare(strict_types=1);
 //                     $minutes = floor(($seconds % 3600) / 60);
 //                     $remainingSeconds = $seconds % 60;
 //                     $formatted_time = ($hours == 0 ? "" : ("$hours hour(s), ")) . ($minutes == 0 ? "" : ("$minutes minute(s), ")) . "$remainingSeconds second(s)";
-//                     throw new UploadException("Upload limit reached, please wait $formatted_time before trying again.");
+//                     throw new InvalidInput("Upload limit reached, please wait $formatted_time before trying again.");
 //                 } else {
 //                     $user_config->set_int("left_upload", $uploads_left - 1);
 //                 }

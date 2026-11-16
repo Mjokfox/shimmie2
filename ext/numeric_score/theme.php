@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A, BR, DIV, H3, INPUT, P, emptyHTML};
+use function MicroHTML\{A, DIV, H3, INPUT, P, emptyHTML};
 
 use MicroHTML\HTMLElement;
 
@@ -29,17 +29,13 @@ class NumericScoreTheme extends Themelet
                 SHM_SUBMIT('Remove All Votes')
             );
             $voters = emptyHTML(
-                BR(),
-                DIV(
-                    ["id" => "votes-content"],
-                    A(
-                        [
-                            "href" => make_link("numeric_score/votes/$image->id"),
-                            "onclick" => 'fetch(this.href).then(r => r.text()).then(html => document.getElementById("votes-content").innerHTML = html); return false;',
-                        ],
-                        "See All Votes"
-                    )
-                ),
+                INPUT([
+                    "type" => "button",
+                    "class" => "numeric-score-votes-button",
+                    "value" => "See All Votes",
+                    "data-votes-url" => make_link("numeric_score/votes/$image->id"),
+                ]),
+                DIV(["id" => "votes-content"]),
             );
         }
         $html = emptyHTML(
@@ -77,7 +73,6 @@ class NumericScoreTheme extends Themelet
 
         $html = emptyHTML(
             H3(
-                ["style" => "text-align: center;"],
                 A(["href" => $b_dte], "<<"),
                 " $current ",
                 A(["href" => $f_dte], ">>")

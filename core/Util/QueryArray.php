@@ -46,7 +46,7 @@ final class QueryArray implements \ArrayAccess, \JsonSerializable
 
     public function req(string $key): string
     {
-        return $this->get($key) ?? throw new \InvalidArgumentException("Required parameter '$key' not found");
+        return $this->get($key) ?? throw new InvalidInput("Required parameter '$key' not found");
     }
 
     /**
@@ -76,13 +76,9 @@ final class QueryArray implements \ArrayAccess, \JsonSerializable
         return $val;
     }
 
-    /**
-     * @param string $offset
-     * @param string|string[] $value
-     */
-    // @phpstan-ignore-next-line
     public function offsetSet(mixed $offset, mixed $value): void
     {
+        assert(is_string($offset));
         $this->params[$offset] = $value;
     }
 

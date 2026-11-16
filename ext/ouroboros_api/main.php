@@ -116,7 +116,7 @@ final class OuroborosPost extends _SafeOuroborosImage
      * @param array<string, mixed> $post
      * @param array<string, mixed>|null $files Optional $_FILES array for file uploads
      */
-    // @phpstan-ignore-next-line
+    // @phpstan-ignore constructor.missingParentCall
     public function __construct(array $post, ?array $files = null)
     {
         if (array_key_exists('tags', $post)) {
@@ -325,7 +325,7 @@ final class OuroborosAPI extends Extension
             $meta['filename'] = basename($post->file_url);
             try {
                 Network::fetch_url($post->file_url, new Path($meta->req('file')));
-            } catch (FetchException $e) {
+            } catch (UserError $e) {
                 $this->sendResponse(500, "Transloading failed: $e");
                 return;
             }
@@ -341,7 +341,7 @@ final class OuroborosAPI extends Extension
             $this->sendResponse(420, self::ERROR_POST_CREATE_MD5);
             return;
         }
-        // @phpstan-ignore-next-line
+        // @phpstan-ignore argument.type (we trust that this is a real hash)
         $img = Post::by_hash($meta->req('hash'));
         if (!is_null($img)) {
             $handler = Ctx::$config->get(UploadConfig::COLLISION_HANDLER);
@@ -372,7 +372,7 @@ final class OuroborosAPI extends Extension
                 return $dae->posts[0];
             });
             $this->sendResponse(200, (string)make_link('post/view/' . $image->id), true);
-        } catch (UploadException $e) {
+        } catch (UserError $e) {
             // Cleanup in case shit hit the fan
             $this->sendResponse(500, $e->getMessage());
         }

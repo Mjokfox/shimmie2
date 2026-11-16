@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A, B, BR, DIV, INPUT, NOSCRIPT, P, SCRIPT, SMALL, SPAN, emptyHTML, rawHTML};
+use function MicroHTML\{A, B, BR, DIV, INPUT, NOSCRIPT, P, SMALL, SPAN, emptyHTML, rawHTML};
 
 use MicroHTML\HTMLElement;
 
@@ -40,7 +40,15 @@ class UploadTheme extends Themelet
         }
         $captcha = Captcha::get_html(UploadPermission::SKIP_UPLOAD_CAPTCHA);
 
-        $form = SHM_FORM(make_link("upload"), multipart: true, id: "file_upload");
+        $form = SHM_FORM(
+            make_link("upload"),
+            multipart: true,
+            id: "file_upload",
+            extra_attrs: [
+                "data-max-size" => $max_size,
+                "data-max-total-size" => $max_total_size,
+            ],
+        );
         $form->appendChild(
             TABLE(
                 ["id" => "large_upload_form", "class" => "form upload-form"],
@@ -73,10 +81,6 @@ class UploadTheme extends Themelet
                 SPAN(["id" => "upload_size_tracker"], "0KB"),
                 ")"
             ),
-            SCRIPT("
-            window.shm_max_size = $max_size;
-            window.shm_max_total_size = $max_total_size;
-            ")
         );
 
         $upload_count = Ctx::$config->get(UploadConfig::COUNT);
@@ -191,12 +195,13 @@ class UploadTheme extends Themelet
             $upload_list->appendChild(
                 TR(
                     TD(
-                        ["colspan" => 2, "style" => "white-space: nowrap;"],
-                        DIV([
+                        ["colspan" => 2],
+                        A([
                             "id" => "canceldata{$i}",
-                            "style" => "display:inline;margin-right:5px;font-size:15px;visibility:hidden;",
-                            "onclick" => "document.getElementById('data{$i}').value='';updateTracker();",
-                        ], "✖"),
+                            "class" => "upload-cancel",
+                            "style" => "visibility:hidden;",
+                            "data-target" => "data{$i}",
+                        ], "✖ "),
                         INPUT([
                             "type" => "file",
                             "id" => "data{$i}",
