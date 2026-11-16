@@ -131,9 +131,7 @@ final class TagCategories extends Extension
     #[EventListener]
     public function onSearchTermParse(SearchTermParseEvent $event): void
     {
-        $database = Ctx::$database;
-
-        if ($matches = $event->matches("/^(.+)_?tags(:|<=|<|=|>|>=)([0-9]+)$/i")) {
+        if ($matches = $event->matches("/^(.+?)_?tags(:|<=|<|=|>|>=)([0-9]+)$/i")) {
             $list_group = strtolower($matches[1]);
             $cmp = cmp_escape($matches[2]);
             $count = $matches[3];
@@ -146,12 +144,18 @@ final class TagCategories extends Extension
 
             if (!\is_null($exists)) {
                 $event->add_querylet(
-                    new Querylet("(
-					    SELECT count(distinct t.id)
-					    FROM tags t
-					    INNER JOIN image_tags it ON it.tag_id = t.id AND images.id = it.image_id
-					    WHERE SCORE_ILIKE(t.tag, :cat) $cmp :count
-					", ["cat" => $list_group, "count" => $count])
+                    new Querylet("
+					    EXISTS (
+                            SELECT 1
+                            FROM image_tags it
+                            INNER JOIN image_tag_categories_tags itct ON it.tag_id = itct.tag_id AND itct.category_id IN (
+                                SELECT id FROM image_tag_categories
+                                WHERE list_group ILIKE :list_group
+                            )
+                            AND images.id = it.image_id
+                            HAVING count(it.image_id) $cmp :count
+                        )
+					", ["list_group" => $list_group, "count" => $count])
                 );
             }
         }
