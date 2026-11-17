@@ -1535,6 +1535,7 @@ class UploadPage {
      */
     set_data(index, data) {
         if (!this.panels[index]) return;
+        this.panels[index].clear_tags();
         this.panels[index].from_data(data);
     }
 }
