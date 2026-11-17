@@ -124,7 +124,10 @@ final class Notifications extends Extension
     {
         // For the post owner
         $post = Post::by_id($event->image_id);
-        if (!is_null($post) && $event->user->id !== $post->owner_id) {
+        if (is_null($post)) {
+            throw new ObjectNotFound("Post with id $event->image_id not found.");
+        }
+        if ($event->user->id !== $post->owner_id) {
             $this->create_notification(new Notification(
                 $post->owner_id,
                 $event->user->id,
@@ -134,7 +137,7 @@ final class Notifications extends Extension
             ));
         }
 
-        $mentions = $this->find_mentions($event->comment, $event->user->name);
+        $mentions = $this->find_mentions($event->comment, [$event->user->name, User::by_id_dangerously_cached($post->owner_id)->name]);
 
         foreach ($mentions as $name) {
             try {
@@ -167,7 +170,7 @@ final class Notifications extends Extension
             ));
         }
 
-        $mentions = $this->find_mentions($event->message, $event->user->name);
+        $mentions = $this->find_mentions($event->message, [$event->user->name, $thread->owner->name]);
         foreach ($mentions as $name) {
             try {
                 $user = User::by_name($name);
@@ -184,19 +187,17 @@ final class Notifications extends Extension
         }
     }
 
-    /** @return string[] */
-    private function find_mentions(string $message, ?string $avoid = null): array
+    /**
+     * @param string[] $avoid
+     * @return string[]
+     */
+    private function find_mentions(string $message, array $avoid): array
     {
-        preg_match_all('/@(\S+)/m', $message, $matches);
+        preg_match_all('/@([a-zA-Z0-9-_]+)/m', $message, $matches);
         if (count($matches[1]) < 1) {
             return [];
         }
-        $res = array_unique($matches[1]);
-        $k = array_search($avoid, $res, true);
-        if ($k !== false) {
-            unset($res[$k]);
-        }
-        return $res;
+        return array_diff(array_unique(array_map(strtolower(...), $matches[1])), array_map(strtolower(...), $avoid));
     }
 
     private function action(QueryArray $POST): void

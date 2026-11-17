@@ -90,7 +90,7 @@ function encode_links(text) {
 	text = text.replaceAll(/\(((?:(?:https?|ftp|irc|site):\/\/|mailto:)\S+)\)(\s?)/gm, function(m, c, c1) {return"({url!}"+safe_btoa(c)+"{/url!})"+(c1??"");;});
 	text = text.replaceAll(/((?:(?:https?|ftp|irc|site):\/\/|mailto:)\S+)(\s?)/gm, function(m, c, c1) {return"{url!}"+safe_btoa(c)+"{/url!}"+(c1??"");});
 	text = text.replaceAll(/\[(.+?)\]\(/gm, function(m, c) {return "[{alt!}"+safe_btoa(c)+"{/alt!}](";});
-	text = text.replaceAll(/@(\S+)/gm, function(m, c) {return "{usr!}"+safe_btoa(c)+"{/usr!}";});
+	text = text.replaceAll(/@([a-zA-Z0-9-_]+)/gm, function(m, c) {return "{usr!}"+safe_btoa(c)+"{/usr!}";});
 	return text;
 }
 function insert_links(text) {
