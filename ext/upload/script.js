@@ -810,29 +810,37 @@ class SelectorPanel {
 
         this.model.append(table);
 
-        this.model.append(this.tag_panel(type_table, tc_dict));
+        this.model.append(this.tag_panel(type_table, tc_dict, data.separator_tag));
     }
 
     input_label(tag, type, group) {
         return build("LABEL", build("INPUT", { value: tag.alias, type: type, ariaLabel: group }), tag.tag);
     }
 
-    all_input(tags, type, parent, group) {
+    all_input(tags, type, parent, separator_tag, group) {
         tags.forEach((tag) => {
-            parent.append(this.input_label(tag, type, group));
+            if (tag.tag === separator_tag) {
+                parent.append(qbuild("DIV", "tag-separator"));
+            } else {
+                parent.append(this.input_label(tag, type, group));
+            }
         });
     }
 
-    all_dropdown(tags, group, overflow = false) {
+    all_dropdown(tags, group, separator_tag, overflow = false) {
         const select = build("SELECT", {ariaLabel: group });
         select.append(build("OPTION", overflow ? "More..." : "Select..."));
         tags.forEach(tag => {
-            select.append(build("OPTION", {value: tag.alias}, tag.tag));
+            if (tag.tag === separator_tag) {
+                select.append(build("OPTION", "–"));
+            } else {
+                select.append(build("OPTION", {value: tag.alias}, tag.tag));
+            }
         });
         return select;
     }
 
-    tag_panel(type_table, tc_dict) {
+    tag_panel(type_table, tc_dict, separator_tag) {
         const grid = build("DIV", {class: "upload-tags-grid"});
         tc_dict.forEach((row) => {
             const type = type_table[row.type] ?? { cols: 4, class: "grid-cell cell-wide" };
@@ -860,6 +868,7 @@ class SelectorPanel {
                         tags,
                         row.type === 8 ? "radio" : "checkbox",
                         inputs,
+                        separator_tag,
                         row.group
                     );
                     break;
@@ -872,21 +881,22 @@ class SelectorPanel {
                             tags.slice(0, overflow),
                             "radio",
                             inputs,
+                            separator_tag,
                             row.group
                         );
 
                         inputs.append(
-                            this.all_dropdown(tags.slice(overflow), row.group, true),
+                            this.all_dropdown(tags.slice(overflow), row.group, separator_tag, true),
                         );
                     } else {
-                        this.all_input(tags, "radio", inputs, row.group);
+                        this.all_input(tags, "radio", inputs, separator_tag, row.group);
                     }
                     break;
                 case 4:
-                    inputs.append(this.all_dropdown(tags, row.group));
+                    inputs.append(this.all_dropdown(tags, row.group, separator_tag));
                     break;
                 default:
-                    this.all_input(tags, "checkbox", inputs);
+                    this.all_input(tags, "checkbox", inputs, separator_tag);
                     break;
             }
             cell.append(inputs);

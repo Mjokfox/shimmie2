@@ -83,20 +83,16 @@ class UploadTheme extends Themelet
             ),
         );
 
-        $upload_count = Ctx::$config->get(UploadConfig::COUNT);
-        $preview_enabled = Ctx::$config->get(UploadConfig::PREVIEW);
-        $split_view = Ctx::$config->get(UploadConfig::SPLITVIEW);
-        $tl_enabled = Ctx::$config->get(UploadConfig::TRANSLOAD_ENGINE) !== "none";
-        $accept = $this->get_accept();
         $uhbe = send_event(new UploadHeaderBuildingEvent());
         $usfbe = send_event(new UploadSpecificBuildingEvent(""));
 
         $upload_page_data = [
-            "max_panels" => $upload_count,
-            "preview_enabled" => $preview_enabled,
-            "splitview" => $split_view,
-            "transload" => $tl_enabled,
-            "media_accept" => $accept,
+            "max_panels" => Ctx::$config->get(UploadConfig::COUNT),
+            "preview_enabled" => Ctx::$config->get(UploadConfig::PREVIEW),
+            "splitview" => Ctx::$config->get(UploadConfig::SPLITVIEW),
+            "separator_tag" => Ctx::$config->get(UploadConfig::SEPARATOR_TAG),
+            "transload" => Ctx::$config->get(UploadConfig::TRANSLOAD_ENGINE) !== "none",
+            "media_accept" => $this->get_accept(),
             "common_parts" => array_map(fn ($e) => $e->__toString(), array_values($ucbe->get_parts())),
             "specific_headers" => $uhbe->get_parts(),
             "specific_parts" => array_map(fn ($e) => $e->__toString(), array_values($usfbe->get_parts())),

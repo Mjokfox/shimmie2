@@ -23,6 +23,8 @@ final class UploadConfig extends ConfigGroup
 
     #[ConfigMeta("Upload preview", ConfigType::BOOL, default: true)]
     public const PREVIEW = "upload_preview";
+    #[ConfigMeta("Separator tag", ConfigType::STRING, default: "!%SEPARATOR%!", advanced: true)]
+    public const SEPARATOR_TAG = "Separator_tag";
 
     #[ConfigMeta("Upload collisions", ConfigType::STRING, default: 'error', options: [
         "Error" => 'error',

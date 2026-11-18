@@ -171,8 +171,7 @@ DIV.grid-cell.cell-wide, DIV.grid-cell.cell-info {
 }
 
 DIV.grid-cell-label {
-	border-right-width: 1px;
-	border-right-style: solid;
+	border-right: 1px solid;
 	height:100%;
 	display: flex;
   	align-items: center;
@@ -215,6 +214,11 @@ DIV.grid-cell-content LABEL {
 
 .grid-cell-content LABEL INPUT {
 	margin-right:1px;
+}
+
+.tag-separator {
+	border: 1px dashed;
+	margin: 0 .5em;
 }
 
 TABLE.form .grid-cell SELECT {
@@ -329,7 +333,6 @@ DIV.upload-tags-grid SELECT {
 	}
 
     DIV.grid-cell {
-		border-right-width: 1px dashed;
 		display: grid;
 		grid-template-columns: 10ch var(--upload-c-width) calc(var(--upload-c-width) - 10ch);
 		padding: 1vh 0;
@@ -362,6 +365,10 @@ DIV.upload-tags-grid SELECT {
 
 	DIV.grid-cell:nth-child(even), DIV.grid-cell.cell-wide:nth-child(even) {
 		background-color: #FFF1;
+	}
+
+	.tag-separator {
+		display: none;
 	}
 }
 
