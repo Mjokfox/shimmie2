@@ -853,11 +853,12 @@ class SelectorPanel {
                 style: `--rows:${rows};--tworows:${tworows};`,
             });
             switch (row.type) {
+                case 9:
                 case 8:
                     inputs.classList.add("dir-row");
                     this.all_input(
                         tags,
-                        "radio",
+                        row.type === 8 ? "radio" : "checkbox",
                         inputs,
                         row.group
                     );

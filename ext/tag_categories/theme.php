@@ -20,7 +20,7 @@ class TagCategoriesTheme extends Themelet
     {
         $tc_block_index = 0;
         $html = [];
-        $type_map = ["hidden", "half width", "full width", "single column", "dropdown", "single row", "single row (half width)", "info line", "radio row"];
+        $type_map = ["hidden", "half width", "full width", "single column", "dropdown", "single row", "single row (half width)", "info line", "radio row", "checkmark row"];
 
         foreach ($tc_dict as $row) {
             $tc_block_index += 1;

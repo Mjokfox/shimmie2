@@ -141,7 +141,8 @@ class UploadTheme extends Themelet
         5 => ["cols" => 4, "class" => "grid-cell cell-wide"],
         6 => ["cols" => 2, "class" => "grid-cell"],
         7 => ["cols" => 4, "class" => "grid-cell cell-info"],
-        8 => ["cols" => 4, "class" => "grid-cell cell-wide"],];
+        8 => ["cols" => 4, "class" => "grid-cell cell-wide"],
+        9 => ["cols" => 4, "class" => "grid-cell cell-wide"],];
 
         $json_data = json_encode([
             "upload_page_data" => $upload_page_data,
