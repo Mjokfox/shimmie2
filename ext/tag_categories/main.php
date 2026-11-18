@@ -252,7 +252,7 @@ final class TagCategories extends Extension
     private function add_tags_to_category(string $category, string $tags): void
     {
         $tags = str_replace("\n", ' ', $tags);
-        $tags = Tag::explode($tags, false);
+        $tags = Tag::sanitize_array(explode(' ', trim($tags)));
         $tag_ids = [];
         foreach ($tags as $tag) {
             $tag_ids[] = Tag::get_or_create_id($tag);
