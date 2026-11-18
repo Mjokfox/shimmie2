@@ -83,68 +83,70 @@ class UploadTheme extends Themelet
             ),
         );
 
-        $uhbe = send_event(new UploadHeaderBuildingEvent());
-        $usfbe = send_event(new UploadSpecificBuildingEvent(""));
+        $json_data = cache_get_or_set("upload_page_json_data", function () use ($max_size, $max_total_size, $ucbe) {
+            $uhbe = send_event(new UploadHeaderBuildingEvent());
+            $usfbe = send_event(new UploadSpecificBuildingEvent(""));
 
-        $upload_page_data = [
-            "max_panels" => Ctx::$config->get(UploadConfig::COUNT),
-            "preview_enabled" => Ctx::$config->get(UploadConfig::PREVIEW),
-            "splitview" => Ctx::$config->get(UploadConfig::SPLITVIEW),
-            "separator_tag" => Ctx::$config->get(UploadConfig::SEPARATOR_TAG),
-            "transload" => Ctx::$config->get(UploadConfig::TRANSLOAD_ENGINE) !== "none",
-            "media_accept" => $this->get_accept(),
-            "common_parts" => array_map(fn ($e) => $e->__toString(), array_values($ucbe->get_parts())),
-            "specific_headers" => $uhbe->get_parts(),
-            "specific_parts" => array_map(fn ($e) => $e->__toString(), array_values($usfbe->get_parts())),
-            "max_file_size" => $max_size,
-            "max_total_size" => $max_total_size
-            ];
+            $upload_page_data = [
+                "max_panels" => Ctx::$config->get(UploadConfig::COUNT),
+                "preview_enabled" => Ctx::$config->get(UploadConfig::PREVIEW),
+                "splitview" => Ctx::$config->get(UploadConfig::SPLITVIEW),
+                "separator_tag" => Ctx::$config->get(UploadConfig::SEPARATOR_TAG),
+                "transload" => Ctx::$config->get(UploadConfig::TRANSLOAD_ENGINE) !== "none",
+                "media_accept" => $this->get_accept(),
+                "common_parts" => array_map(fn ($e) => $e->__toString(), array_values($ucbe->get_parts())),
+                "specific_headers" => $uhbe->get_parts(),
+                "specific_parts" => array_map(fn ($e) => $e->__toString(), array_values($usfbe->get_parts())),
+                "max_file_size" => $max_size,
+                "max_total_size" => $max_total_size
+                ];
 
-        if (TagCategoriesInfo::is_enabled()) {
-            /** @var array{upload_group:string, type:int, tags:string}[] $tc_dict */
-            $tc_dict = Ctx::$database->get_all(
-                "SELECT
-                    itc.upload_group,
-                    itc.upload_page_type AS type,
-                    STRING_AGG(t.tag, ',' ORDER BY itc.upload_page_priority DESC, itct.id ASC) AS tags
-                FROM image_tag_categories_tags itct
-                JOIN image_tag_categories itc ON itct.category_id = itc.id
-                JOIN tags t ON itct.tag_id = t.id
-                WHERE itc.upload_group IS NOT NULL
-                AND itc.upload_group <> ''
-                AND NOT itc.upload_page_type = 0
-                GROUP BY itc.upload_group, itc.upload_page_type
-                ORDER BY MAX(itc.upload_page_priority) DESC;"
-            );
-            // remove numerical array indices :/
-            $tc_dict = array_map(function ($e) {
-                $tags = explode(",", $e["tags"]);
-                $combined = [];
-                foreach ($tags as $tag) {
-                    $aliases = AliasEditor::get_aliases($tag);
-                    $combined[] = ["tag" => $tag, "alias" => empty($aliases) ? $tag : $aliases[0]];
-                }
-                return ["group" => $e["upload_group"], "type" => $e["type"], "tags" => $combined];
-            }, $tc_dict);
-        } else {
-            $tc_dict = [];
-        }
+            if (TagCategoriesInfo::is_enabled()) {
+                /** @var array{upload_group:string, type:int, tags:string}[] $tc_dict */
+                $tc_dict = Ctx::$database->get_all(
+                    "SELECT
+                        itc.upload_group,
+                        itc.upload_page_type AS type,
+                        STRING_AGG(t.tag, ',' ORDER BY itc.upload_page_priority DESC, itct.id ASC) AS tags
+                    FROM image_tag_categories_tags itct
+                    JOIN image_tag_categories itc ON itct.category_id = itc.id
+                    JOIN tags t ON itct.tag_id = t.id
+                    WHERE itc.upload_group IS NOT NULL
+                    AND itc.upload_group <> ''
+                    AND NOT itc.upload_page_type = 0
+                    GROUP BY itc.upload_group, itc.upload_page_type
+                    ORDER BY MAX(itc.upload_page_priority) DESC;"
+                );
+                // remove numerical array indices :/
+                $tc_dict = array_map(function ($e) {
+                    $tags = explode(",", $e["tags"]);
+                    $combined = [];
+                    foreach ($tags as $tag) {
+                        $aliases = AliasEditor::get_aliases($tag);
+                        $combined[] = ["tag" => $tag, "alias" => empty($aliases) ? $tag : $aliases[0]];
+                    }
+                    return ["group" => $e["upload_group"], "type" => $e["type"], "tags" => $combined];
+                }, $tc_dict);
+            } else {
+                $tc_dict = [];
+            }
 
-        $type_table = [1 => ["cols" => 2, "class" => "grid-cell"],
-        2 => ["cols" => 4, "class" => "grid-cell cell-wide"],
-        3 => ["cols" => 1, "class" => "grid-cell cell-thin"],
-        4 => ["cols" => 1, "class" => "grid-cell cell-thin"],
-        5 => ["cols" => 4, "class" => "grid-cell cell-wide"],
-        6 => ["cols" => 2, "class" => "grid-cell"],
-        7 => ["cols" => 4, "class" => "grid-cell cell-info"],
-        8 => ["cols" => 4, "class" => "grid-cell cell-wide"],
-        9 => ["cols" => 4, "class" => "grid-cell cell-wide"],];
+            $type_table = [1 => ["cols" => 2, "class" => "grid-cell"],
+            2 => ["cols" => 4, "class" => "grid-cell cell-wide"],
+            3 => ["cols" => 1, "class" => "grid-cell cell-thin"],
+            4 => ["cols" => 1, "class" => "grid-cell cell-thin"],
+            5 => ["cols" => 4, "class" => "grid-cell cell-wide"],
+            6 => ["cols" => 2, "class" => "grid-cell"],
+            7 => ["cols" => 4, "class" => "grid-cell cell-info"],
+            8 => ["cols" => 4, "class" => "grid-cell cell-wide"],
+            9 => ["cols" => 4, "class" => "grid-cell cell-wide"],];
 
-        $json_data = json_encode([
-            "upload_page_data" => $upload_page_data,
-            "type_table" => $type_table,
-            "tc_dict" => $tc_dict
-            ], );
+            return json_encode([
+                "upload_page_data" => $upload_page_data,
+                "type_table" => $type_table,
+                "tc_dict" => $tc_dict
+                ], );
+        }, 300);
 
         Ctx::$page->add_html_header(rawHTML(
             "<script id=\"upload_page_data\" type=\"application/json\">$json_data</script>"
