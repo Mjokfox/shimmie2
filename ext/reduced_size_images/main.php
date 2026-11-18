@@ -154,7 +154,7 @@ final class ReducedSizeImages extends Extension
 
     private function can_resize_mime(MimeType $mime): bool
     {
-        $engine = MediaEngine::from(Ctx::$config->get(ResizeConfig::ENGINE));
+        $engine = MediaEngine::from(Ctx::$config->get(ThumbnailConfig::ENGINE));
         return MediaEngine::is_input_supported($engine, $mime)
                 && MediaEngine::is_output_supported($engine, $mime);
     }
@@ -165,7 +165,7 @@ final class ReducedSizeImages extends Extension
             throw new InvalidInput("Invalid options for height and width. ($width x $height)");
         }
 
-        $engine = MediaEngine::from(Ctx::$config->get(ResizeConfig::ENGINE));
+        $engine = MediaEngine::from(Ctx::$config->get(ThumbnailConfig::ENGINE));
 
         if (!$this->can_resize_mime($image_obj->get_mime())) {
             throw new InvalidInput("Engine {$engine->value} cannot resize selected image");

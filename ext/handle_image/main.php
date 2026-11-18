@@ -30,6 +30,10 @@ final class ImageFileHandler extends DataHandlerExtension
                 $video = self::is_animated_webp($filename);
                 $length = null; // FIXME
                 break;
+            case MimeType::PNG:
+                $video = self::is_animated_png($filename);
+                $length = null; // FIXME
+                break;
             default:
                 $video = false;
                 $length = null;
@@ -147,5 +151,33 @@ final class ImageFileHandler extends DataHandlerExtension
     public static function is_animated_webp(Path $image_filename): bool
     {
         return compare_file_bytes($image_filename, self::WEBP_ANIMATION_HEADER);
+    }
+
+    public static function is_animated_png(Path $image_filename): bool
+    {
+        $size = $image_filename->filesize();
+        if ($fh = @fopen($image_filename->str(), 'rb')) {
+            try {
+                $offset = 8; // skip png signature
+                while ($offset < $size) {
+                    fseek($fh, $offset);
+                    $data = \Safe\fread($fh, 8); // Length 4B + Chunk type 4B
+
+                    switch (substr($data, 4)) { // Chunk type is 4 bytes after Length
+                        case 'acTL':            // acTL header only exists for animated png, and must precede IDAT
+                            return true;
+                        case 'IDAT':
+                            return false;
+                    }
+                    $length = \Safe\unpack("N", $data)[1]; // format N => unsigned long (always 32 bit, big endian byte order); Only reads the first 4 bytes
+                    $offset += 4 + 4 + $length + 4; // Length 4B + Chunk type 4B + Chunk data $length B + CRC 4B
+                }
+            } finally {
+                @fclose($fh);
+            }
+        } else {
+            throw new ServerError("Unable to open file for byte check: {$image_filename->str()}");
+        }
+        return false;
     }
 }
