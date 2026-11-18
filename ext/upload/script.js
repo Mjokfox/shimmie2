@@ -936,7 +936,7 @@ class UploadPage {
     /** @type {HTMLElement} */
     divider;
     /** @type {CSSRule} */
-    split_view_rule
+    right_column_rule
     /** @type {HTMLElement} */
     media_preview;
     /** @type {HTMLElement} */
@@ -989,13 +989,13 @@ class UploadPage {
         this.left_column = qbuild("DIV", "left-column");
         this.divider = qbuild("DIV", "divider");
         this.right_column = qbuild("DIV", "right-column");
-        const split_view_style = document.createElement('style');
-        split_view_style.innerHTML = `
-          DIV.upload-split-view {
+        const dynamic_style = document.createElement('style');
+        dynamic_style.innerHTML = `
+          .right-column {
           }
         `;
-        document.head.appendChild(split_view_style);
-        this.split_view_rule = split_view_style.sheet.cssRules[0];
+        document.head.appendChild(dynamic_style);
+        this.right_column_rule = dynamic_style.sheet.cssRules[0];
         this.slider_init();
         this.container.append(this.left_column,this.divider,this.right_column);
 
@@ -1146,7 +1146,6 @@ class UploadPage {
 
         this.left_column.style.width = `${newLeftWidth}%`;
         this.right_column.style.width = `${newRightWidth}%`;
-        // this.split_view_rule.style.left = `${inputleft}%`;
         if (this.preview_enabled && !this.splitview)
             this.right_column.firstChild.style.width = `${(newRightWidth/100)*containerRect.width}px`;
     }
@@ -1489,12 +1488,20 @@ class UploadPage {
         
         this.panels[this.showing_input].show_panel();
         this.right_column.style.backgroundColor = background_color;
+        this.resize_right_column();
     }
 
     hide_panel(index) {
         this.showing_input = -1;
         if (this.panels[index]) {
             this.panels[index].hide_panel();
+        }
+    }
+
+    resize_right_column() {
+        if (this.showing_input !== -1) {
+            const height = this.panels[this.showing_input].selector_panel.getBoundingClientRect().height;
+            this.right_column_rule.style.height = `${height}px`;
         }
     }
 
@@ -1568,30 +1575,6 @@ UploadPage.hash_duplicate = function(e) {
     }
 }
 
-/** @type UploadPage */
-let upload_page; 
-
-document.addEventListener('DOMContentLoaded', () => {
-    const success = shm_cookie_get("upload_success");
-    if (success === "true") {
-        UploadPage.delete_state();
-    }
-    const json_element = document.getElementById("upload_page_data");
-    if (!json_element) return;
-    const json = JSON.parse(json_element.textContent)
-    
-    const selector = new SelectorPanel(json.upload_page_data, json.type_table, json.tc_dict);
-    upload_page = new UploadPage(json.upload_page_data, selector);
-    upload_page.init();
-    window.addEventListener("unload", UploadPage.save_state);
-    window.addEventListener("pagehide", UploadPage.save_state);
-    window.addEventListener("beforeunload", UploadPage.save_state);
-    window.addEventListener("visibilitychange", UploadPage.save_state);
-    setInterval(UploadPage.save_state, 30000);
-
-    window.addEventListener("upload_result", UploadPage.hash_duplicate);
-});
-
 let prev_save = Date.now();
 UploadPage.save_state = async function (e) {
     if (upload_page && upload_page.initialized && Date.now() - prev_save > 1000) {
@@ -1618,3 +1601,35 @@ UploadPage.delete_state = function() {
     ui_cookie_remove("upload_page_save_date");
     UploadPage.initDB().then(db => db.transaction(['saved_images'], 'readwrite').objectStore("saved_images").clear());
 }
+
+UploadPage.resize = function() {
+    if (upload_page && upload_page.initialized ) {
+        upload_page.resize_right_column();
+    }
+}
+
+/** @type UploadPage */
+let upload_page; 
+
+document.addEventListener('DOMContentLoaded', () => {
+    const success = shm_cookie_get("upload_success");
+    if (success === "true") {
+        UploadPage.delete_state();
+    }
+    const json_element = document.getElementById("upload_page_data");
+    if (!json_element) return;
+    const json = JSON.parse(json_element.textContent)
+    
+    const selector = new SelectorPanel(json.upload_page_data, json.type_table, json.tc_dict);
+    upload_page = new UploadPage(json.upload_page_data, selector);
+    upload_page.init();
+    window.addEventListener("unload", UploadPage.save_state);
+    window.addEventListener("pagehide", UploadPage.save_state);
+    window.addEventListener("beforeunload", UploadPage.save_state);
+    window.addEventListener("visibilitychange", UploadPage.save_state);
+    setInterval(UploadPage.save_state, 30000);
+
+    window.addEventListener("upload_result", UploadPage.hash_duplicate);
+
+    window.addEventListener("resize", UploadPage.resize);
+});
