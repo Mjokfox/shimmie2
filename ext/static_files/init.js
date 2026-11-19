@@ -64,7 +64,7 @@ function ui_cookie_get(name) {
     return val;
 }
 function ui_cookie_remove(name) {
-    let key = document.body.dataset.baseHref + "/" + name;
+    let key = document.documentElement.dataset.baseHref + "/" + name;
     localStorage.removeItem(key);
 }
 
