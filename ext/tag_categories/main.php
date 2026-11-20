@@ -228,23 +228,6 @@ final class TagCategories extends Extension
         return SPAN($clean_tag);
     }
 
-    private function add_tags_to_category(int $category_id, string $tags): void
-    {
-        $tags = str_replace("\n", ' ', $tags);
-        $tags = Tag::sanitize_array(explode(' ', trim($tags)));
-        $tag_ids = [];
-        foreach ($tags as $tag) {
-            $tag_ids[] = Tag::get_or_create_id($tag);
-        }
-
-        foreach ($tag_ids as $tag_id) {
-            Ctx::$database->execute(
-                "INSERT INTO image_tag_categories_tags (category_id, tag_id) VALUES (:category_id, :tag_id);",
-                ["category_id" => $category_id, "tag_id" => $tag_id]
-            );
-        }
-    }
-
     public function page_update(QueryArray $post): void
     {
         $action = $post->req("action");
@@ -255,8 +238,7 @@ final class TagCategories extends Extension
                 $priority = $post->req("priority");
                 $tags = $post->req("tags");
                 Ctx::$database->execute(
-                    'INSERT INTO image_tag_categories (name, color, priority)
-                    VALUES (:name, :color, :priority)',
+                    'INSERT INTO image_tag_categories (name, color, priority) VALUES (:name, :color, :priority)',
                     ["name" => $name, "color" => $color, "priority" => $priority],
                 );
                 $id = Ctx::$database->get_last_insert_id('image_tag_categories_id_seq');
@@ -271,13 +253,14 @@ final class TagCategories extends Extension
                 $tags = $post->req("tags");
                 Ctx::$database->execute(
                     'UPDATE image_tag_categories
-                    SET name=:name,
-                        color=:color,
-                        priority=:priority
+                    SET name=:name, color=:color, priority=:priority
                     WHERE id=:id',
                     ["id" => $id, "name" => $name, "color" => $color, "priority" => $priority],
                 );
-                Ctx::$database->execute('DELETE FROM image_tag_categories_tags WHERE category_id = :id;', ['id' => $id]);
+                Ctx::$database->execute(
+                    'DELETE FROM image_tag_categories_tags WHERE category_id = :id;',
+                    ['id' => $id]
+                );
                 $this->add_tags_to_category($id, $tags);
                 Log::info("tag_categories", "Edited category: $name", "Edited category: $name");
                 break;
@@ -288,7 +271,24 @@ final class TagCategories extends Extension
                 Log::info("tag_categories", "Deleted category: $name", "Deleted category: $name");
                 break;
             default:
-                return;
+                throw new InvalidInput("Action $action not valid");
+        }
+    }
+
+    private function add_tags_to_category(int $category_id, string $tags): void
+    {
+        $tags = str_replace("\n", ' ', $tags);
+        $tags = Tag::sanitize_array(explode(' ', trim($tags)));
+        $tag_ids = [];
+        foreach ($tags as $tag) {
+            $tag_ids[] = Tag::get_or_create_id($tag);
+        }
+
+        foreach ($tag_ids as $tag_id) {
+            Ctx::$database->execute(
+                "INSERT INTO image_tag_categories_tags (category_id, tag_id) VALUES (:category_id, :tag_id);",
+                ["category_id" => $category_id, "tag_id" => $tag_id]
+            );
         }
     }
 }

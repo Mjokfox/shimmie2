@@ -531,8 +531,8 @@ final class Upload extends Extension
                 );
                 $id = Ctx::$database->get_last_insert_id('upload_blocks_id_seq');
                 $this->add_tags_to_block($id, $tags);
+                Log::info("upload", "Created block: $name", "Created block: $name");
                 break;
-
             case 'edit':
                 $id = int_escape($post->req("id"));
                 $name = $post->req("name");
@@ -541,26 +541,29 @@ final class Upload extends Extension
                 $priority = $post->req("priority");
                 $tags = $post->req("tags");
                 Ctx::$database->execute(
-                    'DELETE FROM upload_blocks_tags WHERE block_id = :block_id',
-                    ['block_id' => $id]
-                );
-                $this->add_tags_to_block($id, $tags);
-                Ctx::$database->execute(
                     'UPDATE upload_blocks
                     SET name=:name, color=:color, type=:type, priority=:priority
                     WHERE id=:id',
                     ["id" => $id, "name" => $name, "color" => $color, "type" => $type, "priority" => $priority]
                 );
+                Ctx::$database->execute(
+                    'DELETE FROM upload_blocks_tags WHERE block_id = :block_id',
+                    ['block_id' => $id]
+                );
+                $this->add_tags_to_block($id, $tags);
+                Log::info("upload", "Edited", "Edited block: $name");
                 break;
-
             case 'delete':
                 $id = $post->req("id");
+                $name = $post->req("name");
                 Ctx::$database->execute('DELETE FROM upload_blocks WHERE id = :id', ["id" => $id]);
+                Log::info("upload", "Deleted block: $name", "Deleted block: $name");
                 break;
 
             default:
                 throw new InvalidInput("Action $action not valid");
         }
+        Ctx::$cache->delete("upload_page_json_data");
     }
 
     private function add_tags_to_block(int $block_id, string $tags): void
