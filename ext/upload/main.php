@@ -112,6 +112,70 @@ final class Upload extends Extension
     public const KEY = "upload";
     public bool $is_full;
 
+    #[EventListener(priority: 10)] // we need to be before tag categories
+    public function onDatabaseUpgrade(DatabaseUpgradeEvent $event): void
+    {
+        $database = Ctx::$database;
+
+        if ($this->get_version() < 1) {
+            $database->create_table(
+                'upload_blocks',
+                'id SCORE_AIPK,
+                name VARCHAR(60),
+				color CHAR(7),
+                type INTEGER NOT NULL,
+                priority INTEGER NOT NULL',
+            );
+
+            $database->create_table(
+                'upload_blocks_tags',
+                'id SCORE_AIPK,
+                block_id INTEGER NOT NULL,
+                tag_id INTEGER NOT NULL,
+                FOREIGN KEY(block_id) REFERENCES upload_blocks(id) ON DELETE CASCADE,
+                FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE'
+            );
+
+            try { // migrate from tag categories
+                $database->get_one('SELECT upload_group FROM image_tag_categories');
+
+                $blocks = $database->get_all("SELECT upload_group as name, max(color) as color, max(upload_page_type) as type, max(upload_page_priority) as priority,
+                    STRING_AGG(CAST(itct.tag_id AS TEXT), ' ' ORDER BY itc.upload_page_priority DESC, itct.id ASC) AS tag_ids
+                    FROM image_tag_categories_tags itct
+                    JOIN image_tag_categories itc ON itct.category_id = itc.id
+                    WHERE itc.upload_group IS NOT NULL
+                    AND itc.upload_group <> ''
+                    AND NOT itc.upload_page_type = 0
+                    GROUP BY itc.upload_group, itc.upload_page_type
+                    ORDER BY MAX(itc.upload_page_priority) DESC;
+                ");
+
+                foreach ($blocks as $block) {
+                    $database->execute(
+                        'INSERT INTO upload_blocks (name, color, type, priority) VALUES (:name, :color, :type, :priority)',
+                        ["name" => $block["name"], "color" => $block["color"], "type" => $block["type"], "priority" => $block["priority"]]
+                    );
+                    $block_id = $database->get_last_insert_id("upload_blocks_id_seq");
+                    foreach (explode(" ", $block["tag_ids"]) as $tag_id) {
+                        $database->execute(
+                            'INSERT INTO upload_blocks_tags (block_id, tag_id) VALUES (:block_id, :tag_id)',
+                            ["block_id" => $block_id, "tag_id" => (int)$tag_id]
+                        );
+                    }
+                }
+            } catch (DatabaseException $e) {
+                // column doesnt exist, theres nothing to migrate
+            }
+
+            $database->execute("CREATE INDEX upload_blocks_id_idx ON upload_blocks(id)");
+            $database->execute("CREATE INDEX upload_blocks_type_idx ON upload_blocks(type)");
+            $database->execute("CREATE INDEX upload_blocks_priority_idx ON upload_blocks(priority)");
+            $database->execute("CREATE INDEX upload_blocks_tags_block_id_idx ON upload_blocks_tags(block_id)");
+
+            $this->set_version(1);
+        }
+    }
+
     #[EventListener]
     public function onInitExt(InitExtEvent $event): void
     {
@@ -143,6 +207,9 @@ final class Upload extends Extension
         if ($event->parent === "upload") {
             if (WikiInfo::is_enabled()) {
                 $event->add_nav_link(make_link('wiki/upload_guidelines'), "Guidelines");
+            }
+            if (Ctx::$user->can(UploadPermission::EDIT_UPLOAD_PAGE)) {
+                $event->add_nav_link(make_link('upload/config'), "Configure");
             }
         }
     }
@@ -297,6 +364,11 @@ final class Upload extends Extension
             }
 
             Ctx::$page->set_data(MimeType::JSON, \Safe\json_encode($uae->output));
+        } elseif ($event->page_matches("upload/config", method: "GET", permission: UploadPermission::EDIT_UPLOAD_PAGE)) {
+            $this->theme->display_edit_page();
+        } elseif ($event->page_matches("upload/config", method: "POST", permission: UploadPermission::EDIT_UPLOAD_PAGE)) {
+            $this->save_block($event->POST);
+            Ctx::$page->set_redirect(make_link("upload/config"));
         }
     }
 
@@ -427,5 +499,84 @@ final class Upload extends Extension
         $s_filename = Network::find_header($headers, 'Content-Disposition');
         $h_filename = ($s_filename ? \Safe\preg_replace('/^.*filename\*?=(?:UTF-8\'\')?\"?([^\";]*)\"?$/i', '$1', $s_filename) : null);
         return $h_filename ?: basename($url);
+    }
+
+    /**
+     * @return array{id: int, name: string, color: string, type: int, priority: int, tags: string}[]
+     */
+    public static function get_blocks(): array
+    {
+        // @phpstan-ignore return.type
+        return Ctx::$database->get_all("
+            SELECT ub.*, STRING_AGG(t.tag, ' ' ORDER BY ub.priority DESC, ubt.id) AS tags
+            FROM upload_blocks ub
+            JOIN upload_blocks_tags ubt ON ubt.block_id = ub.id
+            JOIN tags t ON ubt.tag_id = t.id
+            GROUP BY ub.id ORDER BY ub.priority DESC;
+        ");
+    }
+    private function save_block(QueryArray $post): void
+    {
+        $action = $post->req("action");
+        switch ($action) {
+            case 'new':
+                $name = $post->req("name");
+                $color = $post->req("color");
+                $type = $post->req("type");
+                $priority = $post->req("priority");
+                $tags = $post->req("tags");
+                Ctx::$database->execute(
+                    'INSERT INTO upload_blocks(name, color, type, priority) values (:name, :color, :type, :priority)',
+                    ["name" => $name, "color" => $color, "type" => $type, "priority" => $priority]
+                );
+                $id = Ctx::$database->get_last_insert_id('upload_blocks_id_seq');
+                $this->add_tags_to_block($id, $tags);
+                break;
+
+            case 'edit':
+                $id = int_escape($post->req("id"));
+                $name = $post->req("name");
+                $color = $post->req("color");
+                $type = $post->req("type");
+                $priority = $post->req("priority");
+                $tags = $post->req("tags");
+                Ctx::$database->execute(
+                    'DELETE FROM upload_blocks_tags WHERE block_id = :block_id',
+                    ['block_id' => $id]
+                );
+                $this->add_tags_to_block($id, $tags);
+                Ctx::$database->execute(
+                    'UPDATE upload_blocks
+                    SET name=:name, color=:color, type=:type, priority=:priority
+                    WHERE id=:id',
+                    ["id" => $id, "name" => $name, "color" => $color, "type" => $type, "priority" => $priority]
+                );
+                break;
+
+            case 'delete':
+                $id = $post->req("id");
+                Ctx::$database->execute('DELETE FROM upload_blocks WHERE id = :id', ["id" => $id]);
+                break;
+
+            default:
+                throw new InvalidInput("Action $action not valid");
+        }
+    }
+
+    private function add_tags_to_block(int $block_id, string $tags): void
+    {
+        $tags = str_replace("\n", ' ', $tags);
+        $tags = Tag::sanitize_array(explode(' ', trim($tags)));
+        $tag_ids = [];
+        foreach ($tags as $tag) {
+            $tag_ids[] = Tag::get_or_create_id($tag);
+        }
+
+        foreach ($tag_ids as $tag_id) {
+            Ctx::$database->execute(
+                'INSERT INTO upload_blocks_tags (block_id, tag_id) VALUES (:block_id, :tag_id)',
+                ["block_id" => $block_id, "tag_id" => $tag_id]
+            );
+        }
     }
 }

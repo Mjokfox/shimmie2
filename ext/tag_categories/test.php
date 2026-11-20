@@ -9,16 +9,16 @@ final class TagCategoriesTest extends ShimmiePHPUnitTestCase
     public function testParsing(): void
     {
         $tc = new TagCategories();
-        $_POST = ['tc_status' => "new", 'tc_category' => "test_artist", 'tc_list_group' => "artist", 'tc_upload_group' => "artist", 'tc_tag_list' => "bob", 'tc_color' => "#888888", "tc_up_type" => 0, "tc_up_prio" => 0];
-        $tc->page_update();
-        self::assertSame("test_artist", TagCategories::get_tag_category("bob"));
+        $_POST = ['action' => "new", 'name' => "artist", 'tags' => "bob", 'color' => "#888888", "priority" => "0"];
+        $tc->page_update(new QueryArray($_POST));
+        self::assertNotNull(TagCategories::get_category_info_for_tag("bob"));
 
-        self::assertSame(null, TagCategories::get_tag_category("alice"));
+        self::assertSame(null, TagCategories::get_category_info_for_tag("alice"));
 
-        $_POST = ['tc_status' => "edit", 'tc_category' => "test_artist", 'tc_list_group' => "artist", 'tc_upload_group' => "artist", 'tc_tag_list' => "alice joe", 'tc_color' => "#888888", "tc_up_type" => 0, "tc_up_prio" => 0];
-        $tc->page_update();
+        $_POST = ['action' => "edit", "id" => "4", 'name' => "artist", 'tags' => "alice joe", 'color' => "#888888", "priority" => "0"];
+        $tc->page_update(new QueryArray($_POST));
 
-        self::assertSame(null, TagCategories::get_tag_category("bob"));
-        self::assertSame("test_artist", TagCategories::get_tag_category("alice"));
+        self::assertSame(null, TagCategories::get_category_info_for_tag("bob"));
+        self::assertNotNull(TagCategories::get_category_info_for_tag("alice"));
     }
 }

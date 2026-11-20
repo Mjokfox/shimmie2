@@ -58,13 +58,8 @@
 }
 
 /* In editing mode: show edit elements only */
-.tagcategoryblock.tc-editing .tc-edit {
-	display: block;
-}
-
-/* In deleting mode: show edit and delete elements */
-.tagcategoryblock.tc-deleting .tc-edit,
-.tagcategoryblock.tc-deleting .tc-delete {
+.tagcategoryblock.tc-editing .tc-edit,
+.tagcategoryblock.tc-editing .tc-delete  {
 	display: block;
 }
 

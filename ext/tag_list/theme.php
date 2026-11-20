@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A, BR, COL, COLGROUP, DIV, H3, SPAN, TABLE, TD, TH, THEAD, TR, emptyHTML};
+use function MicroHTML\{A, BR, COL, COLGROUP, H3, SPAN, TABLE, TD, TH, THEAD, TR, emptyHTML};
 
 use MicroHTML\HTMLElement;
 
@@ -56,62 +56,44 @@ class TagListTheme extends Themelet
      */
     public function display_split_related_block(array $tag_infos): void
     {
-        $search = array_key_exists("search", $_GET) ? explode(" ", $_GET["search"]) : [];
+        $search = array_key_exists("search", $_GET) ? SearchTerm::explode($_GET["search"]) : [];
 
         if (Ctx::$config->get(TagListConfig::RELATED_SORT) === TagListConfig::SORT_ALPHABETICAL) {
             usort($tag_infos, fn ($a, $b) => strcasecmp($a['tag'], $b['tag']));
         }
 
         if (TagCategoriesInfo::is_enabled()) {
-            $tag_category_dict = TagCategories::getKeyedDict();
-        } else {
-            $tag_category_dict = [];
-        }
-        $tag_categories_html = [];
-        $priorities = [];
-
-        foreach ($tag_infos as $row) {
-            $category = TagCategories::get_tag_category($row["tag"]);
-            if (\is_null($category)) {
-                $group = "NULL";
-            } elseif (\array_key_exists($category, $tag_category_dict)) {
-                $group = $tag_category_dict[$category]["list_group"];
-                if (!isset($priorities[$group])) {
-                    $priorities[$group] = $tag_category_dict[$category]["upload_page_priority"] ?? 0;
+            $tag_categories_html = [];
+            foreach ($tag_infos as $tag_info) {
+                $category_info = TagCategories::get_category_info_for_tag($tag_info['tag']);
+                if (is_null($category_info)) {
+                    $name = "Other";
+                    $priority = 0;
+                    $color = null;
+                } else {
+                    $name = $category_info["name"];
+                    $priority = $category_info["name"];
+                    $color = $category_info["color"];
                 }
-            } else {
-                $group = "NULL";
-            }
-            if (!isset($tag_categories_html[$group])) {
-                $tag_categories_html[$group] = $this->get_tag_list_preamble();
-            }
-            $tag_categories_html[$group]->appendChild(self::build_tag_row($row, $search));   // @phpstan-ignore-line
-        }
 
-        foreach (array_keys($tag_categories_html) as $group) {
-            $tag_categories_html[$group] = TABLE($tag_categories_html[$group]);
-        }
+                if (!isset($tag_categories_html[$name])) {
+                    $tag_categories_html[$name] = ["html" => $this->get_tag_list_preamble(), "priority" => $priority];
+                }
+                $tag_categories_html[$name]["html"]->appendChild(self::build_tag_row($tag_info, $search, $color));
+            }
 
-        if (isset($tag_categories_html["NULL"])) {
-            $other_html = $tag_categories_html["NULL"];
-            unset($tag_categories_html["NULL"]);
+            uasort($tag_categories_html, fn ($a, $b) => $b["priority"] <=> $a["priority"]);
+
+            $tagshtml = emptyHTML();
+            foreach ($tag_categories_html as $name => $contents) {
+                $tagshtml->appendChild(H3($name));
+                $tagshtml->appendChild(TABLE($contents["html"]));
+            }
         } else {
-            $other_html = null;
-        }
-
-        array_multisort($priorities, SORT_NUMERIC, SORT_DESC, $tag_categories_html);
-
-        $tagshtml = emptyHTML();
-        foreach (array_keys($tag_categories_html) as $group) {
-            $tagshtml->appendChild(H3($group));
-            $tagshtml->appendChild($tag_categories_html[$group]);
-        }
-
-        if (!is_null($other_html)) {
-            $tagshtml->appendChild(DIV(
-                H3("Other"),
-                DIV(["class" => "blockbody"], $other_html),
-            ));
+            $tagshtml = $this->get_tag_list_preamble();
+            foreach ($tag_infos as $tag_info) {
+                $tagshtml->appendChild(self::build_tag_row($tag_info, $search));
+            }
         }
         Ctx::$page->add_block(new Block(null, $tagshtml, "left", 10, "Tagsleft"));
     }
@@ -170,19 +152,15 @@ class TagListTheme extends Themelet
      * @param array{tag: tag-string, count: int} $row
      * @param search-term-array $search
      */
-    protected function build_tag_row(array $row, array $search = []): HTMLElement
+    protected function build_tag_row(array $row, array $search = [], ?string $color = null): HTMLElement
     {
         $tag = $row['tag'];
-        $count = $row['count'];
-        $props = [];
-        if (TagCategoriesInfo::is_enabled()) {
-            $category = TagCategories::get_tag_category($tag);
-            if (!is_null($category)) {
-                $tag_category_dict = TagCategories::getKeyedDict();
-                $props["style"] = "color:".$tag_category_dict[$category]['color'].";";
-            }
+
+        if (!is_null($color)) {
+            $tr = TR(["style" => "color:$color"]);
+        } else {
+            $tr = TR();
         }
-        $tr = TR($props);
 
         $info_link_template = Ctx::$config->get(TagListConfig::INFO_LINK);
         if (!empty($info_link_template)) {

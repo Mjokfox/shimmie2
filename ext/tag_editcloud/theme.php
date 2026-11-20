@@ -26,7 +26,7 @@ class TagEditCloudTheme extends Themelet
         if (TagCategoriesInfo::is_enabled()) {
             $categories = TagCategories::get_all_categories();
             foreach ($categories as $row) {
-                $cat_color[$row['category']] = $row['color'];
+                $cat_color[$row['name']] = $row['color'];
             }
         }
 

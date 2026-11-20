@@ -53,11 +53,10 @@ class CommonElementsTheme extends Themelet
         $body = $tag;
 
         if (TagCategoriesInfo::is_enabled()) {
-            $category = TagCategories::get_tag_category($tag);
-            if (!is_null($category)) {
-                $tag_category_dict = TagCategories::getKeyedDict();
-                $props["class"] = "tag tag_category_$category";
-                $props["style"] = "color:".$tag_category_dict[$category]['color'].";".$style;
+            $category_info = TagCategories::get_category_info_for_tag($tag);
+            if (!is_null($category_info)) {
+                $props["class"] = "tag tag_category_" . $category_info['name'];
+                $props["style"] = "color:".$category_info['color'].";".$style;
             }
         }
 

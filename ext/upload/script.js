@@ -340,22 +340,22 @@ class UploadPanel {
             });
         }
         if (data.radio) {
-            for (let [group, tag] of Object.entries(data.radio)) {
+            for (let [name, tag] of Object.entries(data.radio)) {
                 const el = this.selector_panel.querySelector(`[value=${CSS.escape(tag)}]`);
                 if (el) {
                     el.checked = true;
-                    this.radio_tags[group] = {el: el, tag: tag};
+                    this.radio_tags[name] = {el: el, tag: tag};
                     something_changed = true;
                 };
             };
         }
         
         if (data.select) {
-            for (let [group, tag] of Object.entries(data.select)) {
+            for (let [name, tag] of Object.entries(data.select)) {
                 const el = this.selector_panel.querySelector(`[value=${CSS.escape(tag)}]`);
                 if (el) {
                     el.selected = true;
-                    this.select_tags[group] = tag;
+                    this.select_tags[name] = tag;
                     something_changed = true;
                 }
             };
@@ -501,19 +501,19 @@ class UploadPanel {
     /** @param {HTMLElement} el */
     radio(el) {
         const tag = el.value;
-        const group = el.ariaLabel;
-        if (Object.hasOwn(this.radio_tags, group)) {
-            const prev_tag = this.radio_tags[group].tag;
+        const name = el.ariaLabel;
+        if (Object.hasOwn(this.radio_tags, name)) {
+            const prev_tag = this.radio_tags[name].tag;
             if (prev_tag === tag) { // itself is clicked again
                 el.checked = false;
-                delete this.radio_tags[group];
+                delete this.radio_tags[name];
             } else {
-                const prev_el = this.radio_tags[group].el;
+                const prev_el = this.radio_tags[name].el;
                 prev_el.checked = false;
-                this.radio_tags[group] = {el: el, tag: tag};
+                this.radio_tags[name] = {el: el, tag: tag};
             }
         } else {
-            this.radio_tags[group] = {el: el, tag: tag};
+            this.radio_tags[name] = {el: el, tag: tag};
         }
         this.update_tags();
     }
@@ -521,11 +521,11 @@ class UploadPanel {
     /** @param {HTMLElement} el */
     option(el) {
         const tag = el.attributes.value;
-        const group = el.parentElement.ariaLabel;
+        const name = el.parentElement.ariaLabel;
         if (tag) {
-            this.select_tags[group] = tag.value;
+            this.select_tags[name] = tag.value;
         } else {
-            delete this.select_tags[group];
+            delete this.select_tags[name];
         }
         this.update_tags();
     }
@@ -786,7 +786,7 @@ class UploadPanel {
 class SelectorPanel {
     model;
 
-    constructor(data, type_table, tc_dict) {
+    constructor(data, type_table, blocks) {
         this.model = build("DIV",
             {class: (data.splitview ? "upload-split-view" : undefined)}
         );
@@ -810,25 +810,25 @@ class SelectorPanel {
 
         this.model.append(table);
 
-        this.model.append(this.tag_panel(type_table, tc_dict, data.separator_tag));
+        this.model.append(this.tag_panel(type_table, blocks, data.separator_tag));
     }
 
-    input_label(tag, type, group) {
-        return build("LABEL", build("INPUT", { value: tag.alias, type: type, ariaLabel: group }), tag.tag);
+    input_label(tag, type, name) {
+        return build("LABEL", build("INPUT", { value: tag.alias, type: type, ariaLabel: name }), tag.tag);
     }
 
-    all_input(tags, type, parent, separator_tag, group) {
+    all_input(tags, type, parent, separator_tag, name) {
         tags.forEach((tag) => {
             if (tag.tag === separator_tag) {
                 parent.append(qbuild("DIV", "tag-separator"));
             } else {
-                parent.append(this.input_label(tag, type, group));
+                parent.append(this.input_label(tag, type, name));
             }
         });
     }
 
-    all_dropdown(tags, group, separator_tag, overflow = false) {
-        const select = build("SELECT", {ariaLabel: group });
+    all_dropdown(tags, name, separator_tag, overflow = false) {
+        const select = build("SELECT", {ariaLabel: name });
         select.append(build("OPTION", overflow ? "More..." : "Select..."));
         tags.forEach(tag => {
             if (tag.tag === separator_tag) {
@@ -840,60 +840,61 @@ class SelectorPanel {
         return select;
     }
 
-    tag_panel(type_table, tc_dict, separator_tag) {
+    tag_panel(type_table, blocks, separator_tag) {
         const grid = build("DIV", {class: "upload-tags-grid"});
-        tc_dict.forEach((row) => {
-            const type = type_table[row.type] ?? { cols: 4, class: "grid-cell cell-wide" };
+        blocks.forEach((block) => {
+            if (block.type <= 0) return;
+            const type = type_table[block.type] ?? { cols: 4, class: "grid-cell cell-wide" };
             const cell = build(
                 "DIV",
                 { class: type.class },
-                build("DIV", { class: "grid-cell-label" }, row.group),
+                build("DIV", { class: "grid-cell-label" }, block.name),
             );
             grid.append(cell);
 
-            if (row.type === 7) return;
+            if (block.type === 7) return;
 
-            const tags = row.tags;
+            const tags = block.tags;
             const rows = Math.max(4, Math.ceil(tags.length / type.cols));
             const tworows = Math.ceil(tags.length / 2);
             const inputs = build("DIV", {
                 class: "grid-cell-content",
                 style: `--rows:${rows};--tworows:${tworows};`,
             });
-            switch (row.type) {
+            switch (block.type) {
                 case 9:
                 case 8:
                     inputs.classList.add("dir-row");
                     this.all_input(
                         tags,
-                        row.type === 8 ? "radio" : "checkbox",
+                        block.type === 8 ? "radio" : "checkbox",
                         inputs,
                         separator_tag,
-                        row.group
+                        block.name
                     );
                     break;
                 case 5:
                 case 6:
                     inputs.classList.add("dir-row");
-                    const overflow = row.type === 5 ? 5 : 3;
+                    const overflow = block.type === 5 ? 5 : 3;
                     if (tags.length > overflow) {
                         this.all_input(
                             tags.slice(0, overflow),
                             "radio",
                             inputs,
                             separator_tag,
-                            row.group
+                            block.name
                         );
 
                         inputs.append(
-                            this.all_dropdown(tags.slice(overflow), row.group, separator_tag, true),
+                            this.all_dropdown(tags.slice(overflow), block.name, separator_tag, true),
                         );
                     } else {
-                        this.all_input(tags, "radio", inputs, separator_tag, row.group);
+                        this.all_input(tags, "radio", inputs, separator_tag, block.name);
                     }
                     break;
                 case 4:
-                    inputs.append(this.all_dropdown(tags, row.group, separator_tag));
+                    inputs.append(this.all_dropdown(tags, block.name, separator_tag));
                     break;
                 default:
                     this.all_input(tags, "checkbox", inputs, separator_tag);
@@ -1010,7 +1011,6 @@ class UploadPage {
         this.slider_init();
         this.container.append(this.left_column,this.divider,this.right_column);
 
-        // TODO guidelines
         const reset_button = build("INPUT", {type: "button", value: "reset all input", class: "reset-button", id: "reset_button"});
         reset_button.addEventListener("click", () => {if (window.confirm("Are you sure you want to reset all your input?"))this.reset()});
         this.media_preview = build("DIV", {class: "media-preview", id: "mediaPreview", style: "display: none;"});
@@ -1631,7 +1631,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!json_element) return;
     const json = JSON.parse(json_element.textContent)
     
-    const selector = new SelectorPanel(json.upload_page_data, json.type_table, json.tc_dict);
+    const selector = new SelectorPanel(json.upload_page_data, json.type_table, json.blocks);
     upload_page = new UploadPage(json.upload_page_data, selector);
     upload_page.init();
     window.addEventListener("unload", UploadPage.save_state);

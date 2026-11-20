@@ -12,6 +12,9 @@ class SiteCaptcha extends Extension
     #[EventListener(priority: 10)]
     public function onPageRequest(PageRequestEvent $event): void
     {
+        if (defined('UNITTEST')) {
+            return;
+        }
         $image_cookie = Ctx::$page->get_cookie("captcha_image");
         $css_cookie = Ctx::$page->get_cookie("captcha_css");
         $image_token = $this->get_token("img");

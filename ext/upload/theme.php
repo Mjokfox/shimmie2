@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shimmie2;
 
-use function MicroHTML\{A, B, BR, DIV, INPUT, NOSCRIPT, P, SMALL, SPAN, emptyHTML, rawHTML};
+use function MicroHTML\{A, B, BR, BUTTON, DIV, INPUT, NOSCRIPT, OPTION, P, SELECT, SMALL, SPAN, TEXTAREA, emptyHTML, rawHTML};
 
 use MicroHTML\HTMLElement;
 
@@ -101,35 +101,16 @@ class UploadTheme extends Themelet
                 "max_total_size" => $max_total_size
                 ];
 
-            if (TagCategoriesInfo::is_enabled()) {
-                /** @var array{upload_group:string, type:int, tags:string}[] $tc_dict */
-                $tc_dict = Ctx::$database->get_all(
-                    "SELECT
-                        itc.upload_group,
-                        itc.upload_page_type AS type,
-                        STRING_AGG(t.tag, ',' ORDER BY itc.upload_page_priority DESC, itct.id ASC) AS tags
-                    FROM image_tag_categories_tags itct
-                    JOIN image_tag_categories itc ON itct.category_id = itc.id
-                    JOIN tags t ON itct.tag_id = t.id
-                    WHERE itc.upload_group IS NOT NULL
-                    AND itc.upload_group <> ''
-                    AND NOT itc.upload_page_type = 0
-                    GROUP BY itc.upload_group, itc.upload_page_type
-                    ORDER BY MAX(itc.upload_page_priority) DESC;"
-                );
-                // remove numerical array indices :/
-                $tc_dict = array_map(function ($e) {
-                    $tags = explode(",", $e["tags"]);
-                    $combined = [];
-                    foreach ($tags as $tag) {
-                        $aliases = AliasEditor::get_aliases($tag);
-                        $combined[] = ["tag" => $tag, "alias" => empty($aliases) ? $tag : $aliases[0]];
-                    }
-                    return ["group" => $e["upload_group"], "type" => $e["type"], "tags" => $combined];
-                }, $tc_dict);
-            } else {
-                $tc_dict = [];
-            }
+
+            $blocks = array_map(function ($b) {
+                $tags = explode(" ", $b["tags"]);
+                $combined = [];
+                foreach ($tags as $tag) {
+                    $aliases = AliasEditor::get_aliases($tag);
+                    $combined[] = ["tag" => $tag, "alias" => empty($aliases) ? $tag : $aliases[0]];
+                }
+                return ["name" => $b["name"], "type" => $b["type"], "tags" => $combined];
+            }, Upload::get_blocks());
 
             $type_table = [1 => ["cols" => 2, "class" => "grid-cell"],
             2 => ["cols" => 4, "class" => "grid-cell cell-wide"],
@@ -144,9 +125,9 @@ class UploadTheme extends Themelet
             return json_encode([
                 "upload_page_data" => $upload_page_data,
                 "type_table" => $type_table,
-                "tc_dict" => $tc_dict
+                "blocks" => $blocks
                 ], );
-        }, 300);
+        }, 1);
 
         Ctx::$page->add_html_header(rawHTML(
             "<script id=\"upload_page_data\" type=\"application/json\">$json_data</script>"
@@ -314,6 +295,142 @@ class UploadTheme extends Themelet
             $page->set_redirect(search_link(["id={$ids}"]));
             $page->add_cookie("upload_success", "true", time() + 60, httponly: false);
         }
+    }
+
+    public function display_edit_page(): void
+    {
+        $html = emptyHTML();
+        $type_map = ["hidden", "half width", "full width", "single column", "dropdown", "single row", "single row (half width)", "info line", "radio row", "checkmark row"];
+
+        foreach (Upload::get_blocks() as $block) {
+            $name = $block['name'];
+            $color = $block['color'];
+            $type = $block['type'];
+            $priority = $block['priority'];
+
+            $tags = str_replace(' ', " \n", $block["tags"]);
+
+            $select = SELECT(["name" => "type", "class" => "tc-edit"]);
+            foreach ($type_map as $idx => $text) {
+                $select->appendChild(OPTION(["value" => (string)$idx, ($type === $idx ? "selected" : "") => true], $text));
+            }
+            $html->appendChild(DIV(
+                ["class" => "tagcategoryblock tc-viewing"],
+                SHM_SIMPLE_FORM(
+                    make_link("upload/config"),
+                    INPUT(["type" => "hidden", "name" => "id", "value" => $block['id']]),
+                    TABLE(
+                        TR(
+                            TD("Name"),
+                            TD(
+                                SPAN($name),
+                                INPUT(["type" => "hidden", "name" => "name", "value" => $name])
+                            )
+                        ),
+                        TR(
+                            TD("Color"),
+                            TD(
+                                SPAN(["class" => "tc-view"], $color),
+                                DIV(["class" => "tc_colorswatch tc-view", "style" => "background-color:$color"]),
+                                INPUT(["type" => "color", "name" => "color", "class" => "tc-edit", "value" => $color])
+                            )
+                        ),
+                        TR(
+                            TD("type"),
+                            TD(
+                                SPAN(["class" => "tc-view"], $type_map[$type]),
+                                $select
+                            ),
+                        ),
+                        TR(
+                            TD("Priority"),
+                            TD(
+                                SPAN(["class" => "tc-view"], $priority),
+                                INPUT(["type" => "number", "name" => "priority", "class" => "tc-edit", "value" => $priority]),
+                            ),
+                        ),
+                        TR(
+                            TD("tags"),
+                            TD(
+                                TEXTAREA(
+                                    ["type" => "text", "name" => "tags", "class" => "autocomplete_tags", "placeholder" => "tagme", "rows" => "5.5", "cols" => "15"],
+                                    $tags
+                                ),
+                            ),
+                        ),
+                    ),
+                    BUTTON([
+                        "class" => "tc-view",
+                        "type" => "button",
+                        "data-tc-mode" => "tc-editing"
+                    ], "Edit"),
+                    BUTTON([
+                        "class" => "tc-edit",
+                        "type" => "submit",
+                        "name" => "action",
+                        "value" => "edit"
+                    ], "Submit"),
+                    BUTTON([
+                        "class" => "tc-delete",
+                        "type" => "submit",
+                        "name" => "action",
+                        "value" => "delete",
+                        "data-shm-confirm" => "Are you sure you want to delete $name?"
+                    ], "Delete"),
+                )
+            ));
+        }
+
+        // new
+        $name = 'example';
+        $color = '#EE5542';
+        $selectnew = SELECT(["name" => "type"]);
+        foreach ($type_map as $idx => $text) {
+            $selectnew->appendChild(OPTION(["value" => (string)$idx], $text));
+        }
+        $html->appendChild(DIV(
+            ["class" => "tagcategoryblock"],
+            SHM_SIMPLE_FORM(
+                make_link("upload/config"),
+                TABLE(
+                    TR(
+                        TD("Name"),
+                        TD(
+                            INPUT(["type" => "text", "name" => "name", "value" => $name])
+                        )
+                    ),
+                    TR(
+                        TD("Color"),
+                        TD(
+                            INPUT(["type" => "color", "name" => "color", "value" => $color])
+                        )
+                    ),
+                    TR(
+                        TD("Type"),
+                        TD(
+                            $selectnew
+                        ),
+                    ),
+                    TR(
+                        TD("Priority"),
+                        TD(
+                            INPUT(["type" => "number", "name" => "priority", "value" => "0"]),
+                        ),
+                    ),
+                    TR(
+                        TD("tags"),
+                        TD(
+                            TEXTAREA(["type" => "text", "name" => "tags", "class" => "autocomplete_tags", "placeholder" => "tagme", "rows" => "5", "cols" => "15"]),
+                        ),
+                    ),
+                ),
+                BUTTON(["class" => "tc_submit", "type" => "submit", "name" => "action", "value" => "new"], "Submit")
+            ),
+        ));
+
+        Ctx::$page->set_title("Upload configuration");
+        $this->display_navigation();
+        Ctx::$page->add_block(new Block("Editing", $html, "main", 10));
     }
 
     protected function build_upload_block(): HTMLElement

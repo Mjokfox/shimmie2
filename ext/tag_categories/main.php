@@ -9,7 +9,6 @@ use MicroHTML\HTMLElement;
 use function MicroHTML\SPAN;
 
 /**
- * @phpstan-type TagCategoryRow array{category: string, list_group: string, upload_group: string, color: string, upload_page_type: ?int, upload_page_priority: ?int}
  * @extends Extension<TagCategoriesTheme>
  */
 final class TagCategories extends Extension
@@ -22,35 +21,34 @@ final class TagCategories extends Extension
         $database = Ctx::$database;
 
         if ($this->get_version() < 1) {
-            // primary extension database, holds all our stuff!
             $database->create_table(
                 'image_tag_categories',
                 'id SCORE_AIPK,
-                category VARCHAR(60) UNIQUE,
-				list_group VARCHAR(60),
-				upload_group VARCHAR(60),
-				color VARCHAR(7),
-                upload_page_type INTEGER,
-                upload_page_priority INTEGER',
+				name VARCHAR(60),
+				color CHAR(7),
+                priority INTEGER NOT NULL',
             );
-            // upload_type: 0/NULL = hidden, 1 = half width, 2 = full width, 3 = single width, 4 = single full width row
 
             $database->create_table(
                 'image_tag_categories_tags',
-                'category_id INTEGER,
-                id SCORE_AIPK,
+                'id SCORE_AIPK,
+                category_id INTEGER,
                 tag_id INTEGER,
-                FOREIGN KEY(category_id) REFERENCES image_tag_categories(id),
-                FOREIGN KEY(tag_id) REFERENCES tags(id)'
+                FOREIGN KEY(category_id) REFERENCES image_tag_categories(id) ON DELETE CASCADE,
+                FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE'
             );
 
-            $this->set_version(2);
+            $database->execute("CREATE INDEX idx_itct_category_id ON image_tag_categories_tags(category_id);");
+            $database->execute("CREATE INDEX idx_itct_tag_id ON image_tag_categories_tags(tag_id);");
+            $database->execute("CREATE INDEX itc_name_idx ON image_tag_categories(name)");
+
+            $this->set_version(5);
         }
         if ($this->get_version() < 2) {
-            $database->execute("ALTER TABLE image_tag_categories RENAME COLUMN display_singular to list_group;");
-            $database->execute("ALTER TABLE image_tag_categories RENAME COLUMN display_multiple to upload_group;");
-            $database->execute("ALTER TABLE image_tag_categories ADD COLUMN upload_page_type INTEGER;");
-            $database->execute("ALTER TABLE image_tag_categories ADD COLUMN upload_page_priority INTEGER;");
+            $database->execute("ALTER TABLE image_tag_categories RENAME COLUMN display_singular to name;");
+            $database->execute("ALTER TABLE image_tag_categories DROP COLUMN IF EXISTS display_multiple;");
+            $database->execute("ALTER TABLE image_tag_categories ADD COLUMN id SCORE_AIPK;");
+            $database->execute("ALTER TABLE image_tag_categories ADD COLUMN priority INTEGER;");
             $database->execute("ALTER TABLE image_tag_categories ADD CONSTRAINT image_tag_categories_category_key UNIQUE (category);");
             $this->set_version(2);
         }
@@ -58,14 +56,33 @@ final class TagCategories extends Extension
         if ($this->get_version() < 3) {
             $database->execute("CREATE INDEX idx_itct_category_id ON image_tag_categories_tags(category_id);");
             $database->execute("CREATE INDEX idx_itct_tag_id ON image_tag_categories_tags(tag_id);");
-            $database->execute("CREATE INDEX idx_itc_upload_group ON image_tag_categories(upload_group);");
             $this->set_version(4);
         }
 
         if ($this->get_version() < 4) {
-            $database->execute("ALTER TABLE image_tag_categories RENAME COLUMN upper_group to list_group;");
-            $database->execute("ALTER TABLE image_tag_categories RENAME COLUMN lower_group to upload_group;");
+            $database->execute("ALTER TABLE image_tag_categories DROP COLUMN IF EXISTS upper_group;");
+            $database->execute("ALTER TABLE image_tag_categories DROP COLUMN IF EXISTS lower_group;");
             $this->set_version(4);
+        }
+
+        if ($this->get_version() < 5) { // tag categories -> upload
+            $database->execute("ALTER TABLE image_tag_categories DROP COLUMN IF EXISTS category");
+            $database->execute("ALTER TABLE image_tag_categories DROP COLUMN IF EXISTS upload_group");
+            $database->execute("ALTER TABLE image_tag_categories DROP COLUMN IF EXISTS upload_page_type");
+            $database->execute("ALTER TABLE image_tag_categories RENAME COLUMN list_group to name");
+            $database->execute("ALTER TABLE image_tag_categories RENAME COLUMN upload_page_priority to priority");
+
+            $database->execute("ALTER TABLE image_tag_categories_tags DROP CONSTRAINT image_tag_categories_tags_category_id_fkey");
+            $database->execute("ALTER TABLE image_tag_categories_tags DROP CONSTRAINT image_tag_categories_tags_tag_id_fkey");
+
+            $database->execute("ALTER TABLE image_tag_categories_tags ADD FOREIGN KEY(category_id) REFERENCES image_tag_categories(id) ON DELETE CASCADE");
+            $database->execute("ALTER TABLE image_tag_categories_tags ADD FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE");
+
+            $database->execute("DROP INDEX IF EXISTS idx_itc_upload_group");
+
+            $database->execute("CREATE INDEX itc_name_idx ON image_tag_categories(name)");
+
+            $this->set_version(5);
         }
 
 
@@ -73,18 +90,10 @@ final class TagCategories extends Extension
         $number_of_db_rows = $database->get_one('SELECT COUNT(*) FROM image_tag_categories');
 
         if ($number_of_db_rows === 0) {
-            $database->execute(
-                'INSERT INTO image_tag_categories (category, list_group, upload_group, color) VALUES (:category, :single, :multiple, :color)',
-                ["category" => "artist", "single" => "Artist", "multiple" => "Artists", "color" => "#BB6666"]
-            );
-            $database->execute(
-                'INSERT INTO image_tag_categories (category, list_group, upload_group, color) VALUES (:category, :single, :multiple, :color)',
-                ["category" => "series", "single" => "Series", "multiple" => "Series", "color" => "#AA00AA"]
-            );
-            $database->execute(
-                'INSERT INTO image_tag_categories (category, list_group, upload_group, color) VALUES (:category, :single, :multiple, :color)',
-                ["category" => "character", "single" => "Character", "multiple" => "Characters", "color" => "#66BB66"]
-            );
+            $query = "INSERT INTO image_tag_categories (name, color, priority) VALUES (:name, :color, :priority)";
+            $database->execute($query, ["name" => "Artist", "color" => "#BB6666", "priority" => 100]);
+            $database->execute($query, ["name" => "Series", "color" => "#AA00AA", "priority" => 50]);
+            $database->execute($query, ["name" => "Character", "color" => "#66BB66", "priority" => 10]);
         }
     }
 
@@ -100,11 +109,9 @@ final class TagCategories extends Extension
     public function onPageRequest(PageRequestEvent $event): void
     {
         if ($event->page_matches("tags/categories", method: "GET")) {
-            /** @var array<TagCategoryRow> $tcs */
-            $tcs = self::get_all_categories();
-            $this->theme->show_tag_categories($tcs);
+            $this->theme->show_tag_categories();
         } elseif ($event->page_matches("tags/categories", method: "POST", permission: TagCategoriesPermission::EDIT_TAG_CATEGORIES)) {
-            $this->page_update();
+            $this->page_update($event->POST);
             Ctx::$page->set_redirect(make_link("tags/categories"));
         } elseif ($event->page_matches("tags/categories_tags", method: "GET")) {
             $this->theme->show_count_tag_categories();
@@ -132,14 +139,14 @@ final class TagCategories extends Extension
     public function onSearchTermParse(SearchTermParseEvent $event): void
     {
         if ($matches = $event->matches("/^(.+?)_?tags(:|<=|<|=|>|>=)([0-9]+)$/i")) {
-            $list_group = strtolower($matches[1]);
+            $name = strtolower($matches[1]);
             $cmp = cmp_escape($matches[2]);
             $count = $matches[3];
 
             $exists = Ctx::$database->get_one(
                 'SELECT 1 FROM image_tag_categories
-                WHERE LOWER(list_group) = LOWER(:list_group)',
-                ['list_group' => $list_group]
+                WHERE LOWER(name) = LOWER(:name)',
+                ['name' => $name]
             );
 
             if (!\is_null($exists)) {
@@ -150,12 +157,12 @@ final class TagCategories extends Extension
                             FROM image_tags it
                             INNER JOIN image_tag_categories_tags itct ON it.tag_id = itct.tag_id AND itct.category_id IN (
                                 SELECT id FROM image_tag_categories
-                                WHERE list_group ILIKE :list_group
+                                WHERE name ILIKE :name
                             )
                             AND images.id = it.image_id
                             HAVING count(it.image_id) $cmp :count
                         )
-					", ["list_group" => $list_group, "count" => $count])
+					", ["name" => $name, "count" => $count])
                 );
             }
         }
@@ -171,85 +178,57 @@ final class TagCategories extends Extension
     }
 
     /**
-     * @return array<string, TagCategoryRow>
+     * @return array{id: int, name: string, color: string, priority: int}[]
      */
-    public static function getKeyedDict(): array
+    public static function get_all_categories(): array
     {
-        static $tc_keyed_dict = null;
+        // @phpstan-ignore return.type
+        return Ctx::$database->get_all('SELECT * FROM image_tag_categories ORDER BY priority DESC');
+        ;
+    }
 
-        if (is_null($tc_keyed_dict)) {
-            $tc_keyed_dict = [];
-            $tc_dict = self::get_all_categories();
+    /**
+     * @return ?array{name: string, color: string, priority: int}
+     */
+    public static function get_category_info_for_tag(string $tag): ?array
+    {
+        static $category_info = null;
+        if ($category_info === null || defined('UNITTEST')) {
+            $res = Ctx::$database->get_all(
+                "SELECT t.tag, c.*
+                FROM image_tag_categories_tags ct
+                JOIN image_tag_categories c ON ct.category_id = c.id
+                JOIN tags t ON ct.tag_id = t.id"
+            );
 
-            foreach ($tc_dict as $row) {
-                $tc_keyed_dict[$row['category']] = $row;
+            $category_info = [];
+            foreach ($res as $row) {
+                $category_info[$row["tag"]] = $row;
             }
         }
 
-        return $tc_keyed_dict;
-    }
-    /**
-     * @return array{string:string}
-     */
-    public static function getCategorizedTags(): array
-    {
-        static $tc_category_dict = null;
-        if ($tc_category_dict === null || defined('UNITTEST')) {
-            $query = "
-            SELECT t.tag, c.category
-            FROM image_tag_categories_tags ct
-            JOIN image_tag_categories c ON ct.category_id = c.id
-            JOIN tags t ON ct.tag_id = t.id
-            ORDER BY ct.id;";
-
-            $tc_category_dict = Ctx::$database->get_pairs($query);
-        }
-        return $tc_category_dict;
+        return \array_key_exists($tag, $category_info) ? $category_info[$tag] : null;
     }
 
-    public static function get_tag_category(string $tag): ?string
+    public static function getTagHtml(string $tag): HTMLElement
     {
-        $tag_category_dict = static::getCategorizedTags();
-        if (array_key_exists($tag, $tag_category_dict)) {
-            return $tag_category_dict[$tag];
-        }
-        return null;
-    }
+        $clean_tag = str_replace("_", " ", $tag);
 
-    public static function get_tag_body(string $tag): string
-    {
-        $tag_category_dict = static::getKeyedDict();
-        $tag_split = explode(':', $tag, 2);
-        if (count($tag_split) > 1 && array_key_exists($tag_split[0], $tag_category_dict)) {
-            return $tag_split[1];
-        }
-        return $tag;
-    }
-
-    public static function getTagHtml(string $h_tag, string $extra_text = ''): HTMLElement
-    {
-        $h_tag_no_underscores = str_replace("_", " ", $h_tag).$extra_text;
-
-        $keyed_dict = static::getKeyedDict();
-
-        // we found a tag, see if it's valid!
-        $tag_category_dict = static::getCategorizedTags();
-        if (\array_key_exists($h_tag, $tag_category_dict)) {
-            $category = $tag_category_dict[$h_tag];
-
+        $category_info = TagCategories::get_category_info_for_tag($tag);
+        if (!is_null($category_info)) {
             return SPAN(
                 [
-                    "class" => " tag_category_$category",
-                    "style" => "color:".$keyed_dict[$category]['color'].";"
+                    "class" => "tag_category_" . $category_info['name'],
+                    "style" => "color:".$category_info['color'].";"
                 ],
-                $h_tag_no_underscores
+                $clean_tag
             );
 
         }
-        return SPAN($h_tag_no_underscores);
+        return SPAN($clean_tag);
     }
 
-    private function add_tags_to_category(string $category, string $tags): void
+    private function add_tags_to_category(int $category_id, string $tags): void
     {
         $tags = str_replace("\n", ' ', $tags);
         $tags = Tag::sanitize_array(explode(' ', trim($tags)));
@@ -258,107 +237,58 @@ final class TagCategories extends Extension
             $tag_ids[] = Tag::get_or_create_id($tag);
         }
 
-        $query = "
-        SELECT id
-        FROM image_tag_categories
-        WHERE category = :category;";
-        $args = ["category" => $category];
-
-        $category_id = Ctx::$database->get_one($query, $args);
-
-        $query = "
-        INSERT INTO image_tag_categories_tags (category_id, tag_id)
-        VALUES (:category_id, :tag_id);";
-        $args = ["category_id" => $category_id];
-        foreach ($tag_ids as $tag) {
-            $args["tag_id"] = $tag;
-            Ctx::$database->execute($query, $args);
+        foreach ($tag_ids as $tag_id) {
+            Ctx::$database->execute(
+                "INSERT INTO image_tag_categories_tags (category_id, tag_id) VALUES (:category_id, :tag_id);",
+                ["category_id" => $category_id, "tag_id" => $tag_id]
+            );
         }
     }
-    private function delete_tags_from_category(string $category): void
-    {
-        Ctx::$database->execute(
-            'DELETE FROM image_tag_categories_tags
-            WHERE category_id = (
-                SELECT id
-                FROM image_tag_categories
-                WHERE category = :category
-        );',
-            [
-            'category' => $category
-        ]
-        );
-    }
 
-    public function page_update(): void
+    public function page_update(QueryArray $post): void
     {
-        $required = ['tc_status', 'tc_category', 'tc_list_group', 'tc_upload_group', 'tc_tag_list', 'tc_color', 'tc_up_type', 'tc_up_prio'];
-        if (!empty(array_diff_key(array_flip($required), $_POST))) {
-            return;
-        }
-        switch ($_POST['tc_status']) {
+        $action = $post->req("action");
+        switch ($action) {
+            case 'new':
+                $name = $post->req("name");
+                $color = $post->req("color");
+                $priority = $post->req("priority");
+                $tags = $post->req("tags");
+                Ctx::$database->execute(
+                    'INSERT INTO image_tag_categories (name, color, priority)
+                    VALUES (:name, :color, :priority)',
+                    ["name" => $name, "color" => $color, "priority" => $priority],
+                );
+                $id = Ctx::$database->get_last_insert_id('image_tag_categories_id_seq');
+                $this->add_tags_to_category($id, $tags);
+                Log::info("tag_categories", "Created category: $name", "Created category: $name");
+                break;
             case 'edit':
+                $id = int_escape($post->req("id"));
+                $name = $post->req("name");
+                $color = $post->req("color");
+                $priority = $post->req("priority");
+                $tags = $post->req("tags");
                 Ctx::$database->execute(
                     'UPDATE image_tag_categories
-                    SET list_group=:list_group,
-                        upload_group=:upload_group,
+                    SET name=:name,
                         color=:color,
-                        upload_page_type=:upload_page_type,
-                        upload_page_priority=:upload_page_priority
-                    WHERE category=:category',
-                    [
-                        'category' => $_POST['tc_category'],
-                        'list_group' => $_POST['tc_list_group'],
-                        'upload_group' => $_POST['tc_upload_group'],
-                        'color' => $_POST['tc_color'],
-                        'upload_page_type' => $_POST['tc_up_type'],
-                        'upload_page_priority' => $_POST["tc_up_prio"],
-                    ]
+                        priority=:priority
+                    WHERE id=:id',
+                    ["id" => $id, "name" => $name, "color" => $color, "priority" => $priority],
                 );
-                $this->delete_tags_from_category($_POST['tc_category']);
-                $this->add_tags_to_category($_POST['tc_category'], $_POST['tc_tag_list']);
-                Log::info("tag_categories", "Edited category: ".$_POST['tc_category'], "Edited category: ".$_POST['tc_category']);
-                break;
-            case 'new':
-                Ctx::$database->execute(
-                    'INSERT INTO image_tag_categories (category, list_group, upload_group, color, upload_page_type, upload_page_priority)
-                    VALUES (:category, :list_group, :upload_group, :color, :upload_page_type, :upload_page_priority)',
-                    [
-                        'category' => $_POST['tc_category'],
-                        'list_group' => $_POST['tc_list_group'],
-                        'upload_group' => $_POST['tc_upload_group'],
-                        'color' => $_POST['tc_color'],
-                        'upload_page_type' => $_POST['tc_up_type'],
-                        'upload_page_priority' => $_POST["tc_up_prio"],
-                    ]
-                );
-                $this->add_tags_to_category($_POST['tc_category'], $_POST['tc_tag_list']);
-                Log::info("tag_categories", "Created category: ".$_POST['tc_category'], "Created category: ".$_POST['tc_category']);
+                Ctx::$database->execute('DELETE FROM image_tag_categories_tags WHERE category_id = :id;', ['id' => $id]);
+                $this->add_tags_to_category($id, $tags);
+                Log::info("tag_categories", "Edited category: $name", "Edited category: $name");
                 break;
             case 'delete':
-                $this->delete_tags_from_category($_POST['tc_category']);
-                Ctx::$database->execute(
-                    'DELETE FROM image_tag_categories
-                    WHERE category=:category',
-                    [
-                        'category' => $_POST['tc_category']
-                    ]
-                );
-                Log::info("tag_categories", "Deleted category: ".$_POST['tc_category'], "Deleted category: ".$_POST['tc_category']);
+                $id = $post->req("id");
+                $name = $post->req("name");
+                Ctx::$database->execute('DELETE FROM image_tag_categories WHERE id=:id', ['id' => $id]);
+                Log::info("tag_categories", "Deleted category: $name", "Deleted category: $name");
                 break;
             default:
                 return;
         }
-    }
-
-    /**
-     * Get all tag categories
-     * @return array<TagCategoryRow> Array of category records with all fields
-     */
-    public static function get_all_categories(): array
-    {
-        /** @var array<TagCategoryRow> $result */
-        $result = Ctx::$database->get_all('SELECT * FROM image_tag_categories ORDER BY upload_page_priority IS NULL, upload_page_priority DESC;');
-        return $result;
     }
 }
