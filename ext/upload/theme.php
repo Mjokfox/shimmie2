@@ -127,7 +127,7 @@ class UploadTheme extends Themelet
                 "type_table" => $type_table,
                 "blocks" => $blocks
                 ], );
-        }, 1);
+        }, 300);
 
         Ctx::$page->add_html_header(rawHTML(
             "<script id=\"upload_page_data\" type=\"application/json\">$json_data</script>"
