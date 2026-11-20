@@ -216,9 +216,20 @@ DIV.grid-cell-content LABEL {
 	margin-right:1px;
 }
 
+.dir-row .tag-separator {
+	margin: 0 .5em;
+	height: unset;
+	width: unset;
+	align-self: unset;
+}
+
 .tag-separator {
 	border: 1px dashed;
-	margin: 0 .5em;
+	height: 0;
+	width: 85%;
+	margin: .2em 4% .3em 0;
+	justify-self: center;
+	align-self: center;
 }
 
 TABLE.form .grid-cell SELECT {
