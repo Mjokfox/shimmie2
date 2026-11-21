@@ -323,8 +323,8 @@ class UploadTheme extends Themelet
                         TR(
                             TD("Name"),
                             TD(
-                                SPAN($name),
-                                INPUT(["type" => "hidden", "name" => "name", "value" => $name])
+                                SPAN(["class" => "tc-view"], $name),
+                                INPUT(["type" => "text", "name" => "name", "class" => "tc-edit", "value" => $name])
                             )
                         ),
                         TR(
