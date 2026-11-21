@@ -208,8 +208,11 @@ DIV.grid-cell-label {
 }
 
 DIV.grid-cell-content LABEL {
-	padding-right:5px;
 	width: fit-content;
+	display: flex;
+	flex-direction: row;
+	align-items: start;
+	text-wrap: nowrap;
 }
 
 .grid-cell-content LABEL INPUT {
@@ -440,6 +443,7 @@ DIV.upload-tags-grid SELECT {
 		flex-direction: row;
 		width: fit-content;
 		column-gap: 1ch;
+		flex-wrap: wrap;
 	}
 }
 
