@@ -72,7 +72,7 @@ class TagListTheme extends Themelet
                     $color = null;
                 } else {
                     $name = $category_info["name"];
-                    $priority = $category_info["name"];
+                    $priority = $category_info["priority"];
                     $color = $category_info["color"];
                 }
 
