@@ -17,6 +17,8 @@
 	--tag-count: light-dark(#825519, gray);
 	--comment-meta: gray;
 
+	--input-background: #312a28;
+
 	--hover-bg: light-dark(#825519, #bb7552);
 	--hover-fg: white;
 
@@ -50,7 +52,7 @@
 	}
 
 	INPUT, TEXTAREA, SELECT, BUTTON {
-		background: #312a28;
+		background: var(--input-background);
 		border: 1px solid gray
 	}
 

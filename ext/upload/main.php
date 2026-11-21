@@ -130,8 +130,8 @@ final class Upload extends Extension
             $database->create_table(
                 'upload_blocks_tags',
                 'id SCORE_AIPK,
-                block_id INTEGER NOT NULL,
-                tag_id INTEGER NOT NULL,
+                block_id INTEGER,
+                tag_id INTEGER,
                 FOREIGN KEY(block_id) REFERENCES upload_blocks(id) ON DELETE CASCADE,
                 FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE'
             );

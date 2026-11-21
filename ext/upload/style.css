@@ -192,11 +192,65 @@ DIV.grid-cell-label {
 }
 
 .grid-cell-content {
+	--input-background: #312a28;
     display: grid;
 	justify-content: start;
 	grid-auto-flow: column;
 	grid-template-columns: repeat(2, var(--upload-c-width));
 	grid-template-rows: repeat(var(--num-rows), auto);
+	LABEL {
+		width: fit-content;
+		display: flex;
+		flex-direction: row;
+		align-items: start;
+		text-wrap: nowrap;
+		INPUT {
+			margin-right:1px;
+		}
+	}
+
+	.dropdown:has(input:checked)::before {
+		content:"\2022\0020";
+	}
+	.dropdown.select::after {
+		content:"Select... v";
+	}
+	.dropdown.more::after {
+		content:"More... v";
+	}
+	
+	.dropdown:hover:not(:has(*:hover)) {
+		background-color: var(--hover-bg);
+	}
+	.dropdown:has(input:checked) {
+		border-color: var(--added-background);
+	}
+	.dropdown {
+		position: relative;
+		padding: 0 1ch;
+		background-color: var(--input-background);
+		border: 1px solid gray;
+		text-wrap: nowrap;
+		.dropdown-container {
+			display: none;
+			position: absolute;
+			top: 1.25em;
+			left: 0;
+			z-index: 1;
+			padding: .5em;
+			background-color: var(--input-background);
+			border: 1px solid gray;
+			LABEL {
+				width: 100%;
+			}
+			.tag-separator {
+				margin: .2em 4% .3em 0;
+			}
+		}
+	}
+	.dropdown.open .dropdown-container {
+		display: unset;
+	}
 }
 
 .cell-wide .grid-cell-content {
@@ -205,18 +259,6 @@ DIV.grid-cell-label {
 
 .cell-thin .grid-cell-content {
 	grid-template-columns: minmax(0, 1fr);
-}
-
-DIV.grid-cell-content LABEL {
-	width: fit-content;
-	display: flex;
-	flex-direction: row;
-	align-items: start;
-	text-wrap: nowrap;
-}
-
-.grid-cell-content LABEL INPUT {
-	margin-right:1px;
 }
 
 .dir-row .tag-separator {
@@ -366,16 +408,30 @@ DIV.upload-tags-grid SELECT {
 		grid-auto-flow: dense;
 	}
 
-	DIV DIV.grid-cell-content LABEL {
-		width: max-content;
-		display: flex;
-		margin-bottom: .3em;
+	.grid-cell-content {
+		LABEL {
+			width: max-content;
+			display: flex;
+			margin-bottom: .3em;
+			INPUT {
+				height: 1.2em;
+				width: 1.2em;
+			}
+		}
+		.dropdown {
+			position: static;
+			.dropdown-container {
+				display: none;
+				position: absolute;
+				top: unset;
+				left: unset;
+				right: 1em;
+				margin-top: 1.25em;
+			}
+		}
 	}
-
-	DIV.grid-cell-content LABEL INPUT {
-		height: 1.2em;
-		width: 1.2em;
-	}
+	
+	
 
 	DIV.grid-cell:nth-child(even), DIV.grid-cell.cell-wide:nth-child(even) {
 		background-color: #FFF1;

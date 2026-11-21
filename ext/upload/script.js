@@ -473,6 +473,9 @@ class UploadPanel {
             case "OPTION":
                 this.option(e.target);
                 break;
+            case "DROPDOWN":
+                this.dropdown(e.target);
+                break;
             default:
                 return;
         }
@@ -528,6 +531,21 @@ class UploadPanel {
             delete this.select_tags[name];
         }
         this.update_tags();
+    }
+
+    /** @param {HTMLElement} el */
+    dropdown(el) {
+        if (el.classList.contains("open")) return;
+        el.classList.add("open");
+        const now = Date.now();
+        const listener = (e) => {
+            if (el !== e.target && el.contains(e.target)) return;
+            if (Date.now() - now > 50) {
+                el.classList.remove("open");
+                document.body.removeEventListener("click", listener);
+            }
+        };
+        document.body.addEventListener("click", listener);
     }
 
     clear_file() {
@@ -827,17 +845,16 @@ class SelectorPanel {
         });
     }
 
-    all_dropdown(tags, name, separator_tag, overflow = false) {
-        const select = build("SELECT", {ariaLabel: name });
-        select.append(build("OPTION", overflow ? "More..." : "Select..."));
-        tags.forEach(tag => {
+    all_dropdown(tags, type, name, separator_tag, overflow = false) {
+        const container = qbuild("DIV", "dropdown-container");
+        tags.forEach((tag) => {
             if (tag.tag === separator_tag) {
-                select.append(build("OPTION", "–"));
+                container.append(qbuild("DIV", "tag-separator"));
             } else {
-                select.append(build("OPTION", {value: tag.alias}, tag.tag));
+                container.append(this.input_label(tag, type, name));
             }
         });
-        return select;
+        return qbuild("DROPDOWN", "dropdown " + (overflow ? "more" : "select"), container);
     }
 
     tag_panel(type_table, blocks, separator_tag) {
@@ -887,14 +904,14 @@ class SelectorPanel {
                         );
 
                         inputs.append(
-                            this.all_dropdown(tags.slice(overflow), block.name, separator_tag, true),
+                            this.all_dropdown(tags.slice(overflow), "radio", block.name, separator_tag, true),
                         );
                     } else {
                         this.all_input(tags, "radio", inputs, separator_tag, block.name);
                     }
                     break;
                 case 4:
-                    inputs.append(this.all_dropdown(tags, block.name, separator_tag));
+                    inputs.append(this.all_dropdown(tags, "checkbox", block.name, separator_tag));
                     break;
                 default:
                     this.all_input(tags, "checkbox", inputs, separator_tag);
