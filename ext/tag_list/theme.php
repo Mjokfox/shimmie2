@@ -78,14 +78,20 @@ class TagListTheme extends Themelet
 
                 if (!isset($tag_categories_html[$name])) {
                     $tag_categories_html[$name] = ["html" => $this->get_tag_list_preamble(), "priority" => $priority];
+                } else {
+                    $tag_categories_html[$name]["priority"] = max($tag_categories_html[$name]["priority"], $priority);
                 }
-                $tag_categories_html[$name]["html"]->appendChild(self::build_tag_row($tag_info, $search, $color));
+                $tag_categories_html[$name]["children"][] = ["html" => self::build_tag_row($tag_info, $search, $color), "priority" => $priority];
             }
 
             uasort($tag_categories_html, fn ($a, $b) => $b["priority"] <=> $a["priority"]);
 
             $tagshtml = emptyHTML();
             foreach ($tag_categories_html as $name => $contents) {
+                uasort($contents["children"], fn ($a, $b) => $b["priority"] <=> $a["priority"]);
+                foreach ($contents["children"] as $child) {
+                    $contents["html"]->appendChild($child["html"]);
+                }
                 $tagshtml->appendChild(H3($name));
                 $tagshtml->appendChild(TABLE($contents["html"]));
             }

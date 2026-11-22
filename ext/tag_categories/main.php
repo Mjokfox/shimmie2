@@ -184,7 +184,6 @@ final class TagCategories extends Extension
     {
         // @phpstan-ignore return.type
         return Ctx::$database->get_all('SELECT * FROM image_tag_categories ORDER BY priority DESC');
-        ;
     }
 
     /**
