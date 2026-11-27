@@ -56,16 +56,43 @@ final class TagCategories extends Extension
         if ($this->get_version() < 3) {
             $database->execute("CREATE INDEX idx_itct_category_id ON image_tag_categories_tags(category_id);");
             $database->execute("CREATE INDEX idx_itct_tag_id ON image_tag_categories_tags(tag_id);");
-            $this->set_version(4);
+            $this->set_version(3);
         }
 
         if ($this->get_version() < 4) {
-            $database->execute("ALTER TABLE image_tag_categories DROP COLUMN IF EXISTS upper_group;");
-            $database->execute("ALTER TABLE image_tag_categories DROP COLUMN IF EXISTS lower_group;");
+            $database->execute("ALTER TABLE image_tag_categories RENAME COLUMN upper_group to upload_group;");
+            $database->execute("ALTER TABLE image_tag_categories RENAME COLUMN lower_group to list_group;");
             $this->set_version(4);
         }
 
         if ($this->get_version() < 5) { // tag categories -> upload
+            $row = $database->get_row('SELECT * FROM image_tag_categories LIMIT 1');
+            if (!is_null($row) && array_key_exists("upload_group", $row)){
+                $blocks = $database->get_all("SELECT upload_group as name, max(color) as color, max(upload_page_type) as type, max(upload_page_priority) as priority,
+                    STRING_AGG(CAST(itct.tag_id AS TEXT), ' ' ORDER BY itc.upload_page_priority DESC, itct.id ASC) AS tag_ids
+                    FROM image_tag_categories_tags itct
+                    JOIN image_tag_categories itc ON itct.category_id = itc.id
+                    WHERE itc.upload_group IS NOT NULL
+                    AND itc.upload_group <> ''
+                    AND NOT itc.upload_page_type = 0
+                    GROUP BY itc.upload_group, itc.upload_page_type
+                    ORDER BY MAX(itc.upload_page_priority) DESC;
+                ");
+
+                foreach ($blocks as $block) {
+                    $database->execute(
+                        'INSERT INTO upload_blocks (name, color, type, priority) VALUES (:name, :color, :type, :priority)',
+                        ["name" => $block["name"], "color" => $block["color"], "type" => $block["type"], "priority" => $block["priority"]]
+                    );
+                    $block_id = $database->get_last_insert_id("upload_blocks_id_seq");
+                    foreach (explode(" ", $block["tag_ids"]) as $tag_id) {
+                        $database->execute(
+                            'INSERT INTO upload_blocks_tags (block_id, tag_id) VALUES (:block_id, :tag_id)',
+                            ["block_id" => $block_id, "tag_id" => (int)$tag_id]
+                        );
+                    }
+                }
+            }
             $database->execute("ALTER TABLE image_tag_categories DROP COLUMN IF EXISTS category");
             $database->execute("ALTER TABLE image_tag_categories DROP COLUMN IF EXISTS upload_group");
             $database->execute("ALTER TABLE image_tag_categories DROP COLUMN IF EXISTS upload_page_type");

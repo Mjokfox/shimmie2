@@ -246,11 +246,6 @@ final class CommentList extends Extension
             if ($this->get_version() === 4) {
                 $database->execute("ALTER TABLE images ADD COLUMN comments_locked BOOLEAN NOT NULL DEFAULT FALSE");
                 $database->execute("CREATE INDEX images_comments_locked_idx ON images(comments_locked)");
-                $this->set_version(4);
-            }
-
-            if ($this->get_version() === 4) {
-                $database->execute("ALTER TABLE comments ADD COLUMN edited BOOLEAN NOT NULL DEFAULT FALSE");
                 $this->set_version(5);
             }
 

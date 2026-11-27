@@ -136,37 +136,6 @@ final class Upload extends Extension
                 FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE'
             );
 
-            try { // migrate from tag categories
-                $database->get_one('SELECT upload_group FROM image_tag_categories');
-
-                $blocks = $database->get_all("SELECT upload_group as name, max(color) as color, max(upload_page_type) as type, max(upload_page_priority) as priority,
-                    STRING_AGG(CAST(itct.tag_id AS TEXT), ' ' ORDER BY itc.upload_page_priority DESC, itct.id ASC) AS tag_ids
-                    FROM image_tag_categories_tags itct
-                    JOIN image_tag_categories itc ON itct.category_id = itc.id
-                    WHERE itc.upload_group IS NOT NULL
-                    AND itc.upload_group <> ''
-                    AND NOT itc.upload_page_type = 0
-                    GROUP BY itc.upload_group, itc.upload_page_type
-                    ORDER BY MAX(itc.upload_page_priority) DESC;
-                ");
-
-                foreach ($blocks as $block) {
-                    $database->execute(
-                        'INSERT INTO upload_blocks (name, color, type, priority) VALUES (:name, :color, :type, :priority)',
-                        ["name" => $block["name"], "color" => $block["color"], "type" => $block["type"], "priority" => $block["priority"]]
-                    );
-                    $block_id = $database->get_last_insert_id("upload_blocks_id_seq");
-                    foreach (explode(" ", $block["tag_ids"]) as $tag_id) {
-                        $database->execute(
-                            'INSERT INTO upload_blocks_tags (block_id, tag_id) VALUES (:block_id, :tag_id)',
-                            ["block_id" => $block_id, "tag_id" => (int)$tag_id]
-                        );
-                    }
-                }
-            } catch (DatabaseException $e) {
-                // column doesnt exist, theres nothing to migrate
-            }
-
             $database->execute("CREATE INDEX upload_blocks_id_idx ON upload_blocks(id)");
             $database->execute("CREATE INDEX upload_blocks_type_idx ON upload_blocks(type)");
             $database->execute("CREATE INDEX upload_blocks_priority_idx ON upload_blocks(priority)");
