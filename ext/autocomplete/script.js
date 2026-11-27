@@ -230,6 +230,11 @@ function setCompletion(element, new_word) {
 	element.dispatchEvent(new Event("input"))
 }
 
+/**
+ * Set eventlisteners
+ *
+ * @param {HTMLInputElement} element
+ */
 function elementInit(element) {
     // set metadata
     element.completions = {};
@@ -253,11 +258,8 @@ function elementInit(element) {
     });
 
     // when cursor is moved, change current completion
-    document.addEventListener("selectionchange", () => {
-        // if element is focused
-        if (document.activeElement === element) {
-            updateCompletions(element);
-        }
+    element.addEventListener("selectionchange", () => {
+        updateCompletions(element);
     });
 
     element.addEventListener("keydown", (event) => {
